@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+      "name": "root",
+			"path": "."
+		},
+    {
+      "name": "envoyfilter",
+      "path": "envoyfilter"
+    },
+    {
+      "name": "demos",
+      "path": "./demos"
+    },
+  ],
+  "settings": {}
+}

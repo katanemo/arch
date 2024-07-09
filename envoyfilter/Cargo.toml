@@ -1,0 +1,7 @@
+[package]
+name = "intelligent-prompt-gateway"
+version = "0.1.0"
+authors = ["Katanemo Inc <info@katanemo.com>"]
+edition = "2018"
+
+[dependencies]
