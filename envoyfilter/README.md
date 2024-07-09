@@ -1,1 +1,1 @@
-A open source project for developers to build and secure faster, more personalized generative AI apps. Katanemo is a high performance gateway designed with state of the art (SOTA) fast LLMs to process, route and evaluate prompts.
+Envoy filter code for gateway
