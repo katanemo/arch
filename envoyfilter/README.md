@@ -1,5 +1,11 @@
 # Envoy filter code for gateway
 
+## Add toolchain
+
+```sh
+$ rustup target add wasm32-wasi
+```
+
 ## Building
 
 ```sh
