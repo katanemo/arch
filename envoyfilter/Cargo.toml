@@ -2,6 +2,11 @@
 name = "intelligent-prompt-gateway"
 version = "0.1.0"
 authors = ["Katanemo Inc <info@katanemo.com>"]
-edition = "2018"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
+proxy-wasm = "0.2.1"
+log = "0.4"
