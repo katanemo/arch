@@ -1,4 +1,4 @@
-name: Static Analysis
+name: Checks on PR
 
 on: pull_request
 
