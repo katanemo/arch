@@ -11,11 +11,10 @@ jobs:
         steps:
         - name: Setup | Checkout
           uses: actions/checkout@v4
-        - run: cd envoyfilter
         - name: Setup | Rust
           run: rustup toolchain install stable --profile minimal
         - name: Run Check
-          run: cargo check --lib --bins --examples --all-features
+          run: cd envoyfilter && cargo check --lib --bins --examples --all-features
 
     lint:
         name: Lint
@@ -23,11 +22,10 @@ jobs:
         steps:
         - name: Setup | Checkout
           uses: actions/checkout@v4
-        - run: cd envoyfilter
         - name: Setup | Rust
           run: rustup toolchain install stable --profile minimal
         - name: Run Clippy
-          run: cargo clippy --all-targets --all-features
+          run: cd envoyfilter && cargo clippy --all-targets --all-features
     
     format:
         name: Rustfmt
@@ -36,10 +34,7 @@ jobs:
         steps:
         - name: Setup | Checkout
           uses: actions/checkout@v4
-        - run: cd envoyfilter
         - name: Setup | Rust
-          run: rustup toolchain install stable --profile minimal
-        - name: Setup | Install Rustfmt
-          run: rustup component add rustfmt
+          run: rustup toolchain install stable --profile minimal   
         - name: Run Rustfmt
-          run: cargo fmt --all -- --check
+          run: cd envoyfilter && cargo fmt --all -- --check
