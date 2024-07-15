@@ -9,9 +9,9 @@ jobs:
         name: Check
         runs-on: ubuntu-latest
         steps:
-        - run: cd envoyfilter
         - name: Setup | Checkout
           uses: actions/checkout@v4
+        - run: cd envoyfilter
         - name: Setup | Rust
           run: rustup toolchain install stable --profile minimal
         - name: Run Check
@@ -21,9 +21,9 @@ jobs:
         name: Lint
         runs-on: ubuntu-latest
         steps:
-        - run: cd envoyfilter
         - name: Setup | Checkout
           uses: actions/checkout@v4
+        - run: cd envoyfilter
         - name: Setup | Rust
           run: rustup toolchain install stable --profile minimal
         - name: Run Clippy
@@ -34,9 +34,9 @@ jobs:
         runs-on: ubuntu-latest
         
         steps:
-        - run: cd envoyfilter
         - name: Setup | Checkout
           uses: actions/checkout@v4
+        - run: cd envoyfilter
         - name: Setup | Rust
           run: rustup toolchain install stable --profile minimal
         - name: Setup | Install Rustfmt
