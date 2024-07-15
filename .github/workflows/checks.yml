@@ -9,6 +9,7 @@ jobs:
         name: Check
         runs-on: ubuntu-latest
         steps:
+        - run: cd envoyfilter
         - name: Setup | Checkout
           uses: actions/checkout@v4
         - name: Setup | Rust
@@ -20,6 +21,7 @@ jobs:
         name: Lint
         runs-on: ubuntu-latest
         steps:
+        - run: cd envoyfilter
         - name: Setup | Checkout
           uses: actions/checkout@v4
         - name: Setup | Rust
@@ -32,6 +34,7 @@ jobs:
         runs-on: ubuntu-latest
         
         steps:
+        - run: cd envoyfilter
         - name: Setup | Checkout
           uses: actions/checkout@v4
         - name: Setup | Rust
