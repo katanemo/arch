@@ -1,6 +1,6 @@
 name: Static Analysis
 
-on: [push, pull_request]
+on: pull_request
 
 jobs:
         # Check and Linting are seperate jobs because linting does not fail 
