@@ -11,6 +11,8 @@ jobs:
         steps:
         - name: Setup | Checkout
           uses: actions/checkout@v4
+        - name: Setup | Rust
+          run: rustup toolchain install stable --profile minimal
         - name: Run Check
           run: cargo check --lib --bins --examples --all-features
 
@@ -20,6 +22,8 @@ jobs:
         steps:
         - name: Setup | Checkout
           uses: actions/checkout@v4
+        - name: Setup | Rust
+          run: rustup toolchain install stable --profile minimal
         - name: Run Clippy
           run: cargo clippy --all-targets --all-features
     
@@ -30,5 +34,9 @@ jobs:
         steps:
         - name: Setup | Checkout
           uses: actions/checkout@v4
+        - name: Setup | Rust
+          run: rustup toolchain install stable --profile minimal
+        - name: Setup | Install Rustfmt
+          run: rustup component add rustfmt
         - name: Run Rustfmt
           run: cargo fmt --all -- --check
