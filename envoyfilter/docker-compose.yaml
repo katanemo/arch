@@ -4,10 +4,42 @@ services:
     hostname: envoy
     ports:
       - "10000:10000"
+      - "19901:9901"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
       - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
     networks:
       - envoymesh
+
+  # llmhost:
+  #   image: vllm/vllm-openai:latest
+  #   hostname: llmhost
+  #   ports:
+  #     - "18000:8000"
+  #   volumes:
+  #     - ~/.cache/huggingface:/root/.cache/huggingface
+  #   entrypoint: ["python3", "-m", "vllm.entrypoints.openai.api_server", "--model", "mistralai/Mistral-7B-v0.1"]
+  #   networks:
+  #     - envoymesh
+
+  # local-llm:
+  #   image: ghcr.io/ggerganov/llama.cpp:server
+  #   entrypoint: ["/llama-server", "--port", "8080", "-c", "512", "--host", "0.0.0.0", "-m", "model.gguf", "--n-gpu-layers", "99"]
+  #   ports:
+  #     - "18000:8080"
+  #   volumes:
+  #     - ./sqlcoder-7b-Mistral-7B-Instruct-v0.2-slerp.Q4_K_M.gguf:/model.gguf
+
+  vector-db:
+    image: qdrant/qdrant
+    hostname: vector-db
+    ports:
+      - 16333:6333
+      - 16334:6334
+    volumes:
+      - ./vector_db:/qdrant/storage
+    networks:
+      - envoymesh
+
 networks:
   envoymesh: {}

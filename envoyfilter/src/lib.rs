@@ -1,3 +1,5 @@
+mod configuration;
+
 use log::info;
 use std::time::Duration;
 
@@ -8,14 +10,14 @@ proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> {
         Box::new(HttpHeaderRoot {
-            header_content: String::new(),
+            config: None,
         })
     });
 }}
 
 struct HttpHeader {
     context_id: u32,
-    header_content: String,
+    config: configuration::Configuration,
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
@@ -55,8 +57,7 @@ impl HttpContext for HttpHeader {
     }
 
     fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
-        // Note that the filter can add custom headers. In this case the header is coming from a config value.
-        self.add_http_response_header("custom-header", self.header_content.as_str());
+        self.set_http_response_header("Powered-By", Some("Katanemo"));
         Action::Continue
     }
 }
@@ -87,16 +88,25 @@ impl Context for HttpHeader {
 }
 
 struct HttpHeaderRoot {
-    header_content: String,
+    config: Option<configuration::Configuration>,
 }
 
 impl Context for HttpHeaderRoot {}
 
 // RootContext allows the Rust code to reach into the Envoy Config
 impl RootContext for HttpHeaderRoot {
-    fn on_configure(&mut self, _: usize) -> bool {
+    fn on_configure(&mut self, plugin_configuration_size: usize) -> bool {
+        info!(
+            "on_configure: plugin_configuration_size is {}",
+            plugin_configuration_size
+        );
+
         if let Some(config_bytes) = self.get_plugin_configuration() {
-            self.header_content = String::from_utf8(config_bytes).unwrap()
+            let config_str = String::from_utf8(config_bytes).unwrap();
+            info!("on_configure: plugin configuration is {:?}", config_str);
+            self.config = serde_yaml::from_str(&config_str).unwrap();
+            info!("on_configure: plugin configuration loaded");
+            info!("on_configure: {:?}", self.config);
         }
         true
     }
@@ -104,7 +114,7 @@ impl RootContext for HttpHeaderRoot {
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(HttpHeader {
             context_id,
-            header_content: self.header_content.clone(),
+            config: self.config.clone()?,
         }))
     }
 
