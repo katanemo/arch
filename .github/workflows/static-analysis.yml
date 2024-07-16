@@ -1,0 +1,27 @@
+name: Static Analysis
+
+on: pull_request
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+      - name: Setup | Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Run Clippy
+        run: cd envoyfilter && cargo clippy --all-targets --all-features -- -Dwarnings
+
+  format:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+      - name: Setup | Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Run Rustfmt
+        run: cd envoyfilter && cargo fmt --all -- --check

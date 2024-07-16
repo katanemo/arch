@@ -1,16 +1,26 @@
 mod configuration;
 
 use log::info;
+use stats::IncrementingMetric;
+use stats::Metric;
+use stats::RecordingMetric;
 use std::time::Duration;
 
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
+mod stats;
+
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> {
         Box::new(HttpHeaderRoot {
-            config: None,
+          config: None,
+          metrics: WasmMetrics {
+                counter: stats::Counter::new(String::from("wasm_counter")),
+                gauge: stats::Gauge::new(String::from("wasm_gauge")),
+                histogram: stats::Histogram::new(String::from("wasm_histogram")),
+            },
         })
     });
 }}
@@ -18,6 +28,7 @@ proxy_wasm::main! {{
 struct HttpHeader {
     context_id: u32,
     config: configuration::Configuration,
+    metrics: WasmMetrics,
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
@@ -25,6 +36,14 @@ impl HttpContext for HttpHeader {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
+        // Metrics
+        self.metrics.counter.increment(10);
+        info!("counter -> {}", self.metrics.counter.value());
+        self.metrics.gauge.record(20);
+        info!("gauge -> {}", self.metrics.gauge.value());
+        self.metrics.histogram.record(30);
+        info!("histogram -> {}", self.metrics.histogram.value());
+
         // Example of reading the HTTP headers on the incoming request
         for (name, value) in &self.get_http_request_headers() {
             info!("#{} -> {}: {}", self.context_id, name, value);
@@ -87,7 +106,15 @@ impl Context for HttpHeader {
     }
 }
 
+#[derive(Copy, Clone)]
+struct WasmMetrics {
+    counter: stats::Counter,
+    gauge: stats::Gauge,
+    histogram: stats::Histogram,
+}
+
 struct HttpHeaderRoot {
+    metrics: WasmMetrics,
     config: Option<configuration::Configuration>,
 }
 
@@ -115,6 +142,7 @@ impl RootContext for HttpHeaderRoot {
         Some(Box::new(HttpHeader {
             context_id,
             config: self.config.clone()?,
+            metrics: self.metrics,
         }))
     }
 
