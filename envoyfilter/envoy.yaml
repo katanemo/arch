@@ -14,6 +14,14 @@ static_resources:
               route_config:
                 name: local_routes
                 virtual_hosts:
+                  - name: openai
+                    domains:
+                      - "api.openai.com"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          cluster: openai
                   - name: local_service
                     domains:
                       - "*"
@@ -49,6 +57,23 @@ static_resources:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
   clusters:
+    # LLM Host
+    # Embedding Providers
+    # External LLM Providers
+    - name: openai
+    - connect_timeout: 5s
+      type: LOGICAL_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: openai
+        endpoints:
+          - lb_endpoint:
+            - endpoint:
+              address:
+                socket_address: api.openai.com
+                port_value: 443
+
+
     - name: httpbin
       connect_timeout: 5s
       type: STRICT_DNS

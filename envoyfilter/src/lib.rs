@@ -65,12 +65,18 @@ impl HttpContext for StreamContext {
                 )
                 .unwrap();
                 // Pause the filter until the out of band HTTP response arrives.
-                Action::Pause
+                return Action::Pause;
             }
+            _ => (),
+        };
 
-            // Otherwise let the HTTP request continue.
-            _ => Action::Continue,
-        }
+        // Example of forwarding request to External LLM provider
+        match self.get_http_request_header(":host") {
+            Some(host) if host == "openai" => {}
+            _ => (),
+        };
+
+        Action::Continue
     }
 
     fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
