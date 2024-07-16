@@ -36,6 +36,8 @@ impl HttpContext for HttpHeader {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
+        // Read config
+        info!("config: {:?}", self.config.prompt_config.system_prompt);
         // Metrics
         self.metrics.counter.increment(10);
         info!("counter -> {}", self.metrics.counter.value());

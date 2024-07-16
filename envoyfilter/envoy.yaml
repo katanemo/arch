@@ -44,18 +44,18 @@ static_resources:
                           value: |
                             katanemo-prompt-config:
                               default-prompt-endpoint: "127.0.0.1"
-                              load-balancing: "prompt-robin"
+                              load-balancing: "round-robin"
                               timeout-ms: 5000
 
                               embedding-provider:
-                                provider: "SentenceTransformer"
-                                model-name: "all-MiniLM-L6-v2"
+                                name: "SentenceTransformer"
+                                model: "all-MiniLM-L6-v2"
 
                               llm-providers:
 
-                                - provider: "open-ai-gpt-4"
+                                - name: "open-ai-gpt-4"
                                   api-key: "$OPEN_AI_API_KEY"
-                                  model-version: gpt-4
+                                  model: gpt-4
 
                               system-prompt: |
                                 You are a helpful weather forecaster. Please following following guidelines when responding to user queries:
@@ -74,6 +74,7 @@ static_resources:
                                     - cache-ttl-secs: 3600 # cache expiry in seconds
                                     - cache-max-size: 1000 # in number of items
                                     - cache-eviction-strategy: LRU
+
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           code:
