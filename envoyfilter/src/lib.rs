@@ -1,6 +1,5 @@
-mod configuration;
-
 use log::info;
+use log::warn;
 use stats::IncrementingMetric;
 use stats::Metric;
 use stats::RecordingMetric;
@@ -9,6 +8,8 @@ use std::time::Duration;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
+mod configuration;
+mod llm_backend;
 mod stats;
 
 proxy_wasm::main! {{
@@ -44,7 +45,7 @@ impl HttpContext for StreamContext {
         self.metrics.gauge.record(20);
         info!("gauge -> {}", self.metrics.gauge.value());
         self.metrics.histogram.record(30);
-        info!("histogram -> {}", self.metrics.histogram.value());
+        // info!("histogram -> {}", self.metrics.histogram.value());
 
         // Example of reading the HTTP headers on the incoming request
         for (name, value) in &self.get_http_request_headers() {
@@ -71,14 +72,41 @@ impl HttpContext for StreamContext {
                 // Pause the filter until the out of band HTTP response arrives.
                 return Action::Pause;
             }
-            _ => (),
-        };
+            // The gateway can start gathering information necessary for routing. For now change the path to an
+            // OpenAI API path.
+            Some(path) if path == "/llmrouting" => {
+                self.set_http_request_header(":path", Some("/v1/chat/completions"));
+                return Action::Continue;
+            }
+            // Otherwise let the filter continue.
+            _ => Action::Continue,
+        }
+    }
 
-        // Example of forwarding request to External LLM provider
+    fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
+        // Let the filter continue if the request is not meant for OpenAi
         match self.get_http_request_header(":host") {
-            Some(host) if host == "openai" => {}
-            _ => (),
-        };
+            Some(host) if host != "api.openai.com" => return Action::Continue,
+            _ => {}
+        }
+
+        // Let the client send the gateway all the data before sending to the LLM_provider
+        if !end_of_stream {
+            return Action::Pause;
+        }
+
+        if let Some(body_bytes) = self.get_http_request_body(0, body_size) {
+            let mut deserialized: llm_backend::ChatCompletions =
+                serde_json::from_slice(&body_bytes).unwrap();
+
+            warn!("deserialized body = {:?}", deserialized);
+
+            // This is the big moment here: the user did not set the model in their request.
+            // The gateway is setting the model for them.
+            deserialized.model = String::from("gpt-3.5-turbo");
+
+            self.set_http_request_body(0, body_size, &serde_json::to_vec(&deserialized).unwrap())
+        }
 
         Action::Continue
     }

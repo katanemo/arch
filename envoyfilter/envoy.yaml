@@ -30,6 +30,11 @@ static_resources:
                       - "*"
                     routes:
                       - match:
+                          prefix: "/v1/chat/completions"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: openai
+                      - match:
                           prefix: "/inline"
                         route:
                           cluster: httpbin
@@ -96,17 +101,27 @@ static_resources:
     # Embedding Providers
     # External LLM Providers
     - name: openai
-    - connect_timeout: 5s
+      connect_timeout: 5s
       type: LOGICAL_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: openai
         endpoints:
-          - lb_endpoint:
-            - endpoint:
-              address:
-                socket_address: api.openai.com
-                port_value: 443
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: api.openai.com
+                      port_value: 443
+                  hostname: "api.openai.com"
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          common_tls_context:
+            tls_params:
+              tls_minimum_protocol_version: TLSv1_3
+              tls_maximum_protocol_version: TLSv1_3
 
 
     - name: httpbin
