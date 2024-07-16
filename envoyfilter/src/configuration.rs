@@ -3,56 +3,56 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Configuration {
     #[serde(rename = "katanemo-prompt-config")]
-    promptConfig: PromptConfig,
+    prompt_config: PromptConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PromptConfig {
     #[serde(rename = "default-prompt-endpoint")]
-    defaultPromptEndpoint: String,
+    default_prompt_endpoint: String,
 
     #[serde(rename = "load-balancing")]
-    loadBalancing: String,
+    load_balancing: String,
 
     #[serde(rename = "timeout-ms")]
-    timeoutMs: u64,
+    timeout_ms: u64,
 
     #[serde(rename = "embedding-provider")]
-    embeddingProvider: EmbeddingProviver,
+    embedding_provider: EmbeddingProviver,
 
     #[serde(rename = "llm-providers")]
-    llmProviders: Vec<LlmProvider>,
+    llm_providers: Vec<LlmProvider>,
 
     #[serde(rename = "system-prompt")]
-    systemPrompt: String,
+    system_prompt: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct EmbeddingProviver {
     provider: String,
     #[serde(rename = "model-name")]
-    modelName: String,
+    model_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct LlmProvider {
     provider: String,
     #[serde(rename = "api-key")]
-    apiKey: String,
+    api_key: String,
     //TODO: change it to model-name
     #[serde(rename = "model-version")]
-    modelName: String,
+    model_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PromptTarget {
     #[serde(rename = "type")]
-    promptType: String,
+    prompt_type: String,
 
     name: String,
 
     #[serde(rename = "few-shot-examples")]
-    fewShotExamples: Vec<String>,
+    few_shot_examples: Vec<String>,
 
     endpoint: String,
 }
