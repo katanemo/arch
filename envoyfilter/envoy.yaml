@@ -1,3 +1,6 @@
+admin:
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 9901 }
 static_resources:
   listeners:
     address:
@@ -46,7 +49,40 @@ static_resources:
                         name: "http_config"
                         configuration:
                           "@type": "type.googleapis.com/google.protobuf.StringValue"
-                          value: katanemo filter
+                          value: |
+                            katanemo-prompt-config:
+                              default-prompt-endpoint: "127.0.0.1"
+                              load-balancing: "round-robin"
+                              timeout-ms: 5000
+
+                              embedding-provider:
+                                name: "SentenceTransformer"
+                                model: "all-MiniLM-L6-v2"
+
+                              llm-providers:
+
+                                - name: "open-ai-gpt-4"
+                                  api-key: "$OPEN_AI_API_KEY"
+                                  model: gpt-4
+
+                              system-prompt: |
+                                You are a helpful weather forecaster. Please following following guidelines when responding to user queries:
+                                - Use farenheight for temperature
+                                - Use miles per hour for wind speed
+
+                              prompt-targets:
+
+                                - type: context-resolver
+                                  name: weather-forecast
+                                  few-shot-examples:
+                                    - what is the weather in New York?
+                                  endpoint: "POST:$WEATHER_FORECAST_API_ENDPOINT"
+                                  cache-response: true
+                                  cache-response-settings:
+                                    - cache-ttl-secs: 3600 # cache expiry in seconds
+                                    - cache-max-size: 1000 # in number of items
+                                    - cache-eviction-strategy: LRU
+
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           code:
@@ -55,7 +91,6 @@ static_resources:
                 - name: envoy.filters.http.router
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
-
   clusters:
     # LLM Host
     # Embedding Providers

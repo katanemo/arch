@@ -1,4 +1,3 @@
-
 use proxy_wasm::hostcalls;
 use proxy_wasm::types::*;
 
@@ -17,7 +16,7 @@ pub trait Metric {
 pub trait IncrementingMetric: Metric {
     fn increment(&self, offset: i64) {
         match hostcalls::increment_metric(self.id(), offset) {
-            Ok(_) => return,
+            Ok(data) => data,
             Err(Status::NotFound) => panic!("metric not found: {}", self.id()),
             Err(err) => panic!("unexpected status: {:?}", err),
         }
@@ -27,7 +26,7 @@ pub trait IncrementingMetric: Metric {
 pub trait RecordingMetric: Metric {
     fn record(&self, value: u64) {
         match hostcalls::record_metric(self.id(), value) {
-            Ok(_) => return,
+            Ok(data) => data,
             Err(Status::NotFound) => panic!("metric not found: {}", self.id()),
             Err(err) => panic!("unexpected status: {:?}", err),
         }
