@@ -12,7 +12,7 @@ mod stats;
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> {
-        Box::new(HttpHeaderRoot {
+        Box::new(FilterContext {
             header_content: String::new(),
             metrics: WasmMetrics {
                 counter: stats::Counter::new(String::from("wasm_counter")),
@@ -23,14 +23,14 @@ proxy_wasm::main! {{
     });
 }}
 
-struct HttpHeader {
+struct StreamContext {
     context_id: u32,
     header_content: String,
     metrics: WasmMetrics,
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
-impl HttpContext for HttpHeader {
+impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
@@ -80,7 +80,7 @@ impl HttpContext for HttpHeader {
     }
 }
 
-impl Context for HttpHeader {
+impl Context for StreamContext {
     // Note that the event driven model continues here from the return of the on_http_request_headers above.
     fn on_http_call_response(&mut self, _: u32, _: usize, body_size: usize, _: usize) {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
@@ -112,15 +112,15 @@ struct WasmMetrics {
     histogram: stats::Histogram,
 }
 
-struct HttpHeaderRoot {
+struct FilterContext {
     header_content: String,
     metrics: WasmMetrics,
 }
 
-impl Context for HttpHeaderRoot {}
+impl Context for FilterContext {}
 
 // RootContext allows the Rust code to reach into the Envoy Config
-impl RootContext for HttpHeaderRoot {
+impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.header_content = String::from_utf8(config_bytes).unwrap()
@@ -129,7 +129,7 @@ impl RootContext for HttpHeaderRoot {
     }
 
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
-        Some(Box::new(HttpHeader {
+        Some(Box::new(StreamContext {
             context_id,
             header_content: self.header_content.clone(),
             metrics: self.metrics,
