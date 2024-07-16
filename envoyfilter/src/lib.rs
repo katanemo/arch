@@ -1,3 +1,5 @@
+mod configuration;
+
 use log::info;
 use stats::IncrementingMetric;
 use stats::Metric;
@@ -13,19 +15,19 @@ proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> {
         Box::new(HttpHeaderRoot {
-            header_content: String::new(),
-            metrics: WasmMetrics {
+          config: None,
+          metrics: WasmMetrics {
                 counter: stats::Counter::new(String::from("wasm_counter")),
                 gauge: stats::Gauge::new(String::from("wasm_gauge")),
                 histogram: stats::Histogram::new(String::from("wasm_histogram")),
-            }
+            },
         })
     });
 }}
 
 struct HttpHeader {
     context_id: u32,
-    header_content: String,
+    config: configuration::Configuration,
     metrics: WasmMetrics,
 }
 
@@ -34,6 +36,8 @@ impl HttpContext for HttpHeader {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
+        // Read config
+        info!("config: {:?}", self.config.prompt_config.system_prompt);
         // Metrics
         self.metrics.counter.increment(10);
         info!("counter -> {}", self.metrics.counter.value());
@@ -74,8 +78,7 @@ impl HttpContext for HttpHeader {
     }
 
     fn on_http_response_headers(&mut self, _: usize, _: bool) -> Action {
-        // Note that the filter can add custom headers. In this case the header is coming from a config value.
-        self.add_http_response_header("custom-header", self.header_content.as_str());
+        self.set_http_response_header("Powered-By", Some("Katanemo"));
         Action::Continue
     }
 }
@@ -113,17 +116,26 @@ struct WasmMetrics {
 }
 
 struct HttpHeaderRoot {
-    header_content: String,
     metrics: WasmMetrics,
+    config: Option<configuration::Configuration>,
 }
 
 impl Context for HttpHeaderRoot {}
 
 // RootContext allows the Rust code to reach into the Envoy Config
 impl RootContext for HttpHeaderRoot {
-    fn on_configure(&mut self, _: usize) -> bool {
+    fn on_configure(&mut self, plugin_configuration_size: usize) -> bool {
+        info!(
+            "on_configure: plugin_configuration_size is {}",
+            plugin_configuration_size
+        );
+
         if let Some(config_bytes) = self.get_plugin_configuration() {
-            self.header_content = String::from_utf8(config_bytes).unwrap()
+            let config_str = String::from_utf8(config_bytes).unwrap();
+            info!("on_configure: plugin configuration is {:?}", config_str);
+            self.config = serde_yaml::from_str(&config_str).unwrap();
+            info!("on_configure: plugin configuration loaded");
+            info!("on_configure: {:?}", self.config);
         }
         true
     }
@@ -131,7 +143,7 @@ impl RootContext for HttpHeaderRoot {
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(HttpHeader {
             context_id,
-            header_content: self.header_content.clone(),
+            config: self.config.clone()?,
             metrics: self.metrics,
         }))
     }

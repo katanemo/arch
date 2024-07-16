@@ -4,10 +4,12 @@ services:
     hostname: envoy
     ports:
       - "10000:10000"
+      - "19901:9901"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
       - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
     networks:
       - envoymesh
+
 networks:
   envoymesh: {}
