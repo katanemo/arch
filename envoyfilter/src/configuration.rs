@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 
 //TODO: possibly use protbuf to enforce schema
 
+//FIX: it is unnecessary to place yaml config inside katanemo-prompt-config
+//GH Issue: https://github.com/katanemo/intelligent-prompt-gateway/issues/7
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Configuration {
