@@ -1,4 +1,3 @@
 envoyfilter/target
 envoyfilter/vector_db/
-envoyfilter/vector_storeage/
 embedding-server/venv/
