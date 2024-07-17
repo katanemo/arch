@@ -1,6 +1,8 @@
 mod configuration;
+mod embeddings;
 
 use log::info;
+use serde_json::to_string;
 use stats::IncrementingMetric;
 use stats::Metric;
 use stats::RecordingMetric;
@@ -86,6 +88,7 @@ impl HttpContext for HttpHeader {
 impl Context for HttpHeader {
     // Note that the event driven model continues here from the return of the on_http_request_headers above.
     fn on_http_call_response(&mut self, _: u32, _: usize, body_size: usize, _: usize) {
+        info!("on_http_call_response: body_size = {}", body_size);
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() && body[0] % 2 == 0 {
                 info!("Access granted.");
@@ -120,22 +123,35 @@ struct HttpHeaderRoot {
     config: Option<configuration::Configuration>,
 }
 
-impl Context for HttpHeaderRoot {}
+impl Context for HttpHeaderRoot {
+    fn on_http_call_response(
+        &mut self,
+        _token_id: u32,
+        _num_headers: usize,
+        _body_size: usize,
+        _num_trailers: usize,
+    ) {
+        info!("on_http_call_response: token_id = {}", _token_id);
+
+        if let Some(body) = self.get_http_call_response_body(0, _body_size) {
+            if !body.is_empty() {
+                info!(
+                    "on_http_call_response: body = {:?}",
+                    String::from_utf8_lossy(&body)
+                );
+            }
+        }
+    }
+}
 
 // RootContext allows the Rust code to reach into the Envoy Config
 impl RootContext for HttpHeaderRoot {
-    fn on_configure(&mut self, plugin_configuration_size: usize) -> bool {
-        info!(
-            "on_configure: plugin_configuration_size is {}",
-            plugin_configuration_size
-        );
-
+    fn on_configure(&mut self, _: usize) -> bool {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             let config_str = String::from_utf8(config_bytes).unwrap();
             info!("on_configure: plugin configuration is {:?}", config_str);
             self.config = serde_yaml::from_str(&config_str).unwrap();
             info!("on_configure: plugin configuration loaded");
-            info!("on_configure: {:?}", self.config);
         }
         true
     }
@@ -150,5 +166,42 @@ impl RootContext for HttpHeaderRoot {
 
     fn get_type(&self) -> Option<ContextType> {
         Some(ContextType::HttpContext)
+    }
+
+    fn on_vm_start(&mut self, _: usize) -> bool {
+        info!("on_vm_start: setting up tick timeout");
+        self.set_tick_period(Duration::from_secs(5));
+        true
+    }
+
+    fn on_tick(&mut self) {
+        info!("on_tick: starting to process prompt targets");
+        for prompt_target in &self.config.as_ref().unwrap().prompt_config.prompt_targets {
+            for few_shot_example in &prompt_target.few_shot_examples {
+                info!("few_shot_example: {:?}", few_shot_example);
+                let embeddings = embeddings::Embeddings {
+                    input: few_shot_example.to_string(),
+                    model: String::from("BAAI/bge-large-en-v1.5"),
+                };
+
+                let json_data = to_string(&embeddings).unwrap(); // Handle potential errors
+
+                info!("json_data: {:?}", json_data);
+
+                self.dispatch_http_call(
+                    "embeddingserver",
+                    vec![
+                        (":method", "POST"),
+                        (":path", "/embeddings"),
+                        (":authority", "embeddingserver"),
+                        ("content-type", "application/json"),
+                    ],
+                    Some(&json_data.as_bytes()),
+                    vec![],
+                    Duration::from_secs(5),
+                )
+                .unwrap();
+            }
+        }
     }
 }

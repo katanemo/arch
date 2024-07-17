@@ -1,0 +1,5 @@
+#TOOD: pin versions
+fastapi
+sentence-transformers
+torch
+uvicorn

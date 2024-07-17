@@ -22,6 +22,10 @@ static_resources:
                       - "*"
                     routes:
                       - match:
+                          prefix: "/embeddings"
+                        route:
+                          cluster: embeddingserver
+                      - match:
                           prefix: "/inline"
                         route:
                           cluster: httpbin
@@ -98,3 +102,17 @@ static_resources:
                       address: httpbin.org
                       port_value: 80
                   hostname: "httpbin.org"
+    - name: embeddingserver
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: embeddingserver
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: embeddingserver
+                      port_value: 80
+                  hostname: "embeddingserver"
