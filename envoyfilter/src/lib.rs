@@ -123,6 +123,7 @@ struct WasmMetrics {
 
 struct HttpHeaderRoot {
     metrics: WasmMetrics,
+    // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, common_types::CalloutData>>,
     config: Option<configuration::Configuration>,
 }
@@ -244,6 +245,7 @@ impl RootContext for HttpHeaderRoot {
                 }
             }
         }
-        self.set_tick_period(Duration::from_secs(30));
+        //TODO: ideally we only need to reload the prompt targets when the configuration changes
+        self.set_tick_period(Duration::from_secs(3600));
     }
 }
