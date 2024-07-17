@@ -124,6 +124,16 @@ impl Context for HttpHeaderRoot {}
 
 // RootContext allows the Rust code to reach into the Envoy Config
 impl RootContext for HttpHeaderRoot {
+    fn on_vm_start(&mut self, _vm_configuration_size: usize) -> bool {
+        info!("on_vm_start");
+        self.set_tick_period(Duration::from_secs(5));
+        true
+    }
+
+    fn on_tick(&mut self) {
+        info!("on_tick");
+    }
+
     fn on_configure(&mut self, plugin_configuration_size: usize) -> bool {
         info!(
             "on_configure: plugin_configuration_size is {}",
