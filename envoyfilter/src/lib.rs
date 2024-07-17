@@ -1,11 +1,13 @@
+mod common_types;
 mod configuration;
-mod embeddings;
 
 use log::info;
 use serde_json::to_string;
 use stats::IncrementingMetric;
 use stats::Metric;
 use stats::RecordingMetric;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::time::Duration;
 
 use proxy_wasm::traits::*;
@@ -17,6 +19,7 @@ proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> {
         Box::new(HttpHeaderRoot {
+          callouts: RefCell::new(HashMap::new()),
           config: None,
           metrics: WasmMetrics {
                 counter: stats::Counter::new(String::from("wasm_counter")),
@@ -120,25 +123,48 @@ struct WasmMetrics {
 
 struct HttpHeaderRoot {
     metrics: WasmMetrics,
+    callouts: RefCell<HashMap<u32, common_types::CalloutData>>,
     config: Option<configuration::Configuration>,
 }
 
 impl Context for HttpHeaderRoot {
     fn on_http_call_response(
         &mut self,
-        _token_id: u32,
+        token_id: u32,
         _num_headers: usize,
-        _body_size: usize,
+        body_size: usize,
         _num_trailers: usize,
     ) {
-        info!("on_http_call_response: token_id = {}", _token_id);
+        info!("on_http_call_response: token_id = {}", token_id);
 
-        if let Some(body) = self.get_http_call_response_body(0, _body_size) {
-            if !body.is_empty() {
-                info!(
-                    "on_http_call_response: body = {:?}",
-                    String::from_utf8_lossy(&body)
-                );
+        let callout_data = self
+            .callouts
+            .borrow_mut()
+            .remove(&token_id)
+            .expect("invalid token_id");
+
+        info!(
+            "on_http_call_response: callout message = {:?}",
+            callout_data.message
+        );
+
+        match callout_data.message {
+            common_types::MessageType::CreateEmbeddingRequest(
+                common_types::CreateEmbeddingRequest { .. },
+            ) => {
+                info!("response received for CreateEmbeddingRequest");
+                if let Some(body) = self.get_http_call_response_body(0, body_size) {
+                    if !body.is_empty() {
+                        let embedding_response: common_types::CreateEmbeddingResponse =
+                            serde_json::from_slice(&body).unwrap();
+                        info!(
+                            "embedding_response model: {}, vector len: {}",
+                            embedding_response.model,
+                            embedding_response.data[0].embedding.len()
+                        );
+                        //TODO: store embedding_response in qdrant
+                    }
+                }
             }
         }
     }
@@ -148,9 +174,7 @@ impl Context for HttpHeaderRoot {
 impl RootContext for HttpHeaderRoot {
     fn on_configure(&mut self, _: usize) -> bool {
         if let Some(config_bytes) = self.get_plugin_configuration() {
-            let config_str = String::from_utf8(config_bytes).unwrap();
-            info!("on_configure: plugin configuration is {:?}", config_str);
-            self.config = serde_yaml::from_str(&config_str).unwrap();
+            self.config = serde_yaml::from_slice(&config_bytes).unwrap();
             info!("on_configure: plugin configuration loaded");
         }
         true
@@ -170,7 +194,7 @@ impl RootContext for HttpHeaderRoot {
 
     fn on_vm_start(&mut self, _: usize) -> bool {
         info!("on_vm_start: setting up tick timeout");
-        self.set_tick_period(Duration::from_secs(5));
+        self.set_tick_period(Duration::from_secs(1));
         true
     }
 
@@ -179,16 +203,17 @@ impl RootContext for HttpHeaderRoot {
         for prompt_target in &self.config.as_ref().unwrap().prompt_config.prompt_targets {
             for few_shot_example in &prompt_target.few_shot_examples {
                 info!("few_shot_example: {:?}", few_shot_example);
-                let embeddings = embeddings::Embeddings {
+                let embeddings_input = common_types::CreateEmbeddingRequest {
                     input: few_shot_example.to_string(),
+                    //FIXME: load model from config
                     model: String::from("BAAI/bge-large-en-v1.5"),
                 };
 
-                let json_data = to_string(&embeddings).unwrap(); // Handle potential errors
+                let json_data = to_string(&embeddings_input).unwrap(); // Handle potential errors
 
                 info!("json_data: {:?}", json_data);
 
-                self.dispatch_http_call(
+                let token_id = match self.dispatch_http_call(
                     "embeddingserver",
                     vec![
                         (":method", "POST"),
@@ -196,12 +221,29 @@ impl RootContext for HttpHeaderRoot {
                         (":authority", "embeddingserver"),
                         ("content-type", "application/json"),
                     ],
-                    Some(&json_data.as_bytes()),
+                    Some(json_data.as_bytes()),
                     vec![],
                     Duration::from_secs(5),
-                )
-                .unwrap();
+                ) {
+                    Ok(token_id) => token_id,
+                    Err(e) => {
+                        panic!("Error dispatching HTTP call: {:?}", e);
+                    }
+                };
+                info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
+                let callout_message = common_types::CalloutData {
+                    message: common_types::MessageType::CreateEmbeddingRequest(embeddings_input),
+                };
+                if self
+                    .callouts
+                    .borrow_mut()
+                    .insert(token_id, callout_message)
+                    .is_some()
+                {
+                    panic!("duplicate token_id")
+                }
             }
         }
+        self.set_tick_period(Duration::from_secs(30));
     }
 }
