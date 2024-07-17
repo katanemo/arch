@@ -1,0 +1,192 @@
+openapi: "3.1.0"
+info:
+  title: OMF API
+  version: 1.0.0
+paths:
+  /embeddings:
+    post:
+      operationId: createEmbedding
+      tags:
+        - Embeddings
+      summary: Creates an embedding vector representing the input text.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmbeddingRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateEmbeddingResponse"
+      x-oaiMeta:
+        name: Create embeddings
+        group: embeddings
+        returns: A list of [embedding](/docs/api-reference/embeddings/object) objects.
+        examples:
+          request:
+            curl: |
+              curl https://api.openai.com/v1/embeddings \
+                -H "Authorization: Bearer $OPENAI_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "input": "The food was delicious and the waiter...",
+                  "model": "text-embedding-ada-002",
+                  "encoding_format": "float"
+                }'
+            python: |
+              from openai import OpenAI
+              client = OpenAI()
+
+              client.embeddings.create(
+                model="text-embedding-ada-002",
+                input="The food was delicious and the waiter...",
+                encoding_format="float"
+              )
+            node.js: |-
+              import OpenAI from "openai";
+
+              const openai = new OpenAI();
+
+              async function main() {
+                const embedding = await openai.embeddings.create({
+                  model: "text-embedding-ada-002",
+                  input: "The quick brown fox jumped over the lazy dog",
+                  encoding_format: "float",
+                });
+
+                console.log(embedding);
+              }
+
+              main();
+          response: |
+            {
+              "object": "list",
+              "data": [
+                {
+                  "object": "embedding",
+                  "embedding": [
+                    0.0023064255,
+                    -0.009327292,
+                    .... (1536 floats total for ada-002)
+                    -0.0028842222,
+                  ],
+                  "index": 0
+                }
+              ],
+              "model": "text-embedding-ada-002",
+              "usage": {
+                "prompt_tokens": 8,
+                "total_tokens": 8
+              }
+            }
+components:
+  schemas:
+    createEmbeddingRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        input:
+          description: |
+            Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for `text-embedding-ada-002`), cannot be an empty string, and any array must be 2048 dimensions or less. [Example Python code](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken) for counting tokens.
+          example: "The quick brown fox jumped over the lazy dog"
+          oneOf:
+            - type: string
+              title: string
+              description: The string that will be turned into an embedding.
+              default: ""
+              example: "This is a test."
+            - type: array
+              title: array
+              description: The array of strings that will be turned into an embedding.
+              minItems: 1
+              maxItems: 2048
+              items:
+                type: string
+                default: ""
+                example: "['This is a test.']"
+            - type: array
+              title: array
+              description: The array of integers that will be turned into an embedding.
+              minItems: 1
+              maxItems: 2048
+              items:
+                  type: integer
+              example: "[1212, 318, 257, 1332, 13]"
+            - type: array
+              title: array
+              description: The array of arrays containing integers that will be turned into an embedding.
+              minItems: 1
+              maxItems: 2048
+              items:
+                type: array
+                minItems: 1
+                items:
+                  type: integer
+              example: "[[1212, 318, 257, 1332, 13]]"
+          x-oaiExpandable: true
+        model:
+          description: *model_description
+          example: "text-embedding-3-small"
+          anyOf:
+            - type: string
+            - type: string
+              enum:
+                [
+                  "text-embedding-ada-002",
+                  "text-embedding-3-small",
+                  "text-embedding-3-large",
+                ]
+          x-oaiTypeLabel: string
+        encoding_format:
+          description: "The format to return the embeddings in. Can be either `float` or [`base64`](https://pypi.org/project/pybase64/)."
+          example: "float"
+          default: "float"
+          type: string
+          enum: ["float", "base64"]
+        dimensions:
+          description: |
+            The number of dimensions the resulting output embeddings should have. Only supported in `text-embedding-3` and later models.
+          type: integer
+          minimum: 1
+        user: *end_user_param_configuration
+      required:
+        - model
+        - input
+
+    CreateEmbeddingResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          description: The list of embeddings generated by the model.
+          items:
+            $ref: "#/components/schemas/Embedding"
+        model:
+          type: string
+          description: The name of the model used to generate the embedding.
+        object:
+          type: string
+          description: The object type, which is always "list".
+          enum: [list]
+        usage:
+          type: object
+          description: The usage information for the request.
+          properties:
+            prompt_tokens:
+              type: integer
+              description: The number of tokens used by the prompt.
+            total_tokens:
+              type: integer
+              description: The total number of tokens used by the request.
+          required:
+            - prompt_tokens
+            - total_tokens
+      required:
+        - object
+        - model
+        - data
+        - usage
