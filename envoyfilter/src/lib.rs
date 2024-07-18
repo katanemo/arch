@@ -8,7 +8,6 @@ use serde_json::to_string;
 use stats::IncrementingMetric;
 use stats::Metric;
 use stats::RecordingMetric;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -21,7 +20,7 @@ proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
     proxy_wasm::set_root_context(|_| -> Box<dyn RootContext> {
         Box::new(HttpHeaderRoot {
-          callouts: RefCell::new(HashMap::new()),
+          callouts: HashMap::new(),
           config: None,
           metrics: WasmMetrics {
                 counter: stats::Counter::new(String::from("wasm_counter")),
@@ -126,7 +125,7 @@ struct WasmMetrics {
 struct HttpHeaderRoot {
     metrics: WasmMetrics,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
-    callouts: RefCell<HashMap<u32, common_types::CalloutData>>,
+    callouts: HashMap<u32, common_types::CalloutData>,
     config: Option<configuration::Configuration>,
 }
 
@@ -140,11 +139,7 @@ impl Context for HttpHeaderRoot {
     ) {
         info!("on_http_call_response: token_id = {}", token_id);
 
-        let callout_data = self
-            .callouts
-            .borrow_mut()
-            .remove(&token_id)
-            .expect("invalid token_id");
+        let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
 
         info!(
             "on_http_call_response: callout message = {:?}",
@@ -212,12 +207,7 @@ impl Context for HttpHeaderRoot {
                                 create_vector_store_points,
                             ),
                         };
-                        if self
-                            .callouts
-                            .borrow_mut()
-                            .insert(token_id, callout_message)
-                            .is_some()
-                        {
+                        if self.callouts.insert(token_id, callout_message).is_some() {
                             panic!("duplicate token_id")
                         }
                     }
@@ -301,12 +291,7 @@ impl RootContext for HttpHeaderRoot {
                 let callout_message = common_types::CalloutData {
                     message: common_types::MessageType::EmbeddingRequest(embedding_request),
                 };
-                if self
-                    .callouts
-                    .borrow_mut()
-                    .insert(token_id, callout_message)
-                    .is_some()
-                {
+                if self.callouts.insert(token_id, callout_message).is_some() {
                     panic!("duplicate token_id")
                 }
             }
