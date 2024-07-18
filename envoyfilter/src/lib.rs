@@ -141,11 +141,6 @@ impl Context for HttpHeaderRoot {
 
         let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
 
-        info!(
-            "on_http_call_response: callout message = {:?}",
-            callout_data.message
-        );
-
         match callout_data.message {
             common_types::MessageType::EmbeddingRequest(common_types::EmbeddingRequest {
                 create_embedding_request,
@@ -182,7 +177,10 @@ impl Context for HttpHeaderRoot {
                             }],
                         };
                         let json_data = to_string(&create_vector_store_points).unwrap(); // Handle potential errors
-                        info!("create_vector_store_points: {:?}", json_data);
+                        info!(
+                            "create_vector_store_points: points length: {}",
+                            embedding_response.data[0].embedding.len()
+                        );
                         let token_id = match self.dispatch_http_call(
                             "qdrant",
                             vec![
