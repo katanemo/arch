@@ -12,3 +12,5 @@ repos:
         entry: bash -c "cd envoyfilter && cargo fmt --all"
       - id: cargo-check
         entry: bash -c "cd envoyfilter && cargo check --all"
+      - id: cargo-clippy
+        entry: bash -c "cd envoyfilter && cargo clippy --all"
