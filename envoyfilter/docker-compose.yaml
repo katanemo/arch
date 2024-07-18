@@ -27,14 +27,14 @@ services:
     networks:
       - envoymesh
 
-  vector-db:
+  qdrant:
     image: qdrant/qdrant
     hostname: vector-db
     ports:
       - 16333:6333
       - 16334:6334
     volumes:
-      - ./vector_db:/qdrant/storage
+      - ./qdrant_data:/qdrant/storage
     networks:
       - envoymesh
 
