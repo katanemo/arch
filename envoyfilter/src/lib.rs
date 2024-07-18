@@ -79,13 +79,13 @@ impl HttpContext for StreamContext {
                 )
                 .unwrap();
                 // Pause the filter until the out of band HTTP response arrives.
-                return Action::Pause;
+                Action::Pause
             }
             // The gateway can start gathering information necessary for routing. For now change the path to an
             // OpenAI API path.
             Some(path) if path == "/llmrouting" => {
                 self.set_http_request_header(":path", Some("/v1/chat/completions"));
-                return Action::Continue;
+                Action::Continue
             }
             // Otherwise let the filter continue.
             _ => Action::Continue,
