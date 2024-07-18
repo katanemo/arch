@@ -1,5 +1,6 @@
 mod common_types;
 mod configuration;
+mod consts;
 
 use common_types::EmbeddingRequest;
 use log::info;
@@ -207,7 +208,9 @@ impl Context for HttpHeaderRoot {
                         info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
 
                         let callout_message = common_types::CalloutData {
-                            message: common_types::MessageType::CreateVectorStorePoints(create_vector_store_points),
+                            message: common_types::MessageType::CreateVectorStorePoints(
+                                create_vector_store_points,
+                            ),
                         };
                         if self
                             .callouts
@@ -223,11 +226,11 @@ impl Context for HttpHeaderRoot {
             common_types::MessageType::CreateVectorStorePoints(_) => {
                 info!("response received for CreateVectorStorePoints");
                 if let Some(body) = self.get_http_call_response_body(0, body_size) {
-                  if !body.is_empty() {
-                    info!("response body: {:?}", String::from_utf8(body).unwrap());
-                  }
+                    if !body.is_empty() {
+                        info!("response body: {:?}", String::from_utf8(body).unwrap());
+                    }
                 }
-          }
+            }
         }
     }
 }
@@ -267,11 +270,11 @@ impl RootContext for HttpHeaderRoot {
                 info!("few_shot_example: {:?}", few_shot_example);
                 let embeddings_input = common_types::CreateEmbeddingRequest {
                     input: few_shot_example.to_string(),
-                    //FIXME: load model from config
-                    model: String::from("BAAI/bge-large-en-v1.5"),
+                    model: String::from(consts::DEFAULT_EMBEDDING_MODEL),
                 };
 
-                let json_data = to_string(&embeddings_input).unwrap(); // Handle potential errors
+                // TODO: Handle potential errors
+                let json_data = to_string(&embeddings_input).unwrap();
 
                 let token_id = match self.dispatch_http_call(
                     "embeddingserver",

@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo-fmt
+        language: system
+        types: [file, rust]
+        entry: bash -c "cd envoyfilter && cargo fmt --all"
+      - id: cargo-clippy
+        name: cargo-clippy
+        language: system
+        types: [file, rust]
+        entry: bash -c "cd envoyfilter && cargo clippy --all"
+      - id: cargo-test
+        name: cargo-test
+        language: system
+        types: [file, rust]
+        entry: bash -c "cd envoyfilter && cargo test --all"
