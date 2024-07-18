@@ -35,5 +35,6 @@ jobs:
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Run Tests
-        run: cd envoyfilter && cargo test --lib # --lib is to only test the library, since when integration tests are made, 
+        # --lib is to only test the library, since when integration tests are made, 
+        run: cd envoyfilter && cargo test --lib
                                                 # they will be in a seperate tests directory
