@@ -3,7 +3,7 @@ A open source project for developers to build and secure faster, more personaliz
 # Dev setup
 
 ## Pre-commit
-Use instructions at [pre-commit.com](https://pre-commit.com/#install) to set it up for your machine. Once installed make sure github hooks are setup, so that when you upstream your change. Follow command below to setup github hooks,
+Use instructions at [pre-commit.com](https://pre-commit.com/#install) to set it up for your machine. Once installed make sure github hooks are setup, so that when you upstream your change pre-commit hooks can run and validate your change. Follow command below to setup github hooks,
 
 ```sh
 ➜  intelligent-prompt-gateway git:(main) ✗ pre-commit install
