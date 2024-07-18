@@ -85,7 +85,7 @@ paths:
             }
 components:
   schemas:
-    createEmbeddingRequest:
+    CreateEmbeddingRequest:
       type: object
       additionalProperties: false
       properties:
@@ -196,3 +196,38 @@ components:
         - model
         - data
         - usage
+    Embedding:
+      type: object
+      description: |
+        Represents an embedding vector returned by embedding endpoint.
+      properties:
+        index:
+          type: integer
+          description: The index of the embedding in the list of embeddings.
+        embedding:
+          type: array
+          description: |
+            The embedding vector, which is a list of floats. The length of vector depends on the model as listed in the [embedding guide](/docs/guides/embeddings).
+          items:
+            type: number
+        object:
+          type: string
+          description: The object type, which is always "embedding"
+          enum: [embedding]
+      required:
+        - index
+        - object
+        - embedding
+      x-oaiMeta:
+        name: The embedding object
+        example: |
+          {
+            "object": "embedding",
+            "embedding": [
+              0.0023064255,
+              -0.009327292,
+              .... (1536 floats total for ada-002)
+              -0.0028842222,
+            ],
+            "index": 0
+          }
