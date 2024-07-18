@@ -8,6 +8,7 @@ services:
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
       - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
+      - /etc/ssl/cert.pem:/etc/ssl/cert.pem
     networks:
       - envoymesh
 

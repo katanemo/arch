@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatCompletions {
+    #[serde(default)]
     pub model: String,
     pub messages: Vec<Message>,
 }

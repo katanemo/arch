@@ -14,6 +14,8 @@ static_resources:
               "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
               stat_prefix: ingress_http
               codec_type: AUTO
+              scheme_header_transformation:
+                scheme_to_overwrite: https
               route_config:
                 name: local_routes
                 virtual_hosts:
@@ -24,6 +26,7 @@ static_resources:
                       - match:
                           prefix: "/"
                         route:
+                          auto_host_rewrite: true
                           cluster: openai
                   - name: local_service
                     domains:
@@ -104,6 +107,11 @@ static_resources:
       connect_timeout: 5s
       type: LOGICAL_DNS
       lb_policy: ROUND_ROBIN
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
       load_assignment:
         cluster_name: openai
         endpoints:
@@ -118,11 +126,11 @@ static_resources:
         name: envoy.transport_sockets.tls
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: api.openai.com
           common_tls_context:
             tls_params:
-              tls_minimum_protocol_version: TLSv1_3
+              tls_minimum_protocol_version: TLSv1_2
               tls_maximum_protocol_version: TLSv1_3
-
 
     - name: httpbin
       connect_timeout: 5s
