@@ -38,4 +38,3 @@ jobs:
         # --lib is to only test the library, since when integration tests are made, 
         # they will be in a seperate tests directory
         run: cd envoyfilter && cargo test --lib
-        
