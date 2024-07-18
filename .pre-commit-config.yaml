@@ -12,11 +12,6 @@ repos:
         language: system
         types: [file, rust]
         entry: bash -c "cd envoyfilter && cargo fmt --all"
-      - id: cargo-check
-        name: cargo-check
-        language: system
-        types: [file, rust]
-        entry: bash -c "cd envoyfilter && cargo check --all"
       - id: cargo-clippy
         name: cargo-clippy
         language: system
