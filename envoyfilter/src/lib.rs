@@ -296,7 +296,6 @@ impl RootContext for HttpHeaderRoot {
                 }
             }
         }
-        //TODO: ideally we only need to reload the prompt targets when the configuration changes
-        self.set_tick_period(Duration::from_secs(3600));
+        self.set_tick_period(Duration::from_secs(0));
     }
 }
