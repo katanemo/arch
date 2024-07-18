@@ -29,6 +29,7 @@ pub struct PromptConfig {
     pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
     pub system_prompt: String,
+    pub prompt_targets: Vec<PromptTarget>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

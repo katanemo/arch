@@ -9,6 +9,10 @@
       "path": "envoyfilter"
     },
     {
+      "name": "embedding-server",
+      "path": "embedding-server"
+    },
+    {
       "name": "demos",
       "path": "./demos"
     },
