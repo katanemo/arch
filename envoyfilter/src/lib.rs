@@ -210,7 +210,8 @@ impl RootContext for HttpHeaderRoot {
                     model: String::from("BAAI/bge-large-en-v1.5"),
                 };
 
-                let json_data = to_string(&embeddings_input).unwrap(); // Handle potential errors
+                // TODO: Handle potential errors
+                let json_data = to_string(&embeddings_input).unwrap();
 
                 info!("json_data: {:?}", json_data);
 
