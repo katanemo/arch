@@ -116,3 +116,17 @@ static_resources:
                       address: embeddingserver
                       port_value: 80
                   hostname: "embeddingserver"
+    - name: qdrant
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: qdrant
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: qdrant
+                      port_value: 6333
+                  hostname: "qdrant"

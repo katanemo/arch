@@ -1,6 +1,7 @@
 mod common_types;
 mod configuration;
 
+use common_types::EmbeddingRequest;
 use log::info;
 use serde_json::to_string;
 use stats::IncrementingMetric;
@@ -150,9 +151,10 @@ impl Context for HttpHeaderRoot {
         );
 
         match callout_data.message {
-            common_types::MessageType::CreateEmbeddingRequest(
-                common_types::CreateEmbeddingRequest { .. },
-            ) => {
+            common_types::MessageType::EmbeddingRequest(common_types::EmbeddingRequest {
+                create_embedding_request,
+                prompt_target,
+            }) => {
                 info!("response received for CreateEmbeddingRequest");
                 if let Some(body) = self.get_http_call_response_body(0, body_size) {
                     if !body.is_empty() {
@@ -163,10 +165,69 @@ impl Context for HttpHeaderRoot {
                             embedding_response.model,
                             embedding_response.data[0].embedding.len()
                         );
-                        //TODO: store embedding_response in qdrant
+
+                        let mut payload: HashMap<String, String> = HashMap::new();
+                        payload.insert(
+                            "prompt-target".to_string(),
+                            to_string(&prompt_target).unwrap(),
+                        );
+                        payload.insert(
+                            "few-shot-example".to_string(),
+                            create_embedding_request.input.clone(),
+                        );
+
+                        let id = md5::compute(create_embedding_request.input);
+
+                        let create_vector_store_points = common_types::CreateVectorStorePoints {
+                            points: vec![common_types::VectorPoint {
+                                id: format!("{:x}", id),
+                                payload,
+                                vector: embedding_response.data[0].embedding.clone(),
+                            }],
+                        };
+                        let json_data = to_string(&create_vector_store_points).unwrap(); // Handle potential errors
+                        info!("create_vector_store_points: {:?}", json_data);
+                        let token_id = match self.dispatch_http_call(
+                            "qdrant",
+                            vec![
+                                (":method", "PUT"),
+                                (":path", "/collections/prompt_vector_store/points"),
+                                (":authority", "qdrant"),
+                                ("content-type", "application/json"),
+                            ],
+                            Some(json_data.as_bytes()),
+                            vec![],
+                            Duration::from_secs(5),
+                        ) {
+                            Ok(token_id) => token_id,
+                            Err(e) => {
+                                panic!("Error dispatching HTTP call: {:?}", e);
+                            }
+                        };
+                        info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
+
+                        let callout_message = common_types::CalloutData {
+                            message: common_types::MessageType::CreateVectorStorePoints(create_vector_store_points),
+                        };
+                        if self
+                            .callouts
+                            .borrow_mut()
+                            .insert(token_id, callout_message)
+                            .is_some()
+                        {
+                            panic!("duplicate token_id")
+                        }
                     }
                 }
             }
+            common_types::MessageType::CreateVectorStorePoints(_) => {
+                info!("response received for CreateVectorStorePoints");
+                if let Some(body) = self.get_http_call_response_body(0, body_size) {
+                  if !body.is_empty() {
+                    info!("response body: {:?}", String::from_utf8(body).unwrap());
+                  }
+                }
+          }
         }
     }
 }
@@ -212,8 +273,6 @@ impl RootContext for HttpHeaderRoot {
 
                 let json_data = to_string(&embeddings_input).unwrap(); // Handle potential errors
 
-                info!("json_data: {:?}", json_data);
-
                 let token_id = match self.dispatch_http_call(
                     "embeddingserver",
                     vec![
@@ -232,8 +291,12 @@ impl RootContext for HttpHeaderRoot {
                     }
                 };
                 info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
+                let embedding_request = EmbeddingRequest {
+                    create_embedding_request: embeddings_input,
+                    prompt_target: prompt_target.clone(),
+                };
                 let callout_message = common_types::CalloutData {
-                    message: common_types::MessageType::CreateEmbeddingRequest(embeddings_input),
+                    message: common_types::MessageType::EmbeddingRequest(embedding_request),
                 };
                 if self
                     .callouts
