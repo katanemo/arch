@@ -13,7 +13,6 @@ pub struct Configuration {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-
 pub enum LoadBalancing {
     #[serde(rename = "round-robin")]
     RoundRobin,
