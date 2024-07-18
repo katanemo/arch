@@ -1,5 +1,6 @@
 mod common_types;
 mod configuration;
+mod consts;
 
 use log::info;
 use serde_json::to_string;
@@ -150,9 +151,9 @@ impl Context for HttpHeaderRoot {
         );
 
         match callout_data.message {
-            common_types::MessageType::CreateEmbeddingRequest(
-                common_types::CreateEmbeddingRequest { .. },
-            ) => {
+            common_types::MessageType::EmbeddingRequest(common_types::CreateEmbeddingRequest {
+                ..
+            }) => {
                 info!("response received for CreateEmbeddingRequest");
                 if let Some(body) = self.get_http_call_response_body(0, body_size) {
                     if !body.is_empty() {
@@ -206,8 +207,7 @@ impl RootContext for HttpHeaderRoot {
                 info!("few_shot_example: {:?}", few_shot_example);
                 let embeddings_input = common_types::CreateEmbeddingRequest {
                     input: few_shot_example.to_string(),
-                    //FIXME: load model from config
-                    model: String::from("BAAI/bge-large-en-v1.5"),
+                    model: String::from(consts::DEFAULT_EMBEDDING_MODEL),
                 };
 
                 // TODO: Handle potential errors
@@ -234,7 +234,7 @@ impl RootContext for HttpHeaderRoot {
                 };
                 info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
                 let callout_message = common_types::CalloutData {
-                    message: common_types::MessageType::CreateEmbeddingRequest(embeddings_input),
+                    message: common_types::MessageType::EmbeddingRequest(embeddings_input),
                 };
                 if self
                     .callouts

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
 from load_transformers import load_transformers
 
@@ -28,11 +28,7 @@ async def models():
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
     if not req.model in transformers:
-        res.status_code = 400
-
-        return {
-            "message": "unknown model: " + req.model
-        }
+        raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
     embeddings = transformers[req.model].encode([req.input])
 

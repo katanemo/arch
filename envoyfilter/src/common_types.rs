@@ -22,7 +22,7 @@ pub struct Embedding {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MessageType {
-    CreateEmbeddingRequest(CreateEmbeddingRequest),
+    EmbeddingRequest(CreateEmbeddingRequest),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
