@@ -22,5 +22,5 @@ repos:
         language: system
         types: [file, rust]
         # --lib is to only test the library, since when integration tests are made, 
+        # they will be in a seperate tests directory
         entry: bash -c "cd envoyfilter && cargo test --lib"```
-                                                            # they will be in a seperate tests directory
