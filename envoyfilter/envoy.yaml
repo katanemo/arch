@@ -14,13 +14,29 @@ static_resources:
               "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
               stat_prefix: ingress_http
               codec_type: AUTO
+              scheme_header_transformation:
+                scheme_to_overwrite: https
               route_config:
                 name: local_routes
                 virtual_hosts:
+                  - name: openai
+                    domains:
+                      - "api.openai.com"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: openai
                   - name: local_service
                     domains:
                       - "*"
                     routes:
+                      - match:
+                          prefix: "/v1/chat/completions"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: openai
                       - match:
                           prefix: "/embeddings"
                         route:
@@ -88,6 +104,38 @@ static_resources:
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
   clusters:
+    # LLM Host
+    # Embedding Providers
+    # External LLM Providers
+    - name: openai
+      connect_timeout: 5s
+      type: LOGICAL_DNS
+      lb_policy: ROUND_ROBIN
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: openai
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: api.openai.com
+                      port_value: 443
+                  hostname: "api.openai.com"
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: api.openai.com
+          common_tls_context:
+            tls_params:
+              tls_minimum_protocol_version: TLSv1_2
+              tls_maximum_protocol_version: TLSv1_3
+
     - name: httpbin
       connect_timeout: 5s
       type: STRICT_DNS
