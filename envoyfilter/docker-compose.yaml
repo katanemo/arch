@@ -11,6 +11,33 @@ services:
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
     networks:
       - envoymesh
+    depends_on:
+      embeddingserver:
+        condition: service_healthy
+
+  embeddingserver:
+    build:
+      context: ../embedding-server
+      dockerfile: Dockerfile
+    ports:
+      - "18080:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80"]
+        interval: 5s
+        retries: 20
+    networks:
+      - envoymesh
+
+  qdrant:
+    image: qdrant/qdrant
+    hostname: vector-db
+    ports:
+      - 16333:6333
+      - 16334:6334
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    networks:
+      - envoymesh
 
 networks:
   envoymesh: {}
