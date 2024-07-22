@@ -15,7 +15,6 @@ use proxy_wasm::types::*;
 mod common_types;
 mod configuration;
 mod consts;
-mod llm_backend;
 mod stats;
 
 proxy_wasm::main! {{
@@ -81,7 +80,7 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let mut deserialized_body: llm_backend::ChatCompletions =
+        let mut deserialized_body: common_types::open_ai::ChatCompletions =
             match self.get_http_request_body(0, body_size) {
                 Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                     Ok(deserialized) => deserialized,
@@ -262,7 +261,7 @@ impl FilterContext {
         }
     }
 
-    fn create_vector_store_points_worker(&self, body_size: usize) {
+    fn create_vector_store_points_handler(&self, body_size: usize) {
         info!("response received for CreateVectorStorePoints");
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
@@ -292,7 +291,7 @@ impl Context for FilterContext {
                 self.embedding_request_handler(body_size, create_embedding_request, prompt_target)
             }
             common_types::MessageType::CreateVectorStorePoints(_) => {
-                self.create_vector_store_points_worker(body_size)
+                self.create_vector_store_points_handler(body_size)
             }
         }
     }
