@@ -190,7 +190,7 @@ impl FilterContext {
         }
     }
 
-    fn embedding_request_worker(
+    fn embedding_request_handler(
         &mut self,
         body_size: usize,
         create_embedding_request: CreateEmbeddingRequest,
@@ -288,7 +288,9 @@ impl Context for FilterContext {
             common_types::MessageType::EmbeddingRequest(common_types::EmbeddingRequest {
                 create_embedding_request,
                 prompt_target,
-            }) => self.embedding_request_worker(body_size, create_embedding_request, prompt_target),
+            }) => {
+                self.embedding_request_handler(body_size, create_embedding_request, prompt_target)
+            }
             common_types::MessageType::CreateVectorStorePoints(_) => {
                 self.create_vector_store_points_worker(body_size)
             }
