@@ -7,7 +7,7 @@ services:
       - "19901:9901"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
-      - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
+      - ./target/wasm32-unknown-unknown/release:/etc/envoy/proxy-wasm-plugins
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
     networks:
       - envoymesh
