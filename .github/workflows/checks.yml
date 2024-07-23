@@ -30,7 +30,7 @@ jobs:
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Run Rustfmt
-        run: cd envoyfilter && cargo fmt --all -- --check
+        run: cd envoyfilter && cargo fmt -p intelligent-prompt-gateway --all -- --check
 
   test:
     name: Test
