@@ -41,8 +41,13 @@ async def embedding(req: EmbeddingRequest, res: Response):
             "index": len(data)
         })
 
+    usage = {
+        "prompt_tokens": 0,
+        "total_tokens": 0,
+    }
     return {
         "data": data,
         "model": req.model,
-        "object": "list"
+        "object": "list",
+        "usage": usage
     }

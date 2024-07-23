@@ -1,28 +1,9 @@
+use open_message_format::models::CreateEmbeddingRequest;
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
 use crate::configuration;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateEmbeddingRequest {
-    pub input: String,
-    pub model: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateEmbeddingResponse {
-    pub object: String,
-    pub model: String,
-    pub data: Vec<Embedding>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Embedding {
-    pub object: String,
-    pub index: i32,
-    pub embedding: Vec<f32>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingRequest {
@@ -45,7 +26,7 @@ pub struct CalloutData {
 pub struct VectorPoint {
     pub id: String,
     pub payload: HashMap<String, String>,
-    pub vector: Vec<f32>,
+    pub vector: Vec<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
