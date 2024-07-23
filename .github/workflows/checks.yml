@@ -11,6 +11,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'true'
+          # TODO: Remove this once the repo is public
           token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
@@ -26,6 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'true'
+          # TODO: Remove this once the repo is public
           token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
@@ -40,6 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'true'
+          # TODO: Remove this once the repo is public
           token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
