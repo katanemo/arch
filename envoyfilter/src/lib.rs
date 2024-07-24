@@ -112,11 +112,9 @@ struct WasmMetrics {
 
 impl WasmMetrics {
     fn new() -> WasmMetrics {
-        let new_metrics = WasmMetrics {
+        WasmMetrics {
             active_http_calls: stats::Gauge::new(String::from("active_http_calls")),
-        };
-
-        new_metrics
+        }
     }
 }
 
