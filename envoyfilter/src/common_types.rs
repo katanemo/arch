@@ -1,28 +1,8 @@
+use open_message_format::models::CreateEmbeddingRequest;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
-
 use crate::configuration;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateEmbeddingRequest {
-    pub input: String,
-    pub model: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateEmbeddingResponse {
-    pub object: String,
-    pub model: String,
-    pub data: Vec<Embedding>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Embedding {
-    pub object: String,
-    pub index: i32,
-    pub embedding: Vec<f32>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingRequest {
@@ -31,24 +11,36 @@ pub struct EmbeddingRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum MessageType {
-    EmbeddingRequest(EmbeddingRequest),
-    CreateVectorStorePoints(CreateVectorStorePoints),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CalloutData {
-    pub message: MessageType,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorPoint {
     pub id: String,
     pub payload: HashMap<String, String>,
-    pub vector: Vec<f32>,
+    pub vector: Vec<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateVectorStorePoints {
+pub struct StoreVectorEmbeddingsRequest {
     pub points: Vec<VectorPoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CallContext {
+    EmbeddingRequest(EmbeddingRequest),
+    StoreVectorEmbeddings(StoreVectorEmbeddingsRequest),
+}
+
+pub mod open_ai {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ChatCompletions {
+        #[serde(default)]
+        pub model: String,
+        pub messages: Vec<Message>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Message {
+        pub role: String,
+        pub content: String,
+    }
 }

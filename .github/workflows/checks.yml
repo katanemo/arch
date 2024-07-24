@@ -9,6 +9,10 @@ jobs:
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          # TODO: Remove this once the repo is public
+          token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Run Clippy
@@ -21,20 +25,28 @@ jobs:
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          # TODO: Remove this once the repo is public
+          token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Run Rustfmt
-        run: cd envoyfilter && cargo fmt --all -- --check
-  
+        run: cd envoyfilter && cargo fmt -p intelligent-prompt-gateway -- --check
+
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          # TODO: Remove this once the repo is public
+          token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Run Tests
-        # --lib is to only test the library, since when integration tests are made, 
+        # --lib is to only test the library, since when integration tests are made,
         # they will be in a seperate tests directory
         run: cd envoyfilter && cargo test --lib
