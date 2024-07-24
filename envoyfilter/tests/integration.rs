@@ -1,5 +1,7 @@
 use proxy_wasm_test_framework::tester;
-use proxy_wasm_test_framework::types::{Action, BufferType, LogLevel, MapType, ReturnType};
+use proxy_wasm_test_framework::types::{
+    Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
+};
 use std::path::Path;
 
 fn wasm_module() -> String {
@@ -26,44 +28,53 @@ fn it_loads() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
+    // Setup Filter
     let root_context = 1;
-    // let cfg = r#"{
-    //     "failureMode": "deny",
-    //     "rateLimitPolicies": []
-    // }"#;
-
     module
         .call_proxy_on_context_create(root_context, 0)
-        .expect_log(Some(LogLevel::Info), Some("#1 set_root_context"))
+        .expect_metric_creation(MetricType::Counter, "example_counter")
+        .expect_metric_creation(MetricType::Gauge, "example_gauge")
+        .expect_metric_creation(MetricType::Histogram, "example_histogram")
+        .expect_metric_increment("example_counter", 10)
+        .expect_metric_get("example_counter", 10)
+        .expect_metric_record("example_gauge", 20)
+        .expect_metric_record("example_histogram", 30)
         .execute_and_expect(ReturnType::None)
         .unwrap();
-    // module
-    //     .call_proxy_on_configure(root_context, 0)
-    //     .expect_log(Some(LogLevel::Info), Some("#1 on_configure"))
-    //     .expect_get_buffer_bytes(Some(BufferType::PluginConfiguration))
-    //     .returning(Some(cfg.as_bytes()))
-    //     .expect_log(Some(LogLevel::Info), None)
-    //     .execute_and_expect(ReturnType::Bool(true))
-    //     .unwrap();
 
+    // Setup HTTP Stream
     let http_context = 2;
     module
         .call_proxy_on_context_create(http_context, root_context)
-        .expect_log(Some(LogLevel::Debug), Some("#2 create_http_context"))
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
+    // Request Headers
     module
-        .call_proxy_on_request_headers(http_context, 0, true)
-        .expect_log(Some(LogLevel::Debug), Some("#2 on_http_request_headers"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":authority"))
-        .returning(Some("cars.toystore.com"))
+        .call_proxy_on_request_headers(http_context, 0, false)
+        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
+        .returning(Some("api.openai.com"))
+        .expect_add_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("content-length"),
+            Some(""),
+        )
+        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
+        .returning(Some("/llmrouting"))
+        .expect_add_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some(":path"),
+            Some("/v1/chat/completions"),
+        )
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 
-    module
-        .call_proxy_on_response_headers(http_context, 0, true)
-        .expect_log(Some(LogLevel::Debug), Some("#2 on_http_response_headers"))
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    // Request Body
+    module.call_proxy_on_request_body(http_context, body_size, end_of_stream)
+
+    // module
+    //     .call_proxy_on_response_headers(http_context, 0, true)
+    //     .expect_log(Some(LogLevel::Debug), Some("#2 on_http_response_headers"))
+    //     .execute_and_expect(ReturnType::Action(Action::Continue))
+    //     .unwrap();
 }
