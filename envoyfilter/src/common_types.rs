@@ -1,7 +1,6 @@
 use open_message_format::models::CreateEmbeddingRequest;
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::configuration;
 
@@ -12,17 +11,6 @@ pub struct EmbeddingRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum MessageType {
-    EmbeddingRequest(EmbeddingRequest),
-    CreateVectorStorePoints(CreateVectorStorePoints),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CalloutData {
-    pub message: MessageType,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorPoint {
     pub id: String,
     pub payload: HashMap<String, String>,
@@ -30,8 +18,14 @@ pub struct VectorPoint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateVectorStorePoints {
+pub struct StoreVectorEmbeddingsRequest {
     pub points: Vec<VectorPoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CallContext {
+    EmbeddingRequest(EmbeddingRequest),
+    StoreVectorEmbeddings(StoreVectorEmbeddingsRequest),
 }
 
 pub mod open_ai {
