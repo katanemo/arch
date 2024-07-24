@@ -6,8 +6,6 @@ use open_message_format::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use serde_json::to_string;
-use stats::IncrementingMetric;
-use stats::Metric;
 use stats::RecordingMetric;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -109,26 +107,14 @@ impl Context for StreamContext {}
 
 #[derive(Copy, Clone)]
 struct WasmMetrics {
-    // TODO: remove example metrics once real ones are created. These ones exist in order to silence the dead code warning.
-    example_counter: stats::Counter,
-    example_gauge: stats::Gauge,
-    example_histogram: stats::Histogram,
     active_http_calls: stats::Gauge,
 }
 
 impl WasmMetrics {
     fn new() -> WasmMetrics {
         let new_metrics = WasmMetrics {
-            example_counter: stats::Counter::new(String::from("example_counter")),
-            example_gauge: stats::Gauge::new(String::from("example_gauge")),
             active_http_calls: stats::Gauge::new(String::from("active_http_calls")),
-            example_histogram: stats::Histogram::new(String::from("example_histogram")),
         };
-
-        new_metrics.example_counter.increment(10);
-        new_metrics.example_counter.value();
-        new_metrics.example_gauge.record(20);
-        new_metrics.example_histogram.record(30);
 
         new_metrics
     }
