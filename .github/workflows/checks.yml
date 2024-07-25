@@ -45,7 +45,7 @@ jobs:
           # TODO: Remove this once the repo is public
           token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
-        run: rustup toolchain install stable --profile minimal
+        run: rustup toolchain install stable
       - name: Setup | Install wasm toolchain
         run: rustup target add wasm32-unknown-unknown
       - name: Run Lib Tests
