@@ -12,6 +12,11 @@ $ rustup target add wasm32-unknown-unknown
 $ cargo build --target wasm32-unknown-unknown --release
 ```
 
+## Testing
+```sh
+$ cargo test
+```
+
 ## Using in Envoy
 
 This example can be run with [`docker compose`](https://docs.docker.com/compose/install/)
