@@ -3,13 +3,13 @@
 ## Add toolchain
 
 ```sh
-$ rustup target add wasm32-wasi
+$ rustup target add wasm32-unknown-unknown
 ```
 
 ## Building
 
 ```sh
-$ cargo build --target wasm32-wasi --release
+$ cargo build --target wasm32-unknown-unknown --release
 ```
 
 ## Using in Envoy
