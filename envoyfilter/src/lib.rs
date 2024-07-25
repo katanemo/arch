@@ -1,17 +1,19 @@
 use common_types::{CallContext, EmbeddingRequest};
 use configuration::PromptTarget;
+use http::StatusCode;
+use log::error;
 use log::info;
 use md5::Digest;
 use open_message_format::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use serde_json::to_string;
-use stats::RecordingMetric;
-use std::collections::HashMap;
-use std::time::Duration;
-
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use serde_json::to_string;
+use stats::IncrementingMetric;
+use stats::{Counter, Gauge, RecordingMetric};
+use std::collections::HashMap;
+use std::time::Duration;
 
 mod common_types;
 mod configuration;
@@ -85,12 +87,27 @@ impl HttpContext for StreamContext {
             match self.get_http_request_body(0, body_size) {
                 Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                     Ok(deserialized) => deserialized,
-                    Err(msg) => panic!("Failed to deserialize: {}", msg),
+                    Err(msg) => {
+                        self.send_http_response(
+                            StatusCode::BAD_REQUEST.as_u16().into(),
+                            vec![],
+                            Some(format!("Failed to deserialize: {}", msg).as_bytes()),
+                        );
+                        return Action::Pause;
+                    }
                 },
-                None => panic!(
-                    "Failed to obtain body bytes even though body_size is {}",
-                    body_size
-                ),
+                None => {
+                    self.send_http_response(
+                        StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                        vec![],
+                        None,
+                    );
+                    error!(
+                        "Failed to obtain body bytes even though body_size is {}",
+                        body_size
+                    );
+                    return Action::Pause;
+                }
             };
 
         // Modify JSON payload
@@ -107,13 +124,17 @@ impl Context for StreamContext {}
 
 #[derive(Copy, Clone)]
 struct WasmMetrics {
-    active_http_calls: stats::Gauge,
+    active_http_calls: Gauge,
+    prompt_target_processing_error: Counter,
 }
 
 impl WasmMetrics {
     fn new() -> WasmMetrics {
         WasmMetrics {
-            active_http_calls: stats::Gauge::new(String::from("active_http_calls")),
+            active_http_calls: Gauge::new(String::from("active_http_calls")),
+            prompt_target_processing_error: Counter::new(String::from(
+                "prompt_target_processing_error",
+            )),
         }
     }
 }
@@ -166,7 +187,12 @@ impl FilterContext {
                 ) {
                     Ok(token_id) => token_id,
                     Err(e) => {
-                        panic!("Error dispatching HTTP call: {:?}", e);
+                        self.metrics
+                            .prompt_target_processing_error
+                            .increment(1)
+                            .unwrap();
+                        error!("Error dispatching HTTP call: {:?}", e);
+                        continue;
                     }
                 };
                 info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
@@ -181,11 +207,12 @@ impl FilterContext {
                     })
                     .is_some()
                 {
-                    panic!("duplicate token_id")
+                    panic!("duplicate token_id={}", token_id)
                 }
                 self.metrics
                     .active_http_calls
-                    .record(self.callouts.len().try_into().unwrap());
+                    .record(self.callouts.len().try_into().unwrap())
+                    .unwrap();
             }
         }
     }
@@ -247,7 +274,7 @@ impl FilterContext {
                 ) {
                     Ok(token_id) => token_id,
                     Err(e) => {
-                        panic!("Error dispatching HTTP call: {:?}", e);
+                        panic!("Error dispatching HTTP call for embeddings: {:?}", e);
                     }
                 };
                 info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
@@ -260,11 +287,12 @@ impl FilterContext {
                     )
                     .is_some()
                 {
-                    panic!("duplicate token_id")
+                    panic!("duplicate token_id={}", token_id)
                 }
                 self.metrics
                     .active_http_calls
-                    .record(self.callouts.len().try_into().unwrap());
+                    .record(self.callouts.len().try_into().unwrap())
+                    .unwrap();
             }
         }
     }
@@ -293,7 +321,8 @@ impl Context for FilterContext {
 
         self.metrics
             .active_http_calls
-            .record(self.callouts.len().try_into().unwrap());
+            .record(self.callouts.len().try_into().unwrap())
+            .unwrap();
 
         match callout_data {
             common_types::CallContext::EmbeddingRequest(common_types::EmbeddingRequest {
