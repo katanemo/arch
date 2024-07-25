@@ -17,4 +17,4 @@ md5 = "0.7.0"
 open-message-format = { path = "../open-message-format/clients/omf-rust" }
 
 [dev-dependencies]
-proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "further-abi-0.2.0-work" }
+proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "main" }

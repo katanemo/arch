@@ -1214,7 +1214,7 @@ dependencies = [
 [[package]]
 name = "proxy-wasm-test-framework"
 version = "0.1.0"
-source = "git+https://github.com/katanemo/test-framework.git?branch=further-abi-0.2.0-work#57e21ba08ec1cc3e32649890f68db27dd386878f"
+source = "git+https://github.com/katanemo/test-framework.git?branch=main#3593b817e6dff69ca6bfe32aea8a92f783a6ecd8"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
