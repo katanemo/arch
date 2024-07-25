@@ -1,7 +1,5 @@
 use proxy_wasm_test_framework::tester;
-use proxy_wasm_test_framework::types::{
-    Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
-};
+use proxy_wasm_test_framework::types::{Action, BufferType, MapType, MetricType, ReturnType};
 use std::path::Path;
 
 fn wasm_module() -> String {
