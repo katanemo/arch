@@ -15,7 +15,7 @@ fn wasm_module() -> String {
 }
 
 #[test]
-fn it_loads() {
+fn request_to_open_ai_chat_completions() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -30,6 +30,7 @@ fn it_loads() {
 
     // Setup Filter
     let root_context = 1;
+
     module
         .call_proxy_on_context_create(root_context, 0)
         .expect_metric_creation(MetricType::Counter, "example_counter")
@@ -44,6 +45,7 @@ fn it_loads() {
 
     // Setup HTTP Stream
     let http_context = 2;
+
     module
         .call_proxy_on_context_create(http_context, root_context)
         .execute_and_expect(ReturnType::None)
@@ -70,11 +72,30 @@ fn it_loads() {
         .unwrap();
 
     // Request Body
-    module.call_proxy_on_request_body(http_context, body_size, end_of_stream)
+    let chat_completions_request_body = "\
+    {\
+        \"messages\": [\
+        {\
+            \"role\": \"system\",\
+            \"content\": \"You are a poetic assistant, skilled in explaining complex programming concepts with creative flair.\"\
+        },\
+        {\
+            \"role\": \"user\",\
+            \"content\": \"Compose a poem that explains the concept of recursion in programming.\"\
+        }\
+        ]\
+    }";
 
-    // module
-    //     .call_proxy_on_response_headers(http_context, 0, true)
-    //     .expect_log(Some(LogLevel::Debug), Some("#2 on_http_response_headers"))
-    //     .execute_and_expect(ReturnType::Action(Action::Continue))
-    //     .unwrap();
+    module
+        .call_proxy_on_request_body(
+            http_context,
+            chat_completions_request_body.len() as i32,
+            true,
+        )
+        .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
+        .returning(Some(&chat_completions_request_body))
+        // TODO: assert that the model field was added.
+        .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
+        .execute_and_expect(ReturnType::Action(Action::Continue))
+        .unwrap();
 }
