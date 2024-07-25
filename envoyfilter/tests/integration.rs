@@ -3,8 +3,7 @@ use proxy_wasm_test_framework::types::{Action, BufferType, MapType, MetricType, 
 use std::path::Path;
 
 fn wasm_module() -> String {
-    let wasm_file =
-        Path::new("target/wasm32-unknown-unknown/release/intelligent_prompt_gateway.wasm");
+    let wasm_file = Path::new("target/wasm32-wasi/release/intelligent_prompt_gateway.wasm");
     assert!(
         wasm_file.exists(),
         "Run `cargo build --release --target=wasm32-unknown-unknown` first"
@@ -31,13 +30,7 @@ fn request_to_open_ai_chat_completions() {
 
     module
         .call_proxy_on_context_create(root_context, 0)
-        .expect_metric_creation(MetricType::Counter, "example_counter")
-        .expect_metric_creation(MetricType::Gauge, "example_gauge")
-        .expect_metric_creation(MetricType::Histogram, "example_histogram")
-        .expect_metric_increment("example_counter", 10)
-        .expect_metric_get("example_counter", 10)
-        .expect_metric_record("example_gauge", 20)
-        .expect_metric_record("example_histogram", 30)
+        .expect_metric_creation(MetricType::Gauge, "active_http_calls")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 

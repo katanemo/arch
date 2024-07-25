@@ -512,21 +512,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "function_name"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1ab577a896d09940b5fe12ec5ae71f9d8211fff62c919c03a3750a9901e98a7"
-dependencies = [
- "function_name-proc-macro",
-]
-
-[[package]]
-name = "function_name-proc-macro"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "673464e1e314dd67a0fd9544abc99e8eb28d0c7e3b69b033bcff9b2d00b87333"
-
-[[package]]
 name = "futures-channel"
 version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1229,11 +1214,10 @@ dependencies = [
 [[package]]
 name = "proxy-wasm-test-framework"
 version = "0.1.0"
-source = "git+https://github.com/katanemo/test-framework.git?branch=further-abi-0.2.0-work#3fe11c8e8b4ffab6b520e5b3ead17dfa392582a3"
+source = "git+https://github.com/katanemo/test-framework.git?branch=further-abi-0.2.0-work#57e21ba08ec1cc3e32649890f68db27dd386878f"
 dependencies = [
  "anyhow",
  "cfg-if 0.1.10",
- "function_name",
  "lazy_static",
  "more-asserts",
  "rand",
