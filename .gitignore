@@ -1,3 +1,4 @@
 envoyfilter/target
 envoyfilter/qdrant_data/
 embedding-server/venv/
+chatbot-client/venv/

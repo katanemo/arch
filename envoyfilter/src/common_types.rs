@@ -41,6 +41,6 @@ pub mod open_ai {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Message {
         pub role: String,
-        pub content: String,
+        pub content: Option<String>,
     }
 }
