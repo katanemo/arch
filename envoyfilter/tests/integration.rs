@@ -6,7 +6,7 @@ fn wasm_module() -> String {
     let wasm_file = Path::new("target/wasm32-wasi/release/intelligent_prompt_gateway.wasm");
     assert!(
         wasm_file.exists(),
-        "Run `cargo build --release --target=wasm32-unknown-unknown` first"
+        "Run `cargo build --release --target=wasm32-wasi` first"
     );
     wasm_file.to_str().unwrap().to_string()
 }

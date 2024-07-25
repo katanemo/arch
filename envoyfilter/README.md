@@ -3,13 +3,13 @@
 ## Add toolchain
 
 ```sh
-$ rustup target add wasm32-unknown-unknown
+$ rustup target add wasm32-wasi
 ```
 
 ## Building
 
 ```sh
-$ cargo build --target wasm32-unknown-unknown --release
+$ cargo build --target wasm32-wasi --release
 ```
 
 ## Testing
