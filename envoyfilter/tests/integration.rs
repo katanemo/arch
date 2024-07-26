@@ -34,7 +34,6 @@ fn successful_request_to_open_ai_chat_completions() {
     module
         .call_proxy_on_context_create(root_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
-        .expect_metric_creation(MetricType::Counter, "prompt_target_processing_error")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -116,7 +115,6 @@ fn bad_request_to_open_ai_chat_completions() {
     module
         .call_proxy_on_context_create(root_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
-        .expect_metric_creation(MetricType::Counter, "prompt_target_processing_error")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
