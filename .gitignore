@@ -5,3 +5,4 @@ chatbot-ui/venv/
 __pycache__
 grafana-data
 prom_data
+.env
