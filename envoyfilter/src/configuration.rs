@@ -56,7 +56,9 @@ pub struct PromptTarget {
     pub prompt_type: String,
     pub name: String,
     pub few_shot_examples: Vec<String>,
+    pub entities: Option<Vec<String>>,
     pub endpoint: String,
+    pub system_prompt: Option<String>,
 }
 
 #[cfg(test)]

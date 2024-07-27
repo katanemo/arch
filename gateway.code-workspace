@@ -13,8 +13,8 @@
       "path": "embedding-server"
     },
     {
-      "name": "chatbot-client",
-      "path": "chatbot-client"
+      "name": "chatbot-ui",
+      "path": "chatbot-ui"
     },
     {
       "name": "open-message-format",

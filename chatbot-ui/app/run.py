@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = "sk-proj-G0XMGjhVhETxQym9wHfVT3BlbkFJhXIN6ceNXGJ6rTkPHJeC"
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
-CHAT_COMPLETION_ENDPOINT = "http://localhost:10000/v1/chat/completions"
+# CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
+CHAT_COMPLETION_ENDPOINT = "http://envoy:10000/v1/chat/completions"
 
 class Message(BaseModel):
     role: str
@@ -62,6 +62,7 @@ async def predict(input, history):
     Predict the response of the chatbot and complete a running list of chat history.
     """
     history.append({"role": "user", "content": input})
+    print(history)
     response = await make_completion(history)
     history.append({"role": "assistant", "content": response})
     messages = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
@@ -78,4 +79,4 @@ with gr.Blocks() as demo:
         txt = gr.Textbox(show_label=False, placeholder="Enter text and press enter")
     txt.submit(predict, [txt, state], [chatbot, state])
 
-demo.launch(server_port=8080)
+demo.launch(server_name="0.0.0.0", server_port=8080)

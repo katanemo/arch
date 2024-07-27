@@ -24,6 +24,7 @@ FROM python:3-slim AS output
 # following models have been tested to work with this image
 # "sentence-transformers/all-MiniLM-L6-v2,sentence-transformers/all-mpnet-base-v2,thenlper/gte-base,thenlper/gte-large,thenlper/gte-small"
 ENV MODELS="BAAI/bge-large-en-v1.5"
+ENV NER_MODELS="urchade/gliner_large-v2.1"
 
 COPY --from=builder /runtime /usr/local
 

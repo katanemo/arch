@@ -3,3 +3,4 @@ fastapi
 sentence-transformers
 torch
 uvicorn
+gliner

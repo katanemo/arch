@@ -1,3 +1,4 @@
+#TODO pin versions
 gradio
 async_timeout
 loguru
