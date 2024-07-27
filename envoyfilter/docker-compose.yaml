@@ -47,6 +47,9 @@ services:
       - "8080:8080"
     networks:
       - envoymesh
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CHAT_COMPLETION_ENDPOINT=${CHAT_COMPLETION_ENDPOINT}
 
   prometheus:
     image: prom/prometheus
