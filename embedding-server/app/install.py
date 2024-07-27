@@ -1,4 +1,4 @@
-from load_transformers import load_transformers, load_ner_models
+from app.load_models import load_transformers, load_ner_models
 
 print('installing transformers')
 load_transformers()

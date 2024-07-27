@@ -1,7 +1,7 @@
 import random
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
-from load_transformers import load_ner_models, load_transformers
+from app.load_models import load_ner_models, load_transformers
 from datetime import date, timedelta
 
 transformers = load_transformers()

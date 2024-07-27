@@ -4,3 +4,4 @@ async_timeout
 loguru
 asyncio
 httpx
+python-dotenv

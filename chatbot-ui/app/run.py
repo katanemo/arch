@@ -7,14 +7,13 @@ import async_timeout
 from loguru import logger
 from typing import Optional, List
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
 import os
-from dotenv import load_dotenv
 load_dotenv()
 
-API_KEY = "sk-proj-G0XMGjhVhETxQym9wHfVT3BlbkFJhXIN6ceNXGJ6rTkPHJeC"
-# CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
-CHAT_COMPLETION_ENDPOINT = "http://envoy:10000/v1/chat/completions"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
 
 class Message(BaseModel):
     role: str
@@ -26,7 +25,7 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=30
     """
     header = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {API_KEY}"
+        "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
     try:
         async with async_timeout.timeout(delay=delay):
