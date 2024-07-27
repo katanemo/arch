@@ -1,5 +1,7 @@
 use proxy_wasm_test_framework::tester;
-use proxy_wasm_test_framework::types::{Action, BufferType, MapType, MetricType, ReturnType};
+use proxy_wasm_test_framework::types::{
+    Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
+};
 use std::path::Path;
 
 fn wasm_module() -> String {
@@ -87,6 +89,7 @@ fn request_to_open_ai_chat_completions() {
         .returning(Some(chat_completions_request_body))
         // TODO: assert that the model field was added.
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
+        .expect_log(Some(LogLevel::Info), None)
+        .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
 }
