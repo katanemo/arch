@@ -173,7 +173,9 @@ impl FilterContext {
                 info!("few_shot_example: {:?}", few_shot_example);
 
                 let embeddings_input = CreateEmbeddingRequest {
-                    input: CreateEmbeddingRequestInput::String(few_shot_example.to_string()),
+                    input: Box::new(CreateEmbeddingRequestInput::String(
+                        few_shot_example.to_string(),
+                    )),
                     model: String::from(consts::DEFAULT_EMBEDDING_MODEL),
                     encoding_format: None,
                     dimensions: None,
@@ -248,7 +250,7 @@ impl FilterContext {
         }
 
         let (json_data, create_vector_store_points) =
-            match build_qdrant_data(&body, &create_embedding_request, &prompt_target) {
+            match build_qdrant_data(&body, create_embedding_request, &prompt_target) {
                 Ok(tuple) => tuple,
                 Err(error) => {
                     panic!(
@@ -372,7 +374,7 @@ impl RootContext for FilterContext {
 
 fn build_qdrant_data(
     embedding_data: &Vec<u8>,
-    create_embedding_request: &CreateEmbeddingRequest,
+    create_embedding_request: CreateEmbeddingRequest,
     prompt_target: &PromptTarget,
 ) -> Result<(String, common_types::StoreVectorEmbeddingsRequest), serde_json::Error> {
     let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(embedding_data) {
@@ -394,7 +396,7 @@ fn build_qdrant_data(
     );
 
     let id: Option<Digest>;
-    match create_embedding_request.input {
+    match *create_embedding_request.input {
         CreateEmbeddingRequestInput::String(ref input) => {
             id = Some(md5::compute(&input));
             payload.insert("input".to_string(), input.clone());
