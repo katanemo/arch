@@ -1,3 +1,0 @@
-[submodule "open-message-format"]
-	path = open-message-format
-	url = git@github.com:open-llm-initiative/open-message-format.git

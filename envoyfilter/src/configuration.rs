@@ -51,13 +51,21 @@ pub struct LlmProvider {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+pub struct Endpoint {
+    pub cluster: String,
+    pub path: Option<String>,
+    pub method: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct PromptTarget {
     #[serde(rename = "type")]
     pub prompt_type: String,
     pub name: String,
     pub few_shot_examples: Vec<String>,
     pub entities: Option<Vec<String>>,
-    pub endpoint: String,
+    pub endpoint: Option<Endpoint>,
     pub system_prompt: Option<String>,
 }
 
@@ -90,13 +98,9 @@ katanemo-prompt-config:
       name: weather-forecast
       few-shot-examples:
         - what is the weather in New York?
-      endpoint: "POST:$WEATHER_FORECAST_API_ENDPOINT"
-      cache-response: true
-      cache-response-settings:
-        - cache-ttl-secs: 3600 # cache expiry in seconds
-        - cache-max-size: 1000 # in number of items
-        - cache-eviction-strategy: LRU
-
+      endpoint:
+        cluster: weatherhost
+        path: /weather
   "#;
 
     #[test]

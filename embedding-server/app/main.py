@@ -1,7 +1,7 @@
 import random
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
-from app.load_models import load_ner_models, load_transformers
+from load_models import load_ner_models, load_transformers
 from datetime import date, timedelta
 
 transformers = load_transformers()
@@ -13,7 +13,7 @@ class EmbeddingRequest(BaseModel):
   input: str
   model: str
 
-@app.patch("/healthz")
+@app.get("/healthz")
 async def healthz():
     return {
         "status": "ok"

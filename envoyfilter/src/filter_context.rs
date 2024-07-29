@@ -52,8 +52,6 @@ impl FilterContext {
     fn process_prompt_targets(&mut self) {
         for prompt_target in &self.config.as_ref().unwrap().prompt_config.prompt_targets {
             for few_shot_example in &prompt_target.few_shot_examples {
-                info!("few_shot_example: {:?}", few_shot_example);
-
                 let embeddings_input = CreateEmbeddingRequest {
                     input: Box::new(CreateEmbeddingRequestInput::String(
                         few_shot_example.to_string(),
@@ -84,7 +82,6 @@ impl FilterContext {
                         panic!("Error dispatching HTTP call: {:?}", e);
                     }
                 };
-                info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
                 let embedding_request = EmbeddingRequest {
                     create_embedding_request: embeddings_input,
                     prompt_target: prompt_target.clone(),
@@ -111,16 +108,10 @@ impl FilterContext {
         create_embedding_request: CreateEmbeddingRequest,
         prompt_target: PromptTarget,
     ) {
-        info!("response received for CreateEmbeddingRequest");
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
                 let embedding_response: CreateEmbeddingResponse =
                     serde_json::from_slice(&body).unwrap();
-                info!(
-                    "embedding_response model: {}, vector len: {}",
-                    embedding_response.model,
-                    embedding_response.data[0].embedding.len()
-                );
 
                 let mut payload: HashMap<String, String> = HashMap::new();
                 payload.insert(
@@ -144,10 +135,6 @@ impl FilterContext {
                     }],
                 };
                 let json_data = to_string(&create_vector_store_points).unwrap(); // Handle potential errors
-                info!(
-                    "create_vector_store_points: points length: {}",
-                    embedding_response.data[0].embedding.len()
-                );
                 let token_id = match self.dispatch_http_call(
                     "qdrant",
                     vec![
@@ -165,7 +152,6 @@ impl FilterContext {
                         panic!("Error dispatching HTTP call: {:?}", e);
                     }
                 };
-                info!("on_tick: dispatched HTTP call with token_id = {}", token_id);
 
                 if self
                     .callouts
@@ -185,10 +171,12 @@ impl FilterContext {
     }
 
     fn create_vector_store_points_handler(&self, body_size: usize) {
-        info!("response received for CreateVectorStorePoints");
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
-                info!("response body: {:?}", String::from_utf8(body).unwrap());
+                info!(
+                    "response body: len {:?}",
+                    String::from_utf8(body).unwrap().len()
+                );
             }
         }
     }
@@ -202,8 +190,6 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        info!("on_http_call_response: token_id = {}", token_id);
-
         let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
 
         self.metrics
@@ -229,7 +215,6 @@ impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
-            info!("on_configure: plugin configuration loaded");
         }
         true
     }
@@ -246,13 +231,11 @@ impl RootContext for FilterContext {
     }
 
     fn on_vm_start(&mut self, _: usize) -> bool {
-        info!("on_vm_start: setting up tick timeout");
         self.set_tick_period(Duration::from_secs(1));
         true
     }
 
     fn on_tick(&mut self) {
-        info!("on_tick: starting to process prompt targets");
         self.process_prompt_targets();
         self.set_tick_period(Duration::from_secs(0));
     }

@@ -18,12 +18,12 @@
     },
     {
       "name": "open-message-format",
-      "path": "open-message-format"
+      "path": "envoyfilter/open-message-format"
     },
     {
-      "name": "demos",
-      "path": "./demos"
-    },
+      "name": "demos/weather-forecast",
+      "path": "./demos/weather-forecast",
+    }
   ],
   "settings": {}
 }

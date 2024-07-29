@@ -18,6 +18,7 @@ use crate::configuration::PromptTarget;
 use crate::consts;
 use crate::consts::DEFAULT_COLLECTION_NAME;
 use crate::consts::DEFAULT_NER_MODEL;
+use crate::consts::DEFAULT_NER_THRESHOLD;
 use crate::consts::DEFAULT_PROMPT_TARGET_THRESHOLD;
 
 enum RequestType {
@@ -102,7 +103,6 @@ impl HttpContext for StreamContext {
             match self.get_http_request_body(0, body_size) {
                 Some(body_bytes) => {
                     let body_string = String::from_utf8(body_bytes).unwrap();
-                    info!("body_string: {}", body_string);
                     serde_json::from_str(&body_string).unwrap()
                 }
                 None => panic!(
@@ -126,8 +126,6 @@ impl HttpContext for StreamContext {
                 return Action::Continue;
             }
         };
-
-        info!("user input: {}", user_message);
 
         let get_embeddings_input = CreateEmbeddingRequest {
             input: Box::new(CreateEmbeddingRequestInput::String(user_message.clone())),
@@ -178,213 +176,213 @@ impl Context for StreamContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        info!("on_http_call_response: token_id = {}", token_id);
-
         let mut callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
+
+        let resp = self.get_http_call_response_body(0, body_size);
+
+        if resp.is_none() {
+            warn!("No response body");
+            self.resume_http_request();
+            return;
+        }
+
+        let body = resp.unwrap();
+        if body.is_empty() {
+            warn!("Empty response body");
+            self.resume_http_request();
+            return;
+        }
 
         match callout_context.request_type {
             RequestType::GetEmbedding => {
-                info!("response received for get-embedding");
-                if let Some(body) = self.get_http_call_response_body(0, body_size) {
-                    if !body.is_empty() {
-                        let embedding_response: CreateEmbeddingResponse =
-                            serde_json::from_slice(&body).unwrap();
-                        info!(
-                            "embedding_response model: {}, vector len: {}",
-                            embedding_response.model,
-                            embedding_response.data[0].embedding.len()
-                        );
+                let embedding_response: CreateEmbeddingResponse =
+                    serde_json::from_slice(&body).unwrap();
 
-                        let search_points_request = common_types::SearchPointsRequest {
-                            vector: embedding_response.data[0].embedding.clone(),
-                            limit: 10,
-                            with_payload: true,
-                        };
+                let search_points_request = common_types::SearchPointsRequest {
+                    vector: embedding_response.data[0].embedding.clone(),
+                    limit: 10,
+                    with_payload: true,
+                };
 
-                        let json_data: String = match to_string(&search_points_request) {
-                            Ok(json_data) => json_data,
-                            Err(e) => {
-                                warn!("Error serializing search_points_request: {:?}", e);
-                                self.reset_http_request();
-                                return;
-                            }
-                        };
-
-                        let path =
-                            format!("/collections/{}/points/search", DEFAULT_COLLECTION_NAME);
-
-                        let token_id = match self.dispatch_http_call(
-                            "qdrant",
-                            vec![
-                                (":method", "POST"),
-                                (":path", &path),
-                                (":authority", "qdrant"),
-                                ("content-type", "application/json"),
-                            ],
-                            Some(json_data.as_bytes()),
-                            vec![],
-                            Duration::from_secs(5),
-                        ) {
-                            Ok(token_id) => token_id,
-                            Err(e) => {
-                                panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
-                            }
-                        };
-
-                        callout_context.request_type = RequestType::SearchPoints;
-                        if self.callouts.insert(token_id, callout_context).is_some() {
-                            panic!("duplicate token_id")
-                        }
+                let json_data: String = match to_string(&search_points_request) {
+                    Ok(json_data) => json_data,
+                    Err(e) => {
+                        warn!("Error serializing search_points_request: {:?}", e);
+                        self.reset_http_request();
                         return;
                     }
+                };
+
+                let path = format!("/collections/{}/points/search", DEFAULT_COLLECTION_NAME);
+
+                let token_id = match self.dispatch_http_call(
+                    "qdrant",
+                    vec![
+                        (":method", "POST"),
+                        (":path", &path),
+                        (":authority", "qdrant"),
+                        ("content-type", "application/json"),
+                    ],
+                    Some(json_data.as_bytes()),
+                    vec![],
+                    Duration::from_secs(5),
+                ) {
+                    Ok(token_id) => token_id,
+                    Err(e) => {
+                        panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
+                    }
+                };
+
+                callout_context.request_type = RequestType::SearchPoints;
+                if self.callouts.insert(token_id, callout_context).is_some() {
+                    panic!("duplicate token_id")
                 }
-                info!("resume http request for get-embedding");
-                self.resume_http_request();
             }
             RequestType::SearchPoints => {
-                info!("response received for search-points");
-                if let Some(body) = self.get_http_call_response_body(0, body_size) {
-                    if !body.is_empty() {
-                        let search_points_response: SearchPointsResponse =
-                            serde_json::from_slice(&body).unwrap();
-                        info!(
-                            "search_points_response: {:?}",
-                            search_points_response.result[0].payload
-                        );
-                        let search_results = &search_points_response.result;
-                        if !search_results.is_empty()
-                            && search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD
-                        {
-                            info!("No prompt target found");
-                            self.resume_http_request();
-                            return;
-                        }
-                        let prompt_target_str =
-                            search_results[0].payload.get("prompt-target").unwrap();
-                        let prompt_target: PromptTarget =
-                            serde_json::from_slice(prompt_target_str.as_bytes()).unwrap();
-                        info!("prompt_target name: {:?}", prompt_target.name);
+                let search_points_response: SearchPointsResponse =
+                    serde_json::from_slice(&body).unwrap();
 
-                        let user_message = callout_context.user_message.clone();
-                        let ner_request = common_types::NERRequest {
-                            input: user_message,
-                            labels: prompt_target.entities.clone().unwrap(),
-                            model: DEFAULT_NER_MODEL.to_string(),
-                        };
+                let search_results = &search_points_response.result;
 
-                        let json_data: String = to_string(&ner_request).unwrap();
-
-                        let token_id = match self.dispatch_http_call(
-                            "nerhost",
-                            vec![
-                                (":method", "POST"),
-                                (":path", "/ner"),
-                                (":authority", "nerhost"),
-                                ("content-type", "application/json"),
-                            ],
-                            Some(json_data.as_bytes()),
-                            vec![],
-                            Duration::from_secs(5),
-                        ) {
-                            Ok(token_id) => token_id,
-                            Err(e) => {
-                                panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
-                            }
-                        };
-                        callout_context.request_type = RequestType::Ner;
-                        callout_context.prompt_target = Some(prompt_target);
-                        if self.callouts.insert(token_id, callout_context).is_some() {
-                            panic!("duplicate token_id")
-                        }
-                        return;
-                    }
+                if search_results.is_empty() {
+                    info!("No prompt target matched");
+                    self.resume_http_request();
+                    return;
                 }
 
-                info!("resume http request for search-points");
-                self.resume_http_request();
+                search_results[0].payload.get("prompt-target").unwrap();
+                info!("similarity score: {}", search_results[0].score);
+
+                if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD {
+                    info!(
+                        "prompt target below threshold: {}",
+                        DEFAULT_PROMPT_TARGET_THRESHOLD
+                    );
+                    self.resume_http_request();
+                    return;
+                }
+                let prompt_target_str = search_results[0].payload.get("prompt-target").unwrap();
+                let prompt_target: PromptTarget =
+                    serde_json::from_slice(prompt_target_str.as_bytes()).unwrap();
+                info!("prompt_target name: {:?}", prompt_target.name);
+
+                let user_message = callout_context.user_message.clone();
+                let ner_request = common_types::NERRequest {
+                    input: user_message,
+                    labels: prompt_target.entities.clone().unwrap(),
+                    model: DEFAULT_NER_MODEL.to_string(),
+                };
+
+                let json_data: String = to_string(&ner_request).unwrap();
+
+                let token_id = match self.dispatch_http_call(
+                    "nerhost",
+                    vec![
+                        (":method", "POST"),
+                        (":path", "/ner"),
+                        (":authority", "nerhost"),
+                        ("content-type", "application/json"),
+                    ],
+                    Some(json_data.as_bytes()),
+                    vec![],
+                    Duration::from_secs(5),
+                ) {
+                    Ok(token_id) => token_id,
+                    Err(e) => {
+                        panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
+                    }
+                };
+                callout_context.request_type = RequestType::Ner;
+                callout_context.prompt_target = Some(prompt_target);
+                if self.callouts.insert(token_id, callout_context).is_some() {
+                    panic!("duplicate token_id")
+                }
             }
             RequestType::Ner => {
-                info!("response received for ner");
-                if let Some(body) = self.get_http_call_response_body(0, body_size) {
-                    if !body.is_empty() {
-                        let ner_response: common_types::NERResponse =
-                            serde_json::from_slice(&body).unwrap();
-                        info!("user message: {:?}", callout_context.user_message);
-                        info!(
-                            "prompt target: name: {:?}",
-                            callout_context.prompt_target.as_ref().unwrap().name.clone()
-                        );
-                        info!(
-                            "prompt target: type: {:?}",
-                            callout_context
-                                .prompt_target
-                                .as_ref()
-                                .unwrap()
-                                .prompt_type
-                                .clone()
-                        );
-                        info!("ner_response: {:?}", ner_response);
+                let ner_response: common_types::NERResponse =
+                    serde_json::from_slice(&body).unwrap();
+                info!("ner_response: {:?}", ner_response);
 
-                        let mut req_params: HashMap<String, String> = HashMap::new();
-                        for entity in ner_response.data.iter() {
-                            req_params.insert(entity.label.clone(), entity.text.clone());
-                        }
+                let mut request_params: HashMap<String, String> = HashMap::new();
+                for entity in ner_response.data.iter() {
+                    if entity.score < DEFAULT_NER_THRESHOLD {
+                        continue;
+                    }
+                    request_params.insert(entity.label.clone(), entity.text.clone());
+                }
 
-                        let req_param_str = to_string(&req_params).unwrap();
-
-                        let token_id = match self.dispatch_http_call(
-                            "weatherhost",
-                            vec![
-                                (":method", "POST"),
-                                (":path", "/weather"),
-                                (":authority", "weatherhost"),
-                                ("content-type", "application/json"),
-                            ],
-                            Some(req_param_str.as_bytes()),
-                            vec![],
-                            Duration::from_secs(5),
-                        ) {
-                            Ok(token_id) => token_id,
-                            Err(e) => {
-                                panic!("Error dispatching HTTP call for context-resolver: {:?}", e);
-                            }
-                        };
-                        callout_context.request_type = RequestType::ContextResolver;
-                        if self.callouts.insert(token_id, callout_context).is_some() {
-                            panic!("duplicate token_id")
-                        }
+                let prompt_target = callout_context.prompt_target.as_ref().unwrap();
+                for entity in prompt_target.entities.as_ref().unwrap() {
+                    if !request_params.contains_key(entity) {
+                        warn!("missing entity: {}", entity);
+                        self.resume_http_request();
                         return;
                     }
                 }
-                info!("resume http request for ner");
-                self.resume_http_request();
+
+                let req_param_str = to_string(&request_params).unwrap();
+
+                let endpoint = callout_context
+                    .prompt_target
+                    .as_ref()
+                    .unwrap()
+                    .endpoint
+                    .as_ref()
+                    .unwrap();
+
+                let http_path = match &endpoint.path {
+                    Some(path) => path.clone(),
+                    None => "/".to_string(),
+                };
+
+                let http_method = match &endpoint.method {
+                    Some(method) => method.clone(),
+                    None => "POST".to_string(),
+                };
+
+                let token_id = match self.dispatch_http_call(
+                    &endpoint.cluster.clone(),
+                    vec![
+                        (":method", http_method.as_str()),
+                        (":path", http_path.as_str()),
+                        (":authority", endpoint.cluster.as_str()),
+                        ("content-type", "application/json"),
+                    ],
+                    Some(req_param_str.as_bytes()),
+                    vec![],
+                    Duration::from_secs(5),
+                ) {
+                    Ok(token_id) => token_id,
+                    Err(e) => {
+                        panic!("Error dispatching HTTP call for context-resolver: {:?}", e);
+                    }
+                };
+                callout_context.request_type = RequestType::ContextResolver;
+                if self.callouts.insert(token_id, callout_context).is_some() {
+                    panic!("duplicate token_id")
+                }
             }
             RequestType::ContextResolver => {
                 info!("response received for context-resolver");
-                if let Some(body) = self.get_http_call_response_body(0, body_size) {
-                    if !body.is_empty() {
-                        let body_string = String::from_utf8(body).unwrap();
-                        let prompt_target = callout_context.prompt_target.unwrap();
+                let body_string = String::from_utf8(body).unwrap();
+                let prompt_target = callout_context.prompt_target.unwrap();
 
-                        info!("context-resolver response: {}", body_string);
-                        let system_prompt = Message {
-                            role: "system".to_string(),
-                            content: Some(prompt_target.system_prompt.unwrap().clone()),
-                        };
-                        let weather_system_response = Message {
-                            role: "user".to_string(),
-                            content: Some(body_string.clone()),
-                        };
+                info!("context-resolver response: {}", body_string);
+                let system_prompt = Message {
+                    role: "system".to_string(),
+                    content: Some(prompt_target.system_prompt.unwrap().clone()),
+                };
+                let weather_system_response = Message {
+                    role: "user".to_string(),
+                    content: Some(body_string.clone()),
+                };
 
-                        let mut request_body = callout_context.request_body;
-                        request_body.messages.push(system_prompt);
-                        request_body.messages.push(weather_system_response);
-                        let json_string = serde_json::to_string(&request_body).unwrap();
-                        info!("sending request to openai: {}", json_string);
-                        self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
-                    }
-                }
-                info!("resume http request for context-resolver");
+                let mut request_body = callout_context.request_body;
+                request_body.messages.push(system_prompt);
+                request_body.messages.push(weather_system_response);
+                let json_string = serde_json::to_string(&request_body).unwrap();
+                info!("sending request to openai: msg len: {}", json_string.len());
+                self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
                 self.resume_http_request();
             }
         }
