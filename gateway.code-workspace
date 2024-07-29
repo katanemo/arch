@@ -18,7 +18,7 @@
     },
     {
       "name": "open-message-format",
-      "path": "envoyfilter/open-message-format"
+      "path": "open-message-format"
     },
     {
       "name": "demos/weather-forecast",
