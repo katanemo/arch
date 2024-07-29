@@ -9,7 +9,6 @@ use open_message_format::models::{
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use serde_json;
 use stats::{Gauge, RecordingMetric};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -373,7 +372,7 @@ impl RootContext for FilterContext {
 }
 
 fn build_qdrant_data(
-    embedding_data: &Vec<u8>,
+    embedding_data: &[u8],
     create_embedding_request: CreateEmbeddingRequest,
     prompt_target: &PromptTarget,
 ) -> Result<(String, common_types::StoreVectorEmbeddingsRequest), serde_json::Error> {
@@ -398,7 +397,7 @@ fn build_qdrant_data(
     let id: Option<Digest>;
     match *create_embedding_request.input {
         CreateEmbeddingRequestInput::String(ref input) => {
-            id = Some(md5::compute(&input));
+            id = Some(md5::compute(input));
             payload.insert("input".to_string(), input.clone());
         }
         CreateEmbeddingRequestInput::Array(_) => todo!(),
