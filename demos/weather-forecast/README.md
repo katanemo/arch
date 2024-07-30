@@ -2,6 +2,10 @@
 This demo shows how you can use intelligent prompt gateway to provide realtime weather forecast.
 
 # Startig the demo
+1. Ensure that submodule is up to date
+   ```sh
+   $ git submodule sync --recursive
+   ```
 1. Create `.env` file and set OpenAI key using env var `OPENAI_API_KEY`
 1. Start services
   ```sh
