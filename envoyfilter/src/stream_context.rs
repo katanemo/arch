@@ -11,7 +11,10 @@ use std::time::Duration;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
-use consts::DEFAULT_EMBEDDING_MODEL;
+use consts::{
+    DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE, USER_ROLE,
+};
 
 use crate::common_types;
 
@@ -21,12 +24,6 @@ use crate::configuration::EntityDetail;
 use crate::configuration::EntityType;
 use crate::configuration::PromptTarget;
 use crate::consts;
-use crate::consts::DEFAULT_COLLECTION_NAME;
-use crate::consts::DEFAULT_NER_MODEL;
-use crate::consts::DEFAULT_NER_THRESHOLD;
-use crate::consts::DEFAULT_PROMPT_TARGET_THRESHOLD;
-use crate::consts::SYSTEM_ROLE;
-use crate::consts::USER_ROLE;
 
 enum RequestType {
     GetEmbedding,
