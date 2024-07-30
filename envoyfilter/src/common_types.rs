@@ -27,6 +27,7 @@ pub struct StoreVectorEmbeddingsRequest {
 pub enum CallContext {
     EmbeddingRequest(EmbeddingRequest),
     StoreVectorEmbeddings(StoreVectorEmbeddingsRequest),
+    CreateVectorCollection(String),
 }
 
 // https://api.qdrant.tech/master/api-reference/search/points

@@ -180,6 +180,40 @@ impl FilterContext {
             }
         }
     }
+
+    //TODO: run once per envoy instance, right now it runs once per worker
+    fn init_vector_store(&mut self) {
+        let token_id = match self.dispatch_http_call(
+            "qdrant",
+            vec![
+                (":method", "PUT"),
+                (":path", "/collections/prompt_vector_store"),
+                (":authority", "qdrant"),
+                ("content-type", "application/json"),
+            ],
+            Some(b"{ \"vectors\": { \"size\": 1024, \"distance\": \"Cosine\"}}"),
+            vec![],
+            Duration::from_secs(5),
+        ) {
+            Ok(token_id) => token_id,
+            Err(e) => {
+                panic!("Error dispatching HTTP call for init-vector-store: {:?}", e);
+            }
+        };
+        if self
+            .callouts
+            .insert(
+                token_id,
+                CallContext::CreateVectorCollection("prompt_vector_store".to_string()),
+            )
+            .is_some()
+        {
+            panic!("duplicate token_id")
+        }
+        // self.metrics
+        //     .active_http_calls
+        //     .record(self.callouts.len().try_into().unwrap());
+    }
 }
 
 impl Context for FilterContext {
@@ -205,6 +239,17 @@ impl Context for FilterContext {
             }
             common_types::CallContext::StoreVectorEmbeddings(_) => {
                 self.create_vector_store_points_handler(body_size)
+            }
+            common_types::CallContext::CreateVectorCollection(_) => {
+                let mut http_status_code = "Nil".to_string();
+                self.get_http_call_response_headers()
+                    .iter()
+                    .for_each(|(k, v)| {
+                        if k == ":status" {
+                            http_status_code = v.clone();
+                        }
+                    });
+                info!("CreateVectorCollection response: {}", http_status_code);
             }
         }
     }
@@ -236,6 +281,8 @@ impl RootContext for FilterContext {
     }
 
     fn on_tick(&mut self) {
+        // initialize vector store
+        self.init_vector_store();
         self.process_prompt_targets();
         self.set_tick_period(Duration::from_secs(0));
     }

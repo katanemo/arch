@@ -35,8 +35,6 @@ services:
     ports:
       - 16333:6333
       - 16334:6334
-    volumes:
-      - ./qdrant_data:/qdrant/storage
     networks:
       - envoymesh
 
