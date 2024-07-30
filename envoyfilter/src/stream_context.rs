@@ -14,6 +14,8 @@ use crate::common_types;
 
 use crate::common_types::open_ai::Message;
 use crate::common_types::SearchPointsResponse;
+use crate::configuration::EntityDetail;
+use crate::configuration::EntityType;
 use crate::configuration::PromptTarget;
 use crate::consts;
 use crate::consts::DEFAULT_COLLECTION_NAME;
@@ -266,10 +268,15 @@ impl Context for StreamContext {
                     serde_json::from_slice(prompt_target_str.as_bytes()).unwrap();
                 info!("prompt_target name: {:?}", prompt_target.name);
 
+                // only extract entity names
+                let entity_names = get_entity_details(&prompt_target)
+                    .iter()
+                    .map(|entity| entity.name.clone())
+                    .collect();
                 let user_message = callout_context.user_message.clone();
                 let ner_request = common_types::NERRequest {
                     input: user_message,
-                    labels: prompt_target.entities.clone().unwrap(),
+                    labels: entity_names,
                     model: DEFAULT_NER_MODEL.to_string(),
                 };
 
@@ -306,15 +313,25 @@ impl Context for StreamContext {
                 let mut request_params: HashMap<String, String> = HashMap::new();
                 for entity in ner_response.data.iter() {
                     if entity.score < DEFAULT_NER_THRESHOLD {
+                        warn!(
+                            "score of entity was too low entity name: {}, score: {}",
+                            entity.label, entity.score
+                        );
                         continue;
                     }
                     request_params.insert(entity.label.clone(), entity.text.clone());
                 }
 
                 let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-                for entity in prompt_target.entities.as_ref().unwrap() {
-                    if !request_params.contains_key(entity) {
-                        warn!("missing entity: {}", entity);
+                let entity_details = get_entity_details(&prompt_target);
+                for entity in entity_details {
+                    if entity.required.unwrap_or(false)
+                        && !request_params.contains_key(&entity.name)
+                    {
+                        warn!(
+                            "required entity missing or score of entity was too low: {}",
+                            entity.name
+                        );
                         self.resume_http_request();
                         return;
                     }
@@ -386,5 +403,23 @@ impl Context for StreamContext {
                 self.resume_http_request();
             }
         }
+    }
+}
+
+fn get_entity_details(prompt_target: &PromptTarget) -> Vec<EntityDetail> {
+    match prompt_target.entities.as_ref() {
+        Some(EntityType::Vec(entity_names)) => {
+            let mut entity_details: Vec<EntityDetail> = Vec::new();
+            for entity_name in entity_names {
+                entity_details.push(EntityDetail {
+                    name: entity_name.clone(),
+                    required: Some(true),
+                    description: None,
+                });
+            }
+            entity_details
+        }
+        Some(EntityType::Struct(entity_details)) => entity_details.clone(),
+        None => Vec::new(),
     }
 }

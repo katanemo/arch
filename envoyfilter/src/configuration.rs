@@ -59,12 +59,27 @@ pub struct Endpoint {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+pub struct EntityDetail {
+    pub name: String,
+    pub required: Option<bool>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EntityType {
+    Vec(Vec<String>),
+    Struct(Vec<EntityDetail>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct PromptTarget {
     #[serde(rename = "type")]
     pub prompt_type: String,
     pub name: String,
     pub few_shot_examples: Vec<String>,
-    pub entities: Option<Vec<String>>,
+    pub entities: Option<EntityType>,
     pub endpoint: Option<Endpoint>,
     pub system_prompt: Option<String>,
 }
@@ -101,6 +116,20 @@ katanemo-prompt-config:
       endpoint:
         cluster: weatherhost
         path: /weather
+      entities:
+        - name: location
+          required: true
+          description: "The location for which the weather is requested"
+
+    - type: context-resolver
+      name: weather-forecast-2
+      few-shot-examples:
+        - what is the weather in New York?
+      endpoint:
+        cluster: weatherhost
+        path: /weather
+      entities:
+        - city
   "#;
 
     #[test]

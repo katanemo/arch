@@ -23,6 +23,7 @@ pub struct StoreVectorEmbeddingsRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::large_enum_variant)]
 pub enum CallContext {
     EmbeddingRequest(EmbeddingRequest),
     StoreVectorEmbeddings(StoreVectorEmbeddingsRequest),
