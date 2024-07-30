@@ -7,4 +7,3 @@ grafana-data
 prom_data
 .env
 qdrant_data
-open-message-format

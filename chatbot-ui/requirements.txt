@@ -1,7 +1,6 @@
-#TODO pin versions
-gradio
-async_timeout
-loguru
-asyncio
-httpx
-python-dotenv
+gradio==4.39.0
+async_timeout==4.0.3
+loguru==0.7.2
+asyncio==3.4.3
+httpx==0.27.0
+python-dotenv==1.0.1

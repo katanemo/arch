@@ -1,12 +1,13 @@
 services:
   envoy:
-    image: envoyproxy/envoy:v1.30-latest
+    build:
+      context: ../../
+      dockerfile: envoyfilter/Dockerfile
     hostname: envoy
     ports:
       - "10000:10000"
       - "19901:9901"
     volumes:
-      - ../../envoyfilter/target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
       - ./envoy.yaml:/etc/envoy/envoy.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
     networks:
