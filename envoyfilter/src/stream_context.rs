@@ -5,12 +5,13 @@ use log::warn;
 use open_message_format::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use serde_json::to_string;
 use std::collections::HashMap;
 use std::time::Duration;
 
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+
+use consts::DEFAULT_EMBEDDING_MODEL;
 
 use crate::common_types;
 
@@ -24,6 +25,8 @@ use crate::consts::DEFAULT_COLLECTION_NAME;
 use crate::consts::DEFAULT_NER_MODEL;
 use crate::consts::DEFAULT_NER_THRESHOLD;
 use crate::consts::DEFAULT_PROMPT_TARGET_THRESHOLD;
+use crate::consts::SYSTEM_ROLE;
+use crate::consts::USER_ROLE;
 
 enum RequestType {
     GetEmbedding,
@@ -83,13 +86,6 @@ impl HttpContext for StreamContext {
         Action::Continue
     }
 
-    fn on_http_response_body(&mut self, _body_size: usize, end_of_stream: bool) -> Action {
-        if end_of_stream {
-            info!("on_http_response_body");
-        }
-        Action::Continue
-    }
-
     fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         // Let the client send the gateway all the data before sending to the LLM_provider.
         // TODO: consider a streaming API.
@@ -130,31 +126,27 @@ impl HttpContext for StreamContext {
                 }
             };
 
-        let last_message = match deserialized_body.messages.last() {
-            Some(message) => message,
+        let user_message = match deserialized_body
+            .messages
+            .last()
+            .and_then(|last_message| last_message.content.as_ref())
+        {
+            Some(content) => content,
             None => {
                 info!("No messages in the request body");
                 return Action::Continue;
             }
         };
 
-        let user_message: String = match last_message.content.clone() {
-            Some(content) => content,
-            None => {
-                info!("last_message content is None");
-                return Action::Continue;
-            }
-        };
-
         let get_embeddings_input = CreateEmbeddingRequest {
             input: Box::new(CreateEmbeddingRequestInput::String(user_message.clone())),
-            model: String::from(consts::DEFAULT_EMBEDDING_MODEL),
+            model: String::from(DEFAULT_EMBEDDING_MODEL),
             encoding_format: None,
             dimensions: None,
             user: None,
         };
 
-        let json_data: String = match to_string(&get_embeddings_input) {
+        let json_data: String = match serde_json::to_string(&get_embeddings_input) {
             Ok(json_data) => json_data,
             Err(error) => {
                 panic!("Error serializing embeddings input: {}", error);
@@ -184,7 +176,7 @@ impl HttpContext for StreamContext {
         };
         let call_context = CallContext {
             request_type: RequestType::GetEmbedding,
-            user_message,
+            user_message: user_message.clone(),
             prompt_target: None,
             request_body: deserialized_body,
         };
@@ -217,17 +209,26 @@ impl Context for StreamContext {
             return;
         }
 
-        let body = resp.unwrap();
-        if body.is_empty() {
-            warn!("Empty response body");
-            self.resume_http_request();
-            return;
-        }
+        let body = match resp {
+            Some(body) => body,
+            None => {
+                warn!("Empty response body");
+                self.resume_http_request();
+                return;
+            }
+        };
 
         match callout_context.request_type {
             RequestType::GetEmbedding => {
                 let embedding_response: CreateEmbeddingResponse =
-                    serde_json::from_slice(&body).unwrap();
+                    match serde_json::from_slice(&body) {
+                        Ok(embedding_response) => embedding_response,
+                        Err(e) => {
+                            warn!("Error deserializing embedding response: {:?}", e);
+                            self.resume_http_request();
+                            return;
+                        }
+                    };
 
                 let search_points_request = common_types::SearchPointsRequest {
                     vector: embedding_response.data[0].embedding.clone(),
@@ -235,7 +236,7 @@ impl Context for StreamContext {
                     with_payload: true,
                 };
 
-                let json_data: String = match to_string(&search_points_request) {
+                let json_data: String = match serde_json::to_string(&search_points_request) {
                     Ok(json_data) => json_data,
                     Err(e) => {
                         warn!("Error serializing search_points_request: {:?}", e);
@@ -272,7 +273,14 @@ impl Context for StreamContext {
             }
             RequestType::SearchPoints => {
                 let search_points_response: SearchPointsResponse =
-                    serde_json::from_slice(&body).unwrap();
+                    match serde_json::from_slice(&body) {
+                        Ok(search_points_response) => search_points_response,
+                        Err(e) => {
+                            warn!("Error deserializing search_points_response: {:?}", e);
+                            self.resume_http_request();
+                            return;
+                        }
+                    };
 
                 let search_results = &search_points_response.result;
 
@@ -282,7 +290,6 @@ impl Context for StreamContext {
                     return;
                 }
 
-                search_results[0].payload.get("prompt-target").unwrap();
                 info!("similarity score: {}", search_results[0].score);
 
                 if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD {
@@ -295,7 +302,14 @@ impl Context for StreamContext {
                 }
                 let prompt_target_str = search_results[0].payload.get("prompt-target").unwrap();
                 let prompt_target: PromptTarget =
-                    serde_json::from_slice(prompt_target_str.as_bytes()).unwrap();
+                    match serde_json::from_slice(prompt_target_str.as_bytes()) {
+                        Ok(prompt_target) => prompt_target,
+                        Err(e) => {
+                            warn!("Error deserializing prompt_target: {:?}", e);
+                            self.resume_http_request();
+                            return;
+                        }
+                    };
                 info!("prompt_target name: {:?}", prompt_target.name);
 
                 // only extract entity names
@@ -310,7 +324,14 @@ impl Context for StreamContext {
                     model: DEFAULT_NER_MODEL.to_string(),
                 };
 
-                let json_data: String = to_string(&ner_request).unwrap();
+                let json_data: String = match serde_json::to_string(&ner_request) {
+                    Ok(json_data) => json_data,
+                    Err(e) => {
+                        warn!("Error serializing ner_request: {:?}", e);
+                        self.resume_http_request();
+                        return;
+                    }
+                };
 
                 let token_id = match self.dispatch_http_call(
                     "nerhost",
@@ -337,8 +358,14 @@ impl Context for StreamContext {
                 }
             }
             RequestType::Ner => {
-                let ner_response: common_types::NERResponse =
-                    serde_json::from_slice(&body).unwrap();
+                let ner_response: common_types::NERResponse = match serde_json::from_slice(&body) {
+                    Ok(ner_response) => ner_response,
+                    Err(e) => {
+                        warn!("Error deserializing ner_response: {:?}", e);
+                        self.resume_http_request();
+                        return;
+                    }
+                };
                 info!("ner_response: {:?}", ner_response);
 
                 let mut request_params: HashMap<String, String> = HashMap::new();
@@ -368,7 +395,14 @@ impl Context for StreamContext {
                     }
                 }
 
-                let req_param_str = to_string(&request_params).unwrap();
+                let req_param_str = match serde_json::to_string(&request_params) {
+                    Ok(req_param_str) => req_param_str,
+                    Err(e) => {
+                        warn!("Error serializing request_params: {:?}", e);
+                        self.resume_http_request();
+                        return;
+                    }
+                };
 
                 let endpoint = callout_context
                     .prompt_target
@@ -385,7 +419,7 @@ impl Context for StreamContext {
 
                 let http_method = match &endpoint.method {
                     Some(method) => method.clone(),
-                    None => "POST".to_string(),
+                    None => http::Method::POST.to_string(),
                 };
 
                 let token_id = match self.dispatch_http_call(
@@ -413,23 +447,43 @@ impl Context for StreamContext {
             }
             RequestType::ContextResolver => {
                 info!("response received for context-resolver");
-                let body_string = String::from_utf8(body).unwrap();
+                let body_string = String::from_utf8(body);
                 let prompt_target = callout_context.prompt_target.unwrap();
-
-                info!("context-resolver response: {}", body_string);
-                let system_prompt = Message {
-                    role: "system".to_string(),
-                    content: Some(prompt_target.system_prompt.unwrap().clone()),
-                };
-                let weather_system_response = Message {
-                    role: "user".to_string(),
-                    content: Some(body_string.clone()),
-                };
-
                 let mut request_body = callout_context.request_body;
-                request_body.messages.push(system_prompt);
-                request_body.messages.push(weather_system_response);
-                let json_string = serde_json::to_string(&request_body).unwrap();
+                match prompt_target.system_prompt {
+                    None => {}
+                    Some(system_prompt) => {
+                        let system_prompt_message: Message = Message {
+                            role: SYSTEM_ROLE.to_string(),
+                            content: Some(system_prompt),
+                        };
+                        request_body.messages.push(system_prompt_message);
+                    }
+                }
+                match body_string {
+                    Ok(body_string) => {
+                        info!("context-resolver response: {}", body_string);
+                        let context_resolver_response = Message {
+                            role: USER_ROLE.to_string(),
+                            content: Some(body_string),
+                        };
+                        request_body.messages.push(context_resolver_response);
+                    }
+                    Err(e) => {
+                        warn!("Error converting response to string: {:?}", e);
+                        self.resume_http_request();
+                        return;
+                    }
+                }
+
+                let json_string = match serde_json::to_string(&request_body) {
+                    Ok(json_string) => json_string,
+                    Err(e) => {
+                        warn!("Error serializing request_body: {:?}", e);
+                        self.resume_http_request();
+                        return;
+                    }
+                };
                 info!("sending request to openai: msg len: {}", json_string.len());
                 self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
                 self.resume_http_request();
