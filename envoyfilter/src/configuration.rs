@@ -28,7 +28,7 @@ pub struct PromptConfig {
     pub timeout_ms: u64,
     pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
-    pub system_prompt: String,
+    pub system_prompt: Option<String>,
     pub prompt_targets: Vec<PromptTarget>,
 }
 
