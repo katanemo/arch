@@ -1,14 +1,15 @@
+use log::error;
 use proxy_wasm::hostcalls;
 use proxy_wasm::types::*;
 
 #[allow(unused)]
 pub trait Metric {
     fn id(&self) -> u32;
-    fn value(&self) -> u64 {
+    fn value(&self) -> Result<u64, String> {
         match hostcalls::get_metric(self.id()) {
-            Ok(value) => value,
-            Err(Status::NotFound) => panic!("metric not found: {}", self.id()),
-            Err(err) => panic!("unexpected status: {:?}", err),
+            Ok(value) => Ok(value),
+            Err(Status::NotFound) => Err(format!("metric not found: {}", self.id())),
+            Err(err) => Err(format!("unexpected status: {:?}", err)),
         }
     }
 }
@@ -17,9 +18,8 @@ pub trait Metric {
 pub trait IncrementingMetric: Metric {
     fn increment(&self, offset: i64) {
         match hostcalls::increment_metric(self.id(), offset) {
-            Ok(data) => data,
-            Err(Status::NotFound) => panic!("metric not found: {}", self.id()),
-            Err(err) => panic!("unexpected status: {:?}", err),
+            Ok(_) => (),
+            Err(err) => error!("error incrementing metric: {:?}", err),
         }
     }
 }
@@ -27,9 +27,8 @@ pub trait IncrementingMetric: Metric {
 pub trait RecordingMetric: Metric {
     fn record(&self, value: u64) {
         match hostcalls::record_metric(self.id(), value) {
-            Ok(data) => data,
-            Err(Status::NotFound) => panic!("metric not found: {}", self.id()),
-            Err(err) => panic!("unexpected status: {:?}", err),
+            Ok(_) => (),
+            Err(err) => error!("error recording metric: {:?}", err),
         }
     }
 }

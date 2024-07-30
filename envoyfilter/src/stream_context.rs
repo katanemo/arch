@@ -1,3 +1,5 @@
+use http::StatusCode;
+use log::error;
 use log::info;
 use log::warn;
 use open_message_format::models::{
@@ -103,14 +105,29 @@ impl HttpContext for StreamContext {
         // Currently OpenAI API.
         let deserialized_body: common_types::open_ai::ChatCompletions =
             match self.get_http_request_body(0, body_size) {
-                Some(body_bytes) => {
-                    let body_string = String::from_utf8(body_bytes).unwrap();
-                    serde_json::from_str(&body_string).unwrap()
+                Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
+                    Ok(deserialized) => deserialized,
+                    Err(msg) => {
+                        self.send_http_response(
+                            StatusCode::BAD_REQUEST.as_u16().into(),
+                            vec![],
+                            Some(format!("Failed to deserialize: {}", msg).as_bytes()),
+                        );
+                        return Action::Pause;
+                    }
+                },
+                None => {
+                    self.send_http_response(
+                        StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                        vec![],
+                        None,
+                    );
+                    error!(
+                        "Failed to obtain body bytes even though body_size is {}",
+                        body_size
+                    );
+                    return Action::Pause;
                 }
-                None => panic!(
-                    "Failed to obtain body bytes even though body_size is {}",
-                    body_size
-                ),
             };
 
         let last_message = match deserialized_body.messages.last() {
@@ -137,7 +154,12 @@ impl HttpContext for StreamContext {
             user: None,
         };
 
-        let json_data: String = to_string(&get_embeddings_input).unwrap();
+        let json_data: String = match to_string(&get_embeddings_input) {
+            Ok(json_data) => json_data,
+            Err(error) => {
+                panic!("Error serializing embeddings input: {}", error);
+            }
+        };
 
         let token_id = match self.dispatch_http_call(
             "embeddingserver",
@@ -146,6 +168,7 @@ impl HttpContext for StreamContext {
                 (":path", "/embeddings"),
                 (":authority", "embeddingserver"),
                 ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
             ],
             Some(json_data.as_bytes()),
             vec![],
@@ -153,7 +176,10 @@ impl HttpContext for StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
+                panic!(
+                    "Error dispatching embedding server HTTP call for get-embeddings: {:?}",
+                    e
+                );
             }
         };
         let call_context = CallContext {
@@ -163,7 +189,10 @@ impl HttpContext for StreamContext {
             request_body: deserialized_body,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
-            panic!("duplicate token_id")
+            panic!(
+                "duplicate token_id={} in embedding server requests",
+                token_id
+            )
         }
 
         Action::Pause
@@ -224,6 +253,7 @@ impl Context for StreamContext {
                         (":path", &path),
                         (":authority", "qdrant"),
                         ("content-type", "application/json"),
+                        ("x-envoy-max-retries", "3"),
                     ],
                     Some(json_data.as_bytes()),
                     vec![],
@@ -289,6 +319,7 @@ impl Context for StreamContext {
                         (":path", "/ner"),
                         (":authority", "nerhost"),
                         ("content-type", "application/json"),
+                        ("x-envoy-max-retries", "3"),
                     ],
                     Some(json_data.as_bytes()),
                     vec![],
@@ -323,7 +354,7 @@ impl Context for StreamContext {
                 }
 
                 let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-                let entity_details = get_entity_details(&prompt_target);
+                let entity_details = get_entity_details(prompt_target);
                 for entity in entity_details {
                     if entity.required.unwrap_or(false)
                         && !request_params.contains_key(&entity.name)
@@ -364,6 +395,7 @@ impl Context for StreamContext {
                         (":path", http_path.as_str()),
                         (":authority", endpoint.cluster.as_str()),
                         ("content-type", "application/json"),
+                        ("x-envoy-max-retries", "3"),
                     ],
                     Some(req_param_str.as_bytes()),
                     vec![],
