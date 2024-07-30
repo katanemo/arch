@@ -68,6 +68,275 @@ impl StreamContext {
             _ => (),
         }
     }
+
+    fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
+        let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
+            Ok(embedding_response) => embedding_response,
+            Err(e) => {
+                warn!("Error deserializing embedding response: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        };
+
+        let search_points_request = common_types::SearchPointsRequest {
+            vector: embedding_response.data[0].embedding.clone(),
+            limit: 10,
+            with_payload: true,
+        };
+
+        let json_data: String = match serde_json::to_string(&search_points_request) {
+            Ok(json_data) => json_data,
+            Err(e) => {
+                warn!("Error serializing search_points_request: {:?}", e);
+                self.reset_http_request();
+                return;
+            }
+        };
+
+        let path = format!("/collections/{}/points/search", DEFAULT_COLLECTION_NAME);
+
+        let token_id = match self.dispatch_http_call(
+            "qdrant",
+            vec![
+                (":method", "POST"),
+                (":path", &path),
+                (":authority", "qdrant"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+            ],
+            Some(json_data.as_bytes()),
+            vec![],
+            Duration::from_secs(5),
+        ) {
+            Ok(token_id) => token_id,
+            Err(e) => {
+                panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
+            }
+        };
+
+        callout_context.request_type = RequestType::SearchPoints;
+        if self.callouts.insert(token_id, callout_context).is_some() {
+            panic!("duplicate token_id")
+        }
+    }
+
+    fn search_points_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
+        let search_points_response: SearchPointsResponse = match serde_json::from_slice(&body) {
+            Ok(search_points_response) => search_points_response,
+            Err(e) => {
+                warn!("Error deserializing search_points_response: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        };
+
+        let search_results = &search_points_response.result;
+
+        if search_results.is_empty() {
+            info!("No prompt target matched");
+            self.resume_http_request();
+            return;
+        }
+
+        info!("similarity score: {}", search_results[0].score);
+
+        if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD {
+            info!(
+                "prompt target below threshold: {}",
+                DEFAULT_PROMPT_TARGET_THRESHOLD
+            );
+            self.resume_http_request();
+            return;
+        }
+        let prompt_target_str = search_results[0].payload.get("prompt-target").unwrap();
+        let prompt_target: PromptTarget = match serde_json::from_slice(prompt_target_str.as_bytes())
+        {
+            Ok(prompt_target) => prompt_target,
+            Err(e) => {
+                warn!("Error deserializing prompt_target: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        };
+        info!("prompt_target name: {:?}", prompt_target.name);
+
+        // only extract entity names
+        let entity_names = get_entity_details(&prompt_target)
+            .iter()
+            .map(|entity| entity.name.clone())
+            .collect();
+        let user_message = callout_context.user_message.clone();
+        let ner_request = common_types::NERRequest {
+            input: user_message,
+            labels: entity_names,
+            model: DEFAULT_NER_MODEL.to_string(),
+        };
+
+        let json_data: String = match serde_json::to_string(&ner_request) {
+            Ok(json_data) => json_data,
+            Err(e) => {
+                warn!("Error serializing ner_request: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        };
+
+        let token_id = match self.dispatch_http_call(
+            "nerhost",
+            vec![
+                (":method", "POST"),
+                (":path", "/ner"),
+                (":authority", "nerhost"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+            ],
+            Some(json_data.as_bytes()),
+            vec![],
+            Duration::from_secs(5),
+        ) {
+            Ok(token_id) => token_id,
+            Err(e) => {
+                panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
+            }
+        };
+        callout_context.request_type = RequestType::Ner;
+        callout_context.prompt_target = Some(prompt_target);
+        if self.callouts.insert(token_id, callout_context).is_some() {
+            panic!("duplicate token_id")
+        }
+    }
+
+    fn ner_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
+        let ner_response: common_types::NERResponse = match serde_json::from_slice(&body) {
+            Ok(ner_response) => ner_response,
+            Err(e) => {
+                warn!("Error deserializing ner_response: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        };
+        info!("ner_response: {:?}", ner_response);
+
+        let mut request_params: HashMap<String, String> = HashMap::new();
+        for entity in ner_response.data.iter() {
+            if entity.score < DEFAULT_NER_THRESHOLD {
+                warn!(
+                    "score of entity was too low entity name: {}, score: {}",
+                    entity.label, entity.score
+                );
+                continue;
+            }
+            request_params.insert(entity.label.clone(), entity.text.clone());
+        }
+
+        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
+        let entity_details = get_entity_details(prompt_target);
+        for entity in entity_details {
+            if entity.required.unwrap_or(false) && !request_params.contains_key(&entity.name) {
+                warn!(
+                    "required entity missing or score of entity was too low: {}",
+                    entity.name
+                );
+                self.resume_http_request();
+                return;
+            }
+        }
+
+        let req_param_str = match serde_json::to_string(&request_params) {
+            Ok(req_param_str) => req_param_str,
+            Err(e) => {
+                warn!("Error serializing request_params: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        };
+
+        let endpoint = callout_context
+            .prompt_target
+            .as_ref()
+            .unwrap()
+            .endpoint
+            .as_ref()
+            .unwrap();
+
+        let http_path = match &endpoint.path {
+            Some(path) => path.clone(),
+            None => "/".to_string(),
+        };
+
+        let http_method = match &endpoint.method {
+            Some(method) => method.clone(),
+            None => http::Method::POST.to_string(),
+        };
+
+        let token_id = match self.dispatch_http_call(
+            &endpoint.cluster.clone(),
+            vec![
+                (":method", http_method.as_str()),
+                (":path", http_path.as_str()),
+                (":authority", endpoint.cluster.as_str()),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+            ],
+            Some(req_param_str.as_bytes()),
+            vec![],
+            Duration::from_secs(5),
+        ) {
+            Ok(token_id) => token_id,
+            Err(e) => {
+                panic!("Error dispatching HTTP call for context-resolver: {:?}", e);
+            }
+        };
+        callout_context.request_type = RequestType::ContextResolver;
+        if self.callouts.insert(token_id, callout_context).is_some() {
+            panic!("duplicate token_id")
+        }
+    }
+
+    fn context_resolver_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
+        info!("response received for context-resolver");
+        let body_string = String::from_utf8(body);
+        let prompt_target = callout_context.prompt_target.unwrap();
+        let mut request_body = callout_context.request_body;
+        match prompt_target.system_prompt {
+            None => {}
+            Some(system_prompt) => {
+                let system_prompt_message: Message = Message {
+                    role: SYSTEM_ROLE.to_string(),
+                    content: Some(system_prompt),
+                };
+                request_body.messages.push(system_prompt_message);
+            }
+        }
+        match body_string {
+            Ok(body_string) => {
+                info!("context-resolver response: {}", body_string);
+                let context_resolver_response = Message {
+                    role: USER_ROLE.to_string(),
+                    content: Some(body_string),
+                };
+                request_body.messages.push(context_resolver_response);
+            }
+            Err(e) => {
+                warn!("Error converting response to string: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        }
+
+        let json_string = match serde_json::to_string(&request_body) {
+            Ok(json_string) => json_string,
+            Err(e) => {
+                warn!("Error serializing request_body: {:?}", e);
+                self.resume_http_request();
+                return;
+            }
+        };
+        info!("sending request to openai: msg len: {}", json_string.len());
+        self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
+        self.resume_http_request();
+    }
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
@@ -195,7 +464,7 @@ impl Context for StreamContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let mut callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
+        let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
 
         let resp = self.get_http_call_response_body(0, body_size);
 
@@ -216,273 +485,17 @@ impl Context for StreamContext {
 
         match callout_context.request_type {
             RequestType::GetEmbedding => {
-                let embedding_response: CreateEmbeddingResponse =
-                    match serde_json::from_slice(&body) {
-                        Ok(embedding_response) => embedding_response,
-                        Err(e) => {
-                            warn!("Error deserializing embedding response: {:?}", e);
-                            self.resume_http_request();
-                            return;
-                        }
-                    };
-
-                let search_points_request = common_types::SearchPointsRequest {
-                    vector: embedding_response.data[0].embedding.clone(),
-                    limit: 10,
-                    with_payload: true,
-                };
-
-                let json_data: String = match serde_json::to_string(&search_points_request) {
-                    Ok(json_data) => json_data,
-                    Err(e) => {
-                        warn!("Error serializing search_points_request: {:?}", e);
-                        self.reset_http_request();
-                        return;
-                    }
-                };
-
-                let path = format!("/collections/{}/points/search", DEFAULT_COLLECTION_NAME);
-
-                let token_id = match self.dispatch_http_call(
-                    "qdrant",
-                    vec![
-                        (":method", "POST"),
-                        (":path", &path),
-                        (":authority", "qdrant"),
-                        ("content-type", "application/json"),
-                        ("x-envoy-max-retries", "3"),
-                    ],
-                    Some(json_data.as_bytes()),
-                    vec![],
-                    Duration::from_secs(5),
-                ) {
-                    Ok(token_id) => token_id,
-                    Err(e) => {
-                        panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
-                    }
-                };
-
-                callout_context.request_type = RequestType::SearchPoints;
-                if self.callouts.insert(token_id, callout_context).is_some() {
-                    panic!("duplicate token_id")
-                }
+                self.embeddings_handler(body, callout_context);
             }
+
             RequestType::SearchPoints => {
-                let search_points_response: SearchPointsResponse =
-                    match serde_json::from_slice(&body) {
-                        Ok(search_points_response) => search_points_response,
-                        Err(e) => {
-                            warn!("Error deserializing search_points_response: {:?}", e);
-                            self.resume_http_request();
-                            return;
-                        }
-                    };
-
-                let search_results = &search_points_response.result;
-
-                if search_results.is_empty() {
-                    info!("No prompt target matched");
-                    self.resume_http_request();
-                    return;
-                }
-
-                info!("similarity score: {}", search_results[0].score);
-
-                if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD {
-                    info!(
-                        "prompt target below threshold: {}",
-                        DEFAULT_PROMPT_TARGET_THRESHOLD
-                    );
-                    self.resume_http_request();
-                    return;
-                }
-                let prompt_target_str = search_results[0].payload.get("prompt-target").unwrap();
-                let prompt_target: PromptTarget =
-                    match serde_json::from_slice(prompt_target_str.as_bytes()) {
-                        Ok(prompt_target) => prompt_target,
-                        Err(e) => {
-                            warn!("Error deserializing prompt_target: {:?}", e);
-                            self.resume_http_request();
-                            return;
-                        }
-                    };
-                info!("prompt_target name: {:?}", prompt_target.name);
-
-                // only extract entity names
-                let entity_names = get_entity_details(&prompt_target)
-                    .iter()
-                    .map(|entity| entity.name.clone())
-                    .collect();
-                let user_message = callout_context.user_message.clone();
-                let ner_request = common_types::NERRequest {
-                    input: user_message,
-                    labels: entity_names,
-                    model: DEFAULT_NER_MODEL.to_string(),
-                };
-
-                let json_data: String = match serde_json::to_string(&ner_request) {
-                    Ok(json_data) => json_data,
-                    Err(e) => {
-                        warn!("Error serializing ner_request: {:?}", e);
-                        self.resume_http_request();
-                        return;
-                    }
-                };
-
-                let token_id = match self.dispatch_http_call(
-                    "nerhost",
-                    vec![
-                        (":method", "POST"),
-                        (":path", "/ner"),
-                        (":authority", "nerhost"),
-                        ("content-type", "application/json"),
-                        ("x-envoy-max-retries", "3"),
-                    ],
-                    Some(json_data.as_bytes()),
-                    vec![],
-                    Duration::from_secs(5),
-                ) {
-                    Ok(token_id) => token_id,
-                    Err(e) => {
-                        panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
-                    }
-                };
-                callout_context.request_type = RequestType::Ner;
-                callout_context.prompt_target = Some(prompt_target);
-                if self.callouts.insert(token_id, callout_context).is_some() {
-                    panic!("duplicate token_id")
-                }
+                self.search_points_handler(body, callout_context);
             }
             RequestType::Ner => {
-                let ner_response: common_types::NERResponse = match serde_json::from_slice(&body) {
-                    Ok(ner_response) => ner_response,
-                    Err(e) => {
-                        warn!("Error deserializing ner_response: {:?}", e);
-                        self.resume_http_request();
-                        return;
-                    }
-                };
-                info!("ner_response: {:?}", ner_response);
-
-                let mut request_params: HashMap<String, String> = HashMap::new();
-                for entity in ner_response.data.iter() {
-                    if entity.score < DEFAULT_NER_THRESHOLD {
-                        warn!(
-                            "score of entity was too low entity name: {}, score: {}",
-                            entity.label, entity.score
-                        );
-                        continue;
-                    }
-                    request_params.insert(entity.label.clone(), entity.text.clone());
-                }
-
-                let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-                let entity_details = get_entity_details(prompt_target);
-                for entity in entity_details {
-                    if entity.required.unwrap_or(false)
-                        && !request_params.contains_key(&entity.name)
-                    {
-                        warn!(
-                            "required entity missing or score of entity was too low: {}",
-                            entity.name
-                        );
-                        self.resume_http_request();
-                        return;
-                    }
-                }
-
-                let req_param_str = match serde_json::to_string(&request_params) {
-                    Ok(req_param_str) => req_param_str,
-                    Err(e) => {
-                        warn!("Error serializing request_params: {:?}", e);
-                        self.resume_http_request();
-                        return;
-                    }
-                };
-
-                let endpoint = callout_context
-                    .prompt_target
-                    .as_ref()
-                    .unwrap()
-                    .endpoint
-                    .as_ref()
-                    .unwrap();
-
-                let http_path = match &endpoint.path {
-                    Some(path) => path.clone(),
-                    None => "/".to_string(),
-                };
-
-                let http_method = match &endpoint.method {
-                    Some(method) => method.clone(),
-                    None => http::Method::POST.to_string(),
-                };
-
-                let token_id = match self.dispatch_http_call(
-                    &endpoint.cluster.clone(),
-                    vec![
-                        (":method", http_method.as_str()),
-                        (":path", http_path.as_str()),
-                        (":authority", endpoint.cluster.as_str()),
-                        ("content-type", "application/json"),
-                        ("x-envoy-max-retries", "3"),
-                    ],
-                    Some(req_param_str.as_bytes()),
-                    vec![],
-                    Duration::from_secs(5),
-                ) {
-                    Ok(token_id) => token_id,
-                    Err(e) => {
-                        panic!("Error dispatching HTTP call for context-resolver: {:?}", e);
-                    }
-                };
-                callout_context.request_type = RequestType::ContextResolver;
-                if self.callouts.insert(token_id, callout_context).is_some() {
-                    panic!("duplicate token_id")
-                }
+                self.ner_handler(body, callout_context);
             }
             RequestType::ContextResolver => {
-                info!("response received for context-resolver");
-                let body_string = String::from_utf8(body);
-                let prompt_target = callout_context.prompt_target.unwrap();
-                let mut request_body = callout_context.request_body;
-                match prompt_target.system_prompt {
-                    None => {}
-                    Some(system_prompt) => {
-                        let system_prompt_message: Message = Message {
-                            role: SYSTEM_ROLE.to_string(),
-                            content: Some(system_prompt),
-                        };
-                        request_body.messages.push(system_prompt_message);
-                    }
-                }
-                match body_string {
-                    Ok(body_string) => {
-                        info!("context-resolver response: {}", body_string);
-                        let context_resolver_response = Message {
-                            role: USER_ROLE.to_string(),
-                            content: Some(body_string),
-                        };
-                        request_body.messages.push(context_resolver_response);
-                    }
-                    Err(e) => {
-                        warn!("Error converting response to string: {:?}", e);
-                        self.resume_http_request();
-                        return;
-                    }
-                }
-
-                let json_string = match serde_json::to_string(&request_body) {
-                    Ok(json_string) => json_string,
-                    Err(e) => {
-                        warn!("Error serializing request_body: {:?}", e);
-                        self.resume_http_request();
-                        return;
-                    }
-                };
-                info!("sending request to openai: msg len: {}", json_string.len());
-                self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
-                self.resume_http_request();
+                self.context_resolver_handler(body, callout_context);
             }
         }
     }

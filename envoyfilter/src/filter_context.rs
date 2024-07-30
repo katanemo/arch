@@ -246,7 +246,7 @@ impl Context for FilterContext {
                     .iter()
                     .for_each(|(k, v)| {
                         if k == ":status" {
-                            http_status_code = v.clone();
+                            http_status_code.clone_from(v);
                         }
                     });
                 info!("CreateVectorCollection response: {}", http_status_code);
