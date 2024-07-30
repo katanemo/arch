@@ -1,34 +1,30 @@
-use common_types::{CallContext, EmbeddingRequest};
-use configuration::PromptTarget;
+use crate::common_types::{
+    CallContext, EmbeddingRequest, StoreVectorEmbeddingsRequest, VectorPoint,
+};
+use crate::configuration::{Configuration, PromptTarget};
+use crate::consts::DEFAULT_EMBEDDING_MODEL;
+use crate::stats::{Gauge, RecordingMetric};
+use crate::stream_context::StreamContext;
 use log::info;
 use md5::Digest;
 use open_message_format::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
+use proxy_wasm::traits::*;
+use proxy_wasm::types::*;
 use serde_json::to_string;
-use stats::RecordingMetric;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use consts::DEFAULT_EMBEDDING_MODEL;
-use proxy_wasm::traits::*;
-use proxy_wasm::types::*;
-
-use crate::common_types;
-use crate::configuration;
-use crate::consts;
-use crate::stats;
-use crate::stream_context::StreamContext;
-
 #[derive(Copy, Clone)]
 struct WasmMetrics {
-    active_http_calls: stats::Gauge,
+    active_http_calls: Gauge,
 }
 
 impl WasmMetrics {
     fn new() -> WasmMetrics {
         WasmMetrics {
-            active_http_calls: stats::Gauge::new(String::from("active_http_calls")),
+            active_http_calls: Gauge::new(String::from("active_http_calls")),
         }
     }
 }
@@ -36,8 +32,8 @@ impl WasmMetrics {
 pub struct FilterContext {
     metrics: WasmMetrics,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
-    callouts: HashMap<u32, common_types::CallContext>,
-    config: Option<configuration::Configuration>,
+    callouts: HashMap<u32, CallContext>,
+    config: Option<Configuration>,
 }
 
 impl FilterContext {
@@ -127,8 +123,8 @@ impl FilterContext {
                     CreateEmbeddingRequestInput::Array(_) => todo!(),
                 }
 
-                let create_vector_store_points = common_types::StoreVectorEmbeddingsRequest {
-                    points: vec![common_types::VectorPoint {
+                let create_vector_store_points = StoreVectorEmbeddingsRequest {
+                    points: vec![VectorPoint {
                         id: format!("{:x}", id.unwrap()),
                         payload,
                         vector: embedding_response.data[0].embedding.clone(),
@@ -231,16 +227,16 @@ impl Context for FilterContext {
             .record(self.callouts.len().try_into().unwrap());
 
         match callout_data {
-            common_types::CallContext::EmbeddingRequest(common_types::EmbeddingRequest {
+            CallContext::EmbeddingRequest(EmbeddingRequest {
                 create_embedding_request,
                 prompt_target,
             }) => {
                 self.embedding_request_handler(body_size, create_embedding_request, prompt_target)
             }
-            common_types::CallContext::StoreVectorEmbeddings(_) => {
+            CallContext::StoreVectorEmbeddings(_) => {
                 self.create_vector_store_points_handler(body_size)
             }
-            common_types::CallContext::CreateVectorCollection(_) => {
+            CallContext::CreateVectorCollection(_) => {
                 let mut http_status_code = "Nil".to_string();
                 self.get_http_call_response_headers()
                     .iter()
