@@ -10,15 +10,15 @@ use stats::RecordingMetric;
 use std::collections::HashMap;
 use std::time::Duration;
 
+use consts::DEFAULT_EMBEDDING_MODEL;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
 use crate::common_types;
 use crate::configuration;
+use crate::consts;
 use crate::stats;
 use crate::stream_context::StreamContext;
-
-use crate::consts;
 
 #[derive(Copy, Clone)]
 struct WasmMetrics {
@@ -56,7 +56,7 @@ impl FilterContext {
                     input: Box::new(CreateEmbeddingRequestInput::String(
                         few_shot_example.to_string(),
                     )),
-                    model: String::from(consts::DEFAULT_EMBEDDING_MODEL),
+                    model: String::from(DEFAULT_EMBEDDING_MODEL),
                     encoding_format: None,
                     dimensions: None,
                     user: None,

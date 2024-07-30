@@ -17,7 +17,6 @@ use consts::{
 };
 
 use crate::common_types;
-
 use crate::common_types::open_ai::Message;
 use crate::common_types::SearchPointsResponse;
 use crate::configuration::EntityDetail;
