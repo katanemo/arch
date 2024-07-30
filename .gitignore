@@ -1,3 +1,9 @@
 envoyfilter/target
 envoyfilter/qdrant_data/
 embedding-server/venv/
+chatbot-ui/venv/
+__pycache__
+grafana-data
+prom_data
+.env
+qdrant_data

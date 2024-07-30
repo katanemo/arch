@@ -22,7 +22,7 @@ services:
     ports:
       - "18080:80"
     healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80"]
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
         interval: 5s
         retries: 20
     networks:

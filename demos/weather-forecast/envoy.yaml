@@ -73,11 +73,6 @@ static_resources:
                                   api-key: "$OPEN_AI_API_KEY"
                                   model: gpt-4
 
-                              system-prompt: |
-                                You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
-                                - Use farenheight for temperature
-                                - Use miles per hour for wind speed
-
                               prompt-targets:
 
                                 - type: context-resolver
@@ -87,7 +82,9 @@ static_resources:
                                     - how is the weather in San Francisco?
                                     - what is the forecast in Seattle?
                                   entities:
-                                    - city
+                                    - name: city
+                                      required: true
+                                    - name: days
                                   endpoint:
                                     cluster: weatherhost
                                     path: /weather

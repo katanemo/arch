@@ -13,17 +13,17 @@
       "path": "embedding-server"
     },
     {
-      "name": "chatbot-client",
-      "path": "chatbot-client"
+      "name": "chatbot-ui",
+      "path": "chatbot-ui"
     },
     {
       "name": "open-message-format",
       "path": "open-message-format"
     },
     {
-      "name": "demos",
-      "path": "./demos"
-    },
+      "name": "demos/weather-forecast",
+      "path": "./demos/weather-forecast",
+    }
   ],
   "settings": {}
 }

@@ -90,7 +90,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .returning(Some(chat_completions_request_body))
         // TODO: assert that the model field was added.
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
+        .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
 }
 

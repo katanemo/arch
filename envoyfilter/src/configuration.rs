@@ -28,7 +28,7 @@ pub struct PromptConfig {
     pub timeout_ms: u64,
     pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
-    pub system_prompt: String,
+    pub system_prompt: Option<String>,
     pub prompt_targets: Vec<PromptTarget>,
 }
 
@@ -51,12 +51,37 @@ pub struct LlmProvider {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
+pub struct Endpoint {
+    pub cluster: String,
+    pub path: Option<String>,
+    pub method: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct EntityDetail {
+    pub name: String,
+    pub required: Option<bool>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EntityType {
+    Vec(Vec<String>),
+    Struct(Vec<EntityDetail>),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct PromptTarget {
     #[serde(rename = "type")]
     pub prompt_type: String,
     pub name: String,
     pub few_shot_examples: Vec<String>,
-    pub endpoint: String,
+    pub entities: Option<EntityType>,
+    pub endpoint: Option<Endpoint>,
+    pub system_prompt: Option<String>,
 }
 
 #[cfg(test)]
@@ -88,13 +113,23 @@ katanemo-prompt-config:
       name: weather-forecast
       few-shot-examples:
         - what is the weather in New York?
-      endpoint: "POST:$WEATHER_FORECAST_API_ENDPOINT"
-      cache-response: true
-      cache-response-settings:
-        - cache-ttl-secs: 3600 # cache expiry in seconds
-        - cache-max-size: 1000 # in number of items
-        - cache-eviction-strategy: LRU
+      endpoint:
+        cluster: weatherhost
+        path: /weather
+      entities:
+        - name: location
+          required: true
+          description: "The location for which the weather is requested"
 
+    - type: context-resolver
+      name: weather-forecast-2
+      few-shot-examples:
+        - what is the weather in New York?
+      endpoint:
+        cluster: weatherhost
+        path: /weather
+      entities:
+        - city
   "#;
 
     #[test]

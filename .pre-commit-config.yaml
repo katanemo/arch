@@ -16,11 +16,11 @@ repos:
         name: cargo-clippy
         language: system
         types: [file, rust]
-        entry: bash -c "cd envoyfilter && cargo clippy --all"
+        entry: bash -c "cd envoyfilter && cargo clippy -p intelligent-prompt-gateway --all"
       - id: cargo-test
         name: cargo-test
         language: system
         types: [file, rust]
         # --lib is to only test the library, since when integration tests are made,
         # they will be in a seperate tests directory
-        entry: bash -c "cd envoyfilter && cargo test --lib"
+        entry: bash -c "cd envoyfilter && cargo test -p intelligent-prompt-gateway --lib"
