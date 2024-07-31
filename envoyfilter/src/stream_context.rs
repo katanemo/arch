@@ -13,7 +13,7 @@ use http::StatusCode;
 use log::error;
 use log::info;
 use log::warn;
-use open_message_format::models::{
+use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;

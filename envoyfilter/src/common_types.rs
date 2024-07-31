@@ -1,5 +1,5 @@
 use crate::configuration::PromptTarget;
-use open_message_format::models::CreateEmbeddingRequest;
+use open_message_format_embeddings::models::CreateEmbeddingRequest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
