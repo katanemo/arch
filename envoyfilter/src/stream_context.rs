@@ -1,3 +1,14 @@
+use crate::common_types::{
+    open_ai::{ChatCompletions, Message},
+    NERRequest, NERResponse, SearchPointsRequest, SearchPointsResponse,
+};
+use crate::configuration::EntityDetail;
+use crate::configuration::EntityType;
+use crate::configuration::PromptTarget;
+use crate::consts::{
+    DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE, USER_ROLE,
+};
 use http::StatusCode;
 use log::error;
 use log::info;
@@ -5,24 +16,10 @@ use log::warn;
 use open_message_format::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use std::collections::HashMap;
-use std::time::Duration;
-
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-
-use consts::{
-    DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE, USER_ROLE,
-};
-
-use crate::common_types;
-use crate::common_types::open_ai::Message;
-use crate::common_types::SearchPointsResponse;
-use crate::configuration::EntityDetail;
-use crate::configuration::EntityType;
-use crate::configuration::PromptTarget;
-use crate::consts;
+use std::collections::HashMap;
+use std::time::Duration;
 
 enum RequestType {
     GetEmbedding,
@@ -35,7 +32,7 @@ pub struct CallContext {
     request_type: RequestType,
     user_message: String,
     prompt_target: Option<PromptTarget>,
-    request_body: common_types::open_ai::ChatCompletions,
+    request_body: ChatCompletions,
 }
 
 pub struct StreamContext {
@@ -79,7 +76,7 @@ impl StreamContext {
             }
         };
 
-        let search_points_request = common_types::SearchPointsRequest {
+        let search_points_request = SearchPointsRequest {
             vector: embedding_response.data[0].embedding.clone(),
             limit: 10,
             with_payload: true,
@@ -167,7 +164,7 @@ impl StreamContext {
             .map(|entity| entity.name.clone())
             .collect();
         let user_message = callout_context.user_message.clone();
-        let ner_request = common_types::NERRequest {
+        let ner_request = NERRequest {
             input: user_message,
             labels: entity_names,
             model: DEFAULT_NER_MODEL.to_string(),
@@ -208,7 +205,7 @@ impl StreamContext {
     }
 
     fn ner_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
-        let ner_response: common_types::NERResponse = match serde_json::from_slice(&body) {
+        let ner_response: NERResponse = match serde_json::from_slice(&body) {
             Ok(ner_response) => ner_response,
             Err(e) => {
                 warn!("Error deserializing ner_response: {:?}", e);
@@ -364,32 +361,31 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let deserialized_body: common_types::open_ai::ChatCompletions =
-            match self.get_http_request_body(0, body_size) {
-                Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
-                    Ok(deserialized) => deserialized,
-                    Err(msg) => {
-                        self.send_http_response(
-                            StatusCode::BAD_REQUEST.as_u16().into(),
-                            vec![],
-                            Some(format!("Failed to deserialize: {}", msg).as_bytes()),
-                        );
-                        return Action::Pause;
-                    }
-                },
-                None => {
+        let deserialized_body: ChatCompletions = match self.get_http_request_body(0, body_size) {
+            Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
+                Ok(deserialized) => deserialized,
+                Err(msg) => {
                     self.send_http_response(
-                        StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                        StatusCode::BAD_REQUEST.as_u16().into(),
                         vec![],
-                        None,
-                    );
-                    error!(
-                        "Failed to obtain body bytes even though body_size is {}",
-                        body_size
+                        Some(format!("Failed to deserialize: {}", msg).as_bytes()),
                     );
                     return Action::Pause;
                 }
-            };
+            },
+            None => {
+                self.send_http_response(
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                    vec![],
+                    None,
+                );
+                error!(
+                    "Failed to obtain body bytes even though body_size is {}",
+                    body_size
+                );
+                return Action::Pause;
+            }
+        };
 
         let user_message = match deserialized_body
             .messages
