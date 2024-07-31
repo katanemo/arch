@@ -33,7 +33,7 @@ enum RequestType {
 
 pub struct CallContext {
     request_type: RequestType,
-    user_message: String,
+    user_message: Option<String>,
     prompt_target: Option<PromptTarget>,
     request_body: common_types::open_ai::ChatCompletions,
 }
@@ -70,7 +70,7 @@ impl StreamContext {
     }
 
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
-        let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
+        let mut embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
             Ok(embedding_response) => embedding_response,
             Err(e) => {
                 warn!("Error deserializing embedding response: {:?}", e);
@@ -80,7 +80,7 @@ impl StreamContext {
         };
 
         let search_points_request = common_types::SearchPointsRequest {
-            vector: embedding_response.data[0].embedding.clone(),
+            vector: embedding_response.data.remove(0).embedding,
             limit: 10,
             with_payload: true,
         };
@@ -163,12 +163,11 @@ impl StreamContext {
 
         // only extract entity names
         let entity_names = get_entity_details(&prompt_target)
-            .iter()
-            .map(|entity| entity.name.clone())
+            .into_iter()
+            .map(|entity| entity.name)
             .collect();
-        let user_message = callout_context.user_message.clone();
         let ner_request = common_types::NERRequest {
-            input: user_message,
+            input: callout_context.user_message.take().unwrap(),
             labels: entity_names,
             model: DEFAULT_NER_MODEL.to_string(),
         };
@@ -219,7 +218,7 @@ impl StreamContext {
         info!("ner_response: {:?}", ner_response);
 
         let mut request_params: HashMap<String, String> = HashMap::new();
-        for entity in ner_response.data.iter() {
+        for entity in ner_response.data.into_iter() {
             if entity.score < DEFAULT_NER_THRESHOLD {
                 warn!(
                     "score of entity was too low entity name: {}, score: {}",
@@ -227,7 +226,7 @@ impl StreamContext {
                 );
                 continue;
             }
-            request_params.insert(entity.label.clone(), entity.text.clone());
+            request_params.insert(entity.label, entity.text);
         }
 
         let prompt_target = callout_context.prompt_target.as_ref().unwrap();
@@ -243,8 +242,8 @@ impl StreamContext {
             }
         }
 
-        let req_param_str = match serde_json::to_string(&request_params) {
-            Ok(req_param_str) => req_param_str,
+        let req_param_bytes = match serde_json::to_string(&request_params) {
+            Ok(req_param_str) => req_param_str.as_bytes().to_owned(),
             Err(e) => {
                 warn!("Error serializing request_params: {:?}", e);
                 self.resume_http_request();
@@ -261,25 +260,25 @@ impl StreamContext {
             .unwrap();
 
         let http_path = match &endpoint.path {
-            Some(path) => path.clone(),
-            None => "/".to_string(),
+            Some(path) => path,
+            None => "/",
         };
 
         let http_method = match &endpoint.method {
-            Some(method) => method.clone(),
-            None => http::Method::POST.to_string(),
+            Some(method) => method,
+            None => http::Method::POST.as_str(),
         };
 
         let token_id = match self.dispatch_http_call(
-            &endpoint.cluster.clone(),
+            &endpoint.cluster,
             vec![
-                (":method", http_method.as_str()),
-                (":path", http_path.as_str()),
+                (":method", http_method),
+                (":path", http_path),
                 (":authority", endpoint.cluster.as_str()),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
             ],
-            Some(req_param_str.as_bytes()),
+            Some(&req_param_bytes),
             vec![],
             Duration::from_secs(5),
         ) {
@@ -364,7 +363,7 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let deserialized_body: common_types::open_ai::ChatCompletions =
+        let mut deserialized_body: common_types::open_ai::ChatCompletions =
             match self.get_http_request_body(0, body_size) {
                 Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                     Ok(deserialized) => deserialized,
@@ -393,8 +392,8 @@ impl HttpContext for StreamContext {
 
         let user_message = match deserialized_body
             .messages
-            .last()
-            .and_then(|last_message| last_message.content.as_ref())
+            .pop()
+            .and_then(|last_message| last_message.content)
         {
             Some(content) => content,
             None => {
@@ -404,6 +403,7 @@ impl HttpContext for StreamContext {
         };
 
         let get_embeddings_input = CreateEmbeddingRequest {
+            // Need to clone into input because user_message is used below.
             input: Box::new(CreateEmbeddingRequestInput::String(user_message.clone())),
             model: String::from(DEFAULT_EMBEDDING_MODEL),
             encoding_format: None,
@@ -441,7 +441,7 @@ impl HttpContext for StreamContext {
         };
         let call_context = CallContext {
             request_type: RequestType::GetEmbedding,
-            user_message: user_message.clone(),
+            user_message: Some(user_message),
             prompt_target: None,
             request_body: deserialized_body,
         };
