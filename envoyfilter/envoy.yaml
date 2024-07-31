@@ -81,7 +81,9 @@ static_resources:
                                     - how is the weather in San Francisco?
                                     - what is the forecast in Seattle?
                                   entities:
-                                    - city
+                                    - name: city
+                                      required: true
+                                    - name: days
                                   endpoint:
                                     cluster: weatherhost
                                     path: /weather
