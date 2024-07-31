@@ -27,6 +27,10 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=30
         "Content-Type": "application/json",
         "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
+
+    if OPENAI_API_KEY is None or OPENAI_API_KEY == "":
+        logger.error("No OpenAI API Key found. Please create .env file and set OPENAI_API_KEY env var !")
+        return None
     try:
         async with async_timeout.timeout(delay=delay):
             async with httpx.AsyncClient(headers=header) as aio_client:
@@ -61,7 +65,6 @@ async def predict(input, history):
     Predict the response of the chatbot and complete a running list of chat history.
     """
     history.append({"role": "user", "content": input})
-    print(history)
     response = await make_completion(history)
     history.append({"role": "assistant", "content": response})
     messages = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
