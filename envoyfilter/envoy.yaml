@@ -58,7 +58,6 @@ static_resources:
                         configuration:
                           "@type": "type.googleapis.com/google.protobuf.StringValue"
                           value: |
-                            katanemo_prompt_config:
                               default_prompt_endpoint: "127.0.0.1"
                               load_balancing: "round_robin"
                               timeout_ms: 5000
@@ -72,11 +71,6 @@ static_resources:
                                 - name: "open-ai-gpt-4"
                                   api_key: "$OPEN_AI_API_KEY"
                                   model: gpt-4
-
-                              system_prompt: |
-                                You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
-                                - Use farenheight for temperature
-                                - Use miles per hour for wind speed
 
                               prompt_targets:
 
@@ -95,7 +89,6 @@ static_resources:
                                     You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
                                     - Use farenheight for temperature
                                     - Use miles per hour for wind speed
-
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           code:

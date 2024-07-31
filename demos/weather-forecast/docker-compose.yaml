@@ -1,4 +1,11 @@
 services:
+  config-generator:
+    build:
+      context: ../../
+      dockerfile: config_generator/Dockerfile
+    volumes:
+      - ./katanemo-config.yaml:/usr/src/app/katanemo-config.yaml
+      - ./generated:/usr/src/app/out
   envoy:
     build:
       context: ../../
@@ -8,11 +15,13 @@ services:
       - "10000:10000"
       - "19901:9901"
     volumes:
-      - ./envoy.yaml:/etc/envoy/envoy.yaml
+      - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
     networks:
       - envoymesh
     depends_on:
+      config-generator:
+        condition: service_completed_successfully
       embeddingserver:
         condition: service_healthy
 
