@@ -1,13 +1,12 @@
+use crate::configuration::PromptTarget;
 use open_message_format::models::CreateEmbeddingRequest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::configuration;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingRequest {
     pub create_embedding_request: CreateEmbeddingRequest,
-    pub prompt_target: configuration::PromptTarget,
+    pub prompt_target: PromptTarget,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
