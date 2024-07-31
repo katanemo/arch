@@ -484,19 +484,10 @@ impl Context for StreamContext {
         };
 
         match callout_context.request_type {
-            RequestType::GetEmbedding => {
-                self.embeddings_handler(body, callout_context);
-            }
-
-            RequestType::SearchPoints => {
-                self.search_points_handler(body, callout_context);
-            }
-            RequestType::Ner => {
-                self.ner_handler(body, callout_context);
-            }
-            RequestType::ContextResolver => {
-                self.context_resolver_handler(body, callout_context);
-            }
+            RequestType::GetEmbedding => self.embeddings_handler(body, callout_context),
+            RequestType::SearchPoints => self.search_points_handler(body, callout_context),
+            RequestType::Ner => self.ner_handler(body, callout_context),
+            RequestType::ContextResolver => self.context_resolver_handler(body, callout_context),
         }
     }
 }
