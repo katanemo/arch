@@ -863,7 +863,7 @@ dependencies = [
  "http",
  "log",
  "md5",
- "open-message-format",
+ "open-message-format-embeddings",
  "proxy-wasm",
  "proxy-wasm-test-framework",
  "serde",
@@ -1108,7 +1108,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
-name = "open-message-format"
+name = "open-message-format-embeddings"
 version = "1.0.0"
 dependencies = [
  "reqwest",

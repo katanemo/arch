@@ -14,7 +14,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.34"
 serde_json = "1.0"
 md5 = "0.7.0"
-open-message-format = { path = "../open-message-format/clients/omf-rust" }
+open-message-format-embeddings = { path = "../open-message-format/clients/omf-embeddings-rust" }
 http = "1.1.0"
 
 [dev-dependencies]
