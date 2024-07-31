@@ -50,7 +50,7 @@ impl FilterContext {
     }
 
     fn process_prompt_targets(&mut self) {
-        for prompt_target in &self.config.as_ref().unwrap().prompt_config.prompt_targets {
+        for prompt_target in &self.config.as_ref().unwrap().prompt_targets {
             for few_shot_example in &prompt_target.few_shot_examples {
                 let embeddings_input = CreateEmbeddingRequest {
                     input: Box::new(CreateEmbeddingRequestInput::String(

@@ -285,7 +285,7 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call for context-resolver: {:?}", e);
+                panic!("Error dispatching HTTP call for context_resolver: {:?}", e);
             }
         };
         callout_context.request_type = RequestType::ContextResolver;
@@ -295,7 +295,7 @@ impl StreamContext {
     }
 
     fn context_resolver_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
-        info!("response received for context-resolver");
+        info!("response received for context_resolver");
         let body_string = String::from_utf8(body);
         let prompt_target = callout_context.prompt_target.unwrap();
         let mut request_body = callout_context.request_body;
@@ -311,7 +311,7 @@ impl StreamContext {
         }
         match body_string {
             Ok(body_string) => {
-                info!("context-resolver response: {}", body_string);
+                info!("context_resolver response: {}", body_string);
                 let context_resolver_response = Message {
                     role: USER_ROLE.to_string(),
                     content: Some(body_string),
