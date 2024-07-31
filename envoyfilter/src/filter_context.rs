@@ -7,7 +7,7 @@ use crate::stats::{Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
 use log::info;
 use md5::Digest;
-use open_message_format::models::{
+use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;

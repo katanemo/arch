@@ -7,4 +7,4 @@ grafana-data
 prom_data
 .env
 qdrant_data
-demos/weather-forecast/generated/envoy.yaml
+demos/weather-forecast/generated/
