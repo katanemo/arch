@@ -80,6 +80,7 @@ impl FilterContext {
                 };
                 let embedding_request = EmbeddingRequest {
                     create_embedding_request: embeddings_input,
+                    // Need to clone prompt target to leave config string intact.
                     prompt_target: prompt_target.clone(),
                 };
                 if self
@@ -106,7 +107,7 @@ impl FilterContext {
     ) {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
-                let embedding_response: CreateEmbeddingResponse =
+                let mut embedding_response: CreateEmbeddingResponse =
                     serde_json::from_slice(&body).unwrap();
 
                 let mut payload: HashMap<String, String> = HashMap::new();
@@ -127,7 +128,7 @@ impl FilterContext {
                     points: vec![VectorPoint {
                         id: format!("{:x}", id.unwrap()),
                         payload,
-                        vector: embedding_response.data[0].embedding.clone(),
+                        vector: embedding_response.data.remove(0).embedding,
                     }],
                 };
                 let json_data = to_string(&create_vector_store_points).unwrap(); // Handle potential errors
