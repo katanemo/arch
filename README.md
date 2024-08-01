@@ -19,6 +19,7 @@ A open source project for developers to build and secure faster, more personaliz
 Use instructions at [pre-commit.com](https://pre-commit.com/#install) to set it up for your machine. Once installed make sure github hooks are setup, so that when you upstream your change pre-commit hooks can run and validate your change. Follow command below to setup github hooks,
 
 ```sh
-➜  intelligent-prompt-gateway git:(main) ✗ pre-commit install
+$ brew install pre-commit
+$ pre-commit install
 pre-commit installed at .git/hooks/pre-commit
 ```
