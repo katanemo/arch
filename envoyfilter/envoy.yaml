@@ -91,7 +91,6 @@ static_resources:
                                     You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
                                     - Use farenheight for temperature
                                     - Use miles per hour for wind speed
-
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           code:
