@@ -1,5 +1,8 @@
 A open source project for developers to build and secure faster, more personalized generative AI apps. Katanemo is a high performance gateway designed with state of the art (SOTA) fast LLMs to process, route and evaluate prompts.
 
+# Demos
+* [Weather Forecast]([url](https://github.com/katanemo/intelligent-prompt-gateway/blob/main/demos/weather-forecast/README.md))
+
 # Dev setup
 
 ## Pre-commit
