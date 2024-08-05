@@ -8,3 +8,5 @@ prom_data
 .env
 qdrant_data
 demos/weather-forecast/generated/
+.DS_Store
+*.gguf

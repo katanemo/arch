@@ -8,9 +8,14 @@ embedding_provider:
 
 llm_providers:
 
-  - name: "open-ai-gpt-4"
+  - name: open-ai-gpt-4
     api_key: "$OPEN_AI_API_KEY"
     model: gpt-4
+
+  - name: mistral_7b_instruct
+    model: mistral-7b-instruct
+    endpoint: http://mistral_7b_instruct:10001/v1/chat/completions
+    default: true
 
 prompt_targets:
 

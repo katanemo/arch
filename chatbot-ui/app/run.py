@@ -13,19 +13,20 @@ import os
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
+# CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
+CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "http://localhost:10000/v1/chat/completions")
 
 class Message(BaseModel):
     role: str
     content: str
 
-async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=30) -> Optional[str]:
+async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=120) -> Optional[str]:
     """
     Sends a request to the ChatGPT API to retrieve a response based on a list of previous messages.
     """
     header = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
+        # "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
     if OPENAI_API_KEY is None or OPENAI_API_KEY == "":
@@ -66,7 +67,8 @@ async def predict(input, history):
     """
     history.append({"role": "user", "content": input})
     response = await make_completion(history)
-    history.append({"role": "assistant", "content": response})
+    if response is not None:
+      history.append({"role": "assistant", "content": response})
     messages = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
     return messages, history
 

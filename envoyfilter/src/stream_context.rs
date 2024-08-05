@@ -52,6 +52,7 @@ impl StreamContext {
         // However, a missing Content-Length header is not grounds for bad requests given that intermediary hops could
         // manipulate the body in benign ways e.g., compression.
         self.set_http_request_header("content-length", None);
+        // self.set_http_request_header("authorization", None);
     }
 
     fn modify_path_header(&mut self) {
@@ -329,7 +330,7 @@ impl StreamContext {
                 return;
             }
         };
-        info!("sending request to openai: msg len: {}", json_string.len());
+        info!("sending request to openai: msg {}", json_string);
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }

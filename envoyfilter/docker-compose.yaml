@@ -9,24 +9,9 @@ services:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
       - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
-    networks:
-      - envoymesh
     depends_on:
-      embeddingserver:
-        condition: service_healthy
-
-  embeddingserver:
-    build:
-      context: ../embedding-server
-      dockerfile: Dockerfile
-    ports:
-      - "18080:80"
-    healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
-        interval: 5s
-        retries: 20
-    networks:
-      - envoymesh
+      qdrant:
+        condition: service_started
 
   qdrant:
     image: qdrant/qdrant
@@ -34,10 +19,12 @@ services:
     ports:
       - 16333:6333
       - 16334:6334
-    volumes:
-      - ./qdrant_data:/qdrant/storage
-    networks:
-      - envoymesh
 
-networks:
-  envoymesh: {}
+  mistral_7b_instruct:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    hostname: mistral_7b_instruct
+    ports:
+      - "10001:10001"
+    volumes:
+      - ./mistral-7b-instruct-v0.2.Q4_K_M.gguf:/models/model.gguf
+    command: ["--host", "0.0.0.0", "--port", "10001", "-m", "/models/model.gguf"]

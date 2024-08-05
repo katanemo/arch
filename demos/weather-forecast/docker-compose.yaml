@@ -90,5 +90,14 @@ services:
     networks:
       - envoymesh
 
+  mistral_7b_instruct:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    hostname: mistral_7b_instruct
+    ports:
+      - "10001:10001"
+    volumes:
+      - ./mistral-7b-instruct-v0.2.Q4_K_M.gguf:/models/model.gguf
+    command: ["--host", "0.0.0.0", "--port", "10001", "-m", "/models/model.gguf"]
+
 networks:
   envoymesh: {}
