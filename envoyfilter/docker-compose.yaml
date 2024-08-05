@@ -12,6 +12,20 @@ services:
     depends_on:
       qdrant:
         condition: service_started
+      embeddingserver:
+        condition: service_healthy
+
+
+  embeddingserver:
+    build:
+      context: ../embedding-server
+      dockerfile: Dockerfile
+    ports:
+      - "18080:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
 
   qdrant:
     image: qdrant/qdrant
@@ -28,3 +42,14 @@ services:
     volumes:
       - ./mistral-7b-instruct-v0.2.Q4_K_M.gguf:/models/model.gguf
     command: ["--host", "0.0.0.0", "--port", "10001", "-m", "/models/model.gguf"]
+
+  chatbot-ui:
+    build:
+      context: ../../chatbot-ui
+      dockerfile: Dockerfile
+    ports:
+      - "18080:8080"
+    networks:
+      - envoymesh
+    environment:
+      - CHAT_COMPLETION_ENDPOINT=http://envoy:10000/v1/chat/completions
