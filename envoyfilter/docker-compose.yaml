@@ -49,7 +49,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - "18080:8080"
-    networks:
-      - envoymesh
     environment:
       - CHAT_COMPLETION_ENDPOINT=http://envoy:10000/v1/chat/completions
