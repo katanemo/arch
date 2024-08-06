@@ -2,9 +2,7 @@ use crate::common_types::{
     open_ai::{ChatCompletions, Message},
     NERRequest, NERResponse, SearchPointsRequest, SearchPointsResponse,
 };
-use crate::configuration::EntityDetail;
-use crate::configuration::EntityType;
-use crate::configuration::PromptTarget;
+use crate::configuration::{Entity, PromptTarget};
 use crate::consts::{
     DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
     DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE, USER_ROLE,
@@ -159,10 +157,12 @@ impl StreamContext {
         info!("prompt_target name: {:?}", prompt_target.name);
 
         // only extract entity names
-        let entity_names = get_entity_details(&prompt_target)
-            .into_iter()
-            .map(|entity| entity.name)
-            .collect();
+        let entity_names: Vec<String> = match prompt_target.entities {
+            // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
+            Some(ref entities) => entities.iter().map(|entity| entity.name.clone()).collect(),
+            None => vec![],
+        };
+
         let ner_request = NERRequest {
             input: callout_context.user_message.take().unwrap(),
             labels: entity_names,
@@ -227,8 +227,13 @@ impl StreamContext {
         }
 
         let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-        let entity_details = get_entity_details(prompt_target);
-        for entity in entity_details {
+
+        let empty_vec: Vec<Entity> = vec![];
+        for entity in prompt_target
+            .entities
+            .as_ref()
+            .unwrap_or_else(|| &empty_vec)
+        {
             if entity.required.unwrap_or(false) && !request_params.contains_key(&entity.name) {
                 warn!(
                     "required entity missing or score of entity was too low: {}",
@@ -486,23 +491,5 @@ impl Context for StreamContext {
             RequestType::Ner => self.ner_handler(body, callout_context),
             RequestType::ContextResolver => self.context_resolver_handler(body, callout_context),
         }
-    }
-}
-
-fn get_entity_details(prompt_target: &PromptTarget) -> Vec<EntityDetail> {
-    match prompt_target.entities.as_ref() {
-        Some(EntityType::Vec(entity_names)) => {
-            let mut entity_details: Vec<EntityDetail> = Vec::new();
-            for entity_name in entity_names {
-                entity_details.push(EntityDetail {
-                    name: entity_name.clone(),
-                    required: Some(true),
-                    description: None,
-                });
-            }
-            entity_details
-        }
-        Some(EntityType::Struct(entity_details)) => entity_details.clone(),
-        None => Vec::new(),
     }
 }
