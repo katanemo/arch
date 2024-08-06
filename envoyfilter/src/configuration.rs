@@ -9,6 +9,32 @@ pub struct Configuration {
     pub llm_providers: Vec<LlmProvider>,
     pub system_prompt: Option<String>,
     pub prompt_targets: Vec<PromptTarget>,
+    pub ratelimits: Vec<Ratelimit>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Ratelimit {
+    provider: String,
+    selectors: Vec<Header>,
+    limit: Limit,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Limit {
+    tokens: u32,
+    unit: TimeUnit,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TimeUnit {
+    #[serde(rename = "minute")]
+    Minute,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Header {
+    key: String,
+    value: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,7 +104,6 @@ embedding_provider:
   model: "all-MiniLM-L6-v2"
 
 llm_providers:
-
   - name: "open-ai-gpt-4"
     api_key: "$OPEN_AI_API_KEY"
     model: gpt-4
@@ -89,7 +114,6 @@ system_prompt: |
   - Use miles per hour for wind speed
 
 prompt_targets:
-
   - type: context_resolver
     name: weather_forecast
     few_shot_examples:
@@ -111,6 +135,14 @@ prompt_targets:
       path: /weather
     entities:
       - city
+
+ratelimits:
+  - provider: open-ai-gpt-4
+    selectors:
+      - key: x-katanemo-openai-limit-id
+    limit:
+      tokens: 100
+      unit: minute
   "#;
 
     #[test]
