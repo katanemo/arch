@@ -229,11 +229,7 @@ impl StreamContext {
         let prompt_target = callout_context.prompt_target.as_ref().unwrap();
 
         let empty_vec: Vec<Entity> = vec![];
-        for entity in prompt_target
-            .entities
-            .as_ref()
-            .unwrap_or_else(|| &empty_vec)
-        {
+        for entity in prompt_target.entities.as_ref().unwrap_or(&empty_vec) {
             if entity.required.unwrap_or(false) && !request_params.contains_key(&entity.name) {
                 warn!(
                     "required entity missing or score of entity was too low: {}",
