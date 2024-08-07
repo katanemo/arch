@@ -2,7 +2,7 @@ import os
 import sentence_transformers
 from gliner import GLiNER
 
-def load_transformers(models = os.getenv("MODELS", "sentence-transformers/all-MiniLM-L6-v2")):
+def load_transformers(models = os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
     transformers = {}
 
     for model in models.split(','):

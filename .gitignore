@@ -7,4 +7,6 @@ grafana-data
 prom_data
 .env
 qdrant_data
-demos/weather-forecast/generated/
+generated
+.DS_Store
+*.gguf

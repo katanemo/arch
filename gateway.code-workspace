@@ -23,6 +23,10 @@
     {
       "name": "demos/weather-forecast",
       "path": "./demos/weather-forecast",
+    },
+    {
+      "name": "demos/weather-forecast-local-llm",
+      "path": "./demos/weather-forecast-local-llm",
     }
   ],
   "settings": {}

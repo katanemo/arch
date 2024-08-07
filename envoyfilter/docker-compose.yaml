@@ -9,11 +9,12 @@ services:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
       - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
-    networks:
-      - envoymesh
     depends_on:
+      qdrant:
+        condition: service_started
       embeddingserver:
         condition: service_healthy
+
 
   embeddingserver:
     build:
@@ -25,8 +26,6 @@ services:
         test: ["CMD", "curl" ,"http://localhost:80/healthz"]
         interval: 5s
         retries: 20
-    networks:
-      - envoymesh
 
   qdrant:
     image: qdrant/qdrant
@@ -34,10 +33,12 @@ services:
     ports:
       - 16333:6333
       - 16334:6334
-    volumes:
-      - ./qdrant_data:/qdrant/storage
-    networks:
-      - envoymesh
 
-networks:
-  envoymesh: {}
+  chatbot-ui:
+    build:
+      context: ../chatbot-ui
+      dockerfile: Dockerfile
+    ports:
+      - "18080:8080"
+    environment:
+      - CHAT_COMPLETION_ENDPOINT=http://envoy:10000/v1/chat/completions

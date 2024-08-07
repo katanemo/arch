@@ -56,8 +56,16 @@ pub struct EmbeddingProviver {
 //TODO: use enum for model, but if there is a new model, we need to update the code
 pub struct LlmProvider {
     pub name: String,
-    pub api_key: String,
+    pub api_key: Option<String>,
     pub model: String,
+    pub default: Option<bool>,
+    pub endpoint: Option<EnpointType>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EnpointType {
+    String(String),
+    Struct(Endpoint),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

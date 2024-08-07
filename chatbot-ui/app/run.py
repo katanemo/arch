@@ -19,18 +19,21 @@ class Message(BaseModel):
     role: str
     content: str
 
-async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=30) -> Optional[str]:
+async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=120) -> Optional[str]:
     """
     Sends a request to the ChatGPT API to retrieve a response based on a list of previous messages.
     """
     header = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
+    if OPENAI_API_KEY is not None and OPENAI_API_KEY != "":
+        header["Authorization"] = f"Bearer {OPENAI_API_KEY}"
+
     if OPENAI_API_KEY is None or OPENAI_API_KEY == "":
-        logger.error("No OpenAI API Key found. Please create .env file and set OPENAI_API_KEY env var !")
-        return None
+        if CHAT_COMPLETION_ENDPOINT.startswith("https://api.openai.com"):
+          logger.error("No OpenAI API Key found. Please create .env file and set OPENAI_API_KEY env var !")
+          return None
     try:
         async with async_timeout.timeout(delay=delay):
             async with httpx.AsyncClient(headers=header) as aio_client:
@@ -44,7 +47,8 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=30
                             json = {
                                 "model": "gpt-3.5-turbo",
                                 "messages": messages
-                            }
+                            },
+                            timeout=delay
                         )
                         logger.debug(f"Status Code : {resp.status_code}")
                         if resp.status_code == 200:
@@ -66,7 +70,8 @@ async def predict(input, history):
     """
     history.append({"role": "user", "content": input})
     response = await make_completion(history)
-    history.append({"role": "assistant", "content": response})
+    if response is not None:
+      history.append({"role": "assistant", "content": response})
     messages = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
     return messages, history
 

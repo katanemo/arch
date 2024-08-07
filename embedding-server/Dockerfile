@@ -35,9 +35,11 @@ RUN apt-get update && apt-get install -y \
   curl \
   && rm -rf /var/lib/apt/lists/*
 
-RUN python install.py
+# comment it out for now as we don't want to download the model every time we build the image
+# we will mount host cache to docker image to avoid downloading the model every time
+# see docker-compose file for more details
+
 # RUN python install.py && \
 #   find /root/.cache/torch/sentence_transformers/ -name onnx -exec rm -rf {} +
-
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
