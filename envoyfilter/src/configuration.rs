@@ -42,17 +42,10 @@ pub struct Endpoint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EntityDetail {
+pub struct Entity {
     pub name: String,
     pub required: Option<bool>,
     pub description: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum EntityType {
-    Vec(Vec<String>),
-    Struct(Vec<EntityDetail>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,7 +54,7 @@ pub struct PromptTarget {
     pub prompt_type: String,
     pub name: String,
     pub few_shot_examples: Vec<String>,
-    pub entities: Option<EntityType>,
+    pub entities: Option<Vec<Entity>>,
     pub endpoint: Option<Endpoint>,
     pub system_prompt: Option<String>,
 }
@@ -110,7 +103,7 @@ prompt_targets:
       cluster: weatherhost
       path: /weather
     entities:
-      - city
+      - name: city
   "#;
 
     #[test]
