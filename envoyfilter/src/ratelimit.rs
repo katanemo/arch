@@ -121,6 +121,8 @@ fn get_quota(limit: Limit) -> Quota {
     }
 }
 
+// The following tests are inside the ratelimit module in order to access RatelimitMap::new() in order to provide
+// different configuration values per test.
 #[test]
 fn non_existent_provider_is_ok() {
     let ratelimits_config = vec![Ratelimit {
@@ -360,6 +362,8 @@ fn different_provider_can_have_different_limits_with_the_same_keys() {
         .is_err());
 }
 
+// These tests use the publicly exposed static singleton, thus the same configuration is used in every test.
+// If more tests are written here, move the initial call out of the test.
 #[cfg(test)]
 mod test {
     use super::ratelimits;
