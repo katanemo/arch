@@ -77,7 +77,6 @@ services:
       - ./grafana:/etc/grafana/provisioning/datasources
       - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/dashboards:/var/lib/grafana/dashboards
-      # - ./grafana-data:/var/lib/grafana
 
   mistral_7b_instruct:
     image: ghcr.io/ggerganov/llama.cpp:server

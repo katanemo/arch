@@ -34,9 +34,19 @@ static_resources:
                     routes:
                       - match:
                           prefix: "/v1/chat/completions"
+                          headers:
+                            name: "Authorization"
+                            present_match: true
                         route:
                           auto_host_rewrite: true
                           cluster: openai
+                          timeout: 60s
+                      - match:
+                          prefix: "/v1/chat/completions"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: mistral_7b_instruct
+                          timeout: 60s
                       - match:
                           prefix: "/embeddings"
                         route:

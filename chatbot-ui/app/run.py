@@ -25,12 +25,15 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=12
     """
     header = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
+    if OPENAI_API_KEY is not None and OPENAI_API_KEY != "":
+        header["Authorization"] = f"Bearer {OPENAI_API_KEY}"
+
     if OPENAI_API_KEY is None or OPENAI_API_KEY == "":
-        logger.error("No OpenAI API Key found. Please create .env file and set OPENAI_API_KEY env var !")
-        return None
+        if CHAT_COMPLETION_ENDPOINT.startswith("https://api.openai.com"):
+          logger.error("No OpenAI API Key found. Please create .env file and set OPENAI_API_KEY env var !")
+          return None
     try:
         async with async_timeout.timeout(delay=delay):
             async with httpx.AsyncClient(headers=header) as aio_client:
@@ -44,7 +47,8 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=12
                             json = {
                                 "model": "gpt-3.5-turbo",
                                 "messages": messages
-                            }
+                            },
+                            timeout=delay
                         )
                         logger.debug(f"Status Code : {resp.status_code}")
                         if resp.status_code == 200:
