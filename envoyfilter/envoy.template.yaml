@@ -34,9 +34,19 @@ static_resources:
                     routes:
                       - match:
                           prefix: "/v1/chat/completions"
+                          headers:
+                            name: "Authorization"
+                            present_match: true
                         route:
                           auto_host_rewrite: true
                           cluster: openai
+                          timeout: 60s
+                      - match:
+                          prefix: "/v1/chat/completions"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: mistral_7b_instruct
+                          timeout: 60s
                       - match:
                           prefix: "/embeddings"
                         route:
@@ -156,3 +166,17 @@ static_resources:
                       address: qdrant
                       port_value: 6333
                   hostname: "qdrant"
+    - name: mistral_7b_instruct
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: qdrant
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: mistral_7b_instruct
+                      port_value: 10001
+                  hostname: "mistral_7b_instruct"
