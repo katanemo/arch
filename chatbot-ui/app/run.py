@@ -13,8 +13,7 @@ import os
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-# CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "http://localhost:10000/v1/chat/completions")
+CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
 
 class Message(BaseModel):
     role: str
@@ -26,7 +25,7 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=12
     """
     header = {
         "Content-Type": "application/json",
-        # "Authorization": f"Bearer {OPENAI_API_KEY}"
+        "Authorization": f"Bearer {OPENAI_API_KEY}"
     }
 
     if OPENAI_API_KEY is None or OPENAI_API_KEY == "":
