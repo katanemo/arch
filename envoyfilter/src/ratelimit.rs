@@ -16,17 +16,25 @@ pub fn ratelimits(ratelimits_config: Option<Vec<Ratelimit>>) -> &'static Ratelim
     })
 }
 
+// The Data Structure is laid out in the following way:
+// Provider -> Hash { Header -> Limit }.
+// If the Header used to configure the given Limit:
+//   a) Has None value, then there will be N Limit keyed by the Header value.
+//   b) Has Some() value, then there will be 1 Limit keyed by the empty string.
+// It would have been nicer to use a non-keyed limit for b). However, the type system made that option a nightmare.
 pub struct RatelimitMap {
     datastore: HashMap<String, HashMap<configuration::Header, DefaultKeyedRateLimiter<String>>>,
 }
 
+// This version of Header demands that the user passes a header value to match on.
+#[allow(unused)]
 pub struct Header {
     key: String,
     value: String,
 }
 
 impl Header {
-    pub fn into_config(self) -> configuration::Header {
+    fn into_config(self) -> configuration::Header {
         configuration::Header {
             key: self.key,
             value: Some(self.value),
@@ -69,6 +77,7 @@ impl RatelimitMap {
         new_ratelimit_map
     }
 
+    #[allow(unused)]
     pub fn check_limit(
         &self,
         provider: String,
