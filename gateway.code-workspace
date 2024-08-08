@@ -13,6 +13,10 @@
       "path": "embedding-server"
     },
     {
+      "name": "function_resolver",
+      "path": "function_resolver"
+    },
+    {
       "name": "chatbot-ui",
       "path": "chatbot-ui"
     },
@@ -27,7 +31,11 @@
     {
       "name": "demos/weather-forecast-local-llm",
       "path": "./demos/weather-forecast-local-llm",
-    }
+    },
+    {
+      "name": "demos/function-calling",
+      "path": "./demos/function-calling",
+    },
   ],
   "settings": {}
 }

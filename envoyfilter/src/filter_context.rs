@@ -68,6 +68,8 @@ impl FilterContext {
                         (":path", "/embeddings"),
                         (":authority", "embeddingserver"),
                         ("content-type", "application/json"),
+                        ("x-envoy-max-retries", "3"),
+                        ("x-envoy-upstream-rq-timeout-ms", "20000"),
                     ],
                     Some(json_data.as_bytes()),
                     vec![],
@@ -83,6 +85,10 @@ impl FilterContext {
                     // Need to clone prompt target to leave config string intact.
                     prompt_target: prompt_target.clone(),
                 };
+                info!(
+                    "dispatched HTTP call to embedding server token_id={}",
+                    token_id
+                );
                 if self
                     .callouts
                     .insert(token_id, {
@@ -108,7 +114,16 @@ impl FilterContext {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
                 let mut embedding_response: CreateEmbeddingResponse =
-                    serde_json::from_slice(&body).unwrap();
+                    match serde_json::from_slice(&body) {
+                        Ok(response) => response,
+                        Err(e) => {
+                            panic!(
+                                "Error deserializing embedding response. body: {:?}: {:?}",
+                                String::from_utf8(body).unwrap(),
+                                e
+                            );
+                        }
+                    };
 
                 let mut payload: HashMap<String, String> = HashMap::new();
                 payload.insert(
@@ -164,6 +179,8 @@ impl FilterContext {
                     .active_http_calls
                     .record(self.callouts.len().try_into().unwrap());
             }
+        } else {
+            panic!("No body in response");
         }
     }
 

@@ -50,19 +50,30 @@ pub struct Endpoint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Entity {
+pub struct Parameter {
     pub name: String,
+    #[serde(rename = "type")]
+    pub parameter_type: Option<String>,
+    pub description: String,
     pub required: Option<bool>,
-    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PromptType {
+    #[serde(rename = "context_resolver")]
+    ContextResolver,
+    #[serde(rename = "function_resolver")]
+    FunctionResolver,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PromptTarget {
     #[serde(rename = "type")]
-    pub prompt_type: String,
+    pub prompt_type: PromptType,
     pub name: String,
+    pub description: Option<String>,
     pub few_shot_examples: Vec<String>,
-    pub entities: Option<Vec<Entity>>,
+    pub parameters: Option<Vec<Parameter>>,
     pub endpoint: Option<Endpoint>,
     pub system_prompt: Option<String>,
 }
@@ -98,7 +109,7 @@ prompt_targets:
     endpoint:
       cluster: weatherhost
       path: /weather
-    entities:
+    parameters:
       - name: location
         required: true
         description: "The location for which the weather is requested"
@@ -110,8 +121,9 @@ prompt_targets:
     endpoint:
       cluster: weatherhost
       path: /weather
-    entities:
+    parameters:
       - name: city
+        description: "The location for which the weather is requested"
   "#;
 
     #[test]

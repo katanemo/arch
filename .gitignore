@@ -10,3 +10,4 @@ qdrant_data
 generated
 .DS_Store
 *.gguf
+venv

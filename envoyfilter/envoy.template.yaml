@@ -33,6 +33,19 @@ static_resources:
                       - "*"
                     routes:
                       - match:
+                          prefix: "/mistral/v1/chat/completions"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: mistral_7b_instruct
+                          timeout: 60s
+                      - match:
+                          prefix: "/katanemo_kfc_1b/v1/chat/completions"
+                        route:
+                          prefix_rewrite: /v1/chat/completions
+                          auto_host_rewrite: true
+                          cluster: katanemo_kfc_1b
+                          timeout: 120s
+                      - match:
                           prefix: "/v1/chat/completions"
                           headers:
                             name: "Authorization"
@@ -180,3 +193,17 @@ static_resources:
                       address: mistral_7b_instruct
                       port_value: 10001
                   hostname: "mistral_7b_instruct"
+    - name: katanemo_kfc_1b
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: katanemo_kfc_1b
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: functionresolver
+                      port_value: 80
+                  hostname: "katanemo_kfc_1b"

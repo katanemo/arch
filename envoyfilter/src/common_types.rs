@@ -71,14 +71,41 @@ pub struct NERResponse {
     pub model: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolParameter {
+    #[serde(rename = "type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameter_type: Option<String>,
+    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolParameters {
+    #[serde(rename = "type")]
+    pub parameters_type: String,
+    pub properties: HashMap<String, ToolParameter>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolsDefinition {
+    pub name: String,
+    pub description: String,
+    pub parameters: ToolParameters,
+}
+
 pub mod open_ai {
     use serde::{Deserialize, Serialize};
+
+    use super::ToolsDefinition;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletions {
         #[serde(default)]
         pub model: String,
         pub messages: Vec<Message>,
+        pub tools: Option<Vec<ToolsDefinition>>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,4 +1,6 @@
+
 services:
+
   config-generator:
     build:
       context: ../../
@@ -7,6 +9,7 @@ services:
       - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
       - ./katanemo-config.yaml:/usr/src/app/katanemo-config.yaml
       - ./generated:/usr/src/app/out
+
   envoy:
     build:
       context: ../../
@@ -36,6 +39,20 @@ services:
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
+
+  functionresolver:
+    build:
+      context: ../../function_resolver
+      dockerfile: Dockerfile
+    ports:
+      - "18082:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+
   qdrant:
     image: qdrant/qdrant
     hostname: vector-db

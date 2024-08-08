@@ -15,7 +15,6 @@ services:
       embeddingserver:
         condition: service_healthy
 
-
   embeddingserver:
     build:
       context: ../embedding-server
