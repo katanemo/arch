@@ -423,7 +423,7 @@ impl StreamContext {
     }
 
     fn function_resolver_handler(&self, body: Vec<u8>, callout_context: CallContext) {
-        info!("response received for context_resolver");
+        info!("response received for function resolver");
         let body_string = String::from_utf8(body);
         let prompt_target = callout_context.prompt_target.unwrap();
         let mut request_body = callout_context.request_body;

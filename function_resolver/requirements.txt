@@ -1,4 +1,4 @@
 fastapi
-sentence-transformers
-torch[mps]
 uvicorn
+ollama
+PyYAML
