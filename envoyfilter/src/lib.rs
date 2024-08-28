@@ -9,6 +9,7 @@ mod filter_context;
 mod ratelimit;
 mod stats;
 mod stream_context;
+mod tokenizer;
 
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);
