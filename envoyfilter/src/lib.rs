@@ -6,6 +6,7 @@ mod common_types;
 mod configuration;
 mod consts;
 mod filter_context;
+mod ratelimit;
 mod stats;
 mod stream_context;
 

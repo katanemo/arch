@@ -3,6 +3,7 @@ use crate::common_types::{
 };
 use crate::configuration::{Configuration, PromptTarget};
 use crate::consts::DEFAULT_EMBEDDING_MODEL;
+use crate::ratelimit;
 use crate::stats::{Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
 use log::info;
@@ -207,9 +208,9 @@ impl FilterContext {
         {
             panic!("duplicate token_id")
         }
-        // self.metrics
-        //     .active_http_calls
-        //     .record(self.callouts.len().try_into().unwrap());
+        self.metrics
+            .active_http_calls
+            .record(self.callouts.len().try_into().unwrap());
     }
 }
 
@@ -257,6 +258,14 @@ impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
+
+            if let Some(ratelimits_config) = self
+                .config
+                .as_mut()
+                .and_then(|config| config.ratelimits.as_mut())
+            {
+                ratelimit::ratelimits(Some(std::mem::take(ratelimits_config)));
+            }
         }
         true
     }
@@ -278,7 +287,6 @@ impl RootContext for FilterContext {
     }
 
     fn on_tick(&mut self) {
-        // initialize vector store
         self.init_vector_store();
         self.process_prompt_targets();
         self.set_tick_period(Duration::from_secs(0));

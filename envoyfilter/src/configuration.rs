@@ -14,27 +14,31 @@ pub struct Configuration {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ratelimit {
-    provider: String,
-    selectors: Vec<Header>,
-    limit: Limit,
+    pub provider: String,
+    pub selector: Header,
+    pub limit: Limit,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Limit {
-    tokens: u32,
-    unit: TimeUnit,
+    pub tokens: u32,
+    pub unit: TimeUnit,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TimeUnit {
+    #[serde(rename = "second")]
+    Second,
     #[serde(rename = "minute")]
     Minute,
+    #[serde(rename = "hour")]
+    Hour,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Header {
-    key: String,
-    value: Option<String>,
+    pub key: String,
+    pub value: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -139,8 +143,8 @@ prompt_targets:
 
 ratelimits:
   - provider: open-ai-gpt-4
-    selectors:
-      - key: x-katanemo-openai-limit-id
+    selector:
+      key: x-katanemo-openai-limit-id
     limit:
       tokens: 100
       unit: minute
