@@ -70,7 +70,7 @@ impl StreamContext {
             Ok(embedding_response) => embedding_response,
             Err(e) => {
                 warn!("Error deserializing embedding response: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         };
@@ -85,7 +85,7 @@ impl StreamContext {
             Ok(json_data) => json_data,
             Err(e) => {
                 warn!("Error serializing search_points_request: {:?}", e);
-                self.reset_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         };
@@ -122,7 +122,7 @@ impl StreamContext {
             Ok(search_points_response) => search_points_response,
             Err(e) => {
                 warn!("Error deserializing search_points_response: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         };
@@ -131,7 +131,7 @@ impl StreamContext {
 
         if search_results.is_empty() {
             info!("No prompt target matched");
-            self.resume_http_request();
+            self.send_http_response(status_code, headers, body)
             return;
         }
 
@@ -142,7 +142,7 @@ impl StreamContext {
                 "prompt target below threshold: {}",
                 DEFAULT_PROMPT_TARGET_THRESHOLD
             );
-            self.resume_http_request();
+            self.send_http_response(status_code, headers, body)
             return;
         }
         let prompt_target_str = search_results[0].payload.get("prompt-target").unwrap();
@@ -151,7 +151,7 @@ impl StreamContext {
             Ok(prompt_target) => prompt_target,
             Err(e) => {
                 warn!("Error deserializing prompt_target: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         };
@@ -174,7 +174,7 @@ impl StreamContext {
             Ok(json_data) => json_data,
             Err(e) => {
                 warn!("Error serializing ner_request: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         };
@@ -209,7 +209,7 @@ impl StreamContext {
             Ok(ner_response) => ner_response,
             Err(e) => {
                 warn!("Error deserializing ner_response: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         };
@@ -236,7 +236,7 @@ impl StreamContext {
                     "required entity missing or score of entity was too low: {}",
                     entity.name
                 );
-                self.resume_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         }
@@ -245,7 +245,7 @@ impl StreamContext {
             Ok(req_param_str) => req_param_str.as_bytes().to_owned(),
             Err(e) => {
                 warn!("Error serializing request_params: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response(status_code, headers, body)
                 return;
             }
         };
@@ -318,7 +318,7 @@ impl StreamContext {
             }
             Err(e) => {
                 warn!("Error converting response to string: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response();
                 return;
             }
         }
@@ -327,11 +327,11 @@ impl StreamContext {
             Ok(json_string) => json_string,
             Err(e) => {
                 warn!("Error serializing request_body: {:?}", e);
-                self.resume_http_request();
+                self.send_http_response();
                 return;
             }
         };
-        info!("sending request to openai: msg {}", json_string);
+        info!("completed request processing sending back to filter chain: msg {}", json_string);
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
@@ -465,28 +465,18 @@ impl Context for StreamContext {
     ) {
         let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
 
-        let resp = self.get_http_call_response_body(0, body_size);
-
-        if resp.is_none() {
-            warn!("No response body");
-            self.resume_http_request();
-            return;
-        }
-
-        let body = match resp {
-            Some(body) => body,
-            None => {
-                warn!("Empty response body");
-                self.resume_http_request();
-                return;
+        if let Some(body) = self.get_http_call_response_body(0, body_size) {
+            match callout_context.request_type {
+                RequestType::GetEmbedding => self.embeddings_handler(body, callout_context),
+                RequestType::SearchPoints => self.search_points_handler(body, callout_context),
+                RequestType::Ner => self.ner_handler(body, callout_context),
+                RequestType::ContextResolver => {
+                    self.context_resolver_handler(body, callout_context)
+                }
             }
-        };
-
-        match callout_context.request_type {
-            RequestType::GetEmbedding => self.embeddings_handler(body, callout_context),
-            RequestType::SearchPoints => self.search_points_handler(body, callout_context),
-            RequestType::Ner => self.ner_handler(body, callout_context),
-            RequestType::ContextResolver => self.context_resolver_handler(body, callout_context),
+        } else {
+            warn!("No response body in inline HTTP request");
+            self.resume_http_request();
         }
     }
 }
