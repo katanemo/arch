@@ -331,7 +331,11 @@ impl StreamContext {
                 return;
             }
         };
+
         info!("sending request to openai: msg {}", json_string);
+
+        // Tokenize and Ratelimit.
+
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
