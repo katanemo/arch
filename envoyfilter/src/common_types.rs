@@ -95,6 +95,26 @@ pub struct ToolsDefinition {
     pub parameters: ToolParameters,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionCallingModelResponse {
+    pub model: String,
+    pub created_at: String,
+    pub message: open_ai::Message,
+    pub done_reason: String,
+    pub done: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolCallDetail {
+    pub name: String,
+    pub arguments: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionCallingToolsCallContent {
+    pub tool_calls: Vec<ToolCallDetail>,
+}
+
 pub mod open_ai {
     use serde::{Deserialize, Serialize};
 

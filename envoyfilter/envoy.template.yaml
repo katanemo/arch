@@ -39,11 +39,11 @@ static_resources:
                           cluster: mistral_7b_instruct
                           timeout: 60s
                       - match:
-                          prefix: "/katanemo_kfc_1b/v1/chat/completions"
+                          prefix: "/bolt_fc_1b/v1/chat/completions"
                         route:
                           prefix_rewrite: /v1/chat/completions
                           auto_host_rewrite: true
-                          cluster: katanemo_kfc_1b
+                          cluster: bolt_fc_1b
                           timeout: 120s
                       - match:
                           prefix: "/v1/chat/completions"
@@ -193,12 +193,12 @@ static_resources:
                       address: mistral_7b_instruct
                       port_value: 10001
                   hostname: "mistral_7b_instruct"
-    - name: katanemo_kfc_1b
+    - name: bolt_fc_1b
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: katanemo_kfc_1b
+        cluster_name: bolt_fc_1b
         endpoints:
           - lb_endpoints:
               - endpoint:
@@ -206,4 +206,4 @@ static_resources:
                     socket_address:
                       address: functionresolver
                       port_value: 80
-                  hostname: "katanemo_kfc_1b"
+                  hostname: "bolt_fc_1b"

@@ -1,7 +1,7 @@
 use crate::common_types::{
     open_ai::{ChatCompletions, Message},
-    NERRequest, NERResponse, SearchPointsRequest, SearchPointsResponse, ToolParameter,
-    ToolParameters, ToolsDefinition,
+    FunctionCallingModelResponse, FunctionCallingToolsCallContent, NERRequest, NERResponse,
+    SearchPointsRequest, SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
 };
 use crate::configuration::{Parameter, PromptTarget};
 use crate::consts::{
@@ -26,6 +26,7 @@ enum RequestType {
     Ner,
     ContextResolver,
     FunctionResolver,
+    FunctionCallResponse,
 }
 
 pub struct CallContext {
@@ -234,8 +235,8 @@ impl StreamContext {
                 };
 
                 let tools_defintion: ToolsDefinition = ToolsDefinition {
-                    name: prompt_target.name,
-                    description: prompt_target.description.unwrap_or("".to_string()),
+                    name: prompt_target.name.clone(),
+                    description: prompt_target.description.clone().unwrap_or("".to_string()),
                     parameters: tools_parameters,
                 };
 
@@ -261,11 +262,11 @@ impl StreamContext {
                 };
 
                 let token_id = match self.dispatch_http_call(
-                    "katanemo_kfc_1b",
+                    "bolt_fc_1b",
                     vec![
                         (":method", "POST"),
                         (":path", "/v1/chat/completions"),
-                        (":authority", "katanemo_kfc_1b"),
+                        (":authority", "bolt_fc_1b"),
                         ("content-type", "application/json"),
                         ("x-envoy-max-retries", "3"),
                         ("x-envoy-upstream-rq-timeout-ms", "120000"),
@@ -280,9 +281,13 @@ impl StreamContext {
                     }
                 };
 
-                info!("dispatched call to function kfc_1b token_id={}", token_id);
+                info!(
+                    "dispatched call to function bolt_fc_1b token_id={}",
+                    token_id
+                );
 
                 callout_context.request_type = RequestType::FunctionResolver;
+                callout_context.prompt_target = Some(prompt_target);
                 if self.callouts.insert(token_id, callout_context).is_some() {
                     panic!("duplicate token_id")
                 }
@@ -381,14 +386,14 @@ impl StreamContext {
     fn context_resolver_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
         info!("response received for context_resolver");
         let body_string = String::from_utf8(body);
-        let prompt_target = callout_context.prompt_target.unwrap();
+        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
         let mut request_body = callout_context.request_body;
-        match prompt_target.system_prompt {
+        match prompt_target.system_prompt.as_ref() {
             None => {}
             Some(system_prompt) => {
                 let system_prompt_message: Message = Message {
                     role: SYSTEM_ROLE.to_string(),
-                    content: Some(system_prompt),
+                    content: Some(system_prompt.clone()),
                 };
                 request_body.messages.push(system_prompt_message);
             }
@@ -422,38 +427,114 @@ impl StreamContext {
         self.resume_http_request();
     }
 
-    fn function_resolver_handler(&self, body: Vec<u8>, callout_context: CallContext) {
+    fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
         info!("response received for function resolver");
-        let body_string = String::from_utf8(body);
-        let prompt_target = callout_context.prompt_target.unwrap();
-        let mut request_body = callout_context.request_body;
-        match prompt_target.system_prompt {
-            None => {}
-            Some(system_prompt) => {
-                let system_prompt_message: Message = Message {
-                    role: SYSTEM_ROLE.to_string(),
-                    content: Some(system_prompt),
-                };
-                request_body.messages.push(system_prompt_message);
-            }
-        }
-        match body_string {
-            Ok(body_string) => {
-                info!("context_resolver response: {}", body_string);
-                let context_resolver_response = Message {
-                    role: USER_ROLE.to_string(),
-                    content: Some(body_string),
-                };
-                request_body.messages.push(context_resolver_response);
-            }
+        // let body_string = String::from_utf8(body);
+
+        let body_str = String::from_utf8(body.clone()).unwrap();
+        info!("function_resolver response str: {:?}", body_str);
+
+        let resp = serde_json::from_str::<FunctionCallingModelResponse>(&body_str).unwrap();
+        info!("function_resolver response: {:?}", resp);
+
+        let content: String = resp.message.content.unwrap();
+
+        let _tool_call_details = serde_json::from_str::<FunctionCallingToolsCallContent>(&content);
+        match _tool_call_details {
+            Ok(_) => {}
             Err(e) => {
-                warn!("Error converting response to string: {:?}", e);
-                self.resume_http_request();
+                info!("error deserializing tool_call_details: {:?}", e);
+                info!("possibly some required parameters are missing, send back the response");
+                self.send_http_response(
+                    200,
+                    vec![("Powered-By", "Katanemo")],
+                    Some(body.as_slice()),
+                );
                 return;
             }
         }
 
-        let json_string = match serde_json::to_string(&request_body) {
+        let tool_call_details = _tool_call_details.unwrap();
+
+        info!("tool_call_details: {:?}", tool_call_details);
+        let tool_name = &tool_call_details.tool_calls[0].name;
+        let tool_params = &tool_call_details.tool_calls[0].arguments;
+        info!("tool_name: {:?}", tool_name);
+        info!("tool_params: {:?}", tool_params);
+        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
+        info!("prompt_target: {:?}", prompt_target);
+
+        let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
+
+        let endpoint = prompt_target.endpoint.as_ref().unwrap();
+        let token_id = match self.dispatch_http_call(
+            &endpoint.cluster,
+            vec![
+                (":method", "POST"),
+                (":path", &endpoint.path.as_ref().unwrap_or(&"/".to_string())),
+                (":authority", endpoint.cluster.as_str()),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+            ],
+            Some(tool_params_json_str.as_bytes()),
+            vec![],
+            Duration::from_secs(5),
+        ) {
+            Ok(token_id) => token_id,
+            Err(e) => {
+                panic!("Error dispatching HTTP call for context_resolver: {:?}", e);
+            }
+        };
+
+        callout_context.request_type = RequestType::FunctionCallResponse;
+        if self.callouts.insert(token_id, callout_context).is_some() {
+            panic!("duplicate token_id")
+        }
+    }
+
+    fn function_call_response_handler(&self, body: Vec<u8>, callout_context: CallContext) {
+        info!("response received for function call response");
+        let body_str: String = String::from_utf8(body).unwrap();
+        info!("function_call_response response str: {:?}", body_str);
+        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
+
+        let mut messages: Vec<Message> = Vec::new();
+
+        // add system prompt
+        match prompt_target.system_prompt.as_ref() {
+            None => {}
+            Some(system_prompt) => {
+                let system_prompt_message = Message {
+                    role: SYSTEM_ROLE.to_string(),
+                    content: Some(system_prompt.clone()),
+                };
+                messages.push(system_prompt_message);
+            }
+        }
+
+        // add data from function call response
+        messages.push({
+            Message {
+                role: USER_ROLE.to_string(),
+                content: Some(body_str),
+            }
+        });
+
+        // add original user prompt
+        messages.push({
+            Message {
+                role: USER_ROLE.to_string(),
+                content: Some(callout_context.user_message.unwrap()),
+            }
+        });
+
+        let request_message: ChatCompletions = ChatCompletions {
+            model: "gpt-3.5-turbo".to_string(),
+            messages,
+            tools: None,
+        };
+
+        let json_string = match serde_json::to_string(&request_message) {
             Ok(json_string) => json_string,
             Err(e) => {
                 warn!("Error serializing request_body: {:?}", e);
@@ -624,6 +705,9 @@ impl Context for StreamContext {
             RequestType::Ner => self.ner_handler(body, callout_context),
             RequestType::ContextResolver => self.context_resolver_handler(body, callout_context),
             RequestType::FunctionResolver => self.function_resolver_handler(body, callout_context),
+            RequestType::FunctionCallResponse => {
+                self.function_call_response_handler(body, callout_context)
+            }
         }
     }
 }
