@@ -29,8 +29,8 @@ pub struct RatelimitMap {
 // This version of Header demands that the user passes a header value to match on.
 #[allow(unused)]
 pub struct Header {
-    key: String,
-    value: String,
+    pub key: String,
+    pub value: String,
 }
 
 impl Header {

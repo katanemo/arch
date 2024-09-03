@@ -5,8 +5,11 @@ use crate::common_types::{
 use crate::configuration::{Entity, PromptTarget};
 use crate::consts::{
     DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE, USER_ROLE,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
+use crate::ratelimit;
+use crate::ratelimit::Header;
+use crate::tokenizer;
 use http::StatusCode;
 use log::error;
 use log::info;
@@ -17,6 +20,7 @@ use open_message_format_embeddings::models::{
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::collections::HashMap;
+use std::num::NonZero;
 use std::time::Duration;
 
 enum RequestType {
@@ -35,6 +39,7 @@ pub struct CallContext {
 
 pub struct StreamContext {
     pub host_header: Option<String>,
+    pub ratelimit_selector: Option<Header>,
     pub callouts: HashMap<u32, CallContext>,
 }
 
@@ -63,6 +68,16 @@ impl StreamContext {
             // Otherwise let the filter continue.
             _ => (),
         }
+    }
+
+    fn save_ratelimit_header(&mut self) {
+        self.ratelimit_selector =
+            if let Some(key) = self.get_http_request_header(RATELIMIT_SELECTOR_HEADER_KEY) {
+                self.get_http_request_header(&key)
+                    .map(|value| Header { key, value })
+            } else {
+                None
+            };
     }
 
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -335,6 +350,22 @@ impl StreamContext {
         info!("sending request to openai: msg {}", json_string);
 
         // Tokenize and Ratelimit.
+        if let Some(selector) = self.ratelimit_selector.take() {
+            if let Ok(token_count) = tokenizer::token_count(&request_body.model, &json_string) {
+                match ratelimit::ratelimits(None).read().unwrap().check_limit(
+                    request_body.model,
+                    selector,
+                    NonZero::new(token_count as u32).unwrap(),
+                ) {
+                    Ok(_) => (),
+                    Err(err) => self.send_http_response(
+                        StatusCode::TOO_MANY_REQUESTS.as_u16().into(),
+                        vec![],
+                        Some(format!("Exceeded Ratelimit: {}", err).as_bytes()),
+                    ),
+                }
+            }
+        }
 
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
@@ -349,6 +380,7 @@ impl HttpContext for StreamContext {
         self.save_host_header();
         self.delete_content_length_header();
         self.modify_path_header();
+        self.save_ratelimit_header();
 
         Action::Continue
     }

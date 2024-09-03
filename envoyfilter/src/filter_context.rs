@@ -273,6 +273,7 @@ impl RootContext for FilterContext {
     fn create_http_context(&self, _context_id: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(StreamContext {
             host_header: None,
+            ratelimit_selector: None,
             callouts: HashMap::new(),
         }))
     }
