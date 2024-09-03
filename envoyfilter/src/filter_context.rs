@@ -1,7 +1,3 @@
-use crate::common_types::{
-    CallContext, EmbeddingRequest, StoreVectorEmbeddingsRequest, VectorPoint,
-};
-use crate::configuration::{Configuration, PromptTarget};
 use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::ratelimit;
 use crate::stats::{Gauge, RecordingMetric};
@@ -13,6 +9,10 @@ use open_message_format_embeddings::models::{
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use public_types::common_types::{
+    CallContext, EmbeddingRequest, StoreVectorEmbeddingsRequest, VectorPoint,
+};
+use public_types::configuration::{Configuration, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
 use std::time::Duration;
