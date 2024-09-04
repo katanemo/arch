@@ -1,16 +1,15 @@
 use http::StatusCode;
-use intelligent_prompt_gateway::common_types::{
-    Entity, NERResponse, SearchPointResult, SearchPointsResponse,
-};
-use intelligent_prompt_gateway::configuration::{Endpoint, PromptTarget};
 use open_message_format_embeddings::models::{
     create_embedding_response::{self, CreateEmbeddingResponse},
     create_embedding_response_usage::CreateEmbeddingResponseUsage,
     embedding, Embedding,
 };
 use proxy_wasm_test_framework::tester;
-use proxy_wasm_test_framework::types::{Action, BufferType, MapType, MetricType, ReturnType};
-use public_types::common_types::Entity;
+use proxy_wasm_test_framework::types::{
+    Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
+};
+use public_types::common_types::{self, NERResponse, SearchPointResult, SearchPointsResponse};
+use public_types::configuration::{self, Endpoint, PromptTarget};
 use serial_test::serial;
 use std::collections::HashMap;
 use std::path::Path;
@@ -338,8 +337,6 @@ ratelimits:
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
-        // TODO: assert that the model field was added.
-        .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_http_call(Some("embeddingserver"), None, None, None, None)
         .returning(Some(1))
@@ -376,10 +373,10 @@ ratelimits:
         name: String::from("test-prompt-target"),
         prompt_type: String::from("test-prompt-type"),
         few_shot_examples: vec![],
-        entities: Some(vec![Entity {
-            score: 0.7,
-            text: String::from("test-text"),
-            label: String::from("test-label"),
+        entities: Some(vec![configuration::Entity {
+            name: String::from("test-entity"),
+            required: Some(true),
+            description: None,
         }]),
         endpoint: Some(Endpoint {
             cluster: String::from("test-endpoint-cluster"),
@@ -391,12 +388,12 @@ ratelimits:
     let prompt_target_str = serde_json::to_string(&prompt_target).unwrap();
     let search_points_response = SearchPointsResponse {
         status: String::new(),
-        time: 0,
+        time: 0.0,
         result: vec![SearchPointResult {
             id: String::new(),
             version: 0,
             score: 0.7,
-            payload: HashMap::from([("prompt-target", prompt_target_str)]),
+            payload: HashMap::from([(String::from("prompt-target"), prompt_target_str)]),
         }],
     };
     let search_points_response_buffer = serde_json::to_string(&search_points_response).unwrap();
@@ -410,6 +407,8 @@ ratelimits:
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&search_points_response_buffer))
+        .expect_log(Some(LogLevel::Info), None)
+        .expect_log(Some(LogLevel::Info), None)
         .expect_http_call(Some("nerhost"), None, None, None, None)
         .returning(Some(3))
         .execute_and_expect(ReturnType::None)
@@ -417,24 +416,20 @@ ratelimits:
 
     let ner_reponse = NERResponse {
         model: String::from("test-model"),
-        data: vec![Entity {
+        data: vec![common_types::Entity {
             score: 0.7,
             text: String::from("test-text"),
-            label: String::from("test-label"),
+            label: String::from("test-entity"),
         }],
     };
     let ner_response_buffer = serde_json::to_string(&ner_reponse).unwrap();
+    let upstream_name = prompt_target.endpoint.unwrap().cluster.leak();
     module
         .call_proxy_on_http_call_response(http_context, 3, 0, ner_response_buffer.len() as i32, 0)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&ner_response_buffer))
-        .expect_http_call(
-            Some(&prompt_target.endpoint.unwrap().cluster),
-            None,
-            None,
-            None,
-            None,
-        )
+        .expect_log(Some(LogLevel::Info), None)
+        .expect_http_call(Some(upstream_name), None, None, None, None)
         .returning(Some(4))
         .execute_and_expect(ReturnType::None)
         .unwrap();
@@ -444,6 +439,9 @@ ratelimits:
         .call_proxy_on_http_call_response(http_context, 4, 0, test_body.len() as i32, 0)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(test_body))
+        .expect_log(Some(LogLevel::Info), None)
+        .expect_log(Some(LogLevel::Info), None)
+        .expect_log(Some(LogLevel::Info), None)
         .expect_send_local_response(
             Some(StatusCode::TOO_MANY_REQUESTS.as_u16().into()),
             None,
