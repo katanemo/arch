@@ -2,7 +2,7 @@ use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::ratelimit;
 use crate::stats::{Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
-use log::info;
+use log::{debug, info};
 use md5::Digest;
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -258,6 +258,8 @@ impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
+
+            debug!("set configuration object: {:?}", self.config);
 
             if let Some(ratelimits_config) = self
                 .config

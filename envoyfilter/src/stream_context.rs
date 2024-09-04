@@ -6,9 +6,7 @@ use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::tokenizer;
 use http::StatusCode;
-use log::error;
-use log::info;
-use log::warn;
+use log::{debug, error, info, warn};
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
@@ -308,7 +306,7 @@ impl StreamContext {
     }
 
     fn context_resolver_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
-        info!("response received for context_resolver");
+        debug!("response received for context_resolver");
         let body_string = String::from_utf8(body);
         let prompt_target = callout_context.prompt_target.unwrap();
         let mut request_body = callout_context.request_body;
@@ -347,8 +345,6 @@ impl StreamContext {
             }
         };
 
-        info!("sending request to openai: msg {}", json_string);
-
         // Tokenize and Ratelimit.
         if let Some(selector) = self.ratelimit_selector.take() {
             if let Ok(token_count) = tokenizer::token_count(&request_body.model, &json_string) {
@@ -358,15 +354,19 @@ impl StreamContext {
                     NonZero::new(token_count as u32).unwrap(),
                 ) {
                     Ok(_) => (),
-                    Err(err) => self.send_http_response(
-                        StatusCode::TOO_MANY_REQUESTS.as_u16().into(),
-                        vec![],
-                        Some(format!("Exceeded Ratelimit: {}", err).as_bytes()),
-                    ),
+                    Err(err) => {
+                        self.send_http_response(
+                            StatusCode::TOO_MANY_REQUESTS.as_u16().into(),
+                            vec![],
+                            Some(format!("Exceeded Ratelimit: {}", err).as_bytes()),
+                        );
+                        return;
+                    }
                 }
             }
         }
 
+        debug!("sending request to openai: msg {}", json_string);
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
