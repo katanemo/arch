@@ -1,5 +1,6 @@
 envoyfilter/target
 envoyfilter/qdrant_data/
+public-types/target
 embedding-server/venv/
 chatbot-ui/venv/
 __pycache__

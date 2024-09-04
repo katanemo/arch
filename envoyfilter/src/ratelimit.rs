@@ -1,6 +1,6 @@
-use crate::configuration;
-use crate::configuration::{Limit, Ratelimit, TimeUnit};
 use governor::{DefaultKeyedRateLimiter, InsufficientCapacity, Quota};
+use public_types::configuration;
+use public_types::configuration::{Limit, Ratelimit, TimeUnit};
 use std::num::{NonZero, NonZeroU32};
 use std::sync::RwLock;
 use std::{collections::HashMap, sync::OnceLock};
@@ -376,8 +376,8 @@ fn different_provider_can_have_different_limits_with_the_same_keys() {
 #[cfg(test)]
 mod test {
     use super::ratelimits;
-    use crate::configuration;
     use configuration::{Limit, Ratelimit, TimeUnit};
+    use public_types::configuration;
     use std::num::NonZero;
     use std::thread;
 

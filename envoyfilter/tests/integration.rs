@@ -10,6 +10,7 @@ use open_message_format_embeddings::models::{
 };
 use proxy_wasm_test_framework::tester;
 use proxy_wasm_test_framework::types::{Action, BufferType, MapType, MetricType, ReturnType};
+use public_types::common_types::Entity;
 use serial_test::serial;
 use std::collections::HashMap;
 use std::path::Path;

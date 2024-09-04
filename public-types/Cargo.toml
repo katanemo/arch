@@ -1,0 +1,8 @@
+[package]
+name = "public-types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+open-message-format-embeddings = { path = "../open-message-format/clients/omf-embeddings-rust" }

@@ -1,8 +1,3 @@
-use crate::common_types::{
-    open_ai::{ChatCompletions, Message},
-    NERRequest, NERResponse, SearchPointsRequest, SearchPointsResponse,
-};
-use crate::configuration::{Entity, PromptTarget};
 use crate::consts::{
     DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
     DEFAULT_PROMPT_TARGET_THRESHOLD, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
@@ -19,6 +14,11 @@ use open_message_format_embeddings::models::{
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use public_types::common_types::{
+    open_ai::{ChatCompletions, Message},
+    NERRequest, NERResponse, SearchPointsRequest, SearchPointsResponse,
+};
+use public_types::configuration::{Entity, PromptTarget};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::time::Duration;
