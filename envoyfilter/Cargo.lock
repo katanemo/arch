@@ -918,6 +918,7 @@ dependencies = [
  "open-message-format-embeddings",
  "proxy-wasm",
  "proxy-wasm-test-framework",
+ "public-types",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1375,6 +1376,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5787f7cda34e3033a72192c018bc5883100330f362ef279a8cbccfce8bb4e874"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "public-types"
+version = "0.1.0"
+dependencies = [
+ "open-message-format-embeddings",
+ "serde",
 ]
 
 [[package]]
