@@ -75,6 +75,7 @@ impl Metric for Gauge {
 }
 
 impl RecordingMetric for Gauge {}
+impl IncrementingMetric for Gauge {}
 
 #[derive(Copy, Clone)]
 pub struct Histogram {

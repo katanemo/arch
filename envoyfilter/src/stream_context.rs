@@ -2,8 +2,10 @@ use crate::consts::{
     DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
     DEFAULT_PROMPT_TARGET_THRESHOLD, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
+use crate::filter_context::WasmMetrics;
 use crate::ratelimit;
 use crate::ratelimit::Header;
+use crate::stats::IncrementingMetric;
 use crate::tokenizer;
 use http::StatusCode;
 use log::{debug, error, info, warn};
@@ -19,6 +21,7 @@ use public_types::common_types::{
 use public_types::configuration::{Entity, PromptTarget};
 use std::collections::HashMap;
 use std::num::NonZero;
+use std::rc::Rc;
 use std::time::Duration;
 
 enum RequestType {
@@ -39,6 +42,7 @@ pub struct StreamContext {
     pub host_header: Option<String>,
     pub ratelimit_selector: Option<Header>,
     pub callouts: HashMap<u32, CallContext>,
+    pub metrics: Rc<WasmMetrics>,
 }
 
 impl StreamContext {
@@ -69,13 +73,12 @@ impl StreamContext {
     }
 
     fn save_ratelimit_header(&mut self) {
-        self.ratelimit_selector =
-            if let Some(key) = self.get_http_request_header(RATELIMIT_SELECTOR_HEADER_KEY) {
+        self.ratelimit_selector = self
+            .get_http_request_header(RATELIMIT_SELECTOR_HEADER_KEY)
+            .and_then(|key| {
                 self.get_http_request_header(&key)
                     .map(|value| Header { key, value })
-            } else {
-                None
-            };
+            });
     }
 
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -128,6 +131,7 @@ impl StreamContext {
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
+        self.metrics.active_http_calls.increment(1);
     }
 
     fn search_points_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -215,6 +219,7 @@ impl StreamContext {
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
+        self.metrics.active_http_calls.increment(1);
     }
 
     fn ner_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -303,6 +308,7 @@ impl StreamContext {
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
+        self.metrics.active_http_calls.increment(1);
     }
 
     fn context_resolver_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
@@ -360,6 +366,7 @@ impl StreamContext {
                             vec![],
                             Some(format!("Exceeded Ratelimit: {}", err).as_bytes()),
                         );
+                        self.metrics.ratelimited_rq.increment(1);
                         return;
                     }
                 }
@@ -486,6 +493,7 @@ impl HttpContext for StreamContext {
                 token_id
             )
         }
+        self.metrics.active_http_calls.increment(1);
 
         Action::Pause
     }
@@ -500,6 +508,7 @@ impl Context for StreamContext {
         _num_trailers: usize,
     ) {
         let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
+        self.metrics.active_http_calls.increment(-1);
 
         let resp = self.get_http_call_response_body(0, body_size);
 

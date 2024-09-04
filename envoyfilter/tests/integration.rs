@@ -86,6 +86,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_http_call(Some("embeddingserver"), None, None, None, None)
         .returning(Some(1))
+        .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
 
@@ -108,10 +109,12 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
             embeddings_response_buffer.len() as i32,
             0,
         )
+        .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&embeddings_response_buffer))
         .expect_http_call(Some("qdrant"), None, None, None, None)
         .returning(Some(2))
+        .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -151,12 +154,14 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
             search_points_response_buffer.len() as i32,
             0,
         )
+        .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&search_points_response_buffer))
         .expect_log(Some(LogLevel::Info), None)
         .expect_log(Some(LogLevel::Info), None)
         .expect_http_call(Some("nerhost"), None, None, None, None)
         .returning(Some(3))
+        .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -172,11 +177,13 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
     let upstream_name = prompt_target.endpoint.unwrap().cluster.leak();
     module
         .call_proxy_on_http_call_response(http_context, 3, 0, ner_response_buffer.len() as i32, 0)
+        .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&ner_response_buffer))
         .expect_log(Some(LogLevel::Info), None)
         .expect_http_call(Some(upstream_name), None, None, None, None)
         .returning(Some(4))
+        .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap()
 }
@@ -257,6 +264,7 @@ fn successful_request_to_open_ai_chat_completions() {
     module
         .call_proxy_on_context_create(root_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
+        .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -319,6 +327,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .returning(Some(chat_completions_request_body))
         // TODO: assert that the model field was added.
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
+        .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
 }
@@ -344,6 +353,7 @@ fn bad_request_to_open_ai_chat_completions() {
     module
         .call_proxy_on_context_create(root_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
+        .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -434,6 +444,7 @@ fn request_ratelimited() {
     module
         .call_proxy_on_context_create(filter_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
+        .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .execute_and_expect(ReturnType::None)
         .unwrap();
     module
@@ -452,6 +463,7 @@ fn request_ratelimited() {
     let test_body = "test body";
     module
         .call_proxy_on_http_call_response(http_context, 4, 0, test_body.len() as i32, 0)
+        .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(test_body))
         .expect_log(Some(LogLevel::Debug), None)
@@ -464,6 +476,7 @@ fn request_ratelimited() {
             None,
             None,
         )
+        .expect_metric_increment("ratelimited_rq", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 }
@@ -493,6 +506,7 @@ fn request_not_ratelimited() {
     module
         .call_proxy_on_context_create(filter_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
+        .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .execute_and_expect(ReturnType::None)
         .unwrap();
     module
@@ -511,6 +525,7 @@ fn request_not_ratelimited() {
     let test_body = "test body";
     module
         .call_proxy_on_http_call_response(http_context, 4, 0, test_body.len() as i32, 0)
+        .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(test_body))
         .expect_log(Some(LogLevel::Debug), None)
