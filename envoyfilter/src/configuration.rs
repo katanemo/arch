@@ -60,8 +60,6 @@ pub struct Parameter {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PromptType {
-    #[serde(rename = "context_resolver")]
-    ContextResolver,
     #[serde(rename = "function_resolver")]
     FunctionResolver,
 }
@@ -102,7 +100,7 @@ system_prompt: |
 
 prompt_targets:
 
-  - type: context_resolver
+  - type: function_resolver
     name: weather_forecast
     few_shot_examples:
       - what is the weather in New York?
@@ -114,7 +112,7 @@ prompt_targets:
         required: true
         description: "The location for which the weather is requested"
 
-  - type: context_resolver
+  - type: function_resolver
     name: weather_forecast_2
     few_shot_examples:
       - what is the weather in New York?

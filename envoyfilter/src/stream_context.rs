@@ -1,17 +1,17 @@
 use crate::common_types::{
     open_ai::{ChatCompletions, Message},
-    FunctionCallingModelResponse, FunctionCallingToolsCallContent, NERRequest, NERResponse,
-    SearchPointsRequest, SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
+    FunctionCallingModelResponse, FunctionCallingToolsCallContent, SearchPointsRequest,
+    SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
 };
-use crate::configuration::{Parameter, PromptTarget};
+use crate::configuration::PromptTarget;
 use crate::consts::{
-    DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_NER_MODEL, DEFAULT_NER_THRESHOLD,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE, USER_ROLE,
+    DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE,
+    USER_ROLE,
 };
 use http::StatusCode;
-use log::error;
 use log::info;
 use log::warn;
+use log::{debug, error};
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
@@ -23,8 +23,6 @@ use std::time::Duration;
 enum RequestType {
     GetEmbedding,
     SearchPoints,
-    Ner,
-    ContextResolver,
     FunctionResolver,
     FunctionCallResponse,
 }
@@ -175,55 +173,6 @@ impl StreamContext {
         info!("prompt_target type: {:?}", prompt_target.prompt_type);
 
         match prompt_target.prompt_type {
-            crate::configuration::PromptType::ContextResolver => {
-                // only extract entity names
-                let entity_names: Vec<String> = match prompt_target.parameters {
-                    // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
-                    Some(ref entities) => {
-                        entities.iter().map(|entity| entity.name.clone()).collect()
-                    }
-                    None => vec![],
-                };
-
-                let ner_request = NERRequest {
-                    input: callout_context.user_message.take().unwrap(),
-                    labels: entity_names,
-                    model: DEFAULT_NER_MODEL.to_string(),
-                };
-
-                let json_data: String = match serde_json::to_string(&ner_request) {
-                    Ok(json_data) => json_data,
-                    Err(e) => {
-                        warn!("Error serializing ner_request: {:?}", e);
-                        self.resume_http_request();
-                        return;
-                    }
-                };
-
-                let token_id = match self.dispatch_http_call(
-                    "nerhost",
-                    vec![
-                        (":method", "POST"),
-                        (":path", "/ner"),
-                        (":authority", "nerhost"),
-                        ("content-type", "application/json"),
-                        ("x-envoy-max-retries", "3"),
-                    ],
-                    Some(json_data.as_bytes()),
-                    vec![],
-                    Duration::from_secs(5),
-                ) {
-                    Ok(token_id) => token_id,
-                    Err(e) => {
-                        panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
-                    }
-                };
-                callout_context.request_type = RequestType::Ner;
-                callout_context.prompt_target = Some(prompt_target);
-                if self.callouts.insert(token_id, callout_context).is_some() {
-                    panic!("duplicate token_id")
-                }
-            }
             crate::configuration::PromptType::FunctionResolver => {
                 // only extract entity names
                 let properties: HashMap<String, ToolParameter> = match prompt_target.parameters {
@@ -261,7 +210,7 @@ impl StreamContext {
 
                 let msg_body = match serde_json::to_string(&chat_completions) {
                     Ok(msg_body) => {
-                        info!("msg_body: {}", msg_body);
+                        debug!("msg_body: {}", msg_body);
                         msg_body
                     }
                     Err(e) => {
@@ -305,149 +254,14 @@ impl StreamContext {
         }
     }
 
-    fn ner_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
-        let ner_response: NERResponse = match serde_json::from_slice(&body) {
-            Ok(ner_response) => ner_response,
-            Err(e) => {
-                warn!("Error deserializing ner_response: {:?}", e);
-                self.resume_http_request();
-                return;
-            }
-        };
-        info!("ner_response: {:?}", ner_response);
-
-        let mut request_params: HashMap<String, String> = HashMap::new();
-        for entity in ner_response.data.into_iter() {
-            if entity.score < DEFAULT_NER_THRESHOLD {
-                warn!(
-                    "score of entity was too low entity name: {}, score: {}",
-                    entity.label, entity.score
-                );
-                continue;
-            }
-            request_params.insert(entity.label, entity.text);
-        }
-
-        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-
-        let empty_vec: Vec<Parameter> = vec![];
-        for entity in prompt_target.parameters.as_ref().unwrap_or(&empty_vec) {
-            if entity.required.unwrap_or(false) && !request_params.contains_key(&entity.name) {
-                warn!(
-                    "required entity missing or score of entity was too low: {}",
-                    entity.name
-                );
-                self.resume_http_request();
-                return;
-            }
-        }
-
-        let req_param_bytes = match serde_json::to_string(&request_params) {
-            Ok(req_param_str) => req_param_str.as_bytes().to_owned(),
-            Err(e) => {
-                warn!("Error serializing request_params: {:?}", e);
-                self.resume_http_request();
-                return;
-            }
-        };
-
-        let endpoint = callout_context
-            .prompt_target
-            .as_ref()
-            .unwrap()
-            .endpoint
-            .as_ref()
-            .unwrap();
-
-        let http_path = match &endpoint.path {
-            Some(path) => path,
-            None => "/",
-        };
-
-        let http_method = match &endpoint.method {
-            Some(method) => method,
-            None => http::Method::POST.as_str(),
-        };
-
-        let token_id = match self.dispatch_http_call(
-            &endpoint.cluster,
-            vec![
-                (":method", http_method),
-                (":path", http_path),
-                (":authority", endpoint.cluster.as_str()),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-            ],
-            Some(&req_param_bytes),
-            vec![],
-            Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                panic!("Error dispatching HTTP call for context_resolver: {:?}", e);
-            }
-        };
-        callout_context.request_type = RequestType::ContextResolver;
-        if self.callouts.insert(token_id, callout_context).is_some() {
-            panic!("duplicate token_id")
-        }
-    }
-
-    fn context_resolver_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
-        info!("response received for context_resolver");
-        let body_string = String::from_utf8(body);
-        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-        let mut request_body = callout_context.request_body;
-        match prompt_target.system_prompt.as_ref() {
-            None => {}
-            Some(system_prompt) => {
-                let system_prompt_message: Message = Message {
-                    role: SYSTEM_ROLE.to_string(),
-                    content: Some(system_prompt.clone()),
-                    model: None,
-                };
-                request_body.messages.push(system_prompt_message);
-            }
-        }
-        match body_string {
-            Ok(body_string) => {
-                info!("context_resolver response: {}", body_string);
-                let context_resolver_response = Message {
-                    role: USER_ROLE.to_string(),
-                    content: Some(body_string),
-                    model: None,
-                };
-                request_body.messages.push(context_resolver_response);
-            }
-            Err(e) => {
-                warn!("Error converting response to string: {:?}", e);
-                self.resume_http_request();
-                return;
-            }
-        }
-
-        let json_string = match serde_json::to_string(&request_body) {
-            Ok(json_string) => json_string,
-            Err(e) => {
-                warn!("Error serializing request_body: {:?}", e);
-                self.resume_http_request();
-                return;
-            }
-        };
-        info!("sending request to openai: msg {}", json_string);
-        self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
-        self.resume_http_request();
-    }
-
     fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
         info!("response received for function resolver");
         // let body_string = String::from_utf8(body);
 
         let body_str = String::from_utf8(body.clone()).unwrap();
-        info!("function_resolver response str: {:?}", body_str);
+        debug!("function_resolver response str: {:?}", body_str);
 
         let mut resp = serde_json::from_str::<FunctionCallingModelResponse>(&body_str).unwrap();
-        info!("function_resolver response: {:?}", resp);
         resp.resolver_name = Some(callout_context.prompt_target.as_ref().unwrap().name.clone());
 
         let content: String = resp.message.content.as_ref().unwrap().clone();
@@ -496,7 +310,7 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call for context_resolver: {:?}", e);
+                panic!("Error dispatching HTTP call for function_resolver: {:?}", e);
             }
         };
 
@@ -721,8 +535,6 @@ impl Context for StreamContext {
         match callout_context.request_type {
             RequestType::GetEmbedding => self.embeddings_handler(body, callout_context),
             RequestType::SearchPoints => self.search_points_handler(body, callout_context),
-            RequestType::Ner => self.ner_handler(body, callout_context),
-            RequestType::ContextResolver => self.context_resolver_handler(body, callout_context),
             RequestType::FunctionResolver => self.function_resolver_handler(body, callout_context),
             RequestType::FunctionCallResponse => {
                 self.function_call_response_handler(body, callout_context)
