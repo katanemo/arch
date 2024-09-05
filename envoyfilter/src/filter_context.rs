@@ -1,8 +1,8 @@
 use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::ratelimit;
-use crate::stats::{Gauge, RecordingMetric};
+use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
-use log::info;
+use log::{debug, info};
 use md5::Digest;
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -15,23 +15,26 @@ use public_types::common_types::{
 use public_types::configuration::{Configuration, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::time::Duration;
 
 #[derive(Copy, Clone)]
-struct WasmMetrics {
-    active_http_calls: Gauge,
+pub struct WasmMetrics {
+    pub active_http_calls: Gauge,
+    pub ratelimited_rq: Counter,
 }
 
 impl WasmMetrics {
     fn new() -> WasmMetrics {
         WasmMetrics {
             active_http_calls: Gauge::new(String::from("active_http_calls")),
+            ratelimited_rq: Counter::new(String::from("ratelimited_rq")),
         }
     }
 }
 
 pub struct FilterContext {
-    metrics: WasmMetrics,
+    metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: HashMap<u32, CallContext>,
     config: Option<Configuration>,
@@ -42,7 +45,7 @@ impl FilterContext {
         FilterContext {
             callouts: HashMap::new(),
             config: None,
-            metrics: WasmMetrics::new(),
+            metrics: Rc::new(WasmMetrics::new()),
         }
     }
 
@@ -259,6 +262,8 @@ impl RootContext for FilterContext {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
 
+            debug!("set configuration object: {:?}", self.config);
+
             if let Some(ratelimits_config) = self
                 .config
                 .as_mut()
@@ -273,7 +278,9 @@ impl RootContext for FilterContext {
     fn create_http_context(&self, _context_id: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(StreamContext {
             host_header: None,
+            ratelimit_selector: None,
             callouts: HashMap::new(),
+            metrics: Rc::clone(&self.metrics),
         }))
     }
 

@@ -18,6 +18,7 @@ open-message-format-embeddings = { path = "../open-message-format/clients/omf-em
 public-types = { path = "../public-types" }
 http = "1.1.0"
 governor = "0.6.3"
+tiktoken-rs = "0.5.9"
 
 [dev-dependencies]
 proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "main" }

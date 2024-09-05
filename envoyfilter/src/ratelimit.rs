@@ -1,4 +1,5 @@
 use governor::{DefaultKeyedRateLimiter, InsufficientCapacity, Quota};
+use log::debug;
 use public_types::configuration;
 use public_types::configuration::{Limit, Ratelimit, TimeUnit};
 use std::num::{NonZero, NonZeroU32};
@@ -28,9 +29,10 @@ pub struct RatelimitMap {
 
 // This version of Header demands that the user passes a header value to match on.
 #[allow(unused)]
+#[derive(Debug)]
 pub struct Header {
-    key: String,
-    value: String,
+    pub key: String,
+    pub value: String,
 }
 
 impl Header {
@@ -84,6 +86,11 @@ impl RatelimitMap {
         selector: Header,
         tokens_used: NonZeroU32,
     ) -> Result<(), String> {
+        debug!(
+            "Checking limit for provider={}, with selector={:?}, consuming tokens={:?}",
+            provider, selector, tokens_used
+        );
+
         let provider_limits = match self.datastore.get(&provider) {
             None => {
                 // No limit configured for this provider, hence ok.
