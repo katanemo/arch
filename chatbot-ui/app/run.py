@@ -18,6 +18,8 @@ CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.op
 class Message(BaseModel):
     role: str
     content: str
+    model: str
+    resolver: str
 
 async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=120) -> Optional[str]:
     """
@@ -52,7 +54,20 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=12
                         )
                         logger.debug(f"Status Code : {resp.status_code}")
                         if resp.status_code == 200:
-                            return resp.json()["choices"][0]["message"]["content"]
+                            resp_json = resp.json()
+                            model = resp_json["model"]
+                            msg = {}
+                            msg["role"] = "assistant"
+                            msg["model"] = model
+                            if "resolver_name" in resp_json:
+                                msg["resolver"] = resp_json["resolver_name"]
+                            if "choices" in resp_json:
+                                msg["content"] = resp_json["choices"][0]["message"]["content"]
+                                return msg
+                            elif "message" in resp_json:
+                                msg["content"] = resp_json["message"]["content"]
+                                return msg
+                            keep_loop = False
                         else:
                             logger.warning(resp.content)
                             keep_loop = False
@@ -70,20 +85,21 @@ async def predict(input, history):
     """
     history.append({"role": "user", "content": input})
     response = await make_completion(history)
+    print(response)
     if response is not None:
-      history.append({"role": "assistant", "content": response})
+      history.append(response)
     messages = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
     return messages, history
 
 """
 Gradio Blocks low-level API that allows to create custom web applications (here our chat app)
 """
-with gr.Blocks() as demo:
+with gr.Blocks(fill_height=True, css="footer {visibility: hidden}") as demo:
     logger.info("Starting Demo...")
-    chatbot = gr.Chatbot(label="WebGPT")
+    chatbot = gr.Chatbot(label="Bolt Chatbot", scale=1)
     state = gr.State([])
     with gr.Row():
-        txt = gr.Textbox(show_label=False, placeholder="Enter text and press enter")
+        txt = gr.Textbox(show_label=False, placeholder="Enter text and press enter", scale=1)
     txt.submit(predict, [txt, state], [chatbot, state])
 
 demo.launch(server_name="0.0.0.0", server_port=8080)

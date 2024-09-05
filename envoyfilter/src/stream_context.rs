@@ -139,8 +139,21 @@ impl StreamContext {
         }
 
         info!("similarity score: {}", search_results[0].score);
+        let mut bolt_assistant = false;
+        let messages = &callout_context.request_body.messages;
+        if messages.len() >= 2 {
+            let latest_assistant_message = &messages[messages.len() - 2];
+            latest_assistant_message.model.as_ref().map(|model| {
+                if model.starts_with("Bolt") {
+                    info!("Bolt assistant message found");
+                    bolt_assistant = true;
+                }
+            });
+        } else {
+            info!("no assistant message found, probably first interaction");
+        }
 
-        if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD {
+        if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD && !bolt_assistant {
             info!(
                 "prompt target below threshold: {}",
                 DEFAULT_PROMPT_TARGET_THRESHOLD
@@ -242,10 +255,7 @@ impl StreamContext {
 
                 let chat_completions = ChatCompletions {
                     model: "gpt-3.5-turbo".to_string(),
-                    messages: vec![Message {
-                        role: USER_ROLE.to_string(),
-                        content: callout_context.user_message.clone(),
-                    }],
+                    messages: callout_context.request_body.messages.clone(),
                     tools: Some(vec![tools_defintion]),
                 };
 
@@ -394,6 +404,7 @@ impl StreamContext {
                 let system_prompt_message: Message = Message {
                     role: SYSTEM_ROLE.to_string(),
                     content: Some(system_prompt.clone()),
+                    model: None,
                 };
                 request_body.messages.push(system_prompt_message);
             }
@@ -404,6 +415,7 @@ impl StreamContext {
                 let context_resolver_response = Message {
                     role: USER_ROLE.to_string(),
                     content: Some(body_string),
+                    model: None,
                 };
                 request_body.messages.push(context_resolver_response);
             }
@@ -434,10 +446,11 @@ impl StreamContext {
         let body_str = String::from_utf8(body.clone()).unwrap();
         info!("function_resolver response str: {:?}", body_str);
 
-        let resp = serde_json::from_str::<FunctionCallingModelResponse>(&body_str).unwrap();
+        let mut resp = serde_json::from_str::<FunctionCallingModelResponse>(&body_str).unwrap();
         info!("function_resolver response: {:?}", resp);
+        resp.resolver_name = Some(callout_context.prompt_target.as_ref().unwrap().name.clone());
 
-        let content: String = resp.message.content.unwrap();
+        let content: String = resp.message.content.as_ref().unwrap().clone();
 
         let _tool_call_details = serde_json::from_str::<FunctionCallingToolsCallContent>(&content);
         match _tool_call_details {
@@ -445,10 +458,11 @@ impl StreamContext {
             Err(e) => {
                 info!("error deserializing tool_call_details: {:?}", e);
                 info!("possibly some required parameters are missing, send back the response");
+                let resp_str = serde_json::to_string(&resp).unwrap();
                 self.send_http_response(
                     200,
                     vec![("Powered-By", "Katanemo")],
-                    Some(body.as_slice()),
+                    Some(resp_str.as_bytes()),
                 );
                 return;
             }
@@ -498,7 +512,7 @@ impl StreamContext {
         info!("function_call_response response str: {:?}", body_str);
         let prompt_target = callout_context.prompt_target.as_ref().unwrap();
 
-        let mut messages: Vec<Message> = Vec::new();
+        let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
 
         // add system prompt
         match prompt_target.system_prompt.as_ref() {
@@ -507,6 +521,7 @@ impl StreamContext {
                 let system_prompt_message = Message {
                     role: SYSTEM_ROLE.to_string(),
                     content: Some(system_prompt.clone()),
+                    model: None,
                 };
                 messages.push(system_prompt_message);
             }
@@ -517,6 +532,7 @@ impl StreamContext {
             Message {
                 role: USER_ROLE.to_string(),
                 content: Some(body_str),
+                model: None,
             }
         });
 
@@ -525,6 +541,7 @@ impl StreamContext {
             Message {
                 role: USER_ROLE.to_string(),
                 content: Some(callout_context.user_message.unwrap()),
+                model: None,
             }
         });
 
@@ -542,7 +559,10 @@ impl StreamContext {
                 return;
             }
         };
-        info!("sending request to openai: msg {}", json_string);
+        info!(
+            "function_calling sending request to openai: msg {}",
+            json_string
+        );
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
@@ -573,8 +593,7 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let mut deserialized_body: ChatCompletions = match self.get_http_request_body(0, body_size)
-        {
+        let deserialized_body: ChatCompletions = match self.get_http_request_body(0, body_size) {
             Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                 Ok(deserialized) => deserialized,
                 Err(msg) => {
@@ -602,8 +621,8 @@ impl HttpContext for StreamContext {
 
         let user_message = match deserialized_body
             .messages
-            .pop()
-            .and_then(|last_message| last_message.content)
+            .last()
+            .and_then(|last_message| last_message.content.clone())
         {
             Some(content) => content,
             None => {

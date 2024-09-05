@@ -53,7 +53,21 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
     environment:
+      # use ollama endpoint that is hosted by host machine (no virtualization)
       - OLLAMA_ENDPOINT=host.docker.internal
+      # uncomment following line to use ollama endpoint that is hosted by docker
+      # - OLLAMA_ENDPOINT=ollama
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    volumes:
+      - ./ollama:/root/.ollama
+    restart: unless-stopped
+    ports:
+      - '11434:11434'
+    profiles:
+      - manual
 
   qdrant:
     image: qdrant/qdrant
@@ -97,12 +111,3 @@ services:
       - ./grafana:/etc/grafana/provisioning/datasources
       - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/dashboards:/var/lib/grafana/dashboards
-
-  ollama:
-    image: ollama/ollama
-    container_name: ollama
-    volumes:
-      - ./ollama:/root/.ollama
-    restart: unless-stopped
-    ports:
-      - '11434:11434'

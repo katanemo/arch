@@ -102,12 +102,20 @@ pub struct FunctionCallingModelResponse {
     pub message: open_ai::Message,
     pub done_reason: String,
     pub done: bool,
+    pub resolver_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum IntOrString {
+    Integer(i32),
+    Text(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolCallDetail {
     pub name: String,
-    pub arguments: HashMap<String, String>,
+    pub arguments: HashMap<String, IntOrString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -125,6 +133,7 @@ pub mod open_ai {
         #[serde(default)]
         pub model: String,
         pub messages: Vec<Message>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub tools: Option<Vec<ToolsDefinition>>,
     }
 
@@ -132,5 +141,7 @@ pub mod open_ai {
     pub struct Message {
         pub role: String,
         pub content: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub model: Option<String>,
     }
 }
