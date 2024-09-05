@@ -21,5 +21,5 @@ governor = "0.6.3"
 tiktoken-rs = "0.5.9"
 
 [dev-dependencies]
-proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "more-compatibility" }
+proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "main" }
 serial_test = "3.1.1"
