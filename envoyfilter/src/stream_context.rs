@@ -172,8 +172,10 @@ impl StreamContext {
                 return;
             }
         };
-        info!("prompt_target name: {:?}", prompt_target.name);
-        info!("prompt_target type: {:?}", prompt_target.prompt_type);
+        info!(
+            "prompt_target name: {:?}, type: {:?}",
+            prompt_target.name, prompt_target.prompt_type
+        );
 
         match prompt_target.prompt_type {
             crate::configuration::PromptType::FunctionResolver => {
@@ -246,7 +248,7 @@ impl StreamContext {
                     }
                 };
 
-                info!(
+                debug!(
                     "dispatched call to function {} token_id={}",
                     BOLT_FC_CLUSTER, token_id
                 );
@@ -261,7 +263,7 @@ impl StreamContext {
     }
 
     fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
-        info!("response received for function resolver");
+        debug!("response received for function resolver");
         // let body_string = String::from_utf8(body);
 
         let body_str = String::from_utf8(body.clone()).unwrap();
@@ -276,11 +278,12 @@ impl StreamContext {
         match _tool_call_details {
             Ok(_) => {}
             Err(e) => {
+                //FIXME: this is a hack to handle the case where the response is not a valid tool_call_details
                 info!("error deserializing tool_call_details: {:?}", e);
                 info!("possibly some required parameters are missing, send back the response");
                 let resp_str = serde_json::to_string(&resp).unwrap();
                 self.send_http_response(
-                    200,
+                    StatusCode::OK.as_u16().into(),
                     vec![("Powered-By", "Katanemo")],
                     Some(resp_str.as_bytes()),
                 );
@@ -290,13 +293,13 @@ impl StreamContext {
 
         let tool_call_details = _tool_call_details.unwrap();
 
-        info!("tool_call_details: {:?}", tool_call_details);
+        debug!("tool_call_details: {:?}", tool_call_details);
         let tool_name = &tool_call_details.tool_calls[0].name;
         let tool_params = &tool_call_details.tool_calls[0].arguments;
-        info!("tool_name: {:?}", tool_name);
-        info!("tool_params: {:?}", tool_params);
+        debug!("tool_name: {:?}", tool_name);
+        debug!("tool_params: {:?}", tool_params);
         let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-        info!("prompt_target: {:?}", prompt_target);
+        debug!("prompt_target: {:?}", prompt_target);
 
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
@@ -327,9 +330,9 @@ impl StreamContext {
     }
 
     fn function_call_response_handler(&self, body: Vec<u8>, callout_context: CallContext) {
-        info!("response received for function call response");
+        debug!("response received for function call response");
         let body_str: String = String::from_utf8(body).unwrap();
-        info!("function_call_response response str: {:?}", body_str);
+        debug!("function_call_response response str: {:?}", body_str);
         let prompt_target = callout_context.prompt_target.as_ref().unwrap();
 
         let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
@@ -379,7 +382,7 @@ impl StreamContext {
                 return;
             }
         };
-        info!(
+        debug!(
             "function_calling sending request to openai: msg {}",
             json_string
         );
@@ -446,7 +449,7 @@ impl HttpContext for StreamContext {
         {
             Some(content) => content,
             None => {
-                info!("No messages in the request body");
+                warn!("No messages in the request body");
                 return Action::Continue;
             }
         };
@@ -489,7 +492,7 @@ impl HttpContext for StreamContext {
                 );
             }
         };
-        info!(
+        debug!(
             "dispatched HTTP call to embedding server token_id={}",
             token_id
         );

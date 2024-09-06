@@ -5,7 +5,7 @@ use crate::configuration::{Configuration, PromptTarget};
 use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::stats::{Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
-use log::info;
+use log::debug;
 use md5::Digest;
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -85,7 +85,7 @@ impl FilterContext {
                     // Need to clone prompt target to leave config string intact.
                     prompt_target: prompt_target.clone(),
                 };
-                info!(
+                debug!(
                     "dispatched HTTP call to embedding server token_id={}",
                     token_id
                 );
@@ -187,7 +187,7 @@ impl FilterContext {
     fn create_vector_store_points_handler(&self, body_size: usize) {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
-                info!(
+                debug!(
                     "response body: len {:?}",
                     String::from_utf8(body).unwrap().len()
                 );
@@ -263,7 +263,7 @@ impl Context for FilterContext {
                             http_status_code.clone_from(v);
                         }
                     });
-                info!("CreateVectorCollection response: {}", http_status_code);
+                debug!("CreateVectorCollection response: {}", http_status_code);
             }
         }
     }
