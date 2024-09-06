@@ -53,25 +53,6 @@ pub struct SearchPointsResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NERRequest {
-    pub input: String,
-    pub labels: Vec<String>,
-    pub model: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Entity {
-    pub text: String,
-    pub label: String,
-    pub score: f64,
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NERResponse {
-    pub data: Vec<Entity>,
-    pub model: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolParameter {
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]

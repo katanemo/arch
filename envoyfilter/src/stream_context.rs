@@ -1,12 +1,15 @@
-use crate::common_types::{
-    open_ai::{ChatCompletions, Message},
-    FunctionCallingModelResponse, FunctionCallingToolsCallContent, SearchPointsRequest,
-    SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
-};
 use crate::configuration::PromptTarget;
 use crate::consts::{
     DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE,
     USER_ROLE,
+};
+use crate::{
+    common_types::{
+        open_ai::{ChatCompletions, Message},
+        FunctionCallingModelResponse, FunctionCallingToolsCallContent, SearchPointsRequest,
+        SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
+    },
+    consts::{BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, GPT_35_TURBO},
 };
 use http::StatusCode;
 use log::info;
@@ -203,7 +206,7 @@ impl StreamContext {
                 };
 
                 let chat_completions = ChatCompletions {
-                    model: "gpt-3.5-turbo".to_string(),
+                    model: GPT_35_TURBO.to_string(),
                     messages: callout_context.request_body.messages.clone(),
                     tools: Some(vec![tools_defintion]),
                 };
@@ -221,14 +224,17 @@ impl StreamContext {
                 };
 
                 let token_id = match self.dispatch_http_call(
-                    "bolt_fc_1b",
+                    BOLT_FC_CLUSTER,
                     vec![
                         (":method", "POST"),
                         (":path", "/v1/chat/completions"),
-                        (":authority", "bolt_fc_1b"),
+                        (":authority", BOLT_FC_CLUSTER),
                         ("content-type", "application/json"),
                         ("x-envoy-max-retries", "3"),
-                        ("x-envoy-upstream-rq-timeout-ms", "120000"),
+                        (
+                            "x-envoy-upstream-rq-timeout-ms",
+                            BOLT_FC_REQUEST_TIMEOUT_MS.to_string().as_str(),
+                        ),
                     ],
                     Some(msg_body.as_bytes()),
                     vec![],
@@ -241,8 +247,8 @@ impl StreamContext {
                 };
 
                 info!(
-                    "dispatched call to function bolt_fc_1b token_id={}",
-                    token_id
+                    "dispatched call to function {} token_id={}",
+                    BOLT_FC_CLUSTER, token_id
                 );
 
                 callout_context.request_type = RequestType::FunctionResolver;
@@ -360,7 +366,7 @@ impl StreamContext {
         });
 
         let request_message: ChatCompletions = ChatCompletions {
-            model: "gpt-3.5-turbo".to_string(),
+            model: GPT_35_TURBO.to_string(),
             messages,
             tools: None,
         };
