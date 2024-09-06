@@ -25,14 +25,6 @@
       "path": "open-message-format"
     },
     {
-      "name": "demos/weather-forecast",
-      "path": "./demos/weather-forecast",
-    },
-    {
-      "name": "demos/weather-forecast-local-llm",
-      "path": "./demos/weather-forecast-local-llm",
-    },
-    {
       "name": "demos/function-calling",
       "path": "./demos/function-calling",
     },
