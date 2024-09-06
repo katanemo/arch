@@ -20,6 +20,7 @@ class Message(BaseModel):
 
     role: str
     content: str
+    # model is additional state we maintin on client side so that bolt gateway can know which model responded to user prompt
     model: str
     resolver: str
 
@@ -96,6 +97,7 @@ async def predict(input, history):
 """
 Gradio Blocks low-level API that allows to create custom web applications (here our chat app)
 """
+# with fill_height=true the chatbot to fill the height of the page
 with gr.Blocks(fill_height=True, css="footer {visibility: hidden}") as demo:
     logger.info("Starting Demo...")
     chatbot = gr.Chatbot(label="Bolt Chatbot", scale=1)

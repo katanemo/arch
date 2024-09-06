@@ -1,4 +1,4 @@
-FROM /Users/adilhafeez/src/function-calling/ollama_example/Bolt-Function-Calling-1B-Q3_K_L.gguf
+FROM Bolt-Function-Calling-1B-Q3_K_L.gguf
 
 # Set the size of the context window used to generate the next token
 PARAMETER num_ctx 16384

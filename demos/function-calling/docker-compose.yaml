@@ -54,9 +54,9 @@ services:
       - ~/.cache/huggingface:/root/.cache/huggingface
     environment:
       # use ollama endpoint that is hosted by host machine (no virtualization)
-      # - OLLAMA_ENDPOINT=host.docker.internal
+      - OLLAMA_ENDPOINT=host.docker.internal
       # uncomment following line to use ollama endpoint that is hosted by docker
-      - OLLAMA_ENDPOINT=ollama
+      # - OLLAMA_ENDPOINT=ollama
 
   ollama:
     image: ollama/ollama
@@ -66,6 +66,8 @@ services:
     restart: unless-stopped
     ports:
       - '11434:11434'
+    profiles:
+      - manual
 
   qdrant:
     image: qdrant/qdrant
