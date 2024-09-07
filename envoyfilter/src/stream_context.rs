@@ -8,19 +8,6 @@ use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
-use public_types::common_types::{
-    FunctionCallingModelResponse, FunctionCallingToolsCallContent, ToolParameter, ToolParameters,
-    ToolsDefinition,
-};
-use public_types::configuration::{PromptTarget, PromptType};
-// use crate::{
-//     common_types::{
-//         open_ai::{ChatCompletions, Message},
-//         FunctionCallingModelResponse, FunctionCallingToolsCallContent, SearchPointsRequest,
-//         SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
-//     },
-//     consts::{BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, GPT_35_TURBO},
-// };
 use http::StatusCode;
 use log::{debug, error, info, warn};
 use open_message_format_embeddings::models::{
@@ -32,6 +19,11 @@ use public_types::common_types::{
     open_ai::{ChatCompletions, Message},
     SearchPointsRequest, SearchPointsResponse,
 };
+use public_types::common_types::{
+    FunctionCallingModelResponse, FunctionCallingToolsCallContent, ToolParameter, ToolParameters,
+    ToolsDefinition,
+};
+use public_types::configuration::{PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
