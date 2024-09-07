@@ -1,26 +1,40 @@
-use crate::configuration::PromptTarget;
 use crate::consts::{
-    DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, SYSTEM_ROLE,
+    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE,
     USER_ROLE,
 };
-use crate::{
-    common_types::{
-        open_ai::{ChatCompletions, Message},
-        FunctionCallingModelResponse, FunctionCallingToolsCallContent, SearchPointsRequest,
-        SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
-    },
-    consts::{BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, GPT_35_TURBO},
+use crate::filter_context::WasmMetrics;
+use crate::ratelimit;
+use crate::ratelimit::Header;
+use crate::stats::IncrementingMetric;
+use crate::tokenizer;
+use public_types::common_types::{
+    FunctionCallingModelResponse, FunctionCallingToolsCallContent, ToolParameter, ToolParameters,
+    ToolsDefinition,
 };
+use public_types::configuration::{PromptTarget, PromptType};
+// use crate::{
+//     common_types::{
+//         open_ai::{ChatCompletions, Message},
+//         FunctionCallingModelResponse, FunctionCallingToolsCallContent, SearchPointsRequest,
+//         SearchPointsResponse, ToolParameter, ToolParameters, ToolsDefinition,
+//     },
+//     consts::{BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, GPT_35_TURBO},
+// };
 use http::StatusCode;
-use log::info;
-use log::warn;
-use log::{debug, error};
+use log::{debug, error, info, warn};
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use public_types::common_types::{
+    open_ai::{ChatCompletions, Message},
+    SearchPointsRequest, SearchPointsResponse,
+};
 use std::collections::HashMap;
+use std::num::NonZero;
+use std::rc::Rc;
 use std::time::Duration;
 
 enum RequestType {
@@ -39,7 +53,9 @@ pub struct CallContext {
 
 pub struct StreamContext {
     pub host_header: Option<String>,
+    pub ratelimit_selector: Option<Header>,
     pub callouts: HashMap<u32, CallContext>,
+    pub metrics: Rc<WasmMetrics>,
 }
 
 impl StreamContext {
@@ -67,6 +83,15 @@ impl StreamContext {
             // Otherwise let the filter continue.
             _ => (),
         }
+    }
+
+    fn save_ratelimit_header(&mut self) {
+        self.ratelimit_selector = self
+            .get_http_request_header(RATELIMIT_SELECTOR_HEADER_KEY)
+            .and_then(|key| {
+                self.get_http_request_header(&key)
+                    .map(|value| Header { key, value })
+            });
     }
 
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -119,6 +144,7 @@ impl StreamContext {
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
+        self.metrics.active_http_calls.increment(1);
     }
 
     fn search_points_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -178,7 +204,7 @@ impl StreamContext {
         );
 
         match prompt_target.prompt_type {
-            crate::configuration::PromptType::FunctionResolver => {
+            PromptType::FunctionResolver => {
                 // only extract entity names
                 let properties: HashMap<String, ToolParameter> = match prompt_target.parameters {
                     // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
@@ -260,6 +286,7 @@ impl StreamContext {
                 }
             }
         }
+        self.metrics.active_http_calls.increment(1);
     }
 
     fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -327,9 +354,10 @@ impl StreamContext {
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
+        self.metrics.active_http_calls.increment(1);
     }
 
-    fn function_call_response_handler(&self, body: Vec<u8>, callout_context: CallContext) {
+    fn function_call_response_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
         debug!("response received for function call response");
         let body_str: String = String::from_utf8(body).unwrap();
         debug!("function_call_response response str: {:?}", body_str);
@@ -386,6 +414,32 @@ impl StreamContext {
             "function_calling sending request to openai: msg {}",
             json_string
         );
+
+        let request_body = callout_context.request_body;
+
+        // Tokenize and Ratelimit.
+        if let Some(selector) = self.ratelimit_selector.take() {
+            if let Ok(token_count) = tokenizer::token_count(&request_body.model, &json_string) {
+                match ratelimit::ratelimits(None).read().unwrap().check_limit(
+                    request_body.model,
+                    selector,
+                    NonZero::new(token_count as u32).unwrap(),
+                ) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        self.send_http_response(
+                            StatusCode::TOO_MANY_REQUESTS.as_u16().into(),
+                            vec![],
+                            Some(format!("Exceeded Ratelimit: {}", err).as_bytes()),
+                        );
+                        self.metrics.ratelimited_rq.increment(1);
+                        return;
+                    }
+                }
+            }
+        }
+
+        debug!("sending request to openai: msg {}", json_string);
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
@@ -399,6 +453,7 @@ impl HttpContext for StreamContext {
         self.save_host_header();
         self.delete_content_length_header();
         self.modify_path_header();
+        self.save_ratelimit_header();
 
         Action::Continue
     }
@@ -509,6 +564,7 @@ impl HttpContext for StreamContext {
                 token_id
             )
         }
+        self.metrics.active_http_calls.increment(1);
 
         Action::Pause
     }
@@ -523,6 +579,7 @@ impl Context for StreamContext {
         _num_trailers: usize,
     ) {
         let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
+        self.metrics.active_http_calls.increment(-1);
 
         let resp = self.get_http_call_response_body(0, body_size);
 

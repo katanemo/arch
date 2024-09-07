@@ -5,6 +5,7 @@ COPY envoyfilter/src /envoyfilter/src
 COPY envoyfilter/Cargo.toml /envoyfilter/
 COPY envoyfilter/Cargo.lock /envoyfilter/
 COPY open-message-format /open-message-format
+COPY public-types /public-types
 
 RUN rustup -v target add wasm32-wasi
 RUN cargo build --release --target wasm32-wasi
