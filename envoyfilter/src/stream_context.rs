@@ -162,12 +162,12 @@ impl StreamContext {
         let messages = &callout_context.request_body.messages;
         if messages.len() >= 2 {
             let latest_assistant_message = &messages[messages.len() - 2];
-            latest_assistant_message.model.as_ref().map(|model| {
+            if let Some(model) = latest_assistant_message.model.as_ref() {
                 if model.starts_with("Bolt") {
                     info!("Bolt assistant message found");
                     bolt_assistant = true;
                 }
-            });
+            }
         } else {
             info!("no assistant message found, probably first interaction");
         }
@@ -327,7 +327,7 @@ impl StreamContext {
             &endpoint.cluster,
             vec![
                 (":method", "POST"),
-                (":path", &endpoint.path.as_ref().unwrap_or(&"/".to_string())),
+                (":path", endpoint.path.as_ref().unwrap_or(&"/".to_string())),
                 (":authority", endpoint.cluster.as_str()),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
