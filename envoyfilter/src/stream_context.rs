@@ -20,8 +20,7 @@ use public_types::common_types::{
     SearchPointsRequest, SearchPointsResponse,
 };
 use public_types::common_types::{
-    FunctionCallingModelResponse, FunctionCallingToolsCallContent, ToolParameter, ToolParameters,
-    ToolsDefinition,
+    BoltFCResponse, BoltFCToolsCall, ToolParameter, ToolParameters, ToolsDefinition,
 };
 use public_types::configuration::{PromptTarget, PromptType};
 use std::collections::HashMap;
@@ -158,6 +157,8 @@ impl StreamContext {
         }
 
         info!("similarity score: {}", search_results[0].score);
+        // Check to see who responded to user message. This will help us identify if control should be passed to Bolt FC or not.
+        // If the last message was from Bolt FC, then Bolt FC is handling the conversation (possibly for parameter collection).
         let mut bolt_assistant = false;
         let messages = &callout_context.request_body.messages;
         if messages.len() >= 2 {
@@ -283,38 +284,37 @@ impl StreamContext {
 
     fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
         debug!("response received for function resolver");
-        // let body_string = String::from_utf8(body);
 
-        let body_str = String::from_utf8(body.clone()).unwrap();
+        let body_str = String::from_utf8(body).unwrap();
         debug!("function_resolver response str: {:?}", body_str);
 
-        let mut resp = serde_json::from_str::<FunctionCallingModelResponse>(&body_str).unwrap();
-        resp.resolver_name = Some(callout_context.prompt_target.as_ref().unwrap().name.clone());
+        let mut boltfc_response: BoltFCResponse = serde_json::from_str(&body_str).unwrap();
 
-        let content: String = resp.message.content.as_ref().unwrap().clone();
+        let boltfc_response_str = boltfc_response.message.content.as_ref().unwrap();
 
-        let _tool_call_details = serde_json::from_str::<FunctionCallingToolsCallContent>(&content);
-        match _tool_call_details {
-            Ok(_) => {}
-            Err(e) => {
-                //FIXME: this is a hack to handle the case where the response is not a valid tool_call_details
-                info!("error deserializing tool_call_details: {:?}", e);
-                info!("possibly some required parameters are missing, send back the response");
-                let resp_str = serde_json::to_string(&resp).unwrap();
+        let tools_call_response: BoltFCToolsCall = match serde_json::from_str(boltfc_response_str) {
+            Ok(fc_resp) => fc_resp,
+            Err(_) => {
+                // This means that Bolt FC did not have enough information to resolve the function call
+                // Bolt FC probably responded with a message asking for more information.
+                // Let's send the response back to the user to initalize lightweight dialog for parameter collection
+
+                // add resolver name to the response so the client can send the response back to the correct resolver
+                boltfc_response.resolver_name = Some(callout_context.prompt_target.unwrap().name);
+                info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection");
+                let bolt_fc_dialogue_message = serde_json::to_string(&boltfc_response).unwrap();
                 self.send_http_response(
                     StatusCode::OK.as_u16().into(),
                     vec![("Powered-By", "Katanemo")],
-                    Some(resp_str.as_bytes()),
+                    Some(bolt_fc_dialogue_message.as_bytes()),
                 );
                 return;
             }
-        }
+        };
 
-        let tool_call_details = _tool_call_details.unwrap();
-
-        debug!("tool_call_details: {:?}", tool_call_details);
-        let tool_name = &tool_call_details.tool_calls[0].name;
-        let tool_params = &tool_call_details.tool_calls[0].arguments;
+        debug!("tool_call_details: {:?}", tools_call_response);
+        let tool_name = &tools_call_response.tool_calls[0].name;
+        let tool_params = &tools_call_response.tool_calls[0].arguments;
         debug!("tool_name: {:?}", tool_name);
         debug!("tool_params: {:?}", tool_params);
         let prompt_target = callout_context.prompt_target.as_ref().unwrap();

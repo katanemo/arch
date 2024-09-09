@@ -77,9 +77,8 @@ pub struct ToolsDefinition {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FunctionCallingModelResponse {
+pub struct BoltFCResponse {
     pub model: String,
-    pub created_at: String,
     pub message: open_ai::Message,
     pub done_reason: String,
     pub done: bool,
@@ -100,7 +99,7 @@ pub struct ToolCallDetail {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FunctionCallingToolsCallContent {
+pub struct BoltFCToolsCall {
     pub tool_calls: Vec<ToolCallDetail>,
 }
 
