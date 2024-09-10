@@ -22,3 +22,7 @@ This demo shows how you can use intelligent prompt gateway to do function callin
 5. To see metrics navigate to "http://localhost:3000/" (use admin/grafana for login)
    1. Open up dahsboard named "Intelligent Gateway Overview"
    2. On this dashboard you can see reuqest latency and number of requests
+
+Here is sample interaction,
+
+<img width="575" alt="image" src="https://github.com/user-attachments/assets/e0929490-3eb2-4130-ae87-a732aea4d059">
