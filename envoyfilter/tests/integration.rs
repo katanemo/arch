@@ -8,7 +8,12 @@ use proxy_wasm_test_framework::tester::{self, Tester};
 use proxy_wasm_test_framework::types::{
     Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
 };
-use public_types::configuration::{self, Endpoint, PromptTarget};
+use public_types::{
+    common_types::{
+        open_ai::Message, BoltFCResponse, BoltFCToolsCall, IntOrString, ToolCallDetail,
+    },
+    configuration::{self, Endpoint, PromptTarget},
+};
 use public_types::{
     common_types::{SearchPointResult, SearchPointsResponse},
     configuration::Configuration,
@@ -87,6 +92,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_http_call(Some("embeddingserver"), None, None, None, None)
         .returning(Some(1))
         .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
 
@@ -161,33 +167,13 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .returning(Some(&search_points_response_buffer))
         .expect_log(Some(LogLevel::Info), None)
         .expect_log(Some(LogLevel::Info), None)
-        .expect_http_call(Some("nerhost"), None, None, None, None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_http_call(Some("bolt_fc_1b"), None, None, None, None)
         .returning(Some(3))
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
-
-    // let ner_reponse = NERResponse {
-    //     model: String::from("test-model"),
-    //     data: vec![common_types::Entity {
-    //         score: 0.7,
-    //         text: String::from("test-text"),
-    //         label: String::from("test-entity"),
-    //     }],
-    // };
-    // let ner_response_buffer = serde_json::to_string(&ner_reponse).unwrap();
-    // let upstream_name = prompt_target.endpoint.unwrap().cluster.leak();
-    // module
-    //     .call_proxy_on_http_call_response(http_context, 3, 0, ner_response_buffer.len() as i32, 0)
-    //     .expect_metric_increment("active_http_calls", -1)
-    //     .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-    //     .returning(Some(&ner_response_buffer))
-    //     .expect_log(Some(LogLevel::Info), None)
-    //     .expect_http_call(Some(upstream_name), None, None, None, None)
-    //     .returning(Some(4))
-    //     .expect_metric_increment("active_http_calls", 1)
-    //     .execute_and_expect(ReturnType::None)
-    //     .unwrap()
 }
 
 fn default_config() -> Configuration {
@@ -211,7 +197,7 @@ system_prompt: |
   - Use miles per hour for wind speed
 
 prompt_targets:
-  - type: context_resolver
+  - type: function_resolver
     name: weather_forecast
     few_shot_examples:
       - what is the weather in New York?
@@ -223,7 +209,7 @@ prompt_targets:
         required: true
         description: "The location for which the weather is requested"
 
-  - type: context_resolver
+  - type: function_resolver
     name: weather_forecast_2
     few_shot_examples:
       - what is the weather in New York?
@@ -329,6 +315,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .returning(Some(chat_completions_request_body))
         // TODO: assert that the model field was added.
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
@@ -462,14 +449,59 @@ fn request_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let test_body = "test body";
+    let tool_call_detail = vec![ToolCallDetail {
+        name: String::from("test-tool"),
+        arguments: HashMap::from([(
+            String::from("test-entity"),
+            IntOrString::Text(String::from("test-value")),
+        )]),
+    }];
+
+    let boltfc_tools_call = BoltFCToolsCall {
+        tool_calls: tool_call_detail,
+    };
+
+    let bolt_fc_resp = BoltFCResponse {
+        model: String::from("test"),
+        message: Message {
+            role: String::from("system"),
+            content: Some(String::from(
+                serde_json::to_string(&boltfc_tools_call).unwrap(),
+            )),
+            model: None,
+        },
+        done_reason: String::from("test"),
+        done: true,
+        resolver_name: None,
+    };
+
+    let bolt_fc_resp_str = serde_json::to_string(&bolt_fc_resp).unwrap();
     module
-        .call_proxy_on_http_call_response(http_context, 4, 0, test_body.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 3, 0, bolt_fc_resp_str.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(test_body))
+        .returning(Some(&bolt_fc_resp_str))
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Info), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_http_call(Some("test-endpoint-cluster"), None, None, None, None)
+        .returning(Some(4))
+        .expect_metric_increment("active_http_calls", 1)
+        .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    let body_text = String::from("test body");
+    module
+        .call_proxy_on_http_call_response(http_context, 4, 0, body_text.len() as i32, 0)
+        .expect_metric_increment("active_http_calls", -1)
+        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
+        .returning(Some(&body_text))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
@@ -524,18 +556,63 @@ fn request_not_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let test_body = "test body";
+    let tool_call_detail = vec![ToolCallDetail {
+        name: String::from("test-tool"),
+        arguments: HashMap::from([(
+            String::from("test-entity"),
+            IntOrString::Text(String::from("test-value")),
+        )]),
+    }];
+
+    let boltfc_tools_call = BoltFCToolsCall {
+        tool_calls: tool_call_detail,
+    };
+
+    let bolt_fc_resp = BoltFCResponse {
+        model: String::from("test"),
+        message: Message {
+            role: String::from("system"),
+            content: Some(String::from(
+                serde_json::to_string(&boltfc_tools_call).unwrap(),
+            )),
+            model: None,
+        },
+        done_reason: String::from("test"),
+        done: true,
+        resolver_name: None,
+    };
+
+    let bolt_fc_resp_str = serde_json::to_string(&bolt_fc_resp).unwrap();
     module
-        .call_proxy_on_http_call_response(http_context, 4, 0, test_body.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 3, 0, bolt_fc_resp_str.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(test_body))
+        .returning(Some(&bolt_fc_resp_str))
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Info), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_http_call(Some("test-endpoint-cluster"), None, None, None, None)
+        .returning(Some(4))
+        .expect_metric_increment("active_http_calls", 1)
+        .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    let body_text = String::from("test body");
+    module
+        .call_proxy_on_http_call_response(http_context, 4, 0, body_text.len() as i32, 0)
+        .expect_metric_increment("active_http_calls", -1)
+        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
+        .returning(Some(&body_text))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 }

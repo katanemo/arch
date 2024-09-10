@@ -242,7 +242,10 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
+        let callout_data = self
+            .callouts
+            .remove(&token_id)
+            .expect(&format!("invalid token_id: {}", token_id));
 
         self.metrics
             .active_http_calls

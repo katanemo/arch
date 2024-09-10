@@ -294,14 +294,14 @@ impl StreamContext {
 
         let tools_call_response: BoltFCToolsCall = match serde_json::from_str(boltfc_response_str) {
             Ok(fc_resp) => fc_resp,
-            Err(_) => {
+            Err(e) => {
                 // This means that Bolt FC did not have enough information to resolve the function call
                 // Bolt FC probably responded with a message asking for more information.
                 // Let's send the response back to the user to initalize lightweight dialog for parameter collection
 
                 // add resolver name to the response so the client can send the response back to the correct resolver
                 boltfc_response.resolver_name = Some(callout_context.prompt_target.unwrap().name);
-                info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection");
+                info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
                 let bolt_fc_dialogue_message = serde_json::to_string(&boltfc_response).unwrap();
                 self.send_http_response(
                     StatusCode::OK.as_u16().into(),
@@ -597,7 +597,10 @@ impl Context for StreamContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
+        let callout_context = self
+            .callouts
+            .remove(&token_id)
+            .expect(&format!("invalid token_id: {}", token_id));
         self.metrics.active_http_calls.increment(-1);
 
         let resp = self.get_http_call_response_body(0, body_size);
