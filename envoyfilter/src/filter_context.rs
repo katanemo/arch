@@ -245,7 +245,7 @@ impl Context for FilterContext {
         let callout_data = self
             .callouts
             .remove(&token_id)
-            .expect(&format!("invalid token_id: {}", token_id));
+            .expect("invalid token_id: {}");
 
         self.metrics
             .active_http_calls

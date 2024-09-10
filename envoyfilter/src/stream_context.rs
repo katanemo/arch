@@ -597,10 +597,7 @@ impl Context for StreamContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let callout_context = self
-            .callouts
-            .remove(&token_id)
-            .expect(&format!("invalid token_id: {}", token_id));
+        let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
         self.metrics.active_http_calls.increment(-1);
 
         let resp = self.get_http_call_response_body(0, body_size);

@@ -465,9 +465,7 @@ fn request_ratelimited() {
         model: String::from("test"),
         message: Message {
             role: String::from("system"),
-            content: Some(String::from(
-                serde_json::to_string(&boltfc_tools_call).unwrap(),
-            )),
+            content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
             model: None,
         },
         done_reason: String::from("test"),
@@ -572,9 +570,7 @@ fn request_not_ratelimited() {
         model: String::from("test"),
         message: Message {
             role: String::from("system"),
-            content: Some(String::from(
-                serde_json::to_string(&boltfc_tools_call).unwrap(),
-            )),
+            content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
             model: None,
         },
         done_reason: String::from("test"),
