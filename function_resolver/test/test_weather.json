@@ -1,0 +1,29 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "how is the weather in San Francisco for next 5 days?"
+    }
+  ],
+  "tools": [
+    {
+      "name": "weather_forecast",
+      "description": "This function resolver provides weather forecast information for a given city.",
+      "parameters": {
+        "type": "dict",
+        "properties": {
+          "days": {
+            "description": "The number of days for which the weather forecast is requested."
+          },
+          "units": {
+            "description": "The units in which the weather forecast is requested."
+          },
+          "city": {
+            "description": "The city for which the weather forecast is requested.",
+            "required": true
+          }
+        }
+      }
+    }
+  ]
+}

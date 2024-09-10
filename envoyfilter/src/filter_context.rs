@@ -2,7 +2,7 @@ use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
-use log::{debug, info};
+use log::debug;
 use md5::Digest;
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -72,6 +72,8 @@ impl FilterContext {
                         (":path", "/embeddings"),
                         (":authority", "embeddingserver"),
                         ("content-type", "application/json"),
+                        ("x-envoy-max-retries", "3"),
+                        ("x-envoy-upstream-rq-timeout-ms", "20000"),
                     ],
                     Some(json_data.as_bytes()),
                     vec![],
@@ -87,6 +89,10 @@ impl FilterContext {
                     // Need to clone prompt target to leave config string intact.
                     prompt_target: prompt_target.clone(),
                 };
+                debug!(
+                    "dispatched HTTP call to embedding server token_id={}",
+                    token_id
+                );
                 if self
                     .callouts
                     .insert(token_id, {
@@ -112,7 +118,16 @@ impl FilterContext {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
                 let mut embedding_response: CreateEmbeddingResponse =
-                    serde_json::from_slice(&body).unwrap();
+                    match serde_json::from_slice(&body) {
+                        Ok(response) => response,
+                        Err(e) => {
+                            panic!(
+                                "Error deserializing embedding response. body: {:?}: {:?}",
+                                String::from_utf8(body).unwrap(),
+                                e
+                            );
+                        }
+                    };
 
                 let mut payload: HashMap<String, String> = HashMap::new();
                 payload.insert(
@@ -168,13 +183,15 @@ impl FilterContext {
                     .active_http_calls
                     .record(self.callouts.len().try_into().unwrap());
             }
+        } else {
+            panic!("No body in response");
         }
     }
 
     fn create_vector_store_points_handler(&self, body_size: usize) {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
-                info!(
+                debug!(
                     "response body: len {:?}",
                     String::from_utf8(body).unwrap().len()
                 );
@@ -225,7 +242,10 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
+        let callout_data = self
+            .callouts
+            .remove(&token_id)
+            .expect("invalid token_id: {}");
 
         self.metrics
             .active_http_calls
@@ -250,7 +270,7 @@ impl Context for FilterContext {
                             http_status_code.clone_from(v);
                         }
                     });
-                info!("CreateVectorCollection response: {}", http_status_code);
+                debug!("CreateVectorCollection response: {}", http_status_code);
             }
         }
     }

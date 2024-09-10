@@ -4,6 +4,7 @@ services:
       context: ../../
       dockerfile: config_generator/Dockerfile
     volumes:
+      - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
       - ./katanemo-config.yaml:/usr/src/app/katanemo-config.yaml
       - ./generated:/usr/src/app/out
   envoy:
