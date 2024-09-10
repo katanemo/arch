@@ -1,7 +1,8 @@
 FROM Bolt-Function-Calling-1B-Q3_K_L.gguf
 
 # Set the size of the context window used to generate the next token
-PARAMETER num_ctx 16384
+# PARAMETER num_ctx 16384
+PARAMETER num_ctx 4096
 
 # Set parameters for response generation
 PARAMETER num_predict 1024

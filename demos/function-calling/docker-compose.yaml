@@ -26,6 +26,8 @@ services:
         condition: service_completed_successfully
       embeddingserver:
         condition: service_healthy
+    environment:
+      - LOG_LEVEL=debug
 
   embeddingserver:
     build:

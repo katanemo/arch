@@ -6,7 +6,7 @@ from ollama import Client
 import os
 
 ollama_endpoint = os.getenv("OLLAMA_ENDPOINT", "localhost")
-ollama_model = os.getenv("OLLAMA_MODEL", "Bolt-Function-Calling-1B:Q3_K_L")
+ollama_model = os.getenv("OLLAMA_MODEL", "Bolt-Function-Calling-1B:Q4_K_M")
 logger = logging.getLogger('uvicorn.error')
 
 logger.info(f"using model: {ollama_model}")

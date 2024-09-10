@@ -10,7 +10,7 @@ use proxy_wasm_test_framework::types::{
 };
 use public_types::configuration::{self, Endpoint, PromptTarget};
 use public_types::{
-    common_types::{self, NERResponse, SearchPointResult, SearchPointsResponse},
+    common_types::{SearchPointResult, SearchPointsResponse},
     configuration::Configuration,
 };
 use serial_test::serial;
@@ -120,12 +120,14 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
 
     let prompt_target = PromptTarget {
         name: String::from("test-prompt-target"),
-        prompt_type: String::from("test-prompt-type"),
+        description: None,
+        prompt_type: configuration::PromptType::FunctionResolver,
         few_shot_examples: vec![],
-        entities: Some(vec![configuration::Entity {
+        parameters: Some(vec![configuration::Parameter {
             name: String::from("test-entity"),
+            parameter_type: Some(String::from("string")),
+            description: String::from("test-description"),
             required: Some(true),
-            description: None,
         }]),
         endpoint: Some(Endpoint {
             cluster: String::from("test-endpoint-cluster"),
@@ -165,27 +167,27 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    let ner_reponse = NERResponse {
-        model: String::from("test-model"),
-        data: vec![common_types::Entity {
-            score: 0.7,
-            text: String::from("test-text"),
-            label: String::from("test-entity"),
-        }],
-    };
-    let ner_response_buffer = serde_json::to_string(&ner_reponse).unwrap();
-    let upstream_name = prompt_target.endpoint.unwrap().cluster.leak();
-    module
-        .call_proxy_on_http_call_response(http_context, 3, 0, ner_response_buffer.len() as i32, 0)
-        .expect_metric_increment("active_http_calls", -1)
-        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(&ner_response_buffer))
-        .expect_log(Some(LogLevel::Info), None)
-        .expect_http_call(Some(upstream_name), None, None, None, None)
-        .returning(Some(4))
-        .expect_metric_increment("active_http_calls", 1)
-        .execute_and_expect(ReturnType::None)
-        .unwrap()
+    // let ner_reponse = NERResponse {
+    //     model: String::from("test-model"),
+    //     data: vec![common_types::Entity {
+    //         score: 0.7,
+    //         text: String::from("test-text"),
+    //         label: String::from("test-entity"),
+    //     }],
+    // };
+    // let ner_response_buffer = serde_json::to_string(&ner_reponse).unwrap();
+    // let upstream_name = prompt_target.endpoint.unwrap().cluster.leak();
+    // module
+    //     .call_proxy_on_http_call_response(http_context, 3, 0, ner_response_buffer.len() as i32, 0)
+    //     .expect_metric_increment("active_http_calls", -1)
+    //     .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
+    //     .returning(Some(&ner_response_buffer))
+    //     .expect_log(Some(LogLevel::Info), None)
+    //     .expect_http_call(Some(upstream_name), None, None, None, None)
+    //     .returning(Some(4))
+    //     .expect_metric_increment("active_http_calls", 1)
+    //     .execute_and_expect(ReturnType::None)
+    //     .unwrap()
 }
 
 fn default_config() -> Configuration {

@@ -312,6 +312,33 @@ impl StreamContext {
             }
         };
 
+        // verify required parameters are present
+        callout_context
+            .prompt_target
+            .as_ref()
+            .unwrap()
+            .parameters
+            .as_ref()
+            .unwrap()
+            .iter()
+            .for_each(|param| match param.required {
+                None => {}
+                Some(required) => {
+                    if required
+                        && !tools_call_response.tool_calls[0]
+                            .arguments
+                            .contains_key(&param.name)
+                    {
+                        warn!("boltfc did not extract required parameter: {}", param.name);
+                        return self.send_http_response(
+                            StatusCode::BAD_REQUEST.as_u16().into(),
+                            vec![],
+                            Some("missing required parameter".as_bytes()),
+                        );
+                    }
+                }
+            });
+
         debug!("tool_call_details: {:?}", tools_call_response);
         let tool_name = &tools_call_response.tool_calls[0].name;
         let tool_params = &tools_call_response.tool_calls[0].arguments;
