@@ -11,17 +11,17 @@ This demo shows how you can use intelligent prompt gateway to do function callin
    ```sh
    docker compose up
    ```
-1. Download Bolt-FC model. This demo assumes we have downloaded `Bolt-Function-Calling-1B:Q4_K_M` to local folder
+1. Download Bolt-FC model. This demo assumes we have downloaded [Bolt-Function-Calling-1B:Q4_K_M](https://huggingface.co/katanemolabs/Bolt-Function-Calling-1B.gguf/blob/main/Bolt-Function-Calling-1B-Q4_K_M.gguf) to local folder.
 2. Create model file in ollama repository
    ```sh
    ollama create Bolt-Function-Calling-1B:Q4_K_M -f Bolt-FC-1B-Q4_K_M.model_file
    ```
 3. Navigate to http://localhost:18080/
 4. You can type in queries like "how is the weather in Seattle"
-   1. You can also ask follow up questions like "show me sunny days"
+   - You can also ask follow up questions like "show me sunny days"
 5. To see metrics navigate to "http://localhost:3000/" (use admin/grafana for login)
-   1. Open up dahsboard named "Intelligent Gateway Overview"
-   2. On this dashboard you can see reuqest latency and number of requests
+   - Open up dahsboard named "Intelligent Gateway Overview"
+   - On this dashboard you can see reuqest latency and number of requests
 
 Here is sample interaction,
 
