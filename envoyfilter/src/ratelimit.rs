@@ -1,6 +1,6 @@
 use governor::{DefaultKeyedRateLimiter, InsufficientCapacity, Quota};
 use log::debug;
-use public_types::configuration::{self, Header};
+use public_types::configuration;
 use public_types::configuration::{Limit, Ratelimit, TimeUnit};
 use std::num::{NonZero, NonZeroU32};
 use std::sync::RwLock;
@@ -99,7 +99,7 @@ impl RatelimitMap {
             Some(limit) => limit,
         };
 
-        let mut config_selector = Header::from(selector);
+        let mut config_selector = configuration::Header::from(selector);
 
         let (limit, limit_key) = match provider_limits.get(&config_selector) {
             // This is a specific limit, i.e one that was configured with both key, and value.
