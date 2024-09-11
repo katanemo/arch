@@ -1,14 +1,23 @@
 import random
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
-from load_models import load_ner_models, load_transformers
+from load_models import load_ner_models, load_transformers, load_toxic_model, load_jailbreak_model
 from datetime import date, timedelta
+import torch
+import torch.nn.functional as F
 
 transformers = load_transformers()
 ner_models = load_ner_models()
+toxic_model = load_toxic_model()
+jailbreak_model = load_jailbreak_model()
+
 
 app = FastAPI()
-
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+    
 class EmbeddingRequest(BaseModel):
   input: str
   model: str
@@ -79,6 +88,69 @@ async def ner(req: NERRequest, res: Response):
         "data": entities,
         "model": req.model,
         "object": "list",
+    }
+
+class ToxicRequest(BaseModel):
+  input: str
+  model: str
+
+
+@app.post("/toxic")
+async def toxic(req: ToxicRequest, res: Response):
+    if req.model != toxic_model['model_name']:
+        raise HTTPException(status_code=400, detail="unknown toxic model: " + req.model)
+
+    model = toxic_model['model']
+    tokenizer = toxic_model['tokenizer']
+    assert type(req.input) == str
+    inputs = tokenizer(req.input, return_tensors="pt").to("cpu")
+
+    feed = {'input_ids':inputs['input_ids'].numpy(),
+            'attention_mask': inputs['attention_mask'].numpy(),
+            'token_type_ids': inputs['token_type_ids'].numpy() }
+
+    del inputs
+    logits = model.run(["logits"], feed)[0]
+    probabilities = softmax(logits)
+    positive_class_probabilities = probabilities[:,toxic_model['positive_class']]
+    verdict = "No"
+    if positive_class_probabilities > 0.5:
+        verdict = "Toxic"
+    return {
+        "probability": positive_class_probabilities,
+        "verdict": verdict,
+        "model": req.model,
+    }
+
+class JailBreakRequest(BaseModel):
+  input: str
+  model: str
+
+
+@app.post("/jailbreak")
+async def jailbreak(req: JailBreakRequest, res: Response):
+    if req.model != jailbreak_model['model_name']:
+        raise HTTPException(status_code=400, detail="unknown jail break model: " + req.model)
+
+    model = jailbreak_model['model']
+    tokenizer = jailbreak_model['tokenizer']
+    assert type(req.input) == str
+    inputs = tokenizer(req.input, return_tensors="pt").to("cpu")
+
+    feed = {'input_ids':inputs['input_ids'].numpy(),
+            'attention_mask': inputs['attention_mask'].numpy()}
+
+    del inputs
+    logits = model.run(["logits"], feed)[0]
+    probabilities = softmax(logits)
+    positive_class_probabilities = probabilities[:,jailbreak_model['positive_class']]
+    verdict = "No"
+    if positive_class_probabilities > 0.5:
+        verdict = "Jailbreak"
+    return {
+        "probability": positive_class_probabilities,
+        "verdict": verdict,
+        "model": req.model,
     }
 
 class WeatherRequest(BaseModel):
