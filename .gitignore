@@ -11,3 +11,6 @@ qdrant_data
 generated
 .DS_Store
 *.gguf
+venv
+demos/function-calling/ollama/models/
+demos/function-calling/ollama/id_ed*
