@@ -15,8 +15,11 @@ use open_message_format_embeddings::models::{
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use public_types::common_types::open_ai::StreamOptions;
 use public_types::common_types::{
-    open_ai::{ChatCompletions, Message},
+    open_ai::{
+        ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse, Message,
+    },
     SearchPointsRequest, SearchPointsResponse,
 };
 use public_types::common_types::{
@@ -39,17 +42,31 @@ pub struct CallContext {
     request_type: RequestType,
     user_message: Option<String>,
     prompt_target: Option<PromptTarget>,
-    request_body: ChatCompletions,
+    request_body: ChatCompletionsRequest,
 }
 
 pub struct StreamContext {
-    pub host_header: Option<String>,
-    pub ratelimit_selector: Option<Header>,
-    pub callouts: HashMap<u32, CallContext>,
+    pub context_id: u32,
     pub metrics: Rc<WasmMetrics>,
+    callouts: HashMap<u32, CallContext>,
+    host_header: Option<String>,
+    ratelimit_selector: Option<Header>,
+    streaming_response: bool,
+    response_tokens: usize,
 }
 
 impl StreamContext {
+    pub fn new(context_id: u32, metrics: Rc<WasmMetrics>) -> Self {
+        StreamContext {
+            context_id,
+            metrics,
+            callouts: HashMap::new(),
+            host_header: None,
+            ratelimit_selector: None,
+            streaming_response: false,
+            response_tokens: 0,
+        }
+    }
     fn save_host_header(&mut self) {
         // Save the host header to be used by filter logic later on.
         self.host_header = self.get_http_request_header(":host");
@@ -226,10 +243,12 @@ impl StreamContext {
                     parameters: tools_parameters,
                 };
 
-                let chat_completions = ChatCompletions {
+                let chat_completions = ChatCompletionsRequest {
                     model: GPT_35_TURBO.to_string(),
                     messages: callout_context.request_body.messages.clone(),
                     tools: Some(vec![tools_defintion]),
+                    stream: false,
+                    stream_options: None,
                 };
 
                 let msg_body = match serde_json::to_string(&chat_completions) {
@@ -415,10 +434,12 @@ impl StreamContext {
             }
         });
 
-        let request_message: ChatCompletions = ChatCompletions {
+        let request_message: ChatCompletionsRequest = ChatCompletionsRequest {
             model: GPT_35_TURBO.to_string(),
             messages,
             tools: None,
+            stream: false,
+            stream_options: None,
         };
 
         let json_string = match serde_json::to_string(&request_message) {
@@ -490,31 +511,39 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let deserialized_body: ChatCompletions = match self.get_http_request_body(0, body_size) {
-            Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
-                Ok(deserialized) => deserialized,
-                Err(msg) => {
+        let mut deserialized_body: ChatCompletionsRequest =
+            match self.get_http_request_body(0, body_size) {
+                Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
+                    Ok(deserialized) => deserialized,
+                    Err(msg) => {
+                        self.send_http_response(
+                            StatusCode::BAD_REQUEST.as_u16().into(),
+                            vec![],
+                            Some(format!("Failed to deserialize: {}", msg).as_bytes()),
+                        );
+                        return Action::Pause;
+                    }
+                },
+                None => {
                     self.send_http_response(
-                        StatusCode::BAD_REQUEST.as_u16().into(),
+                        StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
                         vec![],
-                        Some(format!("Failed to deserialize: {}", msg).as_bytes()),
+                        None,
+                    );
+                    error!(
+                        "Failed to obtain body bytes even though body_size is {}",
+                        body_size
                     );
                     return Action::Pause;
                 }
-            },
-            None => {
-                self.send_http_response(
-                    StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                    vec![],
-                    None,
-                );
-                error!(
-                    "Failed to obtain body bytes even though body_size is {}",
-                    body_size
-                );
-                return Action::Pause;
-            }
-        };
+            };
+
+        self.streaming_response = deserialized_body.stream;
+        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
+            deserialized_body.stream_options = Some(StreamOptions {
+                include_usage: true,
+            });
+        }
 
         let user_message = match deserialized_body
             .messages
@@ -586,6 +615,77 @@ impl HttpContext for StreamContext {
         self.metrics.active_http_calls.increment(1);
 
         Action::Pause
+    }
+
+    fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
+        debug!(
+            "recv [S={}] bytes={} end_stream={}",
+            self.context_id, body_size, end_of_stream
+        );
+
+        if body_size == 0 {
+            return Action::Continue;
+        }
+
+        let body = self
+            .get_http_response_body(0, body_size)
+            .expect("cant get response body");
+
+        if self.streaming_response {
+            let body_str = String::from_utf8(body).expect("body is not utf-8");
+            let data: Vec<&str> = body_str.split("data: ").collect();
+            let chat_completions_chunk_response: ChatCompletionChunkResponse =
+                match serde_json::from_str(&data[1]) {
+                    Ok(de) => de,
+                    Err(_) => {
+                        if data[1] != "[NONE]" {
+                            self.send_http_response(
+                                StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                                vec![],
+                                None,
+                            );
+                        }
+                        return Action::Continue;
+                    }
+                };
+
+            if let Some(content) = chat_completions_chunk_response
+                .choices
+                .first()
+                .unwrap()
+                .delta
+                .content
+                .as_ref()
+            {
+                let model = &chat_completions_chunk_response.model;
+                let token_count = tokenizer::token_count(model, content).unwrap_or(0);
+                self.response_tokens += token_count;
+
+                debug!(
+                    "recv [S={}] string={} tokens={} total_tokens={} end_stream={}",
+                    self.context_id, content, token_count, self.response_tokens, end_of_stream
+                );
+            }
+        } else {
+            let chat_completions_response: ChatCompletionsResponse =
+                match serde_json::from_slice(&body) {
+                    Ok(de) => de,
+                    Err(_) => {
+                        self.send_http_response(
+                            StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                            vec![],
+                            None,
+                        );
+                        return Action::Continue;
+                    }
+                };
+
+            self.response_tokens += chat_completions_response.usage.completions_tokens;
+        }
+
+        // TODO:: ratelimit
+
+        Action::Continue
     }
 }
 
