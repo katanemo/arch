@@ -35,11 +35,11 @@ pub struct Header {
     pub value: String,
 }
 
-impl Header {
-    fn into_config(self) -> configuration::Header {
-        configuration::Header {
-            key: self.key,
-            value: Some(self.value),
+impl From<Header> for configuration::Header {
+    fn from(header: Header) -> Self {
+        Self {
+            key: header.key,
+            value: Some(header.value),
         }
     }
 }
@@ -99,7 +99,7 @@ impl RatelimitMap {
             Some(limit) => limit,
         };
 
-        let mut config_selector = selector.into_config();
+        let mut config_selector = configuration::Header::from(selector);
 
         let (limit, limit_key) = match provider_limits.get(&config_selector) {
             // This is a specific limit, i.e one that was configured with both key, and value.
