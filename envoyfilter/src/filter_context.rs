@@ -1,37 +1,40 @@
-use crate::common_types::{
-    CallContext, EmbeddingRequest, StoreVectorEmbeddingsRequest, VectorPoint,
-};
-use crate::configuration::{Configuration, PromptTarget};
 use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::ratelimit;
-use crate::stats::{Gauge, RecordingMetric};
+use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
-use log::info;
+use log::debug;
 use md5::Digest;
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use public_types::common_types::{
+    CallContext, EmbeddingRequest, StoreVectorEmbeddingsRequest, VectorPoint,
+};
+use public_types::configuration::{Configuration, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::time::Duration;
 
 #[derive(Copy, Clone)]
-struct WasmMetrics {
-    active_http_calls: Gauge,
+pub struct WasmMetrics {
+    pub active_http_calls: Gauge,
+    pub ratelimited_rq: Counter,
 }
 
 impl WasmMetrics {
     fn new() -> WasmMetrics {
         WasmMetrics {
             active_http_calls: Gauge::new(String::from("active_http_calls")),
+            ratelimited_rq: Counter::new(String::from("ratelimited_rq")),
         }
     }
 }
 
 pub struct FilterContext {
-    metrics: WasmMetrics,
+    metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: HashMap<u32, CallContext>,
     config: Option<Configuration>,
@@ -42,7 +45,7 @@ impl FilterContext {
         FilterContext {
             callouts: HashMap::new(),
             config: None,
-            metrics: WasmMetrics::new(),
+            metrics: Rc::new(WasmMetrics::new()),
         }
     }
 
@@ -69,6 +72,8 @@ impl FilterContext {
                         (":path", "/embeddings"),
                         (":authority", "embeddingserver"),
                         ("content-type", "application/json"),
+                        ("x-envoy-max-retries", "3"),
+                        ("x-envoy-upstream-rq-timeout-ms", "20000"),
                     ],
                     Some(json_data.as_bytes()),
                     vec![],
@@ -84,6 +89,10 @@ impl FilterContext {
                     // Need to clone prompt target to leave config string intact.
                     prompt_target: prompt_target.clone(),
                 };
+                debug!(
+                    "dispatched HTTP call to embedding server token_id={}",
+                    token_id
+                );
                 if self
                     .callouts
                     .insert(token_id, {
@@ -109,7 +118,16 @@ impl FilterContext {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
                 let mut embedding_response: CreateEmbeddingResponse =
-                    serde_json::from_slice(&body).unwrap();
+                    match serde_json::from_slice(&body) {
+                        Ok(response) => response,
+                        Err(e) => {
+                            panic!(
+                                "Error deserializing embedding response. body: {:?}: {:?}",
+                                String::from_utf8(body).unwrap(),
+                                e
+                            );
+                        }
+                    };
 
                 let mut payload: HashMap<String, String> = HashMap::new();
                 payload.insert(
@@ -165,13 +183,15 @@ impl FilterContext {
                     .active_http_calls
                     .record(self.callouts.len().try_into().unwrap());
             }
+        } else {
+            panic!("No body in response");
         }
     }
 
     fn create_vector_store_points_handler(&self, body_size: usize) {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
-                info!(
+                debug!(
                     "response body: len {:?}",
                     String::from_utf8(body).unwrap().len()
                 );
@@ -222,7 +242,10 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
+        let callout_data = self
+            .callouts
+            .remove(&token_id)
+            .expect("invalid token_id: {}");
 
         self.metrics
             .active_http_calls
@@ -247,7 +270,7 @@ impl Context for FilterContext {
                             http_status_code.clone_from(v);
                         }
                     });
-                info!("CreateVectorCollection response: {}", http_status_code);
+                debug!("CreateVectorCollection response: {}", http_status_code);
             }
         }
     }
@@ -258,6 +281,8 @@ impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
+
+            debug!("set configuration object: {:?}", self.config);
 
             if let Some(ratelimits_config) = self
                 .config
@@ -273,7 +298,9 @@ impl RootContext for FilterContext {
     fn create_http_context(&self, _context_id: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(StreamContext {
             host_header: None,
+            ratelimit_selector: None,
             callouts: HashMap::new(),
+            metrics: Rc::clone(&self.metrics),
         }))
     }
 

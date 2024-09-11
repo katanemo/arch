@@ -74,7 +74,10 @@ impl Metric for Gauge {
     }
 }
 
+/// For state of the world updates
 impl RecordingMetric for Gauge {}
+/// For offset deltas
+impl IncrementingMetric for Gauge {}
 
 #[derive(Copy, Clone)]
 pub struct Histogram {

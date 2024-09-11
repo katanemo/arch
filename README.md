@@ -2,7 +2,7 @@ A open source project for developers to build and secure faster, more personaliz
 
 # Demos
 ## Complete
-* [Weather Forecast](https://github.com/katanemo/intelligent-prompt-gateway/blob/main/demos/weather-forecast/README.md)
+* [Weather Forecast](demos/function-calling/README.md)
   * Showing function calling cabaility
 ## In progress
 * Network Co-pilot

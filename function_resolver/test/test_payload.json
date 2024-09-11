@@ -1,0 +1,33 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Find the area of a triangle with a base of 10 units and height of 5 units."
+    }
+  ],
+  "tools": [
+    {
+      "name": "calculate_triangle_area",
+      "description": "Calculate the area of a triangle given its base and height.",
+      "parameters": {
+        "type": "dict",
+        "properties": {
+          "base": {
+            "type": "integer",
+            "description": "The base of the triangle.",
+            "required": true
+          },
+          "height": {
+            "type": "integer",
+            "description": "The height of the triangle.",
+            "required": true
+          },
+          "unit": {
+            "type": "string",
+            "description": "The unit of measure (defaults to 'units' if not specified)"
+          }
+        }
+      }
+    }
+  ]
+}

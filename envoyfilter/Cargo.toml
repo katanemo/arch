@@ -15,8 +15,10 @@ serde_yaml = "0.9.34"
 serde_json = "1.0"
 md5 = "0.7.0"
 open-message-format-embeddings = { path = "../open-message-format/clients/omf-embeddings-rust" }
+public-types = { path = "../public-types" }
 http = "1.1.0"
-governor = "0.6.3"
+governor = { version = "0.6.3", default-features = false, features = ["no_std"]}
+tiktoken-rs = "0.5.9"
 
 [dev-dependencies]
 proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "main" }

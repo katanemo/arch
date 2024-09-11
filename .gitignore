@@ -1,5 +1,6 @@
 envoyfilter/target
 envoyfilter/qdrant_data/
+public-types/target
 embedding-server/venv/
 chatbot-ui/venv/
 __pycache__
@@ -10,3 +11,6 @@ qdrant_data
 generated
 .DS_Store
 *.gguf
+venv
+demos/function-calling/ollama/models/
+demos/function-calling/ollama/id_ed*
