@@ -644,7 +644,7 @@ impl HttpContext for StreamContext {
             debug!("streaming response");
             let data: Vec<&str> = body_str.split("data: ").collect();
             let chat_completions_chunk_response: ChatCompletionChunkResponse =
-                match serde_json::from_str(&data[1]) {
+                match serde_json::from_str(data[1]) {
                     Ok(de) => de,
                     Err(_) => {
                         if data[1] != "[NONE]" {
