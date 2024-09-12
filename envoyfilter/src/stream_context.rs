@@ -1,13 +1,14 @@
 use crate::consts::{
-    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL,
+    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
     DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE,
     USER_ROLE,
 };
-use crate::filter_context::WasmMetrics;
+use crate::filter_context::{PromptTargetWithEmbeddings, WasmMetrics};
 use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
+use acap::cos::cosine_similarity;
 use http::StatusCode;
 use log::{debug, error, info, warn};
 use open_message_format_embeddings::models::{
@@ -15,24 +16,23 @@ use open_message_format_embeddings::models::{
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use public_types::common_types::{
-    open_ai::{ChatCompletions, Message},
-    SearchPointsRequest, SearchPointsResponse,
-};
+use public_types::common_types::open_ai::{ChatCompletions, Message};
 use public_types::common_types::{
     BoltFCResponse, BoltFCToolsCall, ToolParameter, ToolParameters, ToolsDefinition,
+    ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
 use public_types::configuration::{PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
+use std::sync::RwLock;
 use std::time::Duration;
 
 enum RequestType {
-    GetEmbedding,
-    SearchPoints,
-    FunctionResolver,
-    FunctionCallResponse,
+    GetEmbeddingRespHandler,
+    FunctionResolverRespHandler,
+    FunctionCallResponseHandler,
+    ZeroShotIntentDetectionRespHandler,
 }
 
 pub struct CallContext {
@@ -40,6 +40,7 @@ pub struct CallContext {
     user_message: Option<String>,
     prompt_target: Option<PromptTarget>,
     request_body: ChatCompletions,
+    similarity_scores: Option<Vec<(String, f64)>>,
 }
 
 pub struct StreamContext {
@@ -47,6 +48,7 @@ pub struct StreamContext {
     pub ratelimit_selector: Option<Header>,
     pub callouts: HashMap<u32, CallContext>,
     pub metrics: Rc<WasmMetrics>,
+    pub prompt_targets_with_embeddings: Rc<RwLock<Vec<PromptTargetWithEmbeddings>>>,
 }
 
 impl StreamContext {
@@ -95,31 +97,59 @@ impl StreamContext {
             }
         };
 
-        let search_points_request = SearchPointsRequest {
-            vector: embedding_response.data[0].embedding.clone(),
-            limit: 10,
-            with_payload: true,
+        let message_embeddings = &embedding_response.data[0].embedding;
+
+        info!("message embeddings: {:?}", message_embeddings.len());
+        info!(
+            "prompt target length: {:?}",
+            self.prompt_targets_with_embeddings.read().unwrap().len()
+        );
+        let similarity_scores: Vec<(String, f64)> = self
+            .prompt_targets_with_embeddings
+            .read()
+            .unwrap()
+            .iter()
+            .map(|pte| {
+                let similarity_score_description = cosine_similarity(
+                    &message_embeddings,
+                    &pte.embeddings_description.as_ref().unwrap(),
+                );
+                (pte.prompt_target.name.clone(), similarity_score_description)
+            })
+            .collect();
+        info!("similarity scores: {:?}", similarity_scores);
+
+        callout_context.similarity_scores = Some(similarity_scores);
+
+        let zero_shot_classification_request = ZeroShotClassificationRequest {
+            // Need to clone into input because user_message is used below.
+            input: callout_context.user_message.as_ref().unwrap().clone(),
+            model: String::from(DEFAULT_INTENT_MODEL),
+            labels: self
+                .prompt_targets_with_embeddings
+                .read()
+                .unwrap()
+                .iter()
+                .map(|pte| pte.prompt_target.name.clone())
+                .collect(),
         };
 
-        let json_data: String = match serde_json::to_string(&search_points_request) {
+        let json_data: String = match serde_json::to_string(&zero_shot_classification_request) {
             Ok(json_data) => json_data,
-            Err(e) => {
-                warn!("Error serializing search_points_request: {:?}", e);
-                self.reset_http_request();
-                return;
+            Err(error) => {
+                panic!("Error serializing zero shot request: {}", error);
             }
         };
 
-        let path = format!("/collections/{}/points/search", DEFAULT_COLLECTION_NAME);
-
         let token_id = match self.dispatch_http_call(
-            "qdrant",
+            "embeddingserver",
             vec![
                 (":method", "POST"),
-                (":path", &path),
-                (":authority", "qdrant"),
+                (":path", "/zeroshot"),
+                (":authority", "embeddingserver"),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
             ],
             Some(json_data.as_bytes()),
             vec![],
@@ -127,36 +157,61 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
+                panic!(
+                  "Error dispatching embedding server HTTP call for zero-shot-intent-detection: {:?}",
+                  e
+              );
             }
         };
+        debug!(
+            "dispatched HTTP call to embedding server for zero-shot-intent-detection token_id={}",
+            token_id
+        );
 
-        callout_context.request_type = RequestType::SearchPoints;
+        callout_context.request_type = RequestType::ZeroShotIntentDetectionRespHandler;
+
         if self.callouts.insert(token_id, callout_context).is_some() {
-            panic!("duplicate token_id")
+            panic!(
+                "duplicate token_id={} in embedding server requests",
+                token_id
+            )
         }
-        self.metrics.active_http_calls.increment(1);
     }
 
-    fn search_points_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
-        let search_points_response: SearchPointsResponse = match serde_json::from_slice(&body) {
-            Ok(search_points_response) => search_points_response,
-            Err(e) => {
-                warn!("Error deserializing search_points_response: {:?}", e);
-                self.resume_http_request();
-                return;
-            }
-        };
+    fn zero_shot_intent_detection_resp_handler(
+        &mut self,
+        body: Vec<u8>,
+        mut callout_context: CallContext,
+    ) {
+        let zeroshot_intent_response: ZeroShotClassificationResponse =
+            match serde_json::from_slice(&body) {
+                Ok(zeroshot_response) => zeroshot_response,
+                Err(e) => {
+                    warn!(
+                        "Error deserializing zeroshot intent detection response: {:?}",
+                        e
+                    );
+                    info!("body: {:?}", String::from_utf8(body).unwrap());
+                    self.resume_http_request();
+                    return;
+                }
+            };
 
-        let search_results = &search_points_response.result;
+        info!("zeroshot intent response: {:?}", zeroshot_intent_response);
 
-        if search_results.is_empty() {
-            info!("No prompt target matched");
-            self.resume_http_request();
-            return;
-        }
+        let prompt_target_similarity_score = zeroshot_intent_response.predicted_class_score * 0.7
+            + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
 
-        info!("similarity score: {}", search_results[0].score);
+        info!(
+            "prompt target similarity score: {}, predicted class: {}",
+            prompt_target_similarity_score, zeroshot_intent_response.predicted_class
+        );
+
+        let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
+
+        // let prompt_target_name = similarity_scores[0].0.clone();
+        // let similarity_score = similarity_scores[0].1;
+
         // Check to see who responded to user message. This will help us identify if control should be passed to Bolt FC or not.
         // If the last message was from Bolt FC, then Bolt FC is handling the conversation (possibly for parameter collection).
         let mut bolt_assistant = false;
@@ -165,7 +220,6 @@ impl StreamContext {
             let latest_assistant_message = &messages[messages.len() - 2];
             if let Some(model) = latest_assistant_message.model.as_ref() {
                 if model.starts_with("Bolt") {
-                    info!("Bolt assistant message found");
                     bolt_assistant = true;
                 }
             }
@@ -173,24 +227,32 @@ impl StreamContext {
             info!("no assistant message found, probably first interaction");
         }
 
-        if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD && !bolt_assistant {
-            info!(
-                "prompt target below threshold: {}",
-                DEFAULT_PROMPT_TARGET_THRESHOLD
-            );
-            self.resume_http_request();
-            return;
-        }
-        let prompt_target_str = search_results[0].payload.get("prompt-target").unwrap();
-        let prompt_target: PromptTarget = match serde_json::from_slice(prompt_target_str.as_bytes())
-        {
-            Ok(prompt_target) => prompt_target,
-            Err(e) => {
-                warn!("Error deserializing prompt_target: {:?}", e);
+        // check to ensure that the prompt target similarity score is above the threshold
+        if prompt_target_similarity_score < DEFAULT_PROMPT_TARGET_THRESHOLD && !bolt_assistant {
+            // if bolt fc responded to the user message, then we don't need to check the similarity score
+            // it may be that bolt fc is handling the conversation for parameter collection
+            if bolt_assistant {
+                info!("bolt assistant is handling the conversation");
+            } else {
+                info!(
+                    "prompt target below threshold: {}, continue conversation with user",
+                    prompt_target_similarity_score,
+                );
                 self.resume_http_request();
                 return;
             }
-        };
+        }
+
+        let prompt_target = self
+            .prompt_targets_with_embeddings
+            .read()
+            .unwrap()
+            .iter()
+            .find(|pte| pte.prompt_target.name == prompt_target_name)
+            .unwrap()
+            .prompt_target
+            .clone();
+
         info!(
             "prompt_target name: {:?}, type: {:?}",
             prompt_target.name, prompt_target.prompt_type
@@ -272,7 +334,7 @@ impl StreamContext {
                     BOLT_FC_CLUSTER, token_id
                 );
 
-                callout_context.request_type = RequestType::FunctionResolver;
+                callout_context.request_type = RequestType::FunctionResolverRespHandler;
                 callout_context.prompt_target = Some(prompt_target);
                 if self.callouts.insert(token_id, callout_context).is_some() {
                     panic!("duplicate token_id")
@@ -331,7 +393,7 @@ impl StreamContext {
                     {
                         warn!("boltfc did not extract required parameter: {}", param.name);
                         return self.send_http_response(
-                            StatusCode::BAD_REQUEST.as_u16().into(),
+                            StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
                             vec![],
                             Some("missing required parameter".as_bytes()),
                         );
@@ -369,7 +431,7 @@ impl StreamContext {
             }
         };
 
-        callout_context.request_type = RequestType::FunctionCallResponse;
+        callout_context.request_type = RequestType::FunctionCallResponseHandler;
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
@@ -458,7 +520,6 @@ impl StreamContext {
             }
         }
 
-        debug!("sending request to openai: msg {}", json_string);
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
@@ -572,10 +633,11 @@ impl HttpContext for StreamContext {
         );
 
         let call_context = CallContext {
-            request_type: RequestType::GetEmbedding,
-            user_message: Some(user_message),
+            request_type: RequestType::GetEmbeddingRespHandler,
+            user_message: Some(user_message.clone()),
             prompt_target: None,
-            request_body: deserialized_body,
+            request_body: deserialized_body.clone(),
+            similarity_scores: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(
@@ -583,6 +645,7 @@ impl HttpContext for StreamContext {
                 token_id
             )
         }
+
         self.metrics.active_http_calls.increment(1);
 
         Action::Pause
@@ -618,11 +681,15 @@ impl Context for StreamContext {
         };
 
         match callout_context.request_type {
-            RequestType::GetEmbedding => self.embeddings_handler(body, callout_context),
-            RequestType::SearchPoints => self.search_points_handler(body, callout_context),
-            RequestType::FunctionResolver => self.function_resolver_handler(body, callout_context),
-            RequestType::FunctionCallResponse => {
+            RequestType::GetEmbeddingRespHandler => self.embeddings_handler(body, callout_context),
+            RequestType::FunctionResolverRespHandler => {
+                self.function_resolver_handler(body, callout_context)
+            }
+            RequestType::FunctionCallResponseHandler => {
                 self.function_call_response_handler(body, callout_context)
+            }
+            RequestType::ZeroShotIntentDetectionRespHandler => {
+                self.zero_shot_intent_detection_resp_handler(body, callout_context)
             }
         }
     }

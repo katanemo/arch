@@ -128,7 +128,6 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         name: String::from("test-prompt-target"),
         description: None,
         prompt_type: configuration::PromptType::FunctionResolver,
-        few_shot_examples: vec![],
         parameters: Some(vec![configuration::Parameter {
             name: String::from("test-entity"),
             parameter_type: Some(String::from("string")),

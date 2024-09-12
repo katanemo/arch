@@ -3,19 +3,16 @@ use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
 use log::debug;
-use md5::Digest;
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use public_types::common_types::{
-    CallContext, EmbeddingRequest, StoreVectorEmbeddingsRequest, VectorPoint,
-};
 use public_types::configuration::{Configuration, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::RwLock;
 use std::time::Duration;
 
 #[derive(Copy, Clone)]
@@ -33,11 +30,29 @@ impl WasmMetrics {
     }
 }
 
+struct CallContext {
+    prompt_target: PromptTarget,
+    embedding_type: EmbeddingType,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum EmbeddingType {
+    Name,
+    Description,
+}
+
+pub struct PromptTargetWithEmbeddings {
+    pub prompt_target: PromptTarget,
+    pub embeddings_name: Option<Vec<f64>>,
+    pub embeddings_description: Option<Vec<f64>>,
+}
+
 pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: HashMap<u32, CallContext>,
     config: Option<Configuration>,
+    prompt_targets_with_embeddings: Rc<RwLock<Vec<PromptTargetWithEmbeddings>>>,
 }
 
 impl FilterContext {
@@ -46,73 +61,83 @@ impl FilterContext {
             callouts: HashMap::new(),
             config: None,
             metrics: Rc::new(WasmMetrics::new()),
+            prompt_targets_with_embeddings: Rc::new(RwLock::new(Vec::new())),
         }
     }
 
     fn process_prompt_targets(&mut self) {
-        for prompt_target in &self.config.as_ref().unwrap().prompt_targets {
-            for few_shot_example in &prompt_target.few_shot_examples {
-                let embeddings_input = CreateEmbeddingRequest {
-                    input: Box::new(CreateEmbeddingRequestInput::String(
-                        few_shot_example.to_string(),
-                    )),
-                    model: String::from(DEFAULT_EMBEDDING_MODEL),
-                    encoding_format: None,
-                    dimensions: None,
-                    user: None,
-                };
+        for prompt_target in &self.config.clone().unwrap().prompt_targets {
+            let embedding_requests: HashMap<EmbeddingType, String> = HashMap::from([
+                (EmbeddingType::Name, prompt_target.name.clone()),
+                (
+                    EmbeddingType::Description,
+                    prompt_target.description.clone().unwrap(),
+                ),
+            ]);
 
-                // TODO: Handle potential errors
-                let json_data: String = to_string(&embeddings_input).unwrap();
-
-                let token_id = match self.dispatch_http_call(
-                    "embeddingserver",
-                    vec![
-                        (":method", "POST"),
-                        (":path", "/embeddings"),
-                        (":authority", "embeddingserver"),
-                        ("content-type", "application/json"),
-                        ("x-envoy-max-retries", "3"),
-                        ("x-envoy-upstream-rq-timeout-ms", "20000"),
-                    ],
-                    Some(json_data.as_bytes()),
-                    vec![],
-                    Duration::from_secs(5),
-                ) {
-                    Ok(token_id) => token_id,
-                    Err(e) => {
-                        panic!("Error dispatching HTTP call: {:?}", e);
-                    }
-                };
-                let embedding_request = EmbeddingRequest {
-                    create_embedding_request: embeddings_input,
-                    // Need to clone prompt target to leave config string intact.
+            self.prompt_targets_with_embeddings
+                .write()
+                .unwrap()
+                .push(PromptTargetWithEmbeddings {
                     prompt_target: prompt_target.clone(),
-                };
-                debug!(
-                    "dispatched HTTP call to embedding server token_id={}",
-                    token_id
-                );
-                if self
-                    .callouts
-                    .insert(token_id, {
-                        CallContext::EmbeddingRequest(embedding_request)
-                    })
-                    .is_some()
-                {
-                    panic!("duplicate token_id")
-                }
-                self.metrics
-                    .active_http_calls
-                    .record(self.callouts.len().try_into().unwrap());
-            }
+                    embeddings_name: None,
+                    embeddings_description: None,
+                });
+
+            embedding_requests
+                .iter()
+                .for_each(|(embedding_type, input)| {
+                    let embeddings_input = CreateEmbeddingRequest {
+                        input: Box::new(CreateEmbeddingRequestInput::String(input.clone())),
+                        model: String::from(DEFAULT_EMBEDDING_MODEL),
+                        encoding_format: None,
+                        dimensions: None,
+                        user: None,
+                    };
+
+                    let json_data = to_string(&embeddings_input).unwrap();
+                    let token_id = match self.dispatch_http_call(
+                        "embeddingserver",
+                        vec![
+                            (":method", "POST"),
+                            (":path", "/embeddings"),
+                            (":authority", "embeddingserver"),
+                            ("content-type", "application/json"),
+                            ("x-envoy-upstream-rq-timeout-ms", "60000"),
+                        ],
+                        Some(json_data.as_bytes()),
+                        vec![],
+                        Duration::from_secs(60),
+                    ) {
+                        Ok(token_id) => token_id,
+                        Err(e) => {
+                            panic!("Error dispatching HTTP call: {:?}", e);
+                        }
+                    };
+
+                    if self
+                        .callouts
+                        .insert(token_id, {
+                            CallContext {
+                                prompt_target: prompt_target.clone(),
+                                embedding_type: embedding_type.clone(),
+                            }
+                        })
+                        .is_some()
+                    {
+                        panic!("duplicate token_id")
+                    }
+                    self.metrics
+                        .active_http_calls
+                        .record(self.callouts.len().try_into().unwrap());
+                });
         }
     }
 
-    fn embedding_request_handler(
+    fn embedding_response_handler(
         &mut self,
         body_size: usize,
-        create_embedding_request: CreateEmbeddingRequest,
+        embedding_type: EmbeddingType,
         prompt_target: PromptTarget,
     ) {
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
@@ -129,111 +154,33 @@ impl FilterContext {
                         }
                     };
 
-                let mut payload: HashMap<String, String> = HashMap::new();
-                payload.insert(
-                    "prompt-target".to_string(),
-                    to_string(&prompt_target).unwrap(),
+                let embeddings = embedding_response.data.remove(0).embedding;
+                log::info!(
+                    "Adding embeddings for prompt target name: {:?}, description: {:?}, embedding type: {:?}",
+                    prompt_target.name,
+                    prompt_target.description,
+                    embedding_type
                 );
-                let id: Option<Digest>;
-                match *create_embedding_request.input {
-                    CreateEmbeddingRequestInput::String(input) => {
-                        id = Some(md5::compute(&input));
-                        payload.insert("input".to_string(), input);
-                    }
-                    CreateEmbeddingRequestInput::Array(_) => todo!(),
-                }
 
-                let create_vector_store_points = StoreVectorEmbeddingsRequest {
-                    points: vec![VectorPoint {
-                        id: format!("{:x}", id.unwrap()),
-                        payload,
-                        vector: embedding_response.data.remove(0).embedding,
-                    }],
-                };
-                let json_data = to_string(&create_vector_store_points).unwrap(); // Handle potential errors
-                let token_id = match self.dispatch_http_call(
-                    "qdrant",
-                    vec![
-                        (":method", "PUT"),
-                        (":path", "/collections/prompt_vector_store/points"),
-                        (":authority", "qdrant"),
-                        ("content-type", "application/json"),
-                    ],
-                    Some(json_data.as_bytes()),
-                    vec![],
-                    Duration::from_secs(5),
-                ) {
-                    Ok(token_id) => token_id,
-                    Err(e) => {
-                        panic!("Error dispatching HTTP call: {:?}", e);
-                    }
-                };
-
-                if self
-                    .callouts
-                    .insert(
-                        token_id,
-                        CallContext::StoreVectorEmbeddings(create_vector_store_points),
-                    )
-                    .is_some()
+                if let Some(pt) = self
+                    .prompt_targets_with_embeddings
+                    .write()
+                    .unwrap()
+                    .iter_mut()
+                    .find(|pt| pt.prompt_target.name == prompt_target.name)
                 {
-                    panic!("duplicate token_id")
+                    if embedding_type == EmbeddingType::Name {
+                        pt.embeddings_name = Some(embeddings);
+                    } else {
+                        pt.embeddings_description = Some(embeddings);
+                    }
                 }
-                self.metrics
-                    .active_http_calls
-                    .record(self.callouts.len().try_into().unwrap());
             }
         } else {
             panic!("No body in response");
         }
     }
-
-    fn create_vector_store_points_handler(&self, body_size: usize) {
-        if let Some(body) = self.get_http_call_response_body(0, body_size) {
-            if !body.is_empty() {
-                debug!(
-                    "response body: len {:?}",
-                    String::from_utf8(body).unwrap().len()
-                );
-            }
-        }
-    }
-
-    //TODO: run once per envoy instance, right now it runs once per worker
-    fn init_vector_store(&mut self) {
-        let token_id = match self.dispatch_http_call(
-            "qdrant",
-            vec![
-                (":method", "PUT"),
-                (":path", "/collections/prompt_vector_store"),
-                (":authority", "qdrant"),
-                ("content-type", "application/json"),
-            ],
-            Some(b"{ \"vectors\": { \"size\": 1024, \"distance\": \"Cosine\"}}"),
-            vec![],
-            Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                panic!("Error dispatching HTTP call for init-vector-store: {:?}", e);
-            }
-        };
-        if self
-            .callouts
-            .insert(
-                token_id,
-                CallContext::CreateVectorCollection("prompt_vector_store".to_string()),
-            )
-            .is_some()
-        {
-            panic!("duplicate token_id")
-        }
-        self.metrics
-            .active_http_calls
-            .record(self.callouts.len().try_into().unwrap());
-    }
 }
-
 impl Context for FilterContext {
     fn on_http_call_response(
         &mut self,
@@ -242,37 +189,17 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let callout_data = self
-            .callouts
-            .remove(&token_id)
-            .expect("invalid token_id: {}");
+        let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
 
         self.metrics
             .active_http_calls
             .record(self.callouts.len().try_into().unwrap());
 
-        match callout_data {
-            CallContext::EmbeddingRequest(EmbeddingRequest {
-                create_embedding_request,
-                prompt_target,
-            }) => {
-                self.embedding_request_handler(body_size, create_embedding_request, prompt_target)
-            }
-            CallContext::StoreVectorEmbeddings(_) => {
-                self.create_vector_store_points_handler(body_size)
-            }
-            CallContext::CreateVectorCollection(_) => {
-                let mut http_status_code = "Nil".to_string();
-                self.get_http_call_response_headers()
-                    .iter()
-                    .for_each(|(k, v)| {
-                        if k == ":status" {
-                            http_status_code.clone_from(v);
-                        }
-                    });
-                debug!("CreateVectorCollection response: {}", http_status_code);
-            }
-        }
+        self.embedding_response_handler(
+            body_size,
+            callout_data.embedding_type,
+            callout_data.prompt_target,
+        )
     }
 }
 
@@ -301,6 +228,7 @@ impl RootContext for FilterContext {
             ratelimit_selector: None,
             callouts: HashMap::new(),
             metrics: Rc::clone(&self.metrics),
+            prompt_targets_with_embeddings: Rc::clone(&self.prompt_targets_with_embeddings),
         }))
     }
 
@@ -314,7 +242,6 @@ impl RootContext for FilterContext {
     }
 
     fn on_tick(&mut self) {
-        self.init_vector_store();
         self.process_prompt_targets();
         self.set_tick_period(Duration::from_secs(0));
     }
