@@ -1,7 +1,7 @@
 use crate::consts::{
     BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE,
-    USER_ROLE,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, OPENAI_CHAT_COMPLETIONS_PATH,
+    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::WasmMetrics;
 use crate::ratelimit;
@@ -53,6 +53,7 @@ pub struct StreamContext {
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
+    chat_completions_request: bool,
 }
 
 impl StreamContext {
@@ -65,6 +66,7 @@ impl StreamContext {
             ratelimit_selector: None,
             streaming_response: false,
             response_tokens: 0,
+            chat_completions_request: false,
         }
     }
     fn save_host_header(&mut self) {
@@ -86,7 +88,8 @@ impl StreamContext {
             // The gateway can start gathering information necessary for routing. For now change the path to an
             // OpenAI API path.
             Some(path) if path == "/llmrouting" => {
-                self.set_http_request_header(":path", Some("/v1/chat/completions"));
+                self.set_http_request_header(":path", Some(OPENAI_CHAT_COMPLETIONS_PATH));
+                self.chat_completions_request = true;
             }
             // Otherwise let the filter continue.
             _ => (),
@@ -434,15 +437,15 @@ impl StreamContext {
             }
         });
 
-        let request_message: ChatCompletionsRequest = ChatCompletionsRequest {
+        let chat_completions_request: ChatCompletionsRequest = ChatCompletionsRequest {
             model: GPT_35_TURBO.to_string(),
             messages,
             tools: None,
-            stream: false,
-            stream_options: None,
+            stream: callout_context.request_body.stream,
+            stream_options: callout_context.request_body.stream_options,
         };
 
-        let json_string = match serde_json::to_string(&request_message) {
+        let json_string = match serde_json::to_string(&chat_completions_request) {
             Ok(json_string) => json_string,
             Err(e) => {
                 warn!("Error serializing request_body: {:?}", e);
@@ -455,13 +458,13 @@ impl StreamContext {
             json_string
         );
 
-        let request_body = callout_context.request_body;
-
         // Tokenize and Ratelimit.
         if let Some(selector) = self.ratelimit_selector.take() {
-            if let Ok(token_count) = tokenizer::token_count(&request_body.model, &json_string) {
+            if let Ok(token_count) =
+                tokenizer::token_count(&chat_completions_request.model, &json_string)
+            {
                 match ratelimit::ratelimits(None).read().unwrap().check_limit(
-                    request_body.model,
+                    chat_completions_request.model,
                     selector,
                     NonZero::new(token_count as u32).unwrap(),
                 ) {
@@ -618,27 +621,34 @@ impl HttpContext for StreamContext {
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
+        if !self.chat_completions_request {
+            return Action::Continue;
+        }
+
         debug!(
             "recv [S={}] bytes={} end_stream={}",
             self.context_id, body_size, end_of_stream
         );
 
-        if body_size == 0 {
-            return Action::Continue;
+        if !end_of_stream && !self.streaming_response {
+            return Action::Pause;
         }
 
         let body = self
             .get_http_response_body(0, body_size)
             .expect("cant get response body");
 
+        let body_str = String::from_utf8(body).expect("body is not utf-8");
+
         if self.streaming_response {
-            let body_str = String::from_utf8(body).expect("body is not utf-8");
+            debug!("streaming response");
             let data: Vec<&str> = body_str.split("data: ").collect();
             let chat_completions_chunk_response: ChatCompletionChunkResponse =
                 match serde_json::from_str(&data[1]) {
                     Ok(de) => de,
                     Err(_) => {
                         if data[1] != "[NONE]" {
+                            debug!("error in streaming response");
                             self.send_http_response(
                                 StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
                                 vec![],
@@ -660,17 +670,17 @@ impl HttpContext for StreamContext {
                 let model = &chat_completions_chunk_response.model;
                 let token_count = tokenizer::token_count(model, content).unwrap_or(0);
                 self.response_tokens += token_count;
-
-                debug!(
-                    "recv [S={}] string={} tokens={} total_tokens={} end_stream={}",
-                    self.context_id, content, token_count, self.response_tokens, end_of_stream
-                );
             }
         } else {
+            debug!("non streaming response");
             let chat_completions_response: ChatCompletionsResponse =
-                match serde_json::from_slice(&body) {
+                match serde_json::from_str(&body_str) {
                     Ok(de) => de,
-                    Err(_) => {
+                    Err(e) => {
+                        debug!(
+                            "error in non-streaming response: {}\n response was={}",
+                            e, body_str
+                        );
                         self.send_http_response(
                             StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
                             vec![],
@@ -683,8 +693,12 @@ impl HttpContext for StreamContext {
             self.response_tokens += chat_completions_response.usage.completions_tokens;
         }
 
-        // TODO:: ratelimit
+        debug!(
+            "recv [S={}] total_tokens={} end_stream={}",
+            self.context_id, self.response_tokens, end_of_stream
+        );
 
+        // TODO:: ratelimit based on response tokens.
         Action::Continue
     }
 }

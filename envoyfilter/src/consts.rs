@@ -7,3 +7,4 @@ pub const USER_ROLE: &str = "user";
 pub const GPT_35_TURBO: &str = "gpt-3.5-turbo";
 pub const BOLT_FC_CLUSTER: &str = "bolt_fc_1b";
 pub const BOLT_FC_REQUEST_TIMEOUT_MS: u64 = 120000; // 2 minutes
+pub const OPENAI_CHAT_COMPLETIONS_PATH: &str = "/v1/chat/completions";
