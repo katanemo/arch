@@ -74,7 +74,7 @@ impl FilterContext {
                 (EmbeddingType::Name, prompt_target.name.clone()),
                 (
                     EmbeddingType::Description,
-                    prompt_target.description.clone().unwrap(),
+                    prompt_target.description.clone(),
                 ),
             ]);
 

@@ -100,7 +100,7 @@ pub struct PromptTarget {
     pub prompt_type: PromptType,
     pub name: String,
     //TODO: make description required
-    pub description: Option<String>,
+    pub description: String,
     pub parameters: Option<Vec<Parameter>>,
     pub endpoint: Option<Endpoint>,
     pub system_prompt: Option<String>,

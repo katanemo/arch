@@ -284,7 +284,7 @@ impl StreamContext {
 
                 let tools_defintion: ToolsDefinition = ToolsDefinition {
                     name: prompt_target.name.clone(),
-                    description: prompt_target.description.clone().unwrap_or("".to_string()),
+                    description: prompt_target.description.clone(),
                     parameters: tools_parameters,
                 };
 
