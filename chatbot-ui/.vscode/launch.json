@@ -9,7 +9,7 @@
       "cwd": "${workspaceFolder}/app",
       "type": "debugpy",
       "request": "launch",
-      "program": "run.py",
+      "program": "run_stream.py",
       "console": "integratedTerminal",
     }
   ]
