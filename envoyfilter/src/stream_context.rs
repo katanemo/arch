@@ -29,10 +29,10 @@ use std::sync::RwLock;
 use std::time::Duration;
 
 enum RequestType {
-    GetEmbeddingRespHandler,
-    FunctionResolverRespHandler,
-    FunctionCallResponseHandler,
-    ZeroShotIntentDetectionRespHandler,
+    GetEmbeddings,
+    FunctionResolver,
+    FunctionCall,
+    ZeroShotIntent,
 }
 
 pub struct CallContext {
@@ -168,7 +168,7 @@ impl StreamContext {
             token_id
         );
 
-        callout_context.request_type = RequestType::ZeroShotIntentDetectionRespHandler;
+        callout_context.request_type = RequestType::ZeroShotIntent;
 
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!(
@@ -334,7 +334,7 @@ impl StreamContext {
                     BOLT_FC_CLUSTER, token_id
                 );
 
-                callout_context.request_type = RequestType::FunctionResolverRespHandler;
+                callout_context.request_type = RequestType::FunctionResolver;
                 callout_context.prompt_target = Some(prompt_target);
                 if self.callouts.insert(token_id, callout_context).is_some() {
                     panic!("duplicate token_id")
@@ -431,7 +431,7 @@ impl StreamContext {
             }
         };
 
-        callout_context.request_type = RequestType::FunctionCallResponseHandler;
+        callout_context.request_type = RequestType::FunctionCall;
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
@@ -633,7 +633,7 @@ impl HttpContext for StreamContext {
         );
 
         let call_context = CallContext {
-            request_type: RequestType::GetEmbeddingRespHandler,
+            request_type: RequestType::GetEmbeddings,
             user_message: Some(user_message.clone()),
             prompt_target: None,
             request_body: deserialized_body.clone(),
@@ -681,14 +681,10 @@ impl Context for StreamContext {
         };
 
         match callout_context.request_type {
-            RequestType::GetEmbeddingRespHandler => self.embeddings_handler(body, callout_context),
-            RequestType::FunctionResolverRespHandler => {
-                self.function_resolver_handler(body, callout_context)
-            }
-            RequestType::FunctionCallResponseHandler => {
-                self.function_call_response_handler(body, callout_context)
-            }
-            RequestType::ZeroShotIntentDetectionRespHandler => {
+            RequestType::GetEmbeddings => self.embeddings_handler(body, callout_context),
+            RequestType::FunctionResolver => self.function_resolver_handler(body, callout_context),
+            RequestType::FunctionCall => self.function_call_response_handler(body, callout_context),
+            RequestType::ZeroShotIntent => {
                 self.zero_shot_intent_detection_resp_handler(body, callout_context)
             }
         }

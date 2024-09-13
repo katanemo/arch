@@ -8,13 +8,10 @@ use proxy_wasm_test_framework::tester::{self, Tester};
 use proxy_wasm_test_framework::types::{
     Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
 };
-use public_types::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
-use public_types::{
-    common_types::{
-        open_ai::Message, BoltFCResponse, BoltFCToolsCall, IntOrString, ToolCallDetail,
-    },
-    configuration::{self, Endpoint, PromptTarget},
+use public_types::common_types::{
+    open_ai::Message, BoltFCResponse, BoltFCToolsCall, IntOrString, ToolCallDetail,
 };
+use public_types::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
 use serial_test::serial;
 use std::collections::HashMap;
 use std::path::Path;
@@ -123,24 +120,6 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
-
-    let prompt_target = PromptTarget {
-        name: String::from("test-prompt-target"),
-        description: None,
-        prompt_type: configuration::PromptType::FunctionResolver,
-        parameters: Some(vec![configuration::Parameter {
-            name: String::from("test-entity"),
-            parameter_type: Some(String::from("string")),
-            description: String::from("test-description"),
-            required: Some(true),
-        }]),
-        endpoint: Some(Endpoint {
-            cluster: String::from("test-endpoint-cluster"),
-            path: None,
-            method: None,
-        }),
-        system_prompt: None,
-    };
 
     let zero_shot_response = ZeroShotClassificationResponse {
         predicted_class: "weather_forecast".to_string(),

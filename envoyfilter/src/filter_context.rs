@@ -2,7 +2,7 @@ use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
-use log::{debug, info};
+use log::debug;
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
