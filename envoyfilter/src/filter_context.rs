@@ -2,7 +2,7 @@ use crate::consts::DEFAULT_EMBEDDING_MODEL;
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
-use log::debug;
+use log::{debug, info};
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
@@ -15,7 +15,7 @@ use std::rc::Rc;
 use std::sync::RwLock;
 use std::time::Duration;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct WasmMetrics {
     pub active_http_calls: Gauge,
     pub ratelimited_rq: Counter,
@@ -30,6 +30,7 @@ impl WasmMetrics {
     }
 }
 
+#[derive(Debug)]
 struct CallContext {
     prompt_target: PromptTarget,
     embedding_type: EmbeddingType,
@@ -41,12 +42,14 @@ pub enum EmbeddingType {
     Description,
 }
 
+#[derive(Debug)]
 pub struct PromptTargetWithEmbeddings {
     pub prompt_target: PromptTarget,
     pub embeddings_name: Option<Vec<f64>>,
     pub embeddings_description: Option<Vec<f64>>,
 }
 
+#[derive(Debug)]
 pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
@@ -74,15 +77,6 @@ impl FilterContext {
                     prompt_target.description.clone().unwrap(),
                 ),
             ]);
-
-            self.prompt_targets_with_embeddings
-                .write()
-                .unwrap()
-                .push(PromptTargetWithEmbeddings {
-                    prompt_target: prompt_target.clone(),
-                    embeddings_name: None,
-                    embeddings_description: None,
-                });
 
             embedding_requests
                 .iter()
@@ -189,6 +183,7 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
+        debug!("on_http_call_response called with token_id: {:?}", token_id);
         let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
 
         self.metrics
@@ -218,6 +213,20 @@ impl RootContext for FilterContext {
             {
                 ratelimit::ratelimits(Some(std::mem::take(ratelimits_config)));
             }
+            self.config
+                .clone()
+                .unwrap()
+                .prompt_targets
+                .iter()
+                .for_each(|pt| {
+                    self.prompt_targets_with_embeddings.write().unwrap().push(
+                        PromptTargetWithEmbeddings {
+                            prompt_target: pt.clone(),
+                            embeddings_name: None,
+                            embeddings_description: None,
+                        },
+                    );
+                });
         }
         true
     }

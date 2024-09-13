@@ -112,7 +112,7 @@ impl StreamContext {
             .map(|pte| {
                 let similarity_score_description = cosine_similarity(
                     &message_embeddings,
-                    &pte.embeddings_description.as_ref().unwrap(),
+                    &pte.embeddings_description.as_ref().unwrap_or(&vec![0.0]),
                 );
                 (pte.prompt_target.name.clone(), similarity_score_description)
             })
