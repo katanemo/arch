@@ -12,7 +12,7 @@ use public_types::configuration::{Configuration, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 #[derive(Copy, Clone, Debug)]
@@ -32,7 +32,7 @@ impl WasmMetrics {
 
 #[derive(Debug)]
 struct CallContext {
-    prompt_target: PromptTarget,
+    prompt_target: String,
     embedding_type: EmbeddingType,
 }
 
@@ -42,20 +42,15 @@ pub enum EmbeddingType {
     Description,
 }
 
-#[derive(Debug)]
-pub struct PromptTargetWithEmbeddings {
-    pub prompt_target: PromptTarget,
-    pub embeddings_name: Option<Vec<f64>>,
-    pub embeddings_description: Option<Vec<f64>>,
-}
-
+pub type EmbeddingTypeMap = HashMap<EmbeddingType, Vec<f64>>;
 #[derive(Debug)]
 pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: HashMap<u32, CallContext>,
     config: Option<Configuration>,
-    prompt_targets_with_embeddings: Rc<RwLock<Vec<PromptTargetWithEmbeddings>>>,
+    prompt_targets: Arc<RwLock<HashMap<String, PromptTarget>>>,
+    prompt_embeddings: Arc<RwLock<HashMap<String, EmbeddingTypeMap>>>,
 }
 
 impl FilterContext {
@@ -64,12 +59,14 @@ impl FilterContext {
             callouts: HashMap::new(),
             config: None,
             metrics: Rc::new(WasmMetrics::new()),
-            prompt_targets_with_embeddings: Rc::new(RwLock::new(Vec::new())),
+            prompt_targets: Arc::new(RwLock::new(HashMap::new())),
+            prompt_embeddings: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
     fn process_prompt_targets(&mut self) {
-        for prompt_target in &self.config.clone().unwrap().prompt_targets {
+        for values in self.prompt_targets.read().unwrap().iter() {
+            let prompt_target = &values.1;
             let embedding_requests: HashMap<EmbeddingType, String> = HashMap::from([
                 (EmbeddingType::Name, prompt_target.name.clone()),
                 (
@@ -77,54 +74,51 @@ impl FilterContext {
                     prompt_target.description.clone(),
                 ),
             ]);
+            for (embedding_type, input) in embedding_requests.iter() {
+                let embeddings_input = CreateEmbeddingRequest {
+                    input: Box::new(CreateEmbeddingRequestInput::String(input.clone())),
+                    model: String::from(DEFAULT_EMBEDDING_MODEL),
+                    encoding_format: None,
+                    dimensions: None,
+                    user: None,
+                };
 
-            embedding_requests
-                .iter()
-                .for_each(|(embedding_type, input)| {
-                    let embeddings_input = CreateEmbeddingRequest {
-                        input: Box::new(CreateEmbeddingRequestInput::String(input.clone())),
-                        model: String::from(DEFAULT_EMBEDDING_MODEL),
-                        encoding_format: None,
-                        dimensions: None,
-                        user: None,
-                    };
-
-                    let json_data = to_string(&embeddings_input).unwrap();
-                    let token_id = match self.dispatch_http_call(
-                        "embeddingserver",
-                        vec![
-                            (":method", "POST"),
-                            (":path", "/embeddings"),
-                            (":authority", "embeddingserver"),
-                            ("content-type", "application/json"),
-                            ("x-envoy-upstream-rq-timeout-ms", "60000"),
-                        ],
-                        Some(json_data.as_bytes()),
-                        vec![],
-                        Duration::from_secs(60),
-                    ) {
-                        Ok(token_id) => token_id,
-                        Err(e) => {
-                            panic!("Error dispatching HTTP call: {:?}", e);
-                        }
-                    };
-
-                    if self
-                        .callouts
-                        .insert(token_id, {
-                            CallContext {
-                                prompt_target: prompt_target.clone(),
-                                embedding_type: embedding_type.clone(),
-                            }
-                        })
-                        .is_some()
-                    {
-                        panic!("duplicate token_id")
+                let json_data = to_string(&embeddings_input).unwrap();
+                let token_id = match self.dispatch_http_call(
+                    "embeddingserver",
+                    vec![
+                        (":method", "POST"),
+                        (":path", "/embeddings"),
+                        (":authority", "embeddingserver"),
+                        ("content-type", "application/json"),
+                        ("x-envoy-upstream-rq-timeout-ms", "60000"),
+                    ],
+                    Some(json_data.as_bytes()),
+                    vec![],
+                    Duration::from_secs(60),
+                ) {
+                    Ok(token_id) => token_id,
+                    Err(e) => {
+                        panic!("Error dispatching HTTP call: {:?}", e);
                     }
-                    self.metrics
-                        .active_http_calls
-                        .record(self.callouts.len().try_into().unwrap());
-                });
+                };
+
+                if self
+                    .callouts
+                    .insert(token_id, {
+                        CallContext {
+                            prompt_target: prompt_target.name.clone(),
+                            embedding_type: embedding_type.clone(),
+                        }
+                    })
+                    .is_some()
+                {
+                    panic!("duplicate token_id")
+                }
+                self.metrics
+                    .active_http_calls
+                    .record(self.callouts.len().try_into().unwrap());
+            }
         }
     }
 
@@ -132,8 +126,10 @@ impl FilterContext {
         &mut self,
         body_size: usize,
         embedding_type: EmbeddingType,
-        prompt_target: PromptTarget,
+        prompt_target_name: String,
     ) {
+        let prompt_targets = self.prompt_targets.read().unwrap();
+        let prompt_target = prompt_targets.get(&prompt_target_name).unwrap();
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
             if !body.is_empty() {
                 let mut embedding_response: CreateEmbeddingResponse =
@@ -156,19 +152,10 @@ impl FilterContext {
                     embedding_type
                 );
 
-                if let Some(pt) = self
-                    .prompt_targets_with_embeddings
-                    .write()
-                    .unwrap()
-                    .iter_mut()
-                    .find(|pt| pt.prompt_target.name == prompt_target.name)
-                {
-                    if embedding_type == EmbeddingType::Name {
-                        pt.embeddings_name = Some(embeddings);
-                    } else {
-                        pt.embeddings_description = Some(embeddings);
-                    }
-                }
+                self.prompt_embeddings.write().unwrap().insert(
+                    prompt_target.name.clone(),
+                    HashMap::from([(embedding_type, embeddings)]),
+                );
             }
         } else {
             panic!("No body in response");
@@ -204,6 +191,14 @@ impl RootContext for FilterContext {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
 
+            //TODO: scrap self.config and move imrportant fields to individual variables
+            for pt in self.config.clone().unwrap().prompt_targets {
+                self.prompt_targets
+                    .write()
+                    .unwrap()
+                    .insert(pt.name.clone(), pt.clone());
+            }
+
             debug!("set configuration object: {:?}", self.config);
 
             if let Some(ratelimits_config) = self
@@ -213,20 +208,6 @@ impl RootContext for FilterContext {
             {
                 ratelimit::ratelimits(Some(std::mem::take(ratelimits_config)));
             }
-            self.config
-                .clone()
-                .unwrap()
-                .prompt_targets
-                .iter()
-                .for_each(|pt| {
-                    self.prompt_targets_with_embeddings.write().unwrap().push(
-                        PromptTargetWithEmbeddings {
-                            prompt_target: pt.clone(),
-                            embeddings_name: None,
-                            embeddings_description: None,
-                        },
-                    );
-                });
         }
         true
     }
@@ -237,7 +218,8 @@ impl RootContext for FilterContext {
             ratelimit_selector: None,
             callouts: HashMap::new(),
             metrics: Rc::clone(&self.metrics),
-            prompt_targets_with_embeddings: Rc::clone(&self.prompt_targets_with_embeddings),
+            prompt_targets: Arc::clone(&self.prompt_targets),
+            prompt_embeddings: Arc::clone(&self.prompt_embeddings),
         }))
     }
 

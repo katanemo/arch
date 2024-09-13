@@ -3,12 +3,12 @@ use crate::consts::{
     DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE,
     USER_ROLE,
 };
-use crate::filter_context::{PromptTargetWithEmbeddings, WasmMetrics};
+use crate::filter_context::{EmbeddingType, EmbeddingTypeMap, WasmMetrics};
 use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
-use acap::cos::cosine_similarity;
+use acap::cos;
 use http::StatusCode;
 use log::{debug, error, info, warn};
 use open_message_format_embeddings::models::{
@@ -25,7 +25,7 @@ use public_types::configuration::{PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 enum RequestType {
@@ -48,7 +48,8 @@ pub struct StreamContext {
     pub ratelimit_selector: Option<Header>,
     pub callouts: HashMap<u32, CallContext>,
     pub metrics: Rc<WasmMetrics>,
-    pub prompt_targets_with_embeddings: Rc<RwLock<Vec<PromptTargetWithEmbeddings>>>,
+    pub prompt_embeddings: Arc<RwLock<HashMap<String, EmbeddingTypeMap>>>,
+    pub prompt_targets: Arc<RwLock<HashMap<String, PromptTarget>>>,
 }
 
 impl StreamContext {
@@ -102,19 +103,22 @@ impl StreamContext {
         info!("message embeddings: {:?}", message_embeddings.len());
         info!(
             "prompt target length: {:?}",
-            self.prompt_targets_with_embeddings.read().unwrap().len()
+            self.prompt_embeddings.read().unwrap().len()
         );
         let similarity_scores: Vec<(String, f64)> = self
-            .prompt_targets_with_embeddings
+            .prompt_targets
             .read()
             .unwrap()
             .iter()
-            .map(|pte| {
-                let similarity_score_description = cosine_similarity(
+            .map(|(prompt_name, _)| {
+                let prompt_target_embeddings = self.prompt_embeddings.read().unwrap();
+                let pte = prompt_target_embeddings.get(prompt_name).unwrap();
+                let description_embeddings = pte.get(&EmbeddingType::Description);
+                let similarity_score_description = cos::cosine_similarity(
                     &message_embeddings,
-                    &pte.embeddings_description.as_ref().unwrap_or(&vec![0.0]),
+                    &description_embeddings.unwrap_or(&vec![0.0]),
                 );
-                (pte.prompt_target.name.clone(), similarity_score_description)
+                (prompt_name.clone(), similarity_score_description)
             })
             .collect();
         info!("similarity scores: {:?}", similarity_scores);
@@ -126,11 +130,11 @@ impl StreamContext {
             input: callout_context.user_message.as_ref().unwrap().clone(),
             model: String::from(DEFAULT_INTENT_MODEL),
             labels: self
-                .prompt_targets_with_embeddings
+                .prompt_targets
                 .read()
                 .unwrap()
                 .iter()
-                .map(|pte| pte.prompt_target.name.clone())
+                .map(|(name, _)| name.clone())
                 .collect(),
         };
 
@@ -244,13 +248,11 @@ impl StreamContext {
         }
 
         let prompt_target = self
-            .prompt_targets_with_embeddings
+            .prompt_targets
             .read()
             .unwrap()
-            .iter()
-            .find(|pte| pte.prompt_target.name == prompt_target_name)
+            .get(&prompt_target_name)
             .unwrap()
-            .prompt_target
             .clone();
 
         info!(
