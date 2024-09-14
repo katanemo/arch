@@ -14,7 +14,7 @@ use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;
-use proxy_wasm::types::*;
+use proxy_wasm::types::{Action, *};
 use public_types::common_types::open_ai::StreamOptions;
 use public_types::common_types::{
     open_ai::{
@@ -105,13 +105,15 @@ impl StreamContext {
             });
     }
 
-    fn send_server_error(&mut self, error: String) {
+    fn send_server_error(&mut self, error: String) -> Action {
         debug!("server error occurred: {}", error);
         self.send_http_response(
             StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
             vec![],
             Some(error.as_bytes()),
-        )
+        );
+
+        Action::Pause
     }
 
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -655,12 +657,7 @@ impl HttpContext for StreamContext {
             let chat_completions_data = match body_str.split_once("data: ") {
                 Some((_, chat_completions_data)) => chat_completions_data,
                 None => {
-                    self.send_http_response(
-                        StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                        vec![],
-                        None,
-                    );
-                    return Action::Pause;
+                    return self.send_server_error(String::from("parsing error in streaming data"));
                 }
             };
 
