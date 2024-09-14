@@ -14,7 +14,7 @@ use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;
-use proxy_wasm::types::{Action, *};
+use proxy_wasm::types::*;
 use public_types::common_types::open_ai::StreamOptions;
 use public_types::common_types::{
     open_ai::{
@@ -105,23 +105,26 @@ impl StreamContext {
             });
     }
 
-    fn send_server_error(&mut self, error: String) -> Action {
+    fn send_server_error(&mut self, error: String, override_status_code: Option<StatusCode>) {
         debug!("server error occurred: {}", error);
         self.send_http_response(
-            StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+            override_status_code
+                .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                .as_u16()
+                .into(),
             vec![],
             Some(error.as_bytes()),
         );
-
-        Action::Pause
     }
 
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
         let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
             Ok(embedding_response) => embedding_response,
             Err(e) => {
-                self.send_server_error(format!("Error deserializing embedding response: {:?}", e));
-                return;
+                return self.send_server_error(
+                    format!("Error deserializing embedding response: {:?}", e),
+                    None,
+                );
             }
         };
 
@@ -134,8 +137,10 @@ impl StreamContext {
         let json_data: String = match serde_json::to_string(&search_points_request) {
             Ok(json_data) => json_data,
             Err(e) => {
-                self.send_server_error(format!("Error serializing search_points_request: {:?}", e));
-                return;
+                return self.send_server_error(
+                    format!("Error serializing search_points_request: {:?}", e),
+                    None,
+                );
             }
         };
 
@@ -171,12 +176,10 @@ impl StreamContext {
         let search_points_response: SearchPointsResponse = match serde_json::from_slice(&body) {
             Ok(search_points_response) => search_points_response,
             Err(e) => {
-                self.send_server_error(format!(
-                    "Error deserializing search_points_response: {:?}",
-                    e
-                ));
-
-                return;
+                return self.send_server_error(
+                    format!("Error deserializing search_points_response: {:?}", e),
+                    None,
+                );
             }
         };
 
@@ -218,8 +221,10 @@ impl StreamContext {
         {
             Ok(prompt_target) => prompt_target,
             Err(e) => {
-                self.send_server_error(format!("Error deserializing prompt_target: {:?}", e));
-                return;
+                return self.send_server_error(
+                    format!("Error deserializing prompt_target: {:?}", e),
+                    None,
+                );
             }
         };
         info!(
@@ -271,11 +276,10 @@ impl StreamContext {
                         msg_body
                     }
                     Err(e) => {
-                        self.send_server_error(format!(
-                            "Error serializing request_params: {:?}",
-                            e
-                        ));
-                        return;
+                        return self.send_server_error(
+                            format!("Error serializing request_params: {:?}", e),
+                            None,
+                        );
                     }
                 };
 
@@ -365,10 +369,9 @@ impl StreamContext {
                             .contains_key(&param.name)
                     {
                         warn!("boltfc did not extract required parameter: {}", param.name);
-                        return self.send_http_response(
-                            StatusCode::BAD_REQUEST.as_u16().into(),
-                            vec![],
-                            Some("missing required parameter".as_bytes()),
+                        return self.send_server_error(
+                            String::from("missing required parameter"),
+                            Some(StatusCode::BAD_REQUEST),
                         );
                     }
                 }
@@ -461,8 +464,8 @@ impl StreamContext {
         let json_string = match serde_json::to_string(&chat_completions_request) {
             Ok(json_string) => json_string,
             Err(e) => {
-                self.send_server_error(format!("Error serializing request_body: {:?}", e));
-                return;
+                return self
+                    .send_server_error(format!("Error serializing request_body: {:?}", e), None);
             }
         };
         debug!(
@@ -482,10 +485,9 @@ impl StreamContext {
                 ) {
                     Ok(_) => (),
                     Err(err) => {
-                        self.send_http_response(
-                            StatusCode::TOO_MANY_REQUESTS.as_u16().into(),
-                            vec![],
-                            Some(format!("Exceeded Ratelimit: {}", err).as_bytes()),
+                        self.send_server_error(
+                            format!("Exceeded Ratelimit: {}", err),
+                            Some(StatusCode::TOO_MANY_REQUESTS),
                         );
                         self.metrics.ratelimited_rq.increment(1);
                         return;
@@ -531,23 +533,20 @@ impl HttpContext for StreamContext {
                 Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                     Ok(deserialized) => deserialized,
                     Err(msg) => {
-                        self.send_http_response(
-                            StatusCode::BAD_REQUEST.as_u16().into(),
-                            vec![],
-                            Some(format!("Failed to deserialize: {}", msg).as_bytes()),
+                        self.send_server_error(
+                            format!("Failed to deserialize: {}", msg),
+                            Some(StatusCode::BAD_REQUEST),
                         );
                         return Action::Pause;
                     }
                 },
                 None => {
-                    self.send_http_response(
-                        StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                        vec![],
+                    self.send_server_error(
+                        format!(
+                            "Failed to obtain body bytes even though body_size is {}",
+                            body_size
+                        ),
                         None,
-                    );
-                    error!(
-                        "Failed to obtain body bytes even though body_size is {}",
-                        body_size
                     );
                     return Action::Pause;
                 }
@@ -657,7 +656,8 @@ impl HttpContext for StreamContext {
             let chat_completions_data = match body_str.split_once("data: ") {
                 Some((_, chat_completions_data)) => chat_completions_data,
                 None => {
-                    return self.send_server_error(String::from("parsing error in streaming data"));
+                    self.send_server_error(String::from("parsing error in streaming data"), None);
+                    return Action::Pause;
                 }
             };
 
@@ -666,12 +666,11 @@ impl HttpContext for StreamContext {
                     Ok(de) => de,
                     Err(_) => {
                         if chat_completions_data != "[NONE]" {
-                            debug!("error in streaming response");
-                            self.send_http_response(
-                                StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                                vec![],
+                            self.send_server_error(
+                                String::from("error in streaming response"),
                                 None,
                             );
+                            return Action::Continue;
                         }
                         return Action::Continue;
                     }
@@ -695,16 +694,14 @@ impl HttpContext for StreamContext {
                 match serde_json::from_str(&body_str) {
                     Ok(de) => de,
                     Err(e) => {
-                        debug!(
-                            "error in non-streaming response: {}\n response was={}",
-                            e, body_str
-                        );
-                        self.send_http_response(
-                            StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                            vec![],
+                        self.send_server_error(
+                            format!(
+                                "error in non-streaming response: {}\n response was={}",
+                                e, body_str
+                            ),
                             None,
                         );
-                        return Action::Continue;
+                        return Action::Pause;
                     }
                 };
 
