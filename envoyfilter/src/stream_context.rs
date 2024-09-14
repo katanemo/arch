@@ -642,12 +642,23 @@ impl HttpContext for StreamContext {
 
         if self.streaming_response {
             debug!("streaming response");
-            let data: Vec<&str> = body_str.split("data: ").collect();
+            let chat_completions_data = match body_str.split_once("data: ") {
+                Some((_, chat_completions_data)) => chat_completions_data,
+                None => {
+                    self.send_http_response(
+                        StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                        vec![],
+                        None,
+                    );
+                    return Action::Pause;
+                }
+            };
+
             let chat_completions_chunk_response: ChatCompletionChunkResponse =
-                match serde_json::from_str(data[1]) {
+                match serde_json::from_str(chat_completions_data) {
                     Ok(de) => de,
                     Err(_) => {
-                        if data[1] != "[NONE]" {
+                        if chat_completions_data != "[NONE]" {
                             debug!("error in streaming response");
                             self.send_http_response(
                                 StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
