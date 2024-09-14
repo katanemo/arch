@@ -12,6 +12,10 @@ This demo shows how you can use intelligent prompt gateway to do function callin
    docker compose up
    ```
 1. Download Bolt-FC model. This demo assumes we have downloaded [Bolt-Function-Calling-1B:Q4_K_M](https://huggingface.co/katanemolabs/Bolt-Function-Calling-1B.gguf/blob/main/Bolt-Function-Calling-1B-Q4_K_M.gguf) to local folder.
+1. If running ollama natively run
+   ```sh
+   ollama serve
+   ```
 2. Create model file in ollama repository
    ```sh
    ollama create Bolt-Function-Calling-1B:Q4_K_M -f Bolt-FC-1B-Q4_K_M.model_file
