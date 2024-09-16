@@ -97,7 +97,7 @@ impl FilterContext {
                 .callouts
                 .insert(token_id, {
                     CallContext {
-                        prompt_target: prompt_target.description.clone(),
+                        prompt_target: prompt_target.name.clone(),
                         embedding_type: EmbeddingType::Description,
                     }
                 })
