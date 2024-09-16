@@ -135,6 +135,11 @@ impl StreamContext {
             }
         };
 
+        let prompt_target_names = prompt_targets
+            .iter()
+            .map(|(name, _)| name.clone())
+            .collect();
+
         let similarity_scores: Vec<(String, f64)> = prompt_targets
             .iter()
             .map(|(prompt_name, _)| {
@@ -156,10 +161,7 @@ impl StreamContext {
             // Need to clone into input because user_message is used below.
             input: callout_context.user_message.as_ref().unwrap().clone(),
             model: String::from(DEFAULT_INTENT_MODEL),
-            labels: prompt_targets
-                .iter()
-                .map(|(name, _)| name.clone())
-                .collect(),
+            labels: prompt_target_names,
         };
 
         let json_data: String = match serde_json::to_string(&zero_shot_classification_request) {
