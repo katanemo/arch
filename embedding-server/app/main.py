@@ -21,7 +21,6 @@ jailbreak_model = load_jailbreak_model(guard_model_config["jailbreak"][hardware_
 guard_handler = GuardHandler(toxic_model, jailbreak_model, hardware_config)
 
 app = FastAPI()
-_x.sum()
     
 class EmbeddingRequest(BaseModel):
   input: str
