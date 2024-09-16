@@ -3,7 +3,7 @@ use crate::consts::{
     DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE,
     USER_ROLE,
 };
-use crate::filter_context::{embeddings_store, EmbeddingType, WasmMetrics};
+use crate::filter_context::{embeddings_store, WasmMetrics};
 use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
@@ -18,7 +18,7 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{ChatCompletions, Message};
 use public_types::common_types::{
-    BoltFCResponse, BoltFCToolsCall, ToolParameter, ToolParameters, ToolsDefinition,
+    BoltFCResponse, BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
     ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
 use public_types::configuration::{PromptTarget, PromptType};

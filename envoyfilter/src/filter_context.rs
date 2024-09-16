@@ -8,6 +8,7 @@ use open_message_format_embeddings::models::{
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use public_types::common_types::EmbeddingType;
 use public_types::configuration::{Configuration, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
@@ -34,12 +35,6 @@ impl WasmMetrics {
 struct CallContext {
     prompt_target: String,
     embedding_type: EmbeddingType,
-}
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub enum EmbeddingType {
-    Name,
-    Description,
 }
 
 pub type EmbeddingTypeMap = HashMap<EmbeddingType, Vec<f64>>;

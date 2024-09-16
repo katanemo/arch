@@ -7,6 +7,12 @@ pub struct EmbeddingRequest {
     pub prompt_target: PromptTarget,
 }
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum EmbeddingType {
+    Name,
+    Description,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VectorPoint {
     pub id: String,
