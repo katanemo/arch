@@ -9,7 +9,7 @@ use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
 use http::StatusCode;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
@@ -369,10 +369,10 @@ impl StreamContext {
                             .contains_key(&param.name)
                     {
                         warn!("boltfc did not extract required parameter: {}", param.name);
-                        return self.send_server_error(
+                        self.send_server_error(
                             String::from("missing required parameter"),
                             Some(StatusCode::BAD_REQUEST),
-                        );
+                        )
                     }
                 }
             });
