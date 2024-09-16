@@ -13,10 +13,7 @@ def load_transformers(models=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
     return transformers
 
 
-def load_ner_models(
-    models=os.getenv(
-        "NER_MODELS",
-        "urchade/gliner_large-v2.1")):
+def load_ner_models(models=os.getenv("NER_MODELS", "urchade/gliner_large-v2.1")):
     ner_models = {}
 
     for model in models.split(","):
@@ -40,9 +37,11 @@ def load_toxic_model(
 
         device = "cpu"
         toxic_model["model"] = OVModelForSequenceClassification.from_pretrained(
-            model_name, device_map=device, low_cpu_mem_usage=True)
+            model_name, device_map=device, low_cpu_mem_usage=True
+        )
     elif hardware_config == "non_intel_cpu":
         import onnxruntime as ort
+
         opts = ort.SessionOptions()
         if "model_quantized.onnx" not in model_name:
             model_name += "/model_quantized.onnx"
@@ -54,21 +53,21 @@ def load_toxic_model(
     elif hardware_config == "gpu":
         from transformers import AutoModelForSequenceClassification
         import torch
+
         device = "cuda" if torch.cuda.is_available() else "cpu"
         if device == "cpu":
             print("No GPU found, using CPU...")
 
         toxic_model["model"] = AutoModelForSequenceClassification.from_pretrained(
-            model_name, device_map=device, low_cpu_mem_usage=True)
+            model_name, device_map=device, low_cpu_mem_usage=True
+        )
     toxic_model["device"] = device
 
     return toxic_model
 
 
 def load_jailbreak_model(
-        model_name=os.getenv(
-            "JAILBREAK_MODELS",
-            "katanemolabs/jailbreak-onnx-quantized"),
+    model_name=os.getenv("JAILBREAK_MODELS", "katanemolabs/jailbreak-onnx-quantized"),
     hardware_config="intel_cpu",
 ):
 
@@ -82,9 +81,11 @@ def load_jailbreak_model(
 
         device = "cpu"
         jailbreak_model["model"] = OVModelForSequenceClassification.from_pretrained(
-            model_name, device_map=device, low_cpu_mem_usage=True)
+            model_name, device_map=device, low_cpu_mem_usage=True
+        )
     elif hardware_config == "non_intel_cpu":
         import onnxruntime as ort
+
         opts = ort.SessionOptions()
         if "model_quantized.onnx" not in model_name:
             model_name += "/model_quantized.onnx"
@@ -101,7 +102,8 @@ def load_jailbreak_model(
         if device == "cpu":
             print("No GPU found, using CPU...")
         jailbreak_model["model"] = AutoModelForSequenceClassification.from_pretrained(
-            model_name, device_map=device, low_cpu_mem_usage=True)
+            model_name, device_map=device, low_cpu_mem_usage=True
+        )
     jailbreak_model["device"] = device
 
     return jailbreak_model

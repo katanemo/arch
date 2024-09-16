@@ -46,12 +46,8 @@ def softmax(x):
 
 class PredictHandler:
     def __init__(
-            self,
-            model,
-            tokenizer,
-            device,
-            task="toxic",
-            hardware_config="intel_cpu"):
+        self, model, tokenizer, device, task="toxic", hardware_config="intel_cpu"
+    ):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
@@ -63,19 +59,16 @@ class PredictHandler:
         self.hardware_config = hardware_config
 
     def predict(self, input_text):
-        inputs = self.tokenizer(
-            input_text,
-            return_tensors="pt").to(
-            self.device)
+        inputs = self.tokenizer(input_text, return_tensors="pt").to(self.device)
         with torch.no_grad():
             if self.hardware_config == "non_intel_cpu":
-                
+
                 feed = {
                     "input_ids": inputs["input_ids"].numpy(),
                     "attention_mask": inputs["attention_mask"].numpy(),
                 }
-                if self.task = "toxic":
-                    feed["token_type_ids"] = inputs["token_type_ids"].numpy(),
+                if self.task == "toxic":
+                    feed["token_type_ids"] = (inputs["token_type_ids"].numpy(),)
 
                 del inputs
                 logits = self.model.run(["logits"], feed)[0]
@@ -91,11 +84,7 @@ class PredictHandler:
 
 
 class GuardHandler:
-    def __init__(
-            self,
-            toxic_model,
-            jailbreak_model,
-            hardware_config="intel_cpu"):
+    def __init__(self, toxic_model, jailbreak_model, hardware_config="intel_cpu"):
         self.toxic_model = toxic_model
         self.jailbreak_model = jailbreak_model
         if toxic_model is not None:
@@ -125,9 +114,7 @@ class GuardHandler:
         if not self.single:
             with ThreadPoolExecutor() as executor:
 
-                toxic_thread = executor.submit(
-                    self.toxic_handler.predict, input_text
-                )
+                toxic_thread = executor.submit(self.toxic_handler.predict, input_text)
                 jailbreak_thread = executor.submit(
                     self.jailbreak_handler.predict, input_text
                 )

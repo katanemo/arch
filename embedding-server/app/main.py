@@ -55,19 +55,14 @@ async def models():
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
     if req.model not in transformers:
-        raise HTTPException(
-            status_code=400,
-            detail="unknown model: " +
-            req.model)
+        raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
     embeddings = transformers[req.model].encode([req.input])
 
     data = []
 
     for embedding in embeddings.tolist():
-        data.append({"object": "embedding",
-                     "embedding": embedding,
-                     "index": len(data)})
+        data.append({"object": "embedding", "embedding": embedding, "index": len(data)})
 
     usage = {
         "prompt_tokens": 0,
@@ -85,10 +80,7 @@ class NERRequest(BaseModel):
 @app.post("/ner")
 async def ner(req: NERRequest, res: Response):
     if req.model not in ner_models:
-        raise HTTPException(
-            status_code=400,
-            detail="unknown model: " +
-            req.model)
+        raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
     model = ner_models[req.model]
     entities = model.predict_entities(req.input, req.labels)
