@@ -69,11 +69,13 @@ class PredictHandler:
             self.device)
         with torch.no_grad():
             if self.hardware_config == "non_intel_cpu":
+                
                 feed = {
                     "input_ids": inputs["input_ids"].numpy(),
                     "attention_mask": inputs["attention_mask"].numpy(),
-                    "token_type_ids": inputs["token_type_ids"].numpy(),
                 }
+                if self.task = "toxic":
+                    feed["token_type_ids"] = inputs["token_type_ids"].numpy(),
 
                 del inputs
                 logits = self.model.run(["logits"], feed)[0]
