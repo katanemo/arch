@@ -305,8 +305,6 @@ fn successful_request_to_open_ai_chat_completions() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
-        // TODO: assert that the model field was added.
-        .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(Some("embeddingserver"), None, None, None, None)
         .returning(Some(4))
