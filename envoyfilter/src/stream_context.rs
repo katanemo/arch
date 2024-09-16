@@ -3,7 +3,7 @@ use crate::consts::{
     DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE,
     USER_ROLE,
 };
-use crate::filter_context::{EmbeddingType, EmbeddingTypeMap, WasmMetrics};
+use crate::filter_context::{embeddings_store, EmbeddingType, WasmMetrics};
 use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
@@ -25,7 +25,7 @@ use public_types::configuration::{PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 use std::time::Duration;
 
 enum RequestType {
@@ -48,8 +48,7 @@ pub struct StreamContext {
     pub ratelimit_selector: Option<Header>,
     pub callouts: HashMap<u32, CallContext>,
     pub metrics: Rc<WasmMetrics>,
-    pub prompt_embeddings: Arc<RwLock<HashMap<String, EmbeddingTypeMap>>>,
-    pub prompt_targets: Arc<RwLock<HashMap<String, PromptTarget>>>,
+    pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
 }
 
 impl StreamContext {
@@ -98,30 +97,58 @@ impl StreamContext {
             }
         };
 
-        let message_embeddings = &embedding_response.data[0].embedding;
+        let embeddings_vector = &embedding_response.data[0].embedding;
 
-        info!("message embeddings: {:?}", message_embeddings.len());
-        info!(
-            "prompt target length: {:?}",
-            self.prompt_embeddings.read().unwrap().len()
+        debug!(
+            "embedding model: {}, vector length: {:?}",
+            embedding_response.model,
+            embeddings_vector.len()
         );
-        let similarity_scores: Vec<(String, f64)> = self
-            .prompt_targets
-            .read()
-            .unwrap()
+
+        let prompt_target_embeddings = match embeddings_store().read() {
+            Ok(embeddings) => embeddings,
+            Err(e) => {
+                let error_message = format!("Error reading embeddings store: {:?}", e);
+                warn!("{}", error_message);
+                self.send_http_response(
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                    vec![],
+                    Some(error_message.as_bytes()),
+                );
+                self.resume_http_request();
+                return;
+            }
+        };
+
+        let prompt_targets = match self.prompt_targets.read() {
+            Ok(prompt_targets) => prompt_targets,
+            Err(e) => {
+                let error_message = format!("Error reading prompt targets: {:?}", e);
+                warn!("{}", error_message);
+                self.send_http_response(
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+                    vec![],
+                    Some(error_message.as_bytes()),
+                );
+                self.resume_http_request();
+                return;
+            }
+        };
+
+        let similarity_scores: Vec<(String, f64)> = prompt_targets
             .iter()
             .map(|(prompt_name, _)| {
-                let prompt_target_embeddings = self.prompt_embeddings.read().unwrap();
                 let pte = prompt_target_embeddings.get(prompt_name).unwrap();
                 let description_embeddings = pte.get(&EmbeddingType::Description);
                 let similarity_score_description = cos::cosine_similarity(
-                    &message_embeddings,
+                    &embeddings_vector,
                     &description_embeddings.unwrap_or(&vec![0.0]),
                 );
                 (prompt_name.clone(), similarity_score_description)
             })
             .collect();
-        info!("similarity scores: {:?}", similarity_scores);
+
+        debug!("similarity scores: {:?}", similarity_scores);
 
         callout_context.similarity_scores = Some(similarity_scores);
 
@@ -129,10 +156,7 @@ impl StreamContext {
             // Need to clone into input because user_message is used below.
             input: callout_context.user_message.as_ref().unwrap().clone(),
             model: String::from(DEFAULT_INTENT_MODEL),
-            labels: self
-                .prompt_targets
-                .read()
-                .unwrap()
+            labels: prompt_targets
                 .iter()
                 .map(|(name, _)| name.clone())
                 .collect(),

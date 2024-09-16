@@ -12,7 +12,7 @@ use public_types::configuration::{Configuration, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::{Arc, RwLock};
+use std::sync::{OnceLock, RwLock};
 use std::time::Duration;
 
 #[derive(Copy, Clone, Debug)]
@@ -49,8 +49,15 @@ pub struct FilterContext {
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: HashMap<u32, CallContext>,
     config: Option<Configuration>,
-    prompt_targets: Arc<RwLock<HashMap<String, PromptTarget>>>,
-    prompt_embeddings: Arc<RwLock<HashMap<String, EmbeddingTypeMap>>>,
+    prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+}
+
+pub fn embeddings_store() -> &'static RwLock<HashMap<String, EmbeddingTypeMap>> {
+    static EMBEDDINGS: OnceLock<RwLock<HashMap<String, EmbeddingTypeMap>>> = OnceLock::new();
+    EMBEDDINGS.get_or_init(|| {
+        let embeddings: HashMap<String, EmbeddingTypeMap> = HashMap::new();
+        RwLock::new(embeddings)
+    })
 }
 
 impl FilterContext {
@@ -59,8 +66,7 @@ impl FilterContext {
             callouts: HashMap::new(),
             config: None,
             metrics: Rc::new(WasmMetrics::new()),
-            prompt_targets: Arc::new(RwLock::new(HashMap::new())),
-            prompt_embeddings: Arc::new(RwLock::new(HashMap::new())),
+            prompt_targets: Rc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -152,7 +158,7 @@ impl FilterContext {
                     embedding_type
                 );
 
-                self.prompt_embeddings.write().unwrap().insert(
+                embeddings_store().write().unwrap().insert(
                     prompt_target.name.clone(),
                     HashMap::from([(embedding_type, embeddings)]),
                 );
@@ -218,8 +224,7 @@ impl RootContext for FilterContext {
             ratelimit_selector: None,
             callouts: HashMap::new(),
             metrics: Rc::clone(&self.metrics),
-            prompt_targets: Arc::clone(&self.prompt_targets),
-            prompt_embeddings: Arc::clone(&self.prompt_embeddings),
+            prompt_targets: Rc::clone(&self.prompt_targets),
         }))
     }
 
