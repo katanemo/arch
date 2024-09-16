@@ -43,6 +43,7 @@ pub enum EmbeddingType {
 }
 
 pub type EmbeddingTypeMap = HashMap<EmbeddingType, Vec<f64>>;
+
 #[derive(Debug)]
 pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
