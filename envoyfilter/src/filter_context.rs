@@ -72,61 +72,80 @@ impl FilterContext {
     }
 
     fn process_prompt_targets(&mut self) {
-        for values in self.prompt_targets.read().unwrap().iter() {
-            let prompt_target = &values.1;
-            let embedding_requests: HashMap<EmbeddingType, String> = HashMap::from([
-                (EmbeddingType::Name, prompt_target.name.clone()),
-                (
-                    EmbeddingType::Description,
-                    prompt_target.description.clone(),
-                ),
-            ]);
-            for (embedding_type, input) in embedding_requests.iter() {
-                let embeddings_input = CreateEmbeddingRequest {
-                    input: Box::new(CreateEmbeddingRequestInput::String(input.clone())),
-                    model: String::from(DEFAULT_EMBEDDING_MODEL),
-                    encoding_format: None,
-                    dimensions: None,
-                    user: None,
-                };
-
-                let json_data = to_string(&embeddings_input).unwrap();
-                let token_id = match self.dispatch_http_call(
-                    "embeddingserver",
-                    vec![
-                        (":method", "POST"),
-                        (":path", "/embeddings"),
-                        (":authority", "embeddingserver"),
-                        ("content-type", "application/json"),
-                        ("x-envoy-upstream-rq-timeout-ms", "60000"),
-                    ],
-                    Some(json_data.as_bytes()),
-                    vec![],
-                    Duration::from_secs(60),
-                ) {
-                    Ok(token_id) => token_id,
-                    Err(e) => {
-                        panic!("Error dispatching HTTP call: {:?}", e);
-                    }
-                };
-
-                if self
-                    .callouts
-                    .insert(token_id, {
-                        CallContext {
-                            prompt_target: prompt_target.name.clone(),
-                            embedding_type: embedding_type.clone(),
-                        }
-                    })
-                    .is_some()
-                {
-                    panic!("duplicate token_id")
-                }
-                self.metrics
-                    .active_http_calls
-                    .record(self.callouts.len().try_into().unwrap());
+        let prompt_targets = match self.prompt_targets.read() {
+            Ok(prompt_targets) => prompt_targets,
+            Err(e) => {
+                panic!("Error reading prompt targets: {:?}", e);
             }
+        };
+        for values in prompt_targets.iter() {
+            let prompt_target = &values.1;
+
+            // schedule embeddings call for prompt target name
+            let token_id = self.schedule_embeddings_call(prompt_target.name.clone());
+            if self
+                .callouts
+                .insert(token_id, {
+                    CallContext {
+                        prompt_target: prompt_target.name.clone(),
+                        embedding_type: EmbeddingType::Name,
+                    }
+                })
+                .is_some()
+            {
+                panic!("duplicate token_id")
+            }
+
+            // schedule embeddings call for prompt target description
+            let token_id = self.schedule_embeddings_call(prompt_target.description.clone());
+            if self
+                .callouts
+                .insert(token_id, {
+                    CallContext {
+                        prompt_target: prompt_target.description.clone(),
+                        embedding_type: EmbeddingType::Description,
+                    }
+                })
+                .is_some()
+            {
+                panic!("duplicate token_id")
+            }
+
+            self.metrics
+                .active_http_calls
+                .record(self.callouts.len().try_into().unwrap());
         }
+    }
+
+    fn schedule_embeddings_call(&self, input: String) -> u32 {
+        let embeddings_input = CreateEmbeddingRequest {
+            input: Box::new(CreateEmbeddingRequestInput::String(input)),
+            model: String::from(DEFAULT_EMBEDDING_MODEL),
+            encoding_format: None,
+            dimensions: None,
+            user: None,
+        };
+
+        let json_data = to_string(&embeddings_input).unwrap();
+        let token_id = match self.dispatch_http_call(
+            "embeddingserver",
+            vec![
+                (":method", "POST"),
+                (":path", "/embeddings"),
+                (":authority", "embeddingserver"),
+                ("content-type", "application/json"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ],
+            Some(json_data.as_bytes()),
+            vec![],
+            Duration::from_secs(60),
+        ) {
+            Ok(token_id) => token_id,
+            Err(e) => {
+                panic!("Error dispatching HTTP call: {:?}", e);
+            }
+        };
+        token_id
     }
 
     fn embedding_response_handler(
