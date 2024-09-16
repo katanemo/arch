@@ -28,7 +28,7 @@ use std::rc::Rc;
 use std::sync::RwLock;
 use std::time::Duration;
 
-enum RequestType {
+enum ResponseHandlerType {
     GetEmbeddings,
     FunctionResolver,
     FunctionCall,
@@ -36,7 +36,7 @@ enum RequestType {
 }
 
 pub struct CallContext {
-    request_type: RequestType,
+    response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
     prompt_target: Option<PromptTarget>,
     request_body: ChatCompletions,
@@ -196,7 +196,7 @@ impl StreamContext {
             token_id
         );
 
-        callout_context.request_type = RequestType::ZeroShotIntent;
+        callout_context.response_handler_type = ResponseHandlerType::ZeroShotIntent;
 
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!(
@@ -225,7 +225,7 @@ impl StreamContext {
                 }
             };
 
-        info!("zeroshot intent response: {:?}", zeroshot_intent_response);
+        debug!("zeroshot intent response: {:?}", zeroshot_intent_response);
 
         let prompt_target_similarity_score = zeroshot_intent_response.predicted_class_score * 0.7
             + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
@@ -236,9 +236,6 @@ impl StreamContext {
         );
 
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
-
-        // let prompt_target_name = similarity_scores[0].0.clone();
-        // let similarity_score = similarity_scores[0].1;
 
         // Check to see who responded to user message. This will help us identify if control should be passed to Bolt FC or not.
         // If the last message was from Bolt FC, then Bolt FC is handling the conversation (possibly for parameter collection).
@@ -360,7 +357,7 @@ impl StreamContext {
                     BOLT_FC_CLUSTER, token_id
                 );
 
-                callout_context.request_type = RequestType::FunctionResolver;
+                callout_context.response_handler_type = ResponseHandlerType::FunctionResolver;
                 callout_context.prompt_target = Some(prompt_target);
                 if self.callouts.insert(token_id, callout_context).is_some() {
                     panic!("duplicate token_id")
@@ -457,7 +454,7 @@ impl StreamContext {
             }
         };
 
-        callout_context.request_type = RequestType::FunctionCall;
+        callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
@@ -659,10 +656,10 @@ impl HttpContext for StreamContext {
         );
 
         let call_context = CallContext {
-            request_type: RequestType::GetEmbeddings,
-            user_message: Some(user_message.clone()),
+            response_handler_type: ResponseHandlerType::GetEmbeddings,
+            user_message: Some(user_message),
             prompt_target: None,
-            request_body: deserialized_body.clone(),
+            request_body: deserialized_body,
             similarity_scores: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
@@ -706,11 +703,15 @@ impl Context for StreamContext {
             }
         };
 
-        match callout_context.request_type {
-            RequestType::GetEmbeddings => self.embeddings_handler(body, callout_context),
-            RequestType::FunctionResolver => self.function_resolver_handler(body, callout_context),
-            RequestType::FunctionCall => self.function_call_response_handler(body, callout_context),
-            RequestType::ZeroShotIntent => {
+        match callout_context.response_handler_type {
+            ResponseHandlerType::GetEmbeddings => self.embeddings_handler(body, callout_context),
+            ResponseHandlerType::FunctionResolver => {
+                self.function_resolver_handler(body, callout_context)
+            }
+            ResponseHandlerType::FunctionCall => {
+                self.function_call_response_handler(body, callout_context)
+            }
+            ResponseHandlerType::ZeroShotIntent => {
                 self.zero_shot_intent_detection_resp_handler(body, callout_context)
             }
         }

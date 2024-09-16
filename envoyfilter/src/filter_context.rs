@@ -198,7 +198,6 @@ impl RootContext for FilterContext {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
 
-            //TODO: scrap self.config and move imrportant fields to individual variables
             for pt in self.config.clone().unwrap().prompt_targets {
                 self.prompt_targets
                     .write()
