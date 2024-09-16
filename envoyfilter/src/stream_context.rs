@@ -87,12 +87,20 @@ impl StreamContext {
             });
     }
 
+    fn send_server_error(&self, error: String) {
+        debug!("server error occurred: {}", error);
+        self.send_http_response(
+            StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+            vec![],
+            Some(error.as_bytes()),
+        )
+    }
+
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
         let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
             Ok(embedding_response) => embedding_response,
             Err(e) => {
-                warn!("Error deserializing embedding response: {:?}", e);
-                self.resume_http_request();
+                self.send_server_error(format!("Error deserializing embedding response: {:?}", e));
                 return;
             }
         };
@@ -110,12 +118,7 @@ impl StreamContext {
             Err(e) => {
                 let error_message = format!("Error reading embeddings store: {:?}", e);
                 warn!("{}", error_message);
-                self.send_http_response(
-                    StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                    vec![],
-                    Some(error_message.as_bytes()),
-                );
-                self.resume_http_request();
+                self.send_server_error(error_message);
                 return;
             }
         };
@@ -125,12 +128,7 @@ impl StreamContext {
             Err(e) => {
                 let error_message = format!("Error reading prompt targets: {:?}", e);
                 warn!("{}", error_message);
-                self.send_http_response(
-                    StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                    vec![],
-                    Some(error_message.as_bytes()),
-                );
-                self.resume_http_request();
+                self.send_server_error(error_message);
                 return;
             }
         };
@@ -325,8 +323,10 @@ impl StreamContext {
                         msg_body
                     }
                     Err(e) => {
-                        warn!("Error serializing request_params: {:?}", e);
-                        self.resume_http_request();
+                        self.send_server_error(format!(
+                            "Error serializing request_params: {:?}",
+                            e
+                        ));
                         return;
                     }
                 };
@@ -511,8 +511,7 @@ impl StreamContext {
         let json_string = match serde_json::to_string(&request_message) {
             Ok(json_string) => json_string,
             Err(e) => {
-                warn!("Error serializing request_body: {:?}", e);
-                self.resume_http_request();
+                self.send_server_error(format!("Error serializing request_body: {:?}", e));
                 return;
             }
         };
@@ -688,34 +687,25 @@ impl Context for StreamContext {
         let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
         self.metrics.active_http_calls.increment(-1);
 
-        let resp = self.get_http_call_response_body(0, body_size);
-
-        if resp.is_none() {
-            warn!("No response body");
-            self.resume_http_request();
-            return;
-        }
-
-        let body = match resp {
-            Some(body) => body,
-            None => {
-                warn!("Empty response body");
-                self.resume_http_request();
-                return;
+        if let Some(body) = self.get_http_call_response_body(0, body_size) {
+            match callout_context.response_handler_type {
+                ResponseHandlerType::GetEmbeddings => {
+                    self.embeddings_handler(body, callout_context)
+                }
+                ResponseHandlerType::FunctionResolver => {
+                    self.function_resolver_handler(body, callout_context)
+                }
+                ResponseHandlerType::FunctionCall => {
+                    self.function_call_response_handler(body, callout_context)
+                }
+                ResponseHandlerType::ZeroShotIntent => {
+                    self.zero_shot_intent_detection_resp_handler(body, callout_context)
+                }
             }
-        };
-
-        match callout_context.response_handler_type {
-            ResponseHandlerType::GetEmbeddings => self.embeddings_handler(body, callout_context),
-            ResponseHandlerType::FunctionResolver => {
-                self.function_resolver_handler(body, callout_context)
-            }
-            ResponseHandlerType::FunctionCall => {
-                self.function_call_response_handler(body, callout_context)
-            }
-            ResponseHandlerType::ZeroShotIntent => {
-                self.zero_shot_intent_detection_resp_handler(body, callout_context)
-            }
+        } else {
+            let error_message = format!("No response body in inline HTTP request");
+            warn!("{}", error_message);
+            self.send_server_error(error_message);
         }
     }
 }
