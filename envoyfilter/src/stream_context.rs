@@ -230,7 +230,7 @@ impl StreamContext {
         let prompt_target_similarity_score = zeroshot_intent_response.predicted_class_score * 0.7
             + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
 
-        info!(
+        debug!(
             "prompt target similarity score: {}, predicted class: {}",
             prompt_target_similarity_score, zeroshot_intent_response.predicted_class
         );
