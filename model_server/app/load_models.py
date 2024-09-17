@@ -1,7 +1,7 @@
 import os
 import sentence_transformers
 from gliner import GLiNER
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, pipeline
 
 
 def load_transformers(models=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
@@ -107,3 +107,11 @@ def load_jailbreak_model(
     jailbreak_model["device"] = device
 
     return jailbreak_model
+    
+def load_zero_shot_models(models = os.getenv("ZERO_SHOT_MODELS", "tasksource/deberta-base-long-nli")):
+    zero_shot_models = {}
+
+    for model in models.split(','):
+        zero_shot_models[model] = pipeline("zero-shot-classification",model=model)
+
+    return zero_shot_models

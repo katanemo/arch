@@ -1,5 +1,5 @@
 [package]
-name = "public-types"
+name = "public_types"
 version = "0.1.0"
 edition = "2021"
 

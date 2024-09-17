@@ -11,6 +11,14 @@
       "request": "launch",
       "program": "run.py",
       "console": "integratedTerminal",
+    },
+    {
+      "name": "chatbot-ui streaming",
+      "cwd": "${workspaceFolder}/app",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "run_stream.py",
+      "console": "integratedTerminal",
     }
   ]
 }

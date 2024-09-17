@@ -63,7 +63,7 @@ static_resources:
                       - match:
                           prefix: "/embeddings"
                         route:
-                          cluster: embeddingserver
+                          cluster: model_server
                       - match:
                           prefix: "/"
                         direct_response:
@@ -123,20 +123,20 @@ static_resources:
               tls_minimum_protocol_version: TLSv1_2
               tls_maximum_protocol_version: TLSv1_3
 
-    - name: embeddingserver
+    - name: model_server
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: embeddingserver
+        cluster_name: model_server
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: embeddingserver
+                      address: model_server
                       port_value: 80
-                  hostname: "embeddingserver"
+                  hostname: "model_server"
     - name: weatherhost
       connect_timeout: 5s
       type: STRICT_DNS
@@ -148,9 +148,9 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: embeddingserver
+                      address: model_server
                       port_value: 80
-                  hostname: "embeddingserver"
+                  hostname: "model_server"
     - name: nerhost
       connect_timeout: 5s
       type: STRICT_DNS
@@ -162,29 +162,15 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: embeddingserver
+                      address: model_server
                       port_value: 80
-                  hostname: "embeddingserver"
-    - name: qdrant
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: qdrant
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: qdrant
-                      port_value: 6333
-                  hostname: "qdrant"
+                  hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: qdrant
+        cluster_name: mistral_7b_instruct
         endpoints:
           - lb_endpoints:
               - endpoint:
@@ -204,6 +190,6 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: functionresolver
+                      address: function_resolver
                       port_value: 80
                   hostname: "bolt_fc_1b"
