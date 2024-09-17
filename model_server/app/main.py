@@ -13,17 +13,18 @@ from utils import is_intel_cpu, GuardHandler, split_text_into_chunks
 import json
 import string
 
-transformers = load_transformers()
-ner_models = load_ner_models()
-zero_shot_models = load_zero_shot_models()
+# transformers = load_transformers()
+# ner_models = load_ner_models()
+# zero_shot_models = load_zero_shot_models()
 
 
 if is_intel_cpu():
     hardware_config = "intel_cpu"
 else:
     hardware_config = "non_intel_cpu"
+with open('guard_model_config.json') as f:
+    guard_model_config = json.load(f)
 
-guard_model_config = json.loads("guard_model_config.json")
 toxic_model = load_toxic_model(
     guard_model_config["toxic"][hardware_config], hardware_config
 )
@@ -111,14 +112,14 @@ async def guard(req: GuardRequest, res: Response, max_words=300):
             "toxic_verdict": toxic_verdict,
             "jailbreak_verdict": jailbreak_verdict,
     """
-    if len(req.input.split()) > max_words:
+    if len(req.input.split()) < max_words:
         final_result = guard_handler.guard_predict(req.input)
     else:
         # text is long, split into chunks
         chunks = split_text_into_chunks(req.input)
         final_result = {
-            "toxic_prob": 0,
-            "jailbreak_prob": 0,
+            "toxic_prob": [],
+            "jailbreak_prob": [],
             "time": 0,
             "toxic_verdict": False,
             "jailbreak_verdict": False,

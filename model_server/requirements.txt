@@ -4,3 +4,8 @@ sentence-transformers
 torch
 uvicorn
 gliner
+transformers
+onnxruntime
+optimum-intel
+openvino
+psutil

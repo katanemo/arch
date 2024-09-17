@@ -53,9 +53,8 @@ else:
 
 
 def softmax(x):
-    """Compute softmax values for each sets of scores in x."""
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum()
+    return np.exp(x) / np.exp(x).sum(axis=0)
+
 
 
 class PredictHandler:
@@ -65,7 +64,7 @@ class PredictHandler:
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
-        self.task = "toxic"
+        self.task = task
         if self.task == "toxic":
             self.positive_class = 1
         elif self.task == "jailbreak":
@@ -91,11 +90,12 @@ class PredictHandler:
                 del feed
 
             else:
-                logits = self.model(**inputs).logits
+                logits = self.model(**inputs).logits.numpy()[0]
                 del inputs
-
+        print(logits)
         probabilities = softmax(logits)
-        positive_class_probabilities = probabilities[:, self.positive_class]
+        print(probabilities)
+        positive_class_probabilities = probabilities[self.positive_class]
         return positive_class_probabilities
 
 
@@ -103,6 +103,7 @@ class GuardHandler:
     def __init__(self, toxic_model, jailbreak_model, hardware_config="intel_cpu"):
         self.toxic_model = toxic_model
         self.jailbreak_model = jailbreak_model
+        self.task = "both"
         if toxic_model is not None:
             self.toxic_handler = PredictHandler(
                 toxic_model["model"],
@@ -112,7 +113,7 @@ class GuardHandler:
                 hardware_config,
             )
         else:
-            self.single = True
+            self.task = "jailbreak"
         if jailbreak_model is not None:
             self.jailbreak_handler = PredictHandler(
                 jailbreak_model["model"],
@@ -122,13 +123,14 @@ class GuardHandler:
                 hardware_config,
             )
         else:
-            self.single = True
+            self.task = "toxic"
         self.hardware_config = hardware_config
-        self.task = "both"
+        
+        
 
     def guard_predict(self, input_text):
         start = time.time()
-        if not self.single:
+        if self.task == "both":
             with ThreadPoolExecutor() as executor:
 
                 toxic_thread = executor.submit(self.toxic_handler.predict, input_text)
@@ -163,10 +165,8 @@ class GuardHandler:
         else:
             if self.toxic_model is not None:
                 prob = self.toxic_handler.predict(input_text)
-                self.task = "toxic"
             elif self.jailbreak_model is not None:
                 prob = self.jailbreak_handler.predict(input_text)
-                self.task = "jailbreak"
             else:
                 raise Exception("No model loaded")
             if prob > 0.5:
