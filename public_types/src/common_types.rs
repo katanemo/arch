@@ -42,6 +42,9 @@ pub struct ToolParameter {
     pub description: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enum")]
+    pub enum_values: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

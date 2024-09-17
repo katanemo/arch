@@ -300,6 +300,7 @@ impl StreamContext {
                                 parameter_type: entity.parameter_type.clone(),
                                 description: entity.description.clone(),
                                 required: entity.required,
+                                enum_values: entity.enum_values.clone(),
                             };
                             properties.insert(entity.name.clone(), param);
                         }
@@ -326,7 +327,7 @@ impl StreamContext {
 
                 let msg_body = match serde_json::to_string(&chat_completions) {
                     Ok(msg_body) => {
-                        debug!("msg_body: {}", msg_body);
+                        debug!("bolt-fc request body content: {}", msg_body);
                         msg_body
                     }
                     Err(e) => {
