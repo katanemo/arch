@@ -192,7 +192,7 @@ prompt_targets:
       - name: city
 
 ratelimits:
-  - provider: gpt-4
+  - provider: gpt-3.5-turbo
     selector:
       key: selector-key
       value: selector-value
@@ -282,7 +282,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(Some("embeddingserver"), None, None, None, None)
+        .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::Action(Action::Pause))
@@ -474,6 +474,10 @@ fn request_ratelimited() {
             None,
         )
         .expect_metric_increment("ratelimited_rq", 1)
+        .expect_log(
+            Some(LogLevel::Debug),
+            Some("server error occurred: Exceeded Ratelimit: Not allowed"),
+        )
         .execute_and_expect(ReturnType::None)
         .unwrap();
 }
