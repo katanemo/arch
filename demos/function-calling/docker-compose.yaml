@@ -71,13 +71,6 @@ services:
     profiles:
       - manual
 
-  qdrant:
-    image: qdrant/qdrant
-    hostname: vector-db
-    ports:
-      - 16333:6333
-      - 16334:6334
-
   chatbot-ui:
     build:
       context: ../../chatbot-ui
