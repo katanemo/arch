@@ -7,7 +7,7 @@ services:
       dockerfile: config_generator/Dockerfile
     volumes:
       - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./bolt-config.yaml:/usr/src/app/bolt-config.yaml
+      - ./bolt_config.yaml:/usr/src/app/bolt_config.yaml
       - ./generated:/usr/src/app/out
 
   bolt:
