@@ -1,13 +1,13 @@
 
 services:
 
-  config-generator:
+  config_generator:
     build:
       context: ../../
       dockerfile: config_generator/Dockerfile
     volumes:
       - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./katanemo-config.yaml:/usr/src/app/katanemo-config.yaml
+      - ./bolt-config.yaml:/usr/src/app/bolt-config.yaml
       - ./generated:/usr/src/app/out
 
   bolt:
@@ -22,16 +22,16 @@ services:
       - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
     depends_on:
-      config-generator:
+      config_generator:
         condition: service_completed_successfully
-      embeddingserver:
+      model_server:
         condition: service_healthy
     environment:
       - LOG_LEVEL=debug
 
-  embeddingserver:
+  model_server:
     build:
-      context: ../../embedding-server
+      context: ../../model_server
       dockerfile: Dockerfile
     ports:
       - "18081:80"
@@ -42,7 +42,7 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
 
-  functionresolver:
+  function_resolver:
     build:
       context: ../../function_resolver
       dockerfile: Dockerfile
@@ -71,9 +71,9 @@ services:
     profiles:
       - manual
 
-  chatbot-ui:
+  chatbot_ui:
     build:
-      context: ../../chatbot-ui
+      context: ../../chatbot_ui
       dockerfile: Dockerfile
     ports:
       - "18080:8080"
@@ -92,6 +92,8 @@ services:
     volumes:
       - ./prometheus:/etc/prometheus
       - ./prom_data:/prometheus
+    profiles:
+      - monitoring
 
   grafana:
     image: grafana/grafana
@@ -106,3 +108,5 @@ services:
       - ./grafana:/etc/grafana/provisioning/datasources
       - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+    profiles:
+      - monitoring

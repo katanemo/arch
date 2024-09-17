@@ -603,7 +603,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "public-types"
+name = "public_types"
 version = "0.1.0"
 dependencies = [
  "open-message-format-embeddings",

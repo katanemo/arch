@@ -976,7 +976,7 @@ dependencies = [
  "open-message-format-embeddings",
  "proxy-wasm",
  "proxy-wasm-test-framework",
- "public-types",
+ "public_types",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1453,7 +1453,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "public-types"
+name = "public_types"
 version = "0.1.0"
 dependencies = [
  "open-message-format-embeddings",
