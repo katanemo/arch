@@ -9,7 +9,7 @@ from load_models import (
     load_zero_shot_models,
 )
 from datetime import date, timedelta
-from utils import is_intel_cpu, GuardHandler
+from utils import is_intel_cpu, GuardHandler, split_text_into_chunks
 import json
 import string
 
@@ -101,24 +101,67 @@ class GuardRequest(BaseModel):
 
 
 @app.post("/guard")
-async def guard(req: GuardRequest, res: Response):
+async def guard(req: GuardRequest, res: Response, max_words=300):
     """
-        Guard API, take input as text and return the prediction of toxic and jailbreak
-        result format: dictionary
-                "toxic_prob": toxic_prob,
-                "jailbreak_prob": jailbreak_prob,
-                "time": end - start,
-                "toxic_verdict": toxic_verdict,
-                "jailbreak_verdict": jailbreak_verdict,
+    Guard API, take input as text and return the prediction of toxic and jailbreak
+    result format: dictionary
+            "toxic_prob": toxic_prob,
+            "jailbreak_prob": jailbreak_prob,
+            "time": end - start,
+            "toxic_verdict": toxic_verdict,
+            "jailbreak_verdict": jailbreak_verdict,
     """
-    result = guard_handler.guard_predict(req.input)
-    return result
+    if len(req.input.split()) > max_words:
+        final_result = guard_handler.guard_predict(req.input)
+    else:
+        # text is long, split into chunks
+        chunks = split_text_into_chunks(req.input)
+        final_result = {
+            "toxic_prob": 0,
+            "jailbreak_prob": 0,
+            "time": 0,
+            "toxic_verdict": False,
+            "jailbreak_verdict": False,
+            "toxic_sentence": [],
+            "jailbreak_sentence": [],
+        }
+        if guard_handler.task == "both":
+
+            for chunk in chunks:
+                result_chunk = guard_handler.guard_predict(chunk)
+                final_result["time"] += result_chunk["time"]
+                if result_chunk["toxic_verdict"]:
+                    final_result["toxic_verdict"] = True
+                    final_result["toxic_sentence"].append(
+                        result_chunk["toxic_sentence"]
+                    )
+                    final_result["toxic_prob"].append(result_chunk["toxic_prob"])
+                if result_chunk["jailbreak_verdict"]:
+                    final_result["jailbreak_verdict"] = True
+                    final_result["jailbreak_sentence"].append(
+                        result_chunk["jailbreak_sentence"]
+                    )
+                    final_result["jailbreak_prob"].append(
+                        result_chunk["jailbreak_prob"]
+                    )
+        else:
+            task = guard_handler.task
+            for chunk in chunks:
+                result_chunk = guard_handler.guard_predict(chunk)
+                final_result["time"] += result_chunk["time"]
+                if result_chunk[f"{task}_verdict"]:
+                    final_result[f"{task}_verdict"] = True
+                    final_result[f"{task}_sentence"].append(
+                        result_chunk[f"{task}_sentence"]
+                    )
+                    final_result[f"{task}_prob"].append(result_chunk[f"{task}_prob"])
+    return final_result
 
 
 class ZeroShotRequest(BaseModel):
-  input: str
-  labels: list[str]
-  model: str
+    input: str
+    labels: list[str]
+    model: str
 
 
 def remove_punctuations(s, lower=True):
@@ -136,7 +179,9 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
 
     classifier = zero_shot_models[req.model]
     labels_without_punctuations = [remove_punctuations(label) for label in req.labels]
-    predicted_classes = classifier(req.input, candidate_labels=labels_without_punctuations, multi_label=True)
+    predicted_classes = classifier(
+        req.input, candidate_labels=labels_without_punctuations, multi_label=True
+    )
     label_map = dict(zip(labels_without_punctuations, req.labels))
 
     orig_map = [label_map[label] for label in predicted_classes["labels"]]

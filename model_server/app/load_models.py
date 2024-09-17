@@ -107,11 +107,14 @@ def load_jailbreak_model(
     jailbreak_model["device"] = device
 
     return jailbreak_model
-    
-def load_zero_shot_models(models = os.getenv("ZERO_SHOT_MODELS", "tasksource/deberta-base-long-nli")):
+
+
+def load_zero_shot_models(
+    models=os.getenv("ZERO_SHOT_MODELS", "tasksource/deberta-base-long-nli")
+):
     zero_shot_models = {}
 
-    for model in models.split(','):
-        zero_shot_models[model] = pipeline("zero-shot-classification",model=model)
+    for model in models.split(","):
+        zero_shot_models[model] = pipeline("zero-shot-classification", model=model)
 
     return zero_shot_models

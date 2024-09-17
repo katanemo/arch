@@ -5,6 +5,20 @@ import time
 import torch
 
 
+def split_text_into_chunks(text, max_words=300):
+    """
+    Max number of tokens for tokenizer is 512
+    Split the text into chunks of 300 words (as approximation for tokens)
+    """
+    words = text.split()  # Split text into words
+    # Estimate token count based on word count (1 word ≈ 1 token)
+    chunk_size = max_words  # Use the word count as an approximation for tokens
+    chunks = [
+        " ".join(words[i : i + chunk_size]) for i in range(0, len(words), chunk_size)
+    ]
+    return chunks
+
+
 def is_intel_cpu():
     try:
         # Check the system's platform
@@ -59,7 +73,9 @@ class PredictHandler:
         self.hardware_config = hardware_config
 
     def predict(self, input_text):
-        inputs = self.tokenizer(input_text, return_tensors="pt").to(self.device)
+        inputs = self.tokenizer(
+            input_text, truncation=True, max_length=512, return_tensors="pt"
+        ).to(self.device)
         with torch.no_grad():
             if self.hardware_config == "non_intel_cpu":
 
@@ -108,6 +124,7 @@ class GuardHandler:
         else:
             self.single = True
         self.hardware_config = hardware_config
+        self.task = "both"
 
     def guard_predict(self, input_text):
         start = time.time()
@@ -123,27 +140,44 @@ class GuardHandler:
                 jailbreak_prob = jailbreak_thread.result()
             end = time.time()
             if toxic_prob > 0.5:
-                toxic_verdict = "toxic"
+                toxic_verdict = True
+                toxic_sentence = input_text
+            else:
+                toxic_verdict = False
+                toxic_sentence = None
             if jailbreak_prob > 0.5:
-                jailbreak_verdict = "jailbreak"
+                jailbreak_verdict = True
+                jailbreak_sentence = input_text
+            else:
+                jailbreak_verdict = False
+                jailbreak_sentence = None
             result_dict = {
                 "toxic_prob": toxic_prob,
                 "jailbreak_prob": jailbreak_prob,
                 "time": end - start,
                 "toxic_verdict": toxic_verdict,
                 "jailbreak_verdict": jailbreak_verdict,
+                "toxic_sentence": toxic_sentence,
+                "jailbreak_sentence": jailbreak_sentence,
             }
         else:
             if self.toxic_model is not None:
                 prob = self.toxic_handler.predict(input_text)
+                self.task = "toxic"
             elif self.jailbreak_model is not None:
-                jailbreak_prob = self.jailbreak_handler.predict(input_text)
+                prob = self.jailbreak_handler.predict(input_text)
+                self.task = "jailbreak"
             else:
                 raise Exception("No model loaded")
             if prob > 0.5:
-                verdict = "toxic"
+                verdict = True
+                sentence = input_text
+            else:
+                verdict = False
+                sentence = None
             result_dict = {
-                "prob": toxic_prob,
-                "verdict": verdict,
+                f"{self.task}_prob": prob,
+                f"{self.task}_verdict": verdict,
+                f"{self.task}_sentence": sentence,
             }
         return result_dict
