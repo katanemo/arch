@@ -41,7 +41,7 @@ def load_toxic_model(
         )
     elif hardware_config == "non_intel_cpu":
         import onnxruntime as ort
-
+        device = "cpu"
         opts = ort.SessionOptions()
         if "model_quantized.onnx" not in model_name:
             model_name += "/model_quantized.onnx"
@@ -85,7 +85,7 @@ def load_jailbreak_model(
         )
     elif hardware_config == "non_intel_cpu":
         import onnxruntime as ort
-
+        device = "cpu"
         opts = ort.SessionOptions()
         if "model_quantized.onnx" not in model_name:
             model_name += "/model_quantized.onnx"
