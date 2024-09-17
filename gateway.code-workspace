@@ -9,24 +9,24 @@
       "path": "envoyfilter"
     },
     {
-      "name": "embedding-server",
-      "path": "embedding-server"
+      "name": "model_server",
+      "path": "model_server"
     },
     {
       "name": "function_resolver",
       "path": "function_resolver"
     },
     {
-      "name": "chatbot-ui",
-      "path": "chatbot-ui"
+      "name": "chatbot_ui",
+      "path": "chatbot_ui"
     },
     {
       "name": "open-message-format",
       "path": "open-message-format"
     },
     {
-      "name": "demos/function-calling",
-      "path": "./demos/function-calling",
+      "name": "demos/function_calling",
+      "path": "./demos/function_calling",
     },
   ],
   "settings": {}

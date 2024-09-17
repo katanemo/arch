@@ -1,7 +1,7 @@
 use crate::consts::{
     BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE,
-    USER_ROLE,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
 use crate::ratelimit;
@@ -175,11 +175,11 @@ impl StreamContext {
         };
 
         let token_id = match self.dispatch_http_call(
-            "embeddingserver",
+            MODEL_SERVER_NAME,
             vec![
                 (":method", "POST"),
                 (":path", "/zeroshot"),
-                (":authority", "embeddingserver"),
+                (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -637,11 +637,11 @@ impl HttpContext for StreamContext {
         };
 
         let token_id = match self.dispatch_http_call(
-            "embeddingserver",
+            MODEL_SERVER_NAME,
             vec![
                 (":method", "POST"),
                 (":path", "/embeddings"),
-                (":authority", "embeddingserver"),
+                (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),

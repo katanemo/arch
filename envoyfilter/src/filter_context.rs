@@ -1,4 +1,4 @@
-use crate::consts::DEFAULT_EMBEDDING_MODEL;
+use crate::consts::{DEFAULT_EMBEDDING_MODEL, MODEL_SERVER_NAME};
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
@@ -123,11 +123,11 @@ impl FilterContext {
 
         let json_data = to_string(&embeddings_input).unwrap();
         let token_id = match self.dispatch_http_call(
-            "embeddingserver",
+            MODEL_SERVER_NAME,
             vec![
                 (":method", "POST"),
                 (":path", "/embeddings"),
-                (":authority", "embeddingserver"),
+                (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
             ],
@@ -219,7 +219,7 @@ impl RootContext for FilterContext {
                     .insert(pt.name.clone(), pt.clone());
             }
 
-            debug!("set configuration object: {:?}", self.config);
+            debug!("set configuration object");
 
             if let Some(ratelimits_config) = self
                 .config

@@ -83,7 +83,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         // The actual call is not important in this test, we just need to grab the token_id
-        .expect_http_call(Some("embeddingserver"), None, None, None, None)
+        .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(1))
         .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
@@ -114,7 +114,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .returning(Some(&embeddings_response_buffer))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(Some("embeddingserver"), None, None, None, None)
+        .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(2))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)

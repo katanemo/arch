@@ -6,7 +6,7 @@ COPY envoyfilter/src /envoyfilter/src
 COPY envoyfilter/Cargo.toml /envoyfilter/
 COPY envoyfilter/Cargo.lock /envoyfilter/
 COPY open-message-format /open-message-format
-COPY public-types /public-types
+COPY public_types /public_types
 
 RUN cargo build --release --target wasm32-wasi
 
