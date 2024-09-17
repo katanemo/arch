@@ -63,7 +63,6 @@ impl StreamContext {
         // However, a missing Content-Length header is not grounds for bad requests given that intermediary hops could
         // manipulate the body in benign ways e.g., compression.
         self.set_http_request_header("content-length", None);
-        // self.set_http_request_header("authorization", None);
     }
 
     fn modify_path_header(&mut self) {
@@ -140,8 +139,11 @@ impl StreamContext {
 
         let similarity_scores: Vec<(String, f64)> = prompt_targets
             .iter()
-            .map(|(prompt_name, _)| {
-                let pte = prompt_target_embeddings.get(prompt_name).unwrap();
+            .map(|(prompt_name, _prompt_target)| {
+                let default_embeddings = HashMap::new();
+                let pte = prompt_target_embeddings
+                    .get(prompt_name)
+                    .unwrap_or(&default_embeddings);
                 let description_embeddings = pte.get(&EmbeddingType::Description);
                 let similarity_score_description = cos::cosine_similarity(
                     &embeddings_vector,
@@ -151,7 +153,10 @@ impl StreamContext {
             })
             .collect();
 
-        debug!("similarity scores: {:?}", similarity_scores);
+        debug!(
+            "similarity scores based on description embeddings match: {:?}",
+            similarity_scores
+        );
 
         callout_context.similarity_scores = Some(similarity_scores);
 
@@ -231,8 +236,10 @@ impl StreamContext {
             + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
 
         debug!(
-            "prompt target similarity score: {}, predicted class: {}",
-            prompt_target_similarity_score, zeroshot_intent_response.predicted_class
+            "similarity score: {}, intent score: {}, description embedding score: {}",
+            prompt_target_similarity_score,
+            zeroshot_intent_response.predicted_class_score,
+            callout_context.similarity_scores.as_ref().unwrap()[0].1
         );
 
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
@@ -703,9 +710,9 @@ impl Context for StreamContext {
                 }
             }
         } else {
-            let error_message = format!("No response body in inline HTTP request");
+            let error_message = "No response body in inline HTTP request";
             warn!("{}", error_message);
-            self.send_server_error(error_message);
+            self.send_server_error(error_message.to_owned());
         }
     }
 }

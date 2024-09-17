@@ -112,9 +112,8 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&embeddings_response_buffer))
-        .expect_log(Some(LogLevel::Info), None)
-        .expect_log(Some(LogLevel::Info), None)
-        .expect_log(Some(LogLevel::Info), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(Some("embeddingserver"), None, None, None, None)
         .returning(Some(2))
         .expect_metric_increment("active_http_calls", 1)
@@ -139,8 +138,8 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&zeroshot_intent_detection_buffer))
-        .expect_log(Some(LogLevel::Info), None)
-        .expect_log(Some(LogLevel::Info), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Info), None)
         .expect_http_call(Some("bolt_fc_1b"), None, None, None, None)
         .returning(Some(3))
@@ -174,8 +173,7 @@ system_prompt: |
 prompt_targets:
   - type: function_resolver
     name: weather_forecast
-    few_shot_examples:
-      - what is the weather in New York?
+    description: This resolver provides weather forecast information.
     endpoint:
       cluster: weatherhost
       path: /weather
@@ -190,8 +188,7 @@ prompt_targets:
 
   - type: function_resolver
     name: weather_forecast_2
-    few_shot_examples:
-      - what is the weather in New York?
+    description: This resolver provides weather forecast information.
     endpoint:
       cluster: weatherhost
       path: /weather
