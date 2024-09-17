@@ -1,12 +1,16 @@
 use crate::configuration::PromptTarget;
-use open_message_format_embeddings::models::CreateEmbeddingRequest;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmbeddingRequest {
-    pub create_embedding_request: CreateEmbeddingRequest,
     pub prompt_target: PromptTarget,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum EmbeddingType {
+    Name,
+    Description,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,21 +25,6 @@ pub struct StoreVectorEmbeddingsRequest {
     pub points: Vec<VectorPoint>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(clippy::large_enum_variant)]
-pub enum CallContext {
-    EmbeddingRequest(EmbeddingRequest),
-    StoreVectorEmbeddings(StoreVectorEmbeddingsRequest),
-    CreateVectorCollection(String),
-}
-
-// https://api.qdrant.tech/master/api-reference/search/points
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SearchPointsRequest {
-    pub vector: Vec<f64>,
-    pub limit: i32,
-    pub with_payload: bool,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchPointResult {
@@ -43,13 +32,6 @@ pub struct SearchPointResult {
     pub version: i32,
     pub score: f64,
     pub payload: HashMap<String, String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SearchPointsResponse {
-    pub result: Vec<SearchPointResult>,
-    pub status: String,
-    pub time: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -160,4 +142,19 @@ pub mod open_ai {
     pub struct Delta {
         pub content: Option<String>,
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZeroShotClassificationRequest {
+    pub input: String,
+    pub labels: Vec<String>,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZeroShotClassificationResponse {
+    pub predicted_class: String,
+    pub predicted_class_score: f64,
+    pub scores: HashMap<String, f64>,
+    pub model: String,
 }

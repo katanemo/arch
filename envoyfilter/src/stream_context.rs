@@ -1,13 +1,14 @@
 use crate::consts::{
-    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_COLLECTION_NAME, DEFAULT_EMBEDDING_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, OPENAI_CHAT_COMPLETIONS_PATH,
+    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME, OPENAI_CHAT_COMPLETIONS_PATH,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
-use crate::filter_context::WasmMetrics;
+use crate::filter_context::{embeddings_store, WasmMetrics};
 use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
+use acap::cos;
 use http::StatusCode;
 use log::{debug, info, warn};
 use open_message_format_embeddings::models::{
@@ -15,39 +16,40 @@ use open_message_format_embeddings::models::{
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use public_types::common_types::open_ai::StreamOptions;
-use public_types::common_types::{
-    open_ai::{
-        ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse, Message,
-    },
-    SearchPointsRequest, SearchPointsResponse,
+use public_types::common_types::open_ai::{
+    ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse, Message,
+    StreamOptions,
 };
 use public_types::common_types::{
-    BoltFCResponse, BoltFCToolsCall, ToolParameter, ToolParameters, ToolsDefinition,
+    BoltFCResponse, BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
+    ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
 use public_types::configuration::{PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
+use std::sync::RwLock;
 use std::time::Duration;
 
-enum RequestType {
-    GetEmbedding,
-    SearchPoints,
+enum ResponseHandlerType {
+    GetEmbeddings,
     FunctionResolver,
-    FunctionCallResponse,
+    FunctionCall,
+    ZeroShotIntent,
 }
 
 pub struct CallContext {
-    request_type: RequestType,
+    response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
     prompt_target: Option<PromptTarget>,
     request_body: ChatCompletionsRequest,
+    similarity_scores: Option<Vec<(String, f64)>>,
 }
 
 pub struct StreamContext {
     pub context_id: u32,
     pub metrics: Rc<WasmMetrics>,
+    pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
     callouts: HashMap<u32, CallContext>,
     host_header: Option<String>,
     ratelimit_selector: Option<Header>,
@@ -57,10 +59,15 @@ pub struct StreamContext {
 }
 
 impl StreamContext {
-    pub fn new(context_id: u32, metrics: Rc<WasmMetrics>) -> Self {
+    pub fn new(
+        context_id: u32,
+        metrics: Rc<WasmMetrics>,
+        prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    ) -> Self {
         StreamContext {
             context_id,
             metrics,
+            prompt_targets,
             callouts: HashMap::new(),
             host_header: None,
             ratelimit_selector: None,
@@ -80,7 +87,6 @@ impl StreamContext {
         // However, a missing Content-Length header is not grounds for bad requests given that intermediary hops could
         // manipulate the body in benign ways e.g., compression.
         self.set_http_request_header("content-length", None);
-        // self.set_http_request_header("authorization", None);
     }
 
     fn modify_path_header(&mut self) {
@@ -105,7 +111,7 @@ impl StreamContext {
             });
     }
 
-    fn send_server_error(&mut self, error: String, override_status_code: Option<StatusCode>) {
+    fn send_server_error(&self, error: String, override_status_code: Option<StatusCode>) {
         debug!("server error occurred: {}", error);
         self.send_http_response(
             override_status_code
@@ -128,32 +134,81 @@ impl StreamContext {
             }
         };
 
-        let search_points_request = SearchPointsRequest {
-            vector: embedding_response.data[0].embedding.clone(),
-            limit: 10,
-            with_payload: true,
-        };
+        let embeddings_vector = &embedding_response.data[0].embedding;
 
-        let json_data: String = match serde_json::to_string(&search_points_request) {
-            Ok(json_data) => json_data,
+        debug!(
+            "embedding model: {}, vector length: {:?}",
+            embedding_response.model,
+            embeddings_vector.len()
+        );
+
+        let prompt_target_embeddings = match embeddings_store().read() {
+            Ok(embeddings) => embeddings,
             Err(e) => {
-                return self.send_server_error(
-                    format!("Error serializing search_points_request: {:?}", e),
-                    None,
-                );
+                return self
+                    .send_server_error(format!("Error reading embeddings store: {:?}", e), None);
             }
         };
 
-        let path = format!("/collections/{}/points/search", DEFAULT_COLLECTION_NAME);
+        let prompt_targets = match self.prompt_targets.read() {
+            Ok(prompt_targets) => prompt_targets,
+            Err(e) => {
+                self.send_server_error(format!("Error reading prompt targets: {:?}", e), None);
+                return;
+            }
+        };
+
+        let prompt_target_names = prompt_targets
+            .iter()
+            .map(|(name, _)| name.clone())
+            .collect();
+
+        let similarity_scores: Vec<(String, f64)> = prompt_targets
+            .iter()
+            .map(|(prompt_name, _prompt_target)| {
+                let default_embeddings = HashMap::new();
+                let pte = prompt_target_embeddings
+                    .get(prompt_name)
+                    .unwrap_or(&default_embeddings);
+                let description_embeddings = pte.get(&EmbeddingType::Description);
+                let similarity_score_description = cos::cosine_similarity(
+                    &embeddings_vector,
+                    &description_embeddings.unwrap_or(&vec![0.0]),
+                );
+                (prompt_name.clone(), similarity_score_description)
+            })
+            .collect();
+
+        debug!(
+            "similarity scores based on description embeddings match: {:?}",
+            similarity_scores
+        );
+
+        callout_context.similarity_scores = Some(similarity_scores);
+
+        let zero_shot_classification_request = ZeroShotClassificationRequest {
+            // Need to clone into input because user_message is used below.
+            input: callout_context.user_message.as_ref().unwrap().clone(),
+            model: String::from(DEFAULT_INTENT_MODEL),
+            labels: prompt_target_names,
+        };
+
+        let json_data: String = match serde_json::to_string(&zero_shot_classification_request) {
+            Ok(json_data) => json_data,
+            Err(error) => {
+                panic!("Error serializing zero shot request: {}", error);
+            }
+        };
 
         let token_id = match self.dispatch_http_call(
-            "qdrant",
+            MODEL_SERVER_NAME,
             vec![
                 (":method", "POST"),
-                (":path", &path),
-                (":authority", "qdrant"),
+                (":path", "/zeroshot"),
+                (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
             ],
             Some(json_data.as_bytes()),
             vec![],
@@ -161,37 +216,61 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call for get-embeddings: {:?}", e);
+                panic!(
+                  "Error dispatching embedding server HTTP call for zero-shot-intent-detection: {:?}",
+                  e
+              );
             }
         };
+        debug!(
+            "dispatched HTTP call to embedding server for zero-shot-intent-detection token_id={}",
+            token_id
+        );
 
-        callout_context.request_type = RequestType::SearchPoints;
+        callout_context.response_handler_type = ResponseHandlerType::ZeroShotIntent;
+
         if self.callouts.insert(token_id, callout_context).is_some() {
-            panic!("duplicate token_id")
+            panic!(
+                "duplicate token_id={} in embedding server requests",
+                token_id
+            )
         }
-        self.metrics.active_http_calls.increment(1);
     }
 
-    fn search_points_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
-        let search_points_response: SearchPointsResponse = match serde_json::from_slice(&body) {
-            Ok(search_points_response) => search_points_response,
-            Err(e) => {
-                return self.send_server_error(
-                    format!("Error deserializing search_points_response: {:?}", e),
-                    None,
-                );
-            }
-        };
+    fn zero_shot_intent_detection_resp_handler(
+        &mut self,
+        body: Vec<u8>,
+        mut callout_context: CallContext,
+    ) {
+        let zeroshot_intent_response: ZeroShotClassificationResponse =
+            match serde_json::from_slice(&body) {
+                Ok(zeroshot_response) => zeroshot_response,
+                Err(e) => {
+                    self.send_server_error(
+                        format!(
+                            "Error deserializing zeroshot intent detection response: {:?}",
+                            e
+                        ),
+                        None,
+                    );
+                    return;
+                }
+            };
 
-        let search_results = &search_points_response.result;
+        debug!("zeroshot intent response: {:?}", zeroshot_intent_response);
 
-        if search_results.is_empty() {
-            info!("No prompt target matched");
-            self.resume_http_request();
-            return;
-        }
+        let prompt_target_similarity_score = zeroshot_intent_response.predicted_class_score * 0.7
+            + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
 
-        info!("similarity score: {}", search_results[0].score);
+        debug!(
+            "similarity score: {}, intent score: {}, description embedding score: {}",
+            prompt_target_similarity_score,
+            zeroshot_intent_response.predicted_class_score,
+            callout_context.similarity_scores.as_ref().unwrap()[0].1
+        );
+
+        let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
+
         // Check to see who responded to user message. This will help us identify if control should be passed to Bolt FC or not.
         // If the last message was from Bolt FC, then Bolt FC is handling the conversation (possibly for parameter collection).
         let mut bolt_assistant = false;
@@ -200,7 +279,6 @@ impl StreamContext {
             let latest_assistant_message = &messages[messages.len() - 2];
             if let Some(model) = latest_assistant_message.model.as_ref() {
                 if model.starts_with("Bolt") {
-                    info!("Bolt assistant message found");
                     bolt_assistant = true;
                 }
             }
@@ -208,25 +286,30 @@ impl StreamContext {
             info!("no assistant message found, probably first interaction");
         }
 
-        if search_results[0].score < DEFAULT_PROMPT_TARGET_THRESHOLD && !bolt_assistant {
-            info!(
-                "prompt target below threshold: {}",
-                DEFAULT_PROMPT_TARGET_THRESHOLD
-            );
-            self.resume_http_request();
-            return;
-        }
-        let prompt_target_str = search_results[0].payload.get("prompt-target").unwrap();
-        let prompt_target: PromptTarget = match serde_json::from_slice(prompt_target_str.as_bytes())
-        {
-            Ok(prompt_target) => prompt_target,
-            Err(e) => {
-                return self.send_server_error(
-                    format!("Error deserializing prompt_target: {:?}", e),
-                    None,
+        // check to ensure that the prompt target similarity score is above the threshold
+        if prompt_target_similarity_score < DEFAULT_PROMPT_TARGET_THRESHOLD && !bolt_assistant {
+            // if bolt fc responded to the user message, then we don't need to check the similarity score
+            // it may be that bolt fc is handling the conversation for parameter collection
+            if bolt_assistant {
+                info!("bolt assistant is handling the conversation");
+            } else {
+                info!(
+                    "prompt target below threshold: {}, continue conversation with user",
+                    prompt_target_similarity_score,
                 );
+                self.resume_http_request();
+                return;
             }
-        };
+        }
+
+        let prompt_target = self
+            .prompt_targets
+            .read()
+            .unwrap()
+            .get(&prompt_target_name)
+            .unwrap()
+            .clone();
+
         info!(
             "prompt_target name: {:?}, type: {:?}",
             prompt_target.name, prompt_target.prompt_type
@@ -258,7 +341,7 @@ impl StreamContext {
 
                 let tools_defintion: ToolsDefinition = ToolsDefinition {
                     name: prompt_target.name.clone(),
-                    description: prompt_target.description.clone().unwrap_or("".to_string()),
+                    description: prompt_target.description.clone(),
                     parameters: tools_parameters,
                 };
 
@@ -311,7 +394,7 @@ impl StreamContext {
                     BOLT_FC_CLUSTER, token_id
                 );
 
-                callout_context.request_type = RequestType::FunctionResolver;
+                callout_context.response_handler_type = ResponseHandlerType::FunctionResolver;
                 callout_context.prompt_target = Some(prompt_target);
                 if self.callouts.insert(token_id, callout_context).is_some() {
                     panic!("duplicate token_id")
@@ -368,9 +451,8 @@ impl StreamContext {
                             .arguments
                             .contains_key(&param.name)
                     {
-                        warn!("boltfc did not extract required parameter: {}", param.name);
                         self.send_server_error(
-                            String::from("missing required parameter"),
+                            format!("missing required parameter: {}", param.name),
                             Some(StatusCode::BAD_REQUEST),
                         )
                     }
@@ -407,7 +489,7 @@ impl StreamContext {
             }
         };
 
-        callout_context.request_type = RequestType::FunctionCallResponse;
+        callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
@@ -496,7 +578,6 @@ impl StreamContext {
             }
         }
 
-        debug!("sending request to openai: msg {}", json_string);
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
@@ -588,11 +669,11 @@ impl HttpContext for StreamContext {
         };
 
         let token_id = match self.dispatch_http_call(
-            "embeddingserver",
+            MODEL_SERVER_NAME,
             vec![
                 (":method", "POST"),
                 (":path", "/embeddings"),
-                (":authority", "embeddingserver"),
+                (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -615,10 +696,11 @@ impl HttpContext for StreamContext {
         );
 
         let call_context = CallContext {
-            request_type: RequestType::GetEmbedding,
+            response_handler_type: ResponseHandlerType::GetEmbeddings,
             user_message: Some(user_message),
             prompt_target: None,
             request_body: deserialized_body,
+            similarity_scores: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(
@@ -626,6 +708,7 @@ impl HttpContext for StreamContext {
                 token_id
             )
         }
+
         self.metrics.active_http_calls.increment(1);
 
         Action::Pause
@@ -730,18 +813,25 @@ impl Context for StreamContext {
         self.metrics.active_http_calls.increment(-1);
 
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
-            match callout_context.request_type {
-                RequestType::GetEmbedding => self.embeddings_handler(body, callout_context),
-                RequestType::SearchPoints => self.search_points_handler(body, callout_context),
-                RequestType::FunctionResolver => {
+            match callout_context.response_handler_type {
+                ResponseHandlerType::GetEmbeddings => {
+                    self.embeddings_handler(body, callout_context)
+                }
+                ResponseHandlerType::FunctionResolver => {
                     self.function_resolver_handler(body, callout_context)
                 }
-                RequestType::FunctionCallResponse => {
+                ResponseHandlerType::FunctionCall => {
                     self.function_call_response_handler(body, callout_context)
+                }
+                ResponseHandlerType::ZeroShotIntent => {
+                    self.zero_shot_intent_detection_resp_handler(body, callout_context)
                 }
             }
         } else {
-            warn!("No response body in inline HTTP request");
+            self.send_server_error(
+                String::from("No response body in inline HTTP request"),
+                None,
+            );
         }
     }
 }

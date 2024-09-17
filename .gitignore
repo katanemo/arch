@@ -1,8 +1,7 @@
 envoyfilter/target
 envoyfilter/qdrant_data/
-public-types/target
-embedding-server/venv/
-chatbot-ui/venv/
+public_types/target
+/venv/
 __pycache__
 grafana-data
 prom_data
@@ -12,5 +11,5 @@ generated
 .DS_Store
 *.gguf
 venv
-demos/function-calling/ollama/models/
-demos/function-calling/ollama/id_ed*
+demos/function_calling/ollama/models/
+demos/function_calling/ollama/id_ed*

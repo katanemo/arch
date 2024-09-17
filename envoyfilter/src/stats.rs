@@ -33,7 +33,7 @@ pub trait RecordingMetric: Metric {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Counter {
     id: u32,
 }
@@ -55,7 +55,7 @@ impl Metric for Counter {
 
 impl IncrementingMetric for Counter {}
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Gauge {
     id: u32,
 }
