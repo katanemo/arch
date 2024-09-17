@@ -10,11 +10,11 @@ services:
       - ./katanemo-config.yaml:/usr/src/app/katanemo-config.yaml
       - ./generated:/usr/src/app/out
 
-  envoy:
+  bolt:
     build:
       context: ../../
       dockerfile: envoyfilter/Dockerfile
-    hostname: envoy
+    hostname: bolt
     ports:
       - "10000:10000"
       - "19901:9901"
@@ -79,7 +79,7 @@ services:
       - "18080:8080"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CHAT_COMPLETION_ENDPOINT=http://envoy:10000/v1/chat/completions
+      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1/chat/completions
 
   prometheus:
     image: prom/prometheus
