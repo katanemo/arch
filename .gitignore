@@ -13,3 +13,4 @@ generated
 venv
 demos/function_calling/ollama/models/
 demos/function_calling/ollama/id_ed*
+docs/build/
