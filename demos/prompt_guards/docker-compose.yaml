@@ -1,0 +1,82 @@
+
+services:
+
+  config_generator:
+    build:
+      context: ../../
+      dockerfile: config_generator/Dockerfile
+    volumes:
+      - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
+      - ./bolt_config.yaml:/usr/src/app/bolt_config.yaml
+      - ./generated:/usr/src/app/out
+
+  bolt:
+    build:
+      context: ../../
+      dockerfile: envoyfilter/Dockerfile
+    hostname: bolt
+    ports:
+      - "10000:10000"
+      - "19901:9901"
+    volumes:
+      - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
+      - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+    depends_on:
+      config_generator:
+        condition: service_completed_successfully
+      model_server:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=debug
+
+  model_server:
+    build:
+      context: ../../model_server
+      dockerfile: Dockerfile
+    ports:
+      - "18081:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+
+  function_resolver:
+    build:
+      context: ../../function_resolver
+      dockerfile: Dockerfile
+    ports:
+      - "18082:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    environment:
+      # use ollama endpoint that is hosted by host machine (no virtualization)
+      - OLLAMA_ENDPOINT=host.docker.internal
+      # uncomment following line to use ollama endpoint that is hosted by docker
+      # - OLLAMA_ENDPOINT=ollama
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    volumes:
+      - ./ollama:/root/.ollama
+    restart: unless-stopped
+    ports:
+      - '11434:11434'
+    profiles:
+      - manual
+
+  chatbot_ui:
+    build:
+      context: ../../chatbot_ui
+      dockerfile: Dockerfile
+    ports:
+      - "18080:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1/chat/completions

@@ -1458,6 +1458,7 @@ version = "0.1.0"
 dependencies = [
  "open-message-format-embeddings",
  "serde",
+ "serde_yaml",
 ]
 
 [[package]]

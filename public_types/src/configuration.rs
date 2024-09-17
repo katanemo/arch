@@ -7,9 +7,21 @@ pub struct Configuration {
     pub timeout_ms: u64,
     pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
+    pub prompt_guards: Option<PromptGuard>,
     pub system_prompt: Option<String>,
     pub prompt_targets: Vec<PromptTarget>,
     pub ratelimits: Option<Vec<Ratelimit>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PromptGuard {
+    pub input_guard: Vec<InputGuard>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InputGuard {
+    pub name: String,
+    pub on_exception_message: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -126,12 +138,18 @@ system_prompt: |
   - Use farenheight for temperature
   - Use miles per hour for wind speed
 
+prompt_guards:
+  input_guard:
+    - name: jailbreak
+      on_exception_message: Looks like you are curious about my abilities…
+    - name: toxic
+      on_exception_message: Looks like you are curious about my abilities…
+
 prompt_targets:
 
   - type: function_resolver
     name: weather_forecast
-    few_shot_examples:
-      - what is the weather in New York?
+    description: Get the weather forecast for a location
     endpoint:
       cluster: weatherhost
       path: /weather
@@ -142,6 +160,7 @@ prompt_targets:
 
   - type: function_resolver
     name: weather_forecast_2
+    description: Get the weather forecast for a location
     few_shot_examples:
       - what is the weather in New York?
     endpoint:
@@ -162,6 +181,7 @@ ratelimits:
 
     #[test]
     fn test_deserialize_configuration() {
-        let _: super::Configuration = serde_yaml::from_str(CONFIGURATION).unwrap();
+        let c: super::Configuration = serde_yaml::from_str(CONFIGURATION).unwrap();
+        assert_eq!(c.prompt_guards.unwrap().input_guard.len(), 2);
     }
 }
