@@ -82,7 +82,7 @@ class PredictHandler:
                     "attention_mask": inputs["attention_mask"].numpy(),
                 }
                 if self.task == "toxic":
-                    feed["token_type_ids"] = (inputs["token_type_ids"].numpy(),)
+                    feed["token_type_ids"] = inputs["token_type_ids"].numpy()
 
                 del inputs
                 logits = self.model.run(["logits"], feed)[0]

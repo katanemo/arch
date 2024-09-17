@@ -98,7 +98,7 @@ async def ner(req: NERRequest, res: Response):
 
 class GuardRequest(BaseModel):
     input: str
-    model: str
+    task: str
 
 
 @app.post("/guard")
