@@ -23,7 +23,7 @@ def load_ner_models(models=os.getenv("NER_MODELS", "urchade/gliner_large-v2.1"))
 
 
 def load_toxic_model(
-    model_name=os.getenv("TOXIC_MODELS", "katanemolabs/toxic-onnx-quantized"),
+    model_name,
     hardware_config="intel_cpu",
 ):
 
@@ -67,7 +67,7 @@ def load_toxic_model(
 
 
 def load_jailbreak_model(
-    model_name=os.getenv("JAILBREAK_MODELS", "katanemolabs/jailbreak-onnx-quantized"),
+    model_name,
     hardware_config="intel_cpu",
 ):
 
