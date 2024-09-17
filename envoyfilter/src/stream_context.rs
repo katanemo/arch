@@ -242,6 +242,21 @@ impl StreamContext {
             callout_context.similarity_scores.as_ref().unwrap()[0].1
         );
 
+        // Pretty print Sampreeth
+        // Loop through the zeroshot intent response scores and print them
+        println!("\n\n\n===============================================================\nzeroshot intent response classification scores: ");
+        // Iterate through the scores hashmap
+        for (intent, score) in &zeroshot_intent_response.scores {
+            println!("\n\t{} Score:\t{}", intent, score);
+        }
+        // Print the other specific scores
+        println!("\n\t Top Descrp comparison score:{}", callout_context.similarity_scores.as_ref().unwrap()[0].1);
+        println!(
+            "\n\tprompt target similarity score: {}, \n\tpredicted class: {}\n==========================================================================\n\n",
+            prompt_target_similarity_score, zeroshot_intent_response.predicted_class
+        );
+
+
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
 
         // Check to see who responded to user message. This will help us identify if control should be passed to Bolt FC or not.
@@ -382,6 +397,14 @@ impl StreamContext {
 
         let body_str = String::from_utf8(body).unwrap();
         debug!("function_resolver response str: {:?}", body_str);
+
+        // Pretty print the JSON response - Sampreeth
+        let parsed: Value = from_str(&body_str).unwrap();
+        let content_str = parsed["message"]["content"].as_str().unwrap();
+        // Parse the string content into a JSON object
+        let content_json: Value = from_str(content_str).unwrap();
+        println!("\n========================================================================================================\n\n{}\n=============================================================================================================\n\n", to_string_pretty(&content_json).unwrap());
+
 
         let mut boltfc_response: BoltFCResponse = serde_json::from_str(&body_str).unwrap();
 

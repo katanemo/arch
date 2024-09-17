@@ -4,6 +4,13 @@ from pydantic import BaseModel
 from load_models import load_ner_models, load_transformers, load_zero_shot_models
 from datetime import date, timedelta
 import string
+import pandas as pd
+from load_models import load_sql
+import logging
+
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 transformers = load_transformers()
 ner_models = load_ner_models()
@@ -143,3 +150,87 @@ async def weather(req: WeatherRequest, res: Response):
        })
 
     return weather_forecast
+
+
+'''
+*****
+Adding new functions to test the usecases - Sampreeth
+*****
+'''
+
+conn = load_sql()
+name_col = "name"
+
+class TopEmployees(BaseModel):
+    grouping: str
+    ranking_criteria: str
+    top_n: int
+
+
+@app.post("/top_employees")
+async def top_employees(req: TopEmployees, res: Response):
+    name_col = "name"
+    # Check if `req.ranking_criteria` is a Text object and extract its value accordingly
+    logger.info(f"{'* ' * 50}\n\nCaptured Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}")
+
+    if req.ranking_criteria == "yoe":
+        req.ranking_criteria = "years_of_experience"
+    elif req.ranking_criteria == "rating":
+        req.ranking_criteria = "performance_score"
+    
+    logger.info(f"{'* ' * 50}\n\nFinal Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}")
+
+
+    query = f"""
+    SELECT {req.grouping}, {name_col}, {req.ranking_criteria}
+    FROM (
+        SELECT {req.grouping}, {name_col}, {req.ranking_criteria},
+               DENSE_RANK() OVER (PARTITION BY {req.grouping} ORDER BY {req.ranking_criteria} DESC) as emp_rank
+        FROM employees
+    ) ranked_employees
+    WHERE emp_rank <= {req.top_n};
+    """
+    result_df = pd.read_sql_query(query, conn)
+    result = result_df.to_dict(orient='records')
+    return result
+
+
+class AggregateStats(BaseModel):
+    grouping: str
+    aggregate_criteria: str
+    aggregate_type: str
+
+@app.post("/aggregate_stats")
+async def aggregate_stats(req: AggregateStats, res: Response):
+    logger.info(f"{'* ' * 50}\n\nCaptured Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}")
+
+    if req.aggregate_criteria == "yoe":
+        req.aggregate_criteria = "years_of_experience"
+
+    logger.info(f"{'* ' * 50}\n\nFinal Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}")
+
+    logger.info(f"{'* ' * 50}\n\nCaptured Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}")
+    if req.aggregate_type.lower() not in ["sum", "avg", "min", "max"]:
+        if req.aggregate_type.lower() == "count":
+            req.aggregate_type = "COUNT"
+        elif req.aggregate_type.lower() == "total":
+            req.aggregate_type = "SUM"
+        elif req.aggregate_type.lower() == "average":
+            req.aggregate_type = "AVG"
+        elif req.aggregate_type.lower() == "minimum":
+            req.aggregate_type = "MIN"
+        elif req.aggregate_type.lower() == "maximum":
+            req.aggregate_type = "MAX"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid aggregate type")
+    
+    logger.info(f"{'* ' * 50}\n\nFinal Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}")
+
+    query = f"""
+    SELECT {req.grouping}, {req.aggregate_type}({req.aggregate_criteria}) as {req.aggregate_type}_{req.aggregate_criteria}
+    FROM employees
+    GROUP BY {req.grouping};
+    """
+    result_df = pd.read_sql_query(query, conn)
+    result = result_df.to_dict(orient='records')
+    return result

@@ -4,3 +4,4 @@ sentence-transformers
 torch
 uvicorn
 gliner
+pandas

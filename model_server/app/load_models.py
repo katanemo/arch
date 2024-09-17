@@ -2,6 +2,8 @@ import os
 import sentence_transformers
 from gliner import GLiNER
 from transformers import pipeline
+import sqlite3
+import pandas as pd
 
 def load_transformers(models = os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
     transformers = {}
@@ -26,3 +28,11 @@ def load_zero_shot_models(models = os.getenv("ZERO_SHOT_MODELS", "tasksource/deb
         zero_shot_models[model] = pipeline("zero-shot-classification",model=model)
 
     return zero_shot_models
+
+def load_sql():
+    # Example Usage
+    data = pd.read_csv("Employee_Data.csv")
+    conn = sqlite3.connect(':memory:')
+    data.to_sql('employees', conn, index=False)
+    return conn
+
