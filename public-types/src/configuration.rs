@@ -99,7 +99,6 @@ pub struct PromptTarget {
     #[serde(rename = "type")]
     pub prompt_type: PromptType,
     pub name: String,
-    //TODO: make description required
     pub description: String,
     pub parameters: Option<Vec<Parameter>>,
     pub endpoint: Option<Endpoint>,
