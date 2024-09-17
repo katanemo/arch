@@ -6,7 +6,7 @@
     },
     "jailbreak":{
         "intel_cpu": "katanemolabs/jailbreak_ovn_4bit",
-        "non_intel_cpu": "katanemolabs/jailbreak-onnx-quantized-v2",
+        "non_intel_cpu": "katanemolabs/jailbreak_onnx_quantized_v2",
         "gpu": "katanemolabs/Bolt-Guard-EEtq"
     }
 }
