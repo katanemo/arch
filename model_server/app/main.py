@@ -13,16 +13,16 @@ from utils import is_intel_cpu, GuardHandler, split_text_into_chunks
 import json
 import string
 
-# transformers = load_transformers()
-# ner_models = load_ner_models()
-# zero_shot_models = load_zero_shot_models()
+transformers = load_transformers()
+ner_models = load_ner_models()
+zero_shot_models = load_zero_shot_models()
 
 
 if is_intel_cpu():
     hardware_config = "intel_cpu"
 else:
     hardware_config = "non_intel_cpu"
-with open('guard_model_config.json') as f:
+with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
 toxic_model = load_toxic_model(
@@ -102,7 +102,7 @@ class GuardRequest(BaseModel):
 
 
 @app.post("/guard")
-async def guard(req: GuardRequest, res: Response, max_words=300):
+async def guard(req: GuardRequest, res: Response):
     """
     Guard API, take input as text and return the prediction of toxic and jailbreak
     result format: dictionary
@@ -112,6 +112,7 @@ async def guard(req: GuardRequest, res: Response, max_words=300):
             "toxic_verdict": toxic_verdict,
             "jailbreak_verdict": jailbreak_verdict,
     """
+    max_words = 300
     if len(req.input.split()) < max_words:
         final_result = guard_handler.guard_predict(req.input)
     else:

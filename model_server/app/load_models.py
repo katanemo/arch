@@ -46,7 +46,7 @@ def load_toxic_model(
         if "model_quantized.onnx" not in model_name:
             model_name += "/model_quantized.onnx"
         toxic_model["model"] = ort.InferenceSession(
-            model_name + "/model_quantized.onnx",
+            model_name,
             opts,
             providers=["CPUExecutionProvider"],
         )
@@ -90,7 +90,7 @@ def load_jailbreak_model(
         if "model_quantized.onnx" not in model_name:
             model_name += "/model_quantized.onnx"
         jailbreak_model["model"] = ort.InferenceSession(
-            model_name + "/model_quantized.onnx",
+            model_name,
             opts,
             providers=["CPUExecutionProvider"],
         )

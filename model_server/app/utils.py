@@ -56,7 +56,6 @@ def softmax(x):
     return np.exp(x) / np.exp(x).sum(axis=0)
 
 
-
 class PredictHandler:
     def __init__(
         self, model, tokenizer, device, task="toxic", hardware_config="intel_cpu"
@@ -125,8 +124,6 @@ class GuardHandler:
         else:
             self.task = "toxic"
         self.hardware_config = hardware_config
-        
-        
 
     def guard_predict(self, input_text):
         start = time.time()
