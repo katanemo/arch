@@ -5,6 +5,8 @@ torch
 uvicorn
 gliner
 transformers
+
+# guard inference packages
 onnxruntime
 optimum-intel
 openvino

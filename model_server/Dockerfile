@@ -33,6 +33,9 @@ RUN apt-get update && apt-get install -y \
   curl \
   && rm -rf /var/lib/apt/lists/*
 
+RUN huggingface-cli download katanemolabs/toxic-onnx-quantized --local-dir /app/model/toxic
+RUN huggingface-cli download katanemolabs/jailbreak_onnx_quantized_v2 --local-dir /app/model/jailbreak
+
 # comment it out for now as we don't want to download the model every time we build the image
 # we will mount host cache to docker image to avoid downloading the model every time
 # see docker-compose file for more details
