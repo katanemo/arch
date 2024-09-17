@@ -232,14 +232,12 @@ impl RootContext for FilterContext {
         true
     }
 
-    fn create_http_context(&self, _context_id: u32) -> Option<Box<dyn HttpContext>> {
-        Some(Box::new(StreamContext {
-            host_header: None,
-            ratelimit_selector: None,
-            callouts: HashMap::new(),
-            metrics: Rc::clone(&self.metrics),
-            prompt_targets: Rc::clone(&self.prompt_targets),
-        }))
+    fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
+        Some(Box::new(StreamContext::new(
+            context_id,
+            Rc::clone(&self.metrics),
+            Rc::clone(&self.prompt_targets),
+        )))
     }
 
     fn get_type(&self) -> Option<ContextType> {
