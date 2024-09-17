@@ -85,7 +85,7 @@ class PredictHandler:
                     feed["token_type_ids"] = inputs["token_type_ids"].numpy()
 
                 del inputs
-                logits = self.model.run(["logits"], feed)[0]
+                logits = self.model.run(["logits"], feed)[0][0]
                 del feed
 
             else:
@@ -151,8 +151,8 @@ class GuardHandler:
                 jailbreak_verdict = False
                 jailbreak_sentence = None
             result_dict = {
-                "toxic_prob": toxic_prob,
-                "jailbreak_prob": jailbreak_prob,
+                "toxic_prob": toxic_prob.item(),
+                "jailbreak_prob": jailbreak_prob.item(),
                 "time": end - start,
                 "toxic_verdict": toxic_verdict,
                 "jailbreak_verdict": jailbreak_verdict,
@@ -173,7 +173,7 @@ class GuardHandler:
                 verdict = False
                 sentence = None
             result_dict = {
-                f"{self.task}_prob": prob,
+                f"{self.task}_prob": prob.item(),
                 f"{self.task}_verdict": verdict,
                 f"{self.task}_sentence": sentence,
             }

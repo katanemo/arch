@@ -43,6 +43,9 @@ class EmbeddingRequest(BaseModel):
 
 @app.get("/healthz")
 async def healthz():
+    import os
+
+    print(os.getcwd())
     return {"status": "ok"}
 
 
@@ -137,7 +140,7 @@ async def guard(req: GuardRequest, res: Response):
                     final_result["toxic_sentence"].append(
                         result_chunk["toxic_sentence"]
                     )
-                    final_result["toxic_prob"].append(result_chunk["toxic_prob"])
+                    final_result["toxic_prob"].append(result_chunk["toxic_prob"].item())
                 if result_chunk["jailbreak_verdict"]:
                     final_result["jailbreak_verdict"] = True
                     final_result["jailbreak_sentence"].append(
@@ -156,7 +159,9 @@ async def guard(req: GuardRequest, res: Response):
                     final_result[f"{task}_sentence"].append(
                         result_chunk[f"{task}_sentence"]
                     )
-                    final_result[f"{task}_prob"].append(result_chunk[f"{task}_prob"])
+                    final_result[f"{task}_prob"].append(
+                        result_chunk[f"{task}_prob"].item()
+                    )
     return final_result
 
 
