@@ -96,7 +96,7 @@ impl StreamContext {
 
         let authorization_header_value = format!("Bearer {}", llm_provider_api_key_value);
 
-        self.set_http_request_header("authorization", Some(&authorization_header_value));
+        self.set_http_request_header("Authorization", Some(&authorization_header_value));
 
         // sanitize passed in api keys
         for provider in LlmProviders::VARIANTS.iter() {
@@ -757,14 +757,20 @@ impl HttpContext for StreamContext {
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
-        if !self.chat_completions_request {
-            return Action::Continue;
-        }
-
         debug!(
             "recv [S={}] bytes={} end_stream={}",
             self.context_id, body_size, end_of_stream
         );
+
+        if !self.chat_completions_request {
+            if let Some(body_str) = self
+                .get_http_response_body(0, body_size)
+                .and_then(|bytes| String::from_utf8(bytes).ok())
+            {
+                debug!("recv [S={}] body_str={}", self.context_id, body_str);
+            }
+            return Action::Continue;
+        }
 
         if !end_of_stream && !self.streaming_response {
             return Action::Pause;
