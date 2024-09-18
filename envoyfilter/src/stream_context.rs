@@ -76,7 +76,7 @@ impl StreamContext {
             streaming_response: false,
             response_tokens: 0,
             chat_completions_request: false,
-            overrides: overrides,
+            overrides,
         }
     }
     fn save_host_header(&mut self) {
