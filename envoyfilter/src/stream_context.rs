@@ -242,7 +242,6 @@ impl StreamContext {
             callout_context.similarity_scores.as_ref().unwrap()[0].1
         );
 
-
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
 
         // Check to see who responded to user message. This will help us identify if control should be passed to Bolt FC or not.
