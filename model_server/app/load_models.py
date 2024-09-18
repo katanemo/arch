@@ -63,7 +63,7 @@ def load_toxic_model(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
     toxic_model["device"] = device
-
+    toxic_model['hardware_config'] = hardware_config
     return toxic_model
 
 
@@ -107,7 +107,7 @@ def load_jailbreak_model(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
     jailbreak_model["device"] = device
-
+    jailbreak_model['hardware_config'] = hardware_config
     return jailbreak_model
 
 

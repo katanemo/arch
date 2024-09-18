@@ -12,6 +12,7 @@ from datetime import date, timedelta
 from utils import is_intel_cpu, GuardHandler, split_text_into_chunks
 import json
 import string
+import torch
 
 transformers = load_transformers()
 ner_models = load_ner_models()
@@ -25,8 +26,11 @@ else:
 with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
+toxic_hardware = 'gpu' if torch.cuda.is_available() else hardware_config
+
+
 toxic_model = load_toxic_model(
-    guard_model_config["toxic"][hardware_config], hardware_config
+    guard_model_config["toxic"][hardware_config], toxic_hardware
 )
 jailbreak_model = load_jailbreak_model(
     guard_model_config["jailbreak"][hardware_config], hardware_config

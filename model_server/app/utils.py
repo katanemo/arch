@@ -99,7 +99,7 @@ class PredictHandler:
 
 
 class GuardHandler:
-    def __init__(self, toxic_model, jailbreak_model, hardware_config="intel_cpu"):
+    def __init__(self, toxic_model, jailbreak_model):
         self.toxic_model = toxic_model
         self.jailbreak_model = jailbreak_model
         self.task = "both"
@@ -109,7 +109,7 @@ class GuardHandler:
                 toxic_model["tokenizer"],
                 toxic_model["device"],
                 "toxic",
-                hardware_config,
+                toxic_model["hardware_config"],
             )
         else:
             self.task = "jailbreak"
@@ -119,11 +119,10 @@ class GuardHandler:
                 jailbreak_model["tokenizer"],
                 jailbreak_model["device"],
                 "jailbreak",
-                hardware_config,
+                jailbreak_model["hardware_config"],
             )
         else:
             self.task = "toxic"
-        self.hardware_config = hardware_config
 
     def guard_predict(self, input_text):
         start = time.time()
