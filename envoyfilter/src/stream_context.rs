@@ -25,7 +25,7 @@ use public_types::common_types::{
     BoltFCResponse, BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
     ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
-use public_types::configuration::{PromptTarget, PromptType};
+use public_types::configuration::{Overrides, PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
@@ -51,6 +51,7 @@ pub struct StreamContext {
     pub context_id: u32,
     pub metrics: Rc<WasmMetrics>,
     pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    pub overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
@@ -64,6 +65,7 @@ impl StreamContext {
         context_id: u32,
         metrics: Rc<WasmMetrics>,
         prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+        overrides: Rc<Option<Overrides>>,
     ) -> Self {
         StreamContext {
             context_id,
@@ -75,6 +77,7 @@ impl StreamContext {
             response_tokens: 0,
             chat_completions_request: false,
             llm_provider: None,
+            overrides,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -273,7 +276,7 @@ impl StreamContext {
             + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
 
         debug!(
-            "similarity score: {}, intent score: {}, description embedding score: {}",
+            "similarity score: {:.3}, intent score: {:.3}, description embedding score: {:.3}",
             prompt_target_similarity_score,
             zeroshot_intent_response.predicted_class_score,
             callout_context.similarity_scores.as_ref().unwrap()[0].1
@@ -296,16 +299,28 @@ impl StreamContext {
             info!("no assistant message found, probably first interaction");
         }
 
+        // get prompt target similarity thresold from overrides
+        let prompt_target_intent_matching_threshold = match self.overrides.as_ref() {
+            Some(overrides) => match overrides.prompt_target_intent_matching_threshold {
+                Some(threshold) => threshold,
+                None => DEFAULT_PROMPT_TARGET_THRESHOLD,
+            },
+            None => DEFAULT_PROMPT_TARGET_THRESHOLD,
+        };
+
         // check to ensure that the prompt target similarity score is above the threshold
-        if prompt_target_similarity_score < DEFAULT_PROMPT_TARGET_THRESHOLD && !bolt_assistant {
+        if prompt_target_similarity_score < prompt_target_intent_matching_threshold
+            && !bolt_assistant
+        {
             // if bolt fc responded to the user message, then we don't need to check the similarity score
             // it may be that bolt fc is handling the conversation for parameter collection
             if bolt_assistant {
                 info!("bolt assistant is handling the conversation");
             } else {
                 info!(
-                    "prompt target below threshold: {}, continue conversation with user",
+                    "prompt target below limit: {:.3}, threshold: {:.3}, continue conversation with user",
                     prompt_target_similarity_score,
+                    prompt_target_intent_matching_threshold
                 );
                 self.resume_http_request();
                 return;
