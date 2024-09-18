@@ -1,18 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
   pub prompt_target_intent_matching_threshold: Option<f64>,
-}
-
-impl Default for Overrides {
-    fn default() -> Overrides {
-        {
-            Overrides {
-                prompt_target_intent_matching_threshold: None,
-            }
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
