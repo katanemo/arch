@@ -51,3 +51,8 @@ prompt_targets:
     system_prompt: |
       You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
       - Use policy number to retrieve insurance claim details
+
+clusters:
+  - name: weatherhost
+    address: model_server
+    port: 80

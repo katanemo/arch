@@ -1,5 +1,6 @@
 import os
 from jinja2 import Environment, FileSystemLoader
+import yaml
 
 ENVOY_CONFIG_TEMPLATE_FILE = os.getenv('ENVOY_CONFIG_TEMPLATE_FILE', 'envoy.template.yaml')
 BOLT_CONFIG_FILE = os.getenv('BOLT_CONFIG_FILE', 'bolt_config.yaml')
@@ -11,8 +12,15 @@ template = env.get_template('envoy.template.yaml')
 with open(BOLT_CONFIG_FILE, 'r') as file:
     katanemo_config = file.read()
 
+config_yaml = yaml.safe_load(katanemo_config)
+
+clusters = config_yaml["clusters"]
+
+print(config_yaml)
+
 data = {
-    'katanemo_config': katanemo_config
+    'katanemo_config': katanemo_config,
+    'arch_clusters': clusters
 }
 
 rendered = template.render(data)
