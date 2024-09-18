@@ -35,7 +35,7 @@ toxic_model = load_toxic_model(
 jailbreak_model = load_jailbreak_model(
     guard_model_config["jailbreak"][hardware_config], hardware_config
 )
-guard_handler = GuardHandler(toxic_model, jailbreak_model, hardware_config)
+guard_handler = GuardHandler(toxic_model, jailbreak_model)
 
 app = FastAPI()
 
