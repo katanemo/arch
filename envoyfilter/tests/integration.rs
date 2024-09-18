@@ -36,14 +36,10 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .call_proxy_on_request_headers(http_context, 0, false)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
         .returning(Some("api.openai.com"))
-        .expect_add_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("content-length"),
-            Some(""),
-        )
+        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
         .returning(Some("/llmrouting"))
-        .expect_add_header_map_value(
+        .expect_replace_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some(":path"),
             Some("/v1/chat/completions"),
@@ -196,7 +192,7 @@ prompt_targets:
       - name: city
 
 ratelimits:
-  - provider: gpt-4
+  - provider: gpt-3.5-turbo
     selector:
       key: selector-key
       value: selector-value
@@ -245,14 +241,10 @@ fn successful_request_to_open_ai_chat_completions() {
         .call_proxy_on_request_headers(http_context, 0, false)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
         .returning(Some("api.openai.com"))
-        .expect_add_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("content-length"),
-            Some(""),
-        )
+        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
         .returning(Some("/llmrouting"))
-        .expect_add_header_map_value(
+        .expect_replace_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some(":path"),
             Some("/v1/chat/completions"),
@@ -289,9 +281,9 @@ fn successful_request_to_open_ai_chat_completions() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
-        // TODO: assert that the model field was added.
-        .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_http_call(Some("model_server"), None, None, None, None)
+        .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
@@ -335,14 +327,10 @@ fn bad_request_to_open_ai_chat_completions() {
         .call_proxy_on_request_headers(http_context, 0, false)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
         .returning(Some("api.openai.com"))
-        .expect_add_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("content-length"),
-            Some(""),
-        )
+        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
         .returning(Some("/llmrouting"))
-        .expect_add_header_map_value(
+        .expect_replace_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some(":path"),
             Some("/v1/chat/completions"),
@@ -377,6 +365,7 @@ fn bad_request_to_open_ai_chat_completions() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(incomplete_chat_completions_request_body))
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
             Some(StatusCode::BAD_REQUEST.as_u16().into()),
             None,
@@ -485,6 +474,10 @@ fn request_ratelimited() {
             None,
         )
         .expect_metric_increment("ratelimited_rq", 1)
+        .expect_log(
+            Some(LogLevel::Debug),
+            Some("server error occurred: Exceeded Ratelimit: Not allowed"),
+        )
         .execute_and_expect(ReturnType::None)
         .unwrap();
 }
