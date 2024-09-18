@@ -25,7 +25,7 @@ use public_types::common_types::{
     ToolParameter, ToolParameters, ToolsDefinition, ZeroShotClassificationRequest,
     ZeroShotClassificationResponse,
 };
-use public_types::configuration::{Overrides, PromptTarget, PromptType};
+use public_types::configuration::{Overrides, PromptGuards, PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
@@ -37,6 +37,7 @@ enum ResponseHandlerType {
     FunctionResolver,
     FunctionCall,
     ZeroShotIntent,
+    ArchGuard,
 }
 
 pub struct CallContext {
@@ -58,6 +59,7 @@ pub struct StreamContext {
     streaming_response: bool,
     response_tokens: usize,
     chat_completions_request: bool,
+    prompt_guards: Rc<Option<PromptGuards>>,
 }
 
 impl StreamContext {
@@ -65,6 +67,7 @@ impl StreamContext {
         context_id: u32,
         metrics: Rc<WasmMetrics>,
         prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+        prompt_guards: Rc<Option<PromptGuards>>,
         overrides: Rc<Option<Overrides>>,
     ) -> Self {
         StreamContext {
@@ -77,6 +80,7 @@ impl StreamContext {
             streaming_response: false,
             response_tokens: 0,
             chat_completions_request: false,
+            prompt_guards,
             overrides,
         }
     }
@@ -671,7 +675,7 @@ impl HttpContext for StreamContext {
 
         let get_prompt_guards_request = PromptGuardRequest {
             input: user_message.clone(),
-            task: PromptGuardTask::Toxicity,
+            task: PromptGuardTask::Both,
         };
 
         let json_data: String = match serde_json::to_string(&get_prompt_guards_request) {
@@ -703,6 +707,22 @@ impl HttpContext for StreamContext {
                 );
             }
         };
+
+        debug!("dispatched HTTP call to bolt_guard token_id={}", token_id);
+
+        let call_context = CallContext {
+            response_handler_type: ResponseHandlerType::ArchGuard,
+            user_message: Some(user_message),
+            prompt_target: None,
+            request_body: deserialized_body,
+            similarity_scores: None,
+        };
+        if self.callouts.insert(token_id, call_context).is_some() {
+            panic!(
+                "duplicate token_id={} in embedding server requests",
+                token_id
+            )
+        }
 
         // let get_embeddings_input = CreateEmbeddingRequest {
         //     // Need to clone into input because user_message is used below.
@@ -869,14 +889,20 @@ impl Context for StreamContext {
                 ResponseHandlerType::GetEmbeddings => {
                     self.embeddings_handler(body, callout_context)
                 }
+                ResponseHandlerType::ZeroShotIntent => {
+                    self.zero_shot_intent_detection_resp_handler(body, callout_context)
+                }
                 ResponseHandlerType::FunctionResolver => {
                     self.function_resolver_handler(body, callout_context)
                 }
                 ResponseHandlerType::FunctionCall => {
                     self.function_call_response_handler(body, callout_context)
                 }
-                ResponseHandlerType::ZeroShotIntent => {
-                    self.zero_shot_intent_detection_resp_handler(body, callout_context)
+                ResponseHandlerType::ArchGuard => {
+                    debug!(
+                        "response received for arch guard: {}",
+                        String::from_utf8(body).unwrap()
+                    );
                 }
             }
         } else {

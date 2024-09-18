@@ -13,14 +13,14 @@ pub struct Configuration {
     pub overrides: Option<Overrides>,
     pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
-    pub prompt_guards: Option<PromptGuard>,
+    pub prompt_guards: Option<PromptGuards>,
     pub system_prompt: Option<String>,
     pub prompt_targets: Vec<PromptTarget>,
     pub ratelimits: Option<Vec<Ratelimit>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PromptGuard {
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PromptGuards {
     pub input_guard: Vec<InputGuard>,
 }
 
