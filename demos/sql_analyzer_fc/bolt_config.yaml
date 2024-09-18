@@ -2,11 +2,9 @@ default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
 
-
-# should not be here
-embedding_provider:
-  name: "bge-large-en-v1.5"
-  model: "BAAI/bge-large-en-v1.5"
+overrides:
+  # confidence threshold for prompt target intent matching
+  prompt_target_intent_matching_threshold: 0.7
 
 llm_providers:
 
@@ -18,10 +16,6 @@ llm_providers:
 prompt_targets:
 
   - type: function_resolver
-    few_shot_examples:
-      - what is the salary of the top 5 employees in each department?
-      - who are the top 3 highest rated employees in each location?
-      - what is the list of top 3 experienced employees for each position?
     name: top_employees
     description: |
       Allows you to find the top employees in different groups, such as departments, locations, or position. You can rank the employees by different criteria, like salary, yoe, or rating. Returns the best-ranked employees for each group, helping you identify top n in the list.
