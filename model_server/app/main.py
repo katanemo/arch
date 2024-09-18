@@ -116,6 +116,8 @@ async def guard(req: GuardRequest, res: Response):
             "jailbreak_verdict": jailbreak_verdict,
     """
     max_words = 300
+    if req.task in ['both', 'toxic', 'jailbreak']:
+        guard_handler.task = req.task
     if len(req.input.split()) < max_words:
         final_result = guard_handler.guard_predict(req.input)
     else:
