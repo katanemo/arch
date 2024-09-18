@@ -29,35 +29,37 @@ with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
 if 'prompt_guards' in config.keys():
-    if len(config['prompt_guards']['input_guard']) == 2:
+    if len(config['prompt_guards']['input_guards']) == 2:
         task = 'both'
-        jailbreak_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'jailbreak'][0]
-        toxic_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'jailbreak'][0]
-        if jailbreak_hardware == 'cpu':
+        jailbreak_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'jailbreak'][0]['host_preference'][0]
+        toxic_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'toxic'][0]['host_preference'][0]
+        if jailbreak_hardware == 'cpu' or torch.cuda.is_available() == False:
             jailbreak_hardware = cpu
-        if toxic_hardware == 'cpu':
+        if toxic_hardware == 'cpu' or torch.cuda.is_available() == False:
             toxic_hardware = cpu
+
+
         toxic_model = load_toxic_model(
-            guard_model_config["toxic"][hardware_config], toxic_hardware
+            guard_model_config["toxic"][jailbreak_hardware], toxic_hardware
         )
         jailbreak_model = load_jailbreak_model(
-            guard_model_config["jailbreak"][hardware_config], jailbreak_hardware
+            guard_model_config["jailbreak"][toxic_hardware], jailbreak_hardware
         )
 
     else:
-        task = config['prompt_guards']['input_guard'][0]['name']
+        task = list(config['prompt_guards']['input_guards'].keys())[0]
 
-        hardware = [item for item in config['model_host_preferences'] if item['name'] == task][0]
-        if hardware == 'cpu':
+        hardware = [item for item in config['model_host_preferences'] if item['name'] == task][0]['host_preference'][0]
+        if hardware == 'cpu' or torch.cuda.is_available() == False:
             hardware = cpu
         if task == 'toxic':
             toxic_model = load_toxic_model(
-                guard_model_config["toxic"][hardware_config], hardware
+                guard_model_config["toxic"][hardware], hardware
             )
             jailbreak_model = None
         elif task == 'jailbreak':
             jailbreak_model = load_jailbreak_model(
-                guard_model_config["jailbreak"][hardware_config], hardware
+                guard_model_config["jailbreak"][hardware], hardware
             )
             toxic_model = None
     
