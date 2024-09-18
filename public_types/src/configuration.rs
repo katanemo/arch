@@ -1,10 +1,26 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Overrides {
+  pub prompt_target_intent_matching_threshold: Option<f64>,
+}
+
+impl Default for Overrides {
+    fn default() -> Overrides {
+        {
+            Overrides {
+                prompt_target_intent_matching_threshold: None,
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub default_prompt_endpoint: String,
     pub load_balancing: LoadBalancing,
     pub timeout_ms: u64,
+    pub overrides: Option<Overrides>,
     pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
     pub prompt_guards: Option<PromptGuard>,

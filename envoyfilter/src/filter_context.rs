@@ -9,7 +9,7 @@ use open_message_format_embeddings::models::{
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::EmbeddingType;
-use public_types::configuration::{Configuration, PromptTarget};
+use public_types::configuration::{Configuration, Overrides, PromptTarget};
 use serde_json::to_string;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -45,6 +45,7 @@ pub struct FilterContext {
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: HashMap<u32, CallContext>,
     config: Option<Configuration>,
+    overrides: Rc<Option<Overrides>>,
     prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
 }
 
@@ -63,6 +64,7 @@ impl FilterContext {
             config: None,
             metrics: Rc::new(WasmMetrics::new()),
             prompt_targets: Rc::new(RwLock::new(HashMap::new())),
+            overrides: Rc::new(None),
         }
     }
 
@@ -212,6 +214,14 @@ impl RootContext for FilterContext {
         if let Some(config_bytes) = self.get_plugin_configuration() {
             self.config = serde_yaml::from_slice(&config_bytes).unwrap();
 
+            if let Some(overrides_config) = self
+                .config
+                .as_mut()
+                .and_then(|config| config.overrides.as_mut())
+            {
+                self.overrides = Rc::new(Some(std::mem::take(overrides_config)));
+            }
+
             for pt in self.config.clone().unwrap().prompt_targets {
                 self.prompt_targets
                     .write()
@@ -237,6 +247,7 @@ impl RootContext for FilterContext {
             context_id,
             Rc::clone(&self.metrics),
             Rc::clone(&self.prompt_targets),
+            Rc::clone(&self.overrides),
         )))
     }
 
