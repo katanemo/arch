@@ -5,8 +5,9 @@ from openai import OpenAI
 import gradio as gr
 
 api_key = os.getenv("OPENAI_API_KEY")
+CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1")
 
-client = OpenAI(api_key=api_key)
+client = OpenAI(api_key=api_key, base_url=CHAT_COMPLETION_ENDPOINT)
 
 def predict(message, history):
     history_openai_format = []

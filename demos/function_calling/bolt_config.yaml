@@ -2,6 +2,9 @@ default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
 
+overrides:
+  # confidence threshold for prompt target intent matching
+  prompt_target_intent_matching_threshold: 0.6
 
 # should not be here
 embedding_provider:
