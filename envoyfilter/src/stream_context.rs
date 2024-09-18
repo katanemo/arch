@@ -27,8 +27,6 @@ use std::num::NonZero;
 use std::rc::Rc;
 use std::sync::RwLock;
 use std::time::Duration;
-use serde_json::{Value, from_str, to_string_pretty};
-
 
 enum ResponseHandlerType {
     GetEmbeddings,
