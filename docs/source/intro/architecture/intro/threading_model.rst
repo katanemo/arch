@@ -1,5 +1,3 @@
-.. _architecture_threading:
-
 Threading model
 ===============
 

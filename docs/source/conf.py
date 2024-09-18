@@ -22,6 +22,7 @@ extensions = [
     'sphinx.ext.autodoc',    # For generating documentation from docstrings
     'sphinx.ext.napoleon',   # For Google style and NumPy style docstrings
     'sphinx_copybutton',
+    'sphinx.ext.viewcode',
 ]
 
 # Paths that contain templates, relative to this directory.

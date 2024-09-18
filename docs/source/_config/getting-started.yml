@@ -1,12 +1,11 @@
 version: "0.1-beta"
 listen:
   address: 127.0.0.1 | 0.0.0.0
-  port_value: 443
-  path: /agent
+  port_value: 8080 #If you configure port 443, you'll need to update the listener to with your tls_certificates
   messages: tuple | hugging-face-messages-api 
 system_prompts:
-  - name: legal_assistant
-    content: you are a legal assistant that just offers facts; not advice 
+  - name: network_assistant
+    content: you are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions
 llm_providers: 
     - name: "OpenAI"
       access_key: $OPEN_AI_KEY
