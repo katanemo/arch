@@ -34,16 +34,9 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
     // Request Headers
     module
         .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
         .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
+        // The value of the host header is random, so it is not specified in the expectation
+        .expect_replace_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"), None)
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some("x-katanemo-ratelimit-selector"),
@@ -51,6 +44,9 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .returning(Some("selector-key"))
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
         .returning(Some("selector-value"))
+        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
+        .returning(None)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 
@@ -239,21 +235,17 @@ fn successful_request_to_open_ai_chat_completions() {
     // Request Headers
     module
         .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
         .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
+        // The value of the host header is random, so it is not specified in the expectation
+        .expect_replace_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"), None)
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some("x-katanemo-ratelimit-selector"),
         )
         .returning(None)
+        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
+        .returning(None)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 
@@ -325,21 +317,17 @@ fn bad_request_to_open_ai_chat_completions() {
     // Request Headers
     module
         .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
         .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
+        // The value of the host header is random, so it is not specified in the expectation
+        .expect_replace_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"), None)
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some("x-katanemo-ratelimit-selector"),
         )
         .returning(None)
+        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
+        .returning(None)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 

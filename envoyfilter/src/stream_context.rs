@@ -1,13 +1,13 @@
 use crate::consts::{
     BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME, OPENAI_CHAT_COMPLETIONS_PATH,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
-use crate::ratelimit;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
+use crate::{ratelimit, routing};
 use acap::cos;
 use http::StatusCode;
 use log::{debug, info, warn};
@@ -51,7 +51,6 @@ pub struct StreamContext {
     pub metrics: Rc<WasmMetrics>,
     pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
     callouts: HashMap<u32, CallContext>,
-    host_header: Option<String>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
@@ -69,16 +68,14 @@ impl StreamContext {
             metrics,
             prompt_targets,
             callouts: HashMap::new(),
-            host_header: None,
             ratelimit_selector: None,
             streaming_response: false,
             response_tokens: 0,
             chat_completions_request: false,
         }
     }
-    fn save_host_header(&mut self) {
-        // Save the host header to be used by filter logic later on.
-        self.host_header = self.get_http_request_header(":host");
+    fn modify_host_header(&mut self) {
+        self.set_http_request_header(":host", Some(routing::get_llm_provider().as_ref()));
     }
 
     fn delete_content_length_header(&mut self) {
@@ -87,19 +84,6 @@ impl StreamContext {
         // However, a missing Content-Length header is not grounds for bad requests given that intermediary hops could
         // manipulate the body in benign ways e.g., compression.
         self.set_http_request_header("content-length", None);
-    }
-
-    fn modify_path_header(&mut self) {
-        match self.get_http_request_header(":path") {
-            // The gateway can start gathering information necessary for routing. For now change the path to an
-            // OpenAI API path.
-            Some(path) if path == "/llmrouting" => {
-                self.set_http_request_header(":path", Some(OPENAI_CHAT_COMPLETIONS_PATH));
-                self.chat_completions_request = true;
-            }
-            // Otherwise let the filter continue.
-            _ => (),
-        }
     }
 
     fn save_ratelimit_header(&mut self) {
@@ -589,10 +573,15 @@ impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        self.save_host_header();
+        self.modify_host_header();
         self.delete_content_length_header();
-        self.modify_path_header();
         self.save_ratelimit_header();
+
+        debug!(
+            "S[{}] req_headers={:?}",
+            self.context_id,
+            self.get_http_request_headers()
+        );
 
         Action::Continue
     }

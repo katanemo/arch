@@ -20,6 +20,7 @@ http = "1.1.0"
 governor = { version = "0.6.3", default-features = false, features = ["no_std"]}
 tiktoken-rs = "0.5.9"
 acap = "0.3.0"
+rand = "0.8.5"
 
 [dev-dependencies]
 proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "main" }

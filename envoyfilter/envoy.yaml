@@ -29,19 +29,20 @@ static_resources:
                           auto_host_rewrite: true
                           cluster: openai
                           timeout: 60s
+                  - name: mistral
+                    domains:
+                      - "api.mistral.ai"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: mistral
+                          timeout: 60s
                   - name: local_service
                     domains:
                       - "*"
                     routes:
-                      - match:
-                          prefix: "/v1/chat/completions"
-                          headers:
-                            name: "Authorization"
-                            present_match: true
-                        route:
-                          auto_host_rewrite: true
-                          cluster: openai
-                          timeout: 60s
                       - match:
                           prefix: "/v1/chat/completions"
                         route:
@@ -144,6 +145,34 @@ static_resources:
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
           sni: api.openai.com
+          common_tls_context:
+            tls_params:
+              tls_minimum_protocol_version: TLSv1_2
+              tls_maximum_protocol_version: TLSv1_3
+    - name: mistral
+      connect_timeout: 5s
+      type: LOGICAL_DNS
+      lb_policy: ROUND_ROBIN
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: mistral
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: api.mistral.ai
+                      port_value: 443
+                  hostname: "api.mistral.ai"
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: api.mistral.ai
           common_tls_context:
             tls_params:
               tls_minimum_protocol_version: TLSv1_2

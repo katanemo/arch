@@ -977,6 +977,7 @@ dependencies = [
  "proxy-wasm",
  "proxy-wasm-test-framework",
  "public_types",
+ "rand",
  "serde",
  "serde_json",
  "serde_yaml",
