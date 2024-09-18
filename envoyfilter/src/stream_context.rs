@@ -18,8 +18,9 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{ChatCompletions, Message};
 use public_types::common_types::{
-    BoltFCResponse, BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
-    ZeroShotClassificationRequest, ZeroShotClassificationResponse,
+    BoltFCResponse, BoltFCToolsCall, EmbeddingType, PromptGuardRequest, PromptGuardTask,
+    ToolParameter, ToolParameters, ToolsDefinition, ZeroShotClassificationRequest,
+    ZeroShotClassificationResponse,
 };
 use public_types::configuration::{PromptTarget, PromptType};
 use std::collections::HashMap;
@@ -620,16 +621,12 @@ impl HttpContext for StreamContext {
             }
         };
 
-        let get_embeddings_input = CreateEmbeddingRequest {
-            // Need to clone into input because user_message is used below.
-            input: Box::new(CreateEmbeddingRequestInput::String(user_message.clone())),
-            model: String::from(DEFAULT_EMBEDDING_MODEL),
-            encoding_format: None,
-            dimensions: None,
-            user: None,
+        let get_prompt_guards_request = PromptGuardRequest {
+            input: user_message.clone(),
+            task: PromptGuardTask::Toxicity,
         };
 
-        let json_data: String = match serde_json::to_string(&get_embeddings_input) {
+        let json_data: String = match serde_json::to_string(&get_prompt_guards_request) {
             Ok(json_data) => json_data,
             Err(error) => {
                 panic!("Error serializing embeddings input: {}", error);
@@ -640,7 +637,7 @@ impl HttpContext for StreamContext {
             MODEL_SERVER_NAME,
             vec![
                 (":method", "POST"),
-                (":path", "/embeddings"),
+                (":path", "/guard"),
                 (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
@@ -658,24 +655,63 @@ impl HttpContext for StreamContext {
                 );
             }
         };
-        debug!(
-            "dispatched HTTP call to embedding server token_id={}",
-            token_id
-        );
 
-        let call_context = CallContext {
-            response_handler_type: ResponseHandlerType::GetEmbeddings,
-            user_message: Some(user_message),
-            prompt_target: None,
-            request_body: deserialized_body,
-            similarity_scores: None,
-        };
-        if self.callouts.insert(token_id, call_context).is_some() {
-            panic!(
-                "duplicate token_id={} in embedding server requests",
-                token_id
-            )
-        }
+        // let get_embeddings_input = CreateEmbeddingRequest {
+        //     // Need to clone into input because user_message is used below.
+        //     input: Box::new(CreateEmbeddingRequestInput::String(user_message.clone())),
+        //     model: String::from(DEFAULT_EMBEDDING_MODEL),
+        //     encoding_format: None,
+        //     dimensions: None,
+        //     user: None,
+        // };
+
+        // let json_data: String = match serde_json::to_string(&get_embeddings_input) {
+        //     Ok(json_data) => json_data,
+        //     Err(error) => {
+        //         panic!("Error serializing embeddings input: {}", error);
+        //     }
+        // };
+
+        // let token_id = match self.dispatch_http_call(
+        //     MODEL_SERVER_NAME,
+        //     vec![
+        //         (":method", "POST"),
+        //         (":path", "/embeddings"),
+        //         (":authority", MODEL_SERVER_NAME),
+        //         ("content-type", "application/json"),
+        //         ("x-envoy-max-retries", "3"),
+        //         ("x-envoy-upstream-rq-timeout-ms", "60000"),
+        //     ],
+        //     Some(json_data.as_bytes()),
+        //     vec![],
+        //     Duration::from_secs(5),
+        // ) {
+        //     Ok(token_id) => token_id,
+        //     Err(e) => {
+        //         panic!(
+        //             "Error dispatching embedding server HTTP call for get-embeddings: {:?}",
+        //             e
+        //         );
+        //     }
+        // };
+        // debug!(
+        //     "dispatched HTTP call to embedding server token_id={}",
+        //     token_id
+        // );
+
+        // let call_context = CallContext {
+        //     response_handler_type: ResponseHandlerType::GetEmbeddings,
+        //     user_message: Some(user_message),
+        //     prompt_target: None,
+        //     request_body: deserialized_body,
+        //     similarity_scores: None,
+        // };
+        // if self.callouts.insert(token_id, call_context).is_some() {
+        //     panic!(
+        //         "duplicate token_id={} in embedding server requests",
+        //         token_id
+        //     )
+        // }
 
         self.metrics.active_http_calls.increment(1);
 

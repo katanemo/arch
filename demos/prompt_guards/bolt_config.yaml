@@ -27,10 +27,6 @@ prompt_targets:
   - type: function_resolver
     name: weather_forecast
     description: This function resolver provides weather forecast information for a given city.
-    few_shot_examples:
-      - what is the weather in New York?
-      - how is the weather in San Francisco?
-      - what is the forecast in Chicago?
     parameters:
       - name: city
         required: true
