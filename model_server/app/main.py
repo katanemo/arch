@@ -2,12 +2,13 @@ import random
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
 from load_models import load_ner_models, load_transformers, load_zero_shot_models
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 import string
 import pandas as pd
 from load_models import load_sql
 import logging
 from dateparser import parse
+from network_data_generator import convert_to_ago_format
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -254,14 +255,20 @@ async def interface_down_pkt_drop(req: PacketDropCorrelationRequest, res: Respon
     # Step 1: Convert the from_time natural language string to a timestamp if provided
     if req.from_time:
         # Use `dateparser` to parse natural language timeframes
-        parsed_time = parse(req.from_time, settings={'RELATIVE_BASE': datetime.datetime.now()})
+        logger.info(f"{'* ' * 50}\n\nCaptured from time: {req.from_time}\n\n")
+        parsed_time = parse(req.from_time, settings={'RELATIVE_BASE': datetime.now()})
         if not parsed_time:
-            return {"error": "Invalid from_time format. Please provide a valid time description such as 'past 7 days' or 'since last month'."}
+            conv_time = convert_to_ago_format(req.from_time)
+            if conv_time:
+                parsed_time = parse(conv_time, settings={'RELATIVE_BASE': datetime.now()})
+            else:
+                return {"error": "Invalid from_time format. Please provide a valid time description such as 'past 7 days' or 'since last month'."}
+        logger.info(f"\n\nConverted from time: {parsed_time}\n\n{'* ' * 50}\n\n")
         from_time = parsed_time
         logger.info(f"Using parsed from_time: {from_time}")
     else:
         # If no from_time is provided, use a default value (e.g., the past 7 days)
-        from_time = datetime.datetime.now() - datetime.timedelta(days=7)
+        from_time = datetime.now() - timedelta(days=7)
         logger.info(f"Using default from_time: {from_time}")
 
     # Step 2: Build the dynamic SQL query based on the optional filters

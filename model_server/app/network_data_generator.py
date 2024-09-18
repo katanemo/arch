@@ -1,6 +1,32 @@
 import pandas as pd
 import random
 from datetime import datetime, timedelta, timezone
+import re
+
+# Function to convert natural language time expressions to "X {time} ago" format
+def convert_to_ago_format(expression):
+    # Define patterns for different time units
+    time_units = {
+        'seconds': r'seconds',
+        'minutes': r'minutes',
+        'hours': r'hours',
+        'days': r'days',
+        'weeks': r'weeks',
+        'months': r'months',
+        'years': r'years'
+    }
+
+    # Iterate over each time unit and create regex for each phrase format
+    for unit, pattern in time_units.items():
+        # Handle "for the past X {unit}"
+        match = re.search(fr'(\d+) {pattern}', expression)
+        if match:
+            quantity = match.group(1)
+            return f"{quantity} {unit} ago"
+
+    # If the format is not recognized, return None or raise an error
+    return None
+
 
 # Function to generate random MAC addresses
 def random_mac():
