@@ -2,6 +2,18 @@ default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
 
+model_host_preferences:
+  - name: jailbreak
+    # if host is not specified, it will be run on the gpu if its available otherwise it will run on cpu
+    host_preference:
+      - gpu
+      - cpu
+    # revision: "refs/pr13"
+  - name: toxic
+    host_preference:
+      - cpu
+  - name: arch-fc
+    host_preference: ec2
 
 # should not be here
 embedding_provider:
