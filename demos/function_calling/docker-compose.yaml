@@ -94,8 +94,7 @@ services:
       - "18080:8080"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
-      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1/chat/completions
-
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
   prometheus:
     image: prom/prometheus
     container_name: prometheus

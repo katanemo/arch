@@ -56,6 +56,7 @@ pub struct StreamContext {
     streaming_response: bool,
     response_tokens: usize,
     chat_completions_request: bool,
+    llm_provider: Option<&'static LlmProvider<'static>>,
 }
 
 impl StreamContext {
@@ -73,16 +74,22 @@ impl StreamContext {
             streaming_response: false,
             response_tokens: 0,
             chat_completions_request: false,
+            llm_provider: None,
         }
     }
-    fn modify_host_header(&mut self, llm_provider: &LlmProvider) {
-        self.set_http_request_header(":host", Some(llm_provider.hostname()));
+    fn llm_provider(&self) -> &LlmProvider {
+        self.llm_provider
+            .expect("the provider should be set when asked for it")
     }
 
-    fn modify_auth_headers(&mut self, llm_provider: &LlmProvider) -> Result<(), String> {
+    fn modify_host_header(&mut self) {
+        self.set_http_request_header(":host", Some(self.llm_provider().hostname()));
+    }
+
+    fn modify_auth_headers(&mut self) -> Result<(), String> {
         let llm_provider_api_key_value = self
-            .get_http_request_header(llm_provider.api_key_header())
-            .ok_or(format!("missing {} api key", llm_provider))?;
+            .get_http_request_header(self.llm_provider().api_key_header())
+            .ok_or(format!("missing {} api key", self.llm_provider()))?;
 
         let authorization_header_value = format!("Bearer {}", llm_provider_api_key_value);
 
@@ -540,7 +547,7 @@ impl StreamContext {
         });
 
         let chat_completions_request: ChatCompletionsRequest = ChatCompletionsRequest {
-            model: GPT_35_TURBO.to_string(),
+            model: callout_context.request_body.model,
             messages,
             tools: None,
             stream: callout_context.request_body.stream,
@@ -595,10 +602,10 @@ impl HttpContext for StreamContext {
         let provider_hint = self
             .get_http_request_header("x-bolt-deterministic-provider")
             .is_some();
-        let llm_provider = routing::get_llm_provider(provider_hint);
+        self.llm_provider = Some(routing::get_llm_provider(provider_hint));
 
-        self.modify_host_header(llm_provider);
-        if let Err(error) = self.modify_auth_headers(llm_provider) {
+        self.modify_host_header();
+        if let Err(error) = self.modify_auth_headers() {
             self.send_server_error(error, Some(StatusCode::BAD_REQUEST));
         }
         self.delete_content_length_header();
@@ -649,6 +656,9 @@ impl HttpContext for StreamContext {
                     return Action::Pause;
                 }
             };
+
+        // Set the model based on the chosen LLM Provider
+        deserialized_body.model = String::from(self.llm_provider().choose_model());
 
         self.streaming_response = deserialized_body.stream;
         if deserialized_body.stream && deserialized_body.stream_options.is_none() {

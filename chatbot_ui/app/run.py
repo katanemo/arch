@@ -13,8 +13,8 @@ import os
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1/chat/completions")
-
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+CHAT_COMPLETION_ENDPOINT = "http://bolt:10000/v1/chat/completions"
 
 class Message(BaseModel):
 
@@ -33,12 +33,10 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=12
     }
 
     if OPENAI_API_KEY is not None and OPENAI_API_KEY != "":
-        header["Authorization"] = f"Bearer {OPENAI_API_KEY}"
+        header["x-bolt-openai-api-key"] = f"{OPENAI_API_KEY}"
+    if OPENAI_API_KEY is not None and OPENAI_API_KEY != "":
+        header["x-bolt-mistral-api-key"] = f"{MISTRAL_API_KEY}"
 
-    if OPENAI_API_KEY is None or OPENAI_API_KEY == "":
-        if CHAT_COMPLETION_ENDPOINT.startswith("https://api.openai.com"):
-          logger.error("No OpenAI API Key found. Please create .env file and set OPENAI_API_KEY env var !")
-          return None
     try:
         async with async_timeout.timeout(delay=delay):
             async with httpx.AsyncClient(headers=header) as aio_client:
@@ -50,7 +48,6 @@ async def make_completion(messages:List[Message], nb_retries:int=3, delay:int=12
                         resp = await aio_client.post(
                             url = CHAT_COMPLETION_ENDPOINT,
                             json = {
-                                "model": "gpt-3.5-turbo",
                                 "messages": messages
                             },
                             timeout=delay
