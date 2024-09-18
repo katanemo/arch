@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
-  pub prompt_target_intent_matching_threshold: Option<f64>,
+    pub prompt_target_intent_matching_threshold: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,13 +21,18 @@ pub struct Configuration {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PromptGuards {
-    pub input_guard: Vec<InputGuard>,
+    pub input_guards: InputGuards,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InputGuard {
-    pub name: String,
-    pub on_exception_message: String,
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct InputGuards {
+    pub jailbreak: Option<GuardOptions>,
+    pub toxicity: Option<GuardOptions>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GuardOptions {
+    pub on_exception_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
