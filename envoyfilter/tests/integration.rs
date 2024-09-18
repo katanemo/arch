@@ -33,8 +33,11 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
             Some("x-bolt-deterministic-provider"),
         )
         .returning(Some("true"))
-        // The value of the host header is random, so it is not specified in the expectation
-        .expect_replace_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"), None)
+        .expect_add_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-llm-provider"),
+            Some("openai"),
+        )
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some("x-bolt-openai-api-key"),
@@ -42,7 +45,7 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .returning(Some("api-key"))
         .expect_replace_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("authorization"),
+            Some("Authorization"),
             Some("Bearer api-key"),
         )
         .expect_remove_header_map_value(

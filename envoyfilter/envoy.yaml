@@ -17,48 +17,32 @@ static_resources:
               scheme_header_transformation:
                 scheme_to_overwrite: https
               route_config:
-                name: local_routes
-                virtual_hosts:
-                  - name: openai
-                    domains:
-                      - "api.openai.com"
-                    routes:
-                      - match:
-                          prefix: "/"
-                        route:
-                          auto_host_rewrite: true
-                          cluster: openai
-                          timeout: 60s
-                  - name: mistral
-                    domains:
-                      - "api.mistral.ai"
-                    routes:
-                      - match:
-                          prefix: "/"
-                        route:
-                          auto_host_rewrite: true
-                          cluster: mistral
-                          timeout: 60s
-                  - name: local_service
+                  - name: bolt
                     domains:
                       - "*"
                     routes:
                       - match:
-                          prefix: "/v1/chat/completions"
+                          headers:
+                            - name: "x-bolt-llm-provider"
+                              string_match:
+                                exact: openai
                         route:
                           auto_host_rewrite: true
-                          cluster: mistral_7b_instruct
+                          cluster: openai
+                          timeout: 60s
+                      - match:
+                          headers:
+                            - name: "x-bolt-llm-provider"
+                              string_match:
+                                exact: mistral
+                        route:
+                          auto_host_rewrite: true
+                          cluster: mistral
                           timeout: 60s
                       - match:
                           prefix: "/embeddings"
                         route:
                           cluster: embeddingserver
-                      - match:
-                          prefix: "/"
-                        direct_response:
-                          status: 200
-                          body:
-                            inline_string: "Inspect the HTTP header: custom-header.\n"
               http_filters:
                 - name: envoy.filters.http.wasm
                   typed_config:

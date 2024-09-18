@@ -1,6 +1,6 @@
 use crate::consts::{
-    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, BOLT_ROUTING_HEADER, DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
@@ -85,8 +85,8 @@ impl StreamContext {
             .expect("the provider should be set when asked for it")
     }
 
-    fn modify_host_header(&mut self) {
-        self.set_http_request_header(":host", Some(self.llm_provider().hostname()));
+    fn add_routing_header(&mut self) {
+        self.add_http_request_header(BOLT_ROUTING_HEADER, self.llm_provider().as_ref());
     }
 
     fn modify_auth_headers(&mut self) -> Result<(), String> {
@@ -619,7 +619,7 @@ impl HttpContext for StreamContext {
             .is_some();
         self.llm_provider = Some(routing::get_llm_provider(provider_hint));
 
-        self.modify_host_header();
+        self.add_routing_header();
         if let Err(error) = self.modify_auth_headers() {
             self.send_server_error(error, Some(StatusCode::BAD_REQUEST));
         }

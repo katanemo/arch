@@ -8,3 +8,4 @@ pub const GPT_35_TURBO: &str = "gpt-3.5-turbo";
 pub const BOLT_FC_CLUSTER: &str = "bolt_fc_1b";
 pub const BOLT_FC_REQUEST_TIMEOUT_MS: u64 = 120000; // 2 minutes
 pub const MODEL_SERVER_NAME: &str = "model_server";
+pub const BOLT_ROUTING_HEADER: &str = "x-bolt-llm-provider";
