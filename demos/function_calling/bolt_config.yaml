@@ -23,10 +23,6 @@ prompt_targets:
   - type: function_resolver
     name: weather_forecast
     description: This function resolver provides weather forecast information for a given city.
-    few_shot_examples:
-      - what is the weather in New York?
-      - how is the weather in San Francisco?
-      - what is the forecast in Chicago?
     parameters:
       - name: city
         required: true
@@ -42,3 +38,16 @@ prompt_targets:
       You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
       - Use farenheight for temperature
       - Use miles per hour for wind speed
+  - type: function_resolver
+    name: insurance_claim_details
+    description: This function resolver provides insurance claim details for a given policy number.
+    parameters:
+      - name: policy_number
+        required: true
+        description: The policy number for which the insurance claim details are requested.
+    endpoint:
+      cluster: weatherhost
+      path: /insurance_claim_details
+    system_prompt: |
+      You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
+      - Use policy number to retrieve insurance claim details

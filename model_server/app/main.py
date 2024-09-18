@@ -143,3 +143,19 @@ async def weather(req: WeatherRequest, res: Response):
        })
 
     return weather_forecast
+
+class InsuranceClaimDetailsRequest(BaseModel):
+  policy_number: str
+
+@app.post("/insurance_claim_details")
+async def insurance_claim_details(req: InsuranceClaimDetailsRequest, res: Response):
+
+    claim_details = {
+        "policy_number": req.policy_number,
+        "claim_status": "Approved",
+        "claim_amount": random.randrange(1000, 10000),
+        "claim_date": str(date.today() - timedelta(days=random.randrange(1, 30))),
+        "claim_reason": "Car Accident",
+    }
+
+    return claim_details
