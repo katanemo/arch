@@ -7,3 +7,4 @@ Technical Architecture
   intro/terminology
   intro/threading_model
   listeners/listeners
+  prompt_processing/prompt_processing

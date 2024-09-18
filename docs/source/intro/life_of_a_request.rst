@@ -48,7 +48,7 @@ traverse multiple Arch gateways:
 Configuration
 -------------
 
-We only support a static bootstrap configuration file for simplicity today:
+Today, only support a static bootstrap configuration file for simplicity today:
 
 .. literalinclude:: /_config/getting-started.yml
     :language: yaml
@@ -77,7 +77,7 @@ A brief outline of the life cycle of a request and response using the example co
 5. **API Call Execution**:  
    Arch routes the prompt to the appropriate backend API or function call. If an endpoint cluster is identified, load balancing is performed, circuit breakers are checked, and the request is proxied to the upstream endpoint. For more details on routing and load balancing, refer to the [Envoy routing documentation](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/intro/arch_overview).
 
-6. **Summarization by Upstream LLM**:  
+6. **Default Summarization by Upstream LLM**:  
    By default, if no specific endpoint processing is needed, the prompt is sent to an upstream LLM for summarization. This ensures that responses are concise and relevant, enhancing user experience in RAG (Retrieval-Augmented Generation) and agentic applications.
 
 7. **Error Handling and Forwarding**:  

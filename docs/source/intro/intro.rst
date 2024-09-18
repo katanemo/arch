@@ -9,5 +9,3 @@ Introduction
   what_is_arch
   architecture/architecture
   life_of_a_request
-
-
