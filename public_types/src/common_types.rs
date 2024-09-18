@@ -42,6 +42,9 @@ pub struct ToolParameter {
     pub description: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "enum")]
+    pub enum_values: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,12 +94,21 @@ pub mod open_ai {
     use super::ToolsDefinition;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct ChatCompletions {
+    pub struct ChatCompletionsRequest {
         #[serde(default)]
         pub model: String,
         pub messages: Vec<Message>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tools: Option<Vec<ToolsDefinition>>,
+        #[serde(default)]
+        pub stream: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub stream_options: Option<StreamOptions>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct StreamOptions {
+        pub include_usage: bool,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,6 +117,33 @@ pub mod open_ai {
         pub content: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub model: Option<String>,
+    }
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ChatCompletionsResponse {
+        pub usage: Usage,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Usage {
+        pub completions_tokens: usize,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ChatCompletionChunkResponse {
+        pub model: String,
+        pub choices: Vec<Choice>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Choice {
+        pub delta: Delta,
+        // TODO: could this be an enum?
+        pub finish_reason: Option<String>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Delta {
+        pub content: Option<String>,
     }
 }
 
@@ -137,4 +176,12 @@ pub enum PromptGuardTask {
 pub struct PromptGuardRequest {
     pub input: String,
     pub task: PromptGuardTask,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PromptGuardResponse {
+    pub toxic_prob: Option<f64>,
+    pub jailbreak_prob: Option<f64>,
+    pub toxic_verdict: Option<bool>,
+    pub jailbreak_verdict: Option<bool>,
 }
