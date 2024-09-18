@@ -4,6 +4,7 @@ use proxy_wasm::types::*;
 
 mod consts;
 mod filter_context;
+mod llm_providers;
 mod ratelimit;
 mod routing;
 mod stats;

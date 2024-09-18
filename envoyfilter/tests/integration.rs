@@ -25,21 +25,38 @@ fn wasm_module() -> String {
     wasm_file.to_str().unwrap().to_string()
 }
 
-fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
-    module
-        .call_proxy_on_context_create(http_context, filter_context)
-        .execute_and_expect(ReturnType::None)
-        .unwrap();
-
-    // Request Headers
+fn request_headers_expectations(module: &mut Tester, http_context: i32) {
     module
         .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-deterministic-provider"),
+        )
+        .returning(Some("true"))
         // The value of the host header is random, so it is not specified in the expectation
         .expect_replace_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"), None)
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
+            Some("x-bolt-openai-api-key"),
+        )
+        .returning(Some("api-key"))
+        .expect_replace_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("authorization"),
+            Some("Bearer api-key"),
+        )
+        .expect_remove_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-openai-api-key"),
+        )
+        .expect_remove_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-mistral-api-key"),
+        )
+        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-ratelimit-selector"),
         )
         .returning(Some("selector-key"))
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
@@ -49,6 +66,15 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
+}
+
+fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
+    module
+        .call_proxy_on_context_create(http_context, filter_context)
+        .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    request_headers_expectations(module, http_context);
 
     // Request Body
     let chat_completions_request_body = "\
@@ -77,8 +103,8 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(1))
-        .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
 
@@ -109,6 +135,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(2))
         .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -232,22 +259,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        // The value of the host header is random, so it is not specified in the expectation
-        .expect_replace_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"), None)
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(None)
-        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
-        .returning(None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(&mut module, http_context);
 
     // Request Body
     let chat_completions_request_body = "\
@@ -314,22 +326,7 @@ fn bad_request_to_open_ai_chat_completions() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        // The value of the host header is random, so it is not specified in the expectation
-        .expect_replace_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"), None)
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(None)
-        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
-        .returning(None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(&mut module, http_context);
 
     // Request Body
     let incomplete_chat_completions_request_body = "\
@@ -565,7 +562,6 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
-        // .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 }

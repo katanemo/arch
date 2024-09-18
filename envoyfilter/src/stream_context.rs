@@ -4,6 +4,7 @@ use crate::consts::{
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
+use crate::llm_providers::{LlmProvider, LlmProviders};
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
@@ -74,8 +75,25 @@ impl StreamContext {
             chat_completions_request: false,
         }
     }
-    fn modify_host_header(&mut self) {
-        self.set_http_request_header(":host", Some(routing::get_llm_provider().as_ref()));
+    fn modify_host_header(&mut self, llm_provider: &LlmProvider) {
+        self.set_http_request_header(":host", Some(llm_provider.hostname()));
+    }
+
+    fn modify_auth_headers(&mut self, llm_provider: &LlmProvider) -> Result<(), String> {
+        let llm_provider_api_key_value = self
+            .get_http_request_header(llm_provider.api_key_header())
+            .ok_or(format!("missing {} api key", llm_provider))?;
+
+        let authorization_header_value = format!("Bearer {}", llm_provider_api_key_value);
+
+        self.set_http_request_header("authorization", Some(&authorization_header_value));
+
+        // sanitize passed in api keys
+        for provider in LlmProviders::VARIANTS.iter() {
+            self.set_http_request_header(provider.api_key_header(), None);
+        }
+
+        Ok(())
     }
 
     fn delete_content_length_header(&mut self) {
@@ -211,6 +229,7 @@ impl StreamContext {
             token_id
         );
 
+        self.metrics.active_http_calls.increment(1);
         callout_context.response_handler_type = ResponseHandlerType::ZeroShotIntent;
 
         if self.callouts.insert(token_id, callout_context).is_some() {
@@ -379,6 +398,7 @@ impl StreamContext {
                     BOLT_FC_CLUSTER, token_id
                 );
 
+                self.metrics.active_http_calls.increment(1);
                 callout_context.response_handler_type = ResponseHandlerType::FunctionResolver;
                 callout_context.prompt_target = Some(prompt_target);
                 if self.callouts.insert(token_id, callout_context).is_some() {
@@ -386,7 +406,6 @@ impl StreamContext {
                 }
             }
         }
-        self.metrics.active_http_calls.increment(1);
     }
 
     fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -573,7 +592,15 @@ impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        self.modify_host_header();
+        let provider_hint = self
+            .get_http_request_header("x-bolt-deterministic-provider")
+            .is_some();
+        let llm_provider = routing::get_llm_provider(provider_hint);
+
+        self.modify_host_header(llm_provider);
+        if let Err(error) = self.modify_auth_headers(llm_provider) {
+            self.send_server_error(error, Some(StatusCode::BAD_REQUEST));
+        }
         self.delete_content_length_header();
         self.save_ratelimit_header();
 

@@ -1,24 +1,13 @@
-const OPEN_AI_PROVIDER: LlmProvider = LlmProvider::OpenAi("api.openai.com");
-const MISTRAL_PROVIDER: LlmProvider = LlmProvider::Mistral("api.mistral.ai");
+use crate::llm_providers::{LlmProvider, LlmProviders};
+use rand::{seq::SliceRandom, thread_rng};
 
-pub enum LlmProvider<'hostname> {
-    OpenAi(&'hostname str),
-    Mistral(&'hostname str),
-}
-
-impl AsRef<str> for LlmProvider<'_> {
-    fn as_ref(&self) -> &str {
-        match self {
-            LlmProvider::OpenAi(hostname) => hostname,
-            LlmProvider::Mistral(hostname) => hostname,
-        }
-    }
-}
-
-pub fn get_llm_provider<'hostname>() -> LlmProvider<'hostname> {
-    if rand::random() {
-        OPEN_AI_PROVIDER
+pub fn get_llm_provider<'hostname>(deterministic: bool) -> &'static LlmProvider<'hostname> {
+    if deterministic {
+        &LlmProviders::OPENAI_PROVIDER
     } else {
-        MISTRAL_PROVIDER
+        let mut rng = thread_rng();
+        LlmProviders::VARIANTS
+            .choose(&mut rng)
+            .expect("There should always be at least one llm provider")
     }
 }
