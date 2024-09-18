@@ -5,7 +5,7 @@ torch
 uvicorn
 gliner
 transformers
-
+pyyaml
 # guard inference packages
 onnxruntime
 optimum-intel

@@ -13,28 +13,55 @@ from utils import is_intel_cpu, GuardHandler, split_text_into_chunks
 import json
 import string
 import torch
+import yaml
 
 transformers = load_transformers()
 ner_models = load_ner_models()
 zero_shot_models = load_zero_shot_models()
 
-
+with open('bolt_config.yaml', 'r') as file:
+    config = yaml.safe_load(file)
 if is_intel_cpu():
-    hardware_config = "intel_cpu"
+    cpu = "intel_cpu"
 else:
-    hardware_config = "non_intel_cpu"
+    cpu = "non_intel_cpu"
 with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
-toxic_hardware = 'gpu' if torch.cuda.is_available() else hardware_config
+if 'prompt_guards' in config.keys():
+    if len(config['prompt_guards']['input_guard']) == 2:
+        task = 'both'
+        jailbreak_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'jailbreak'][0]
+        toxic_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'jailbreak'][0]
+        if jailbreak_hardware == 'cpu':
+            jailbreak_hardware = cpu
+        if toxic_hardware == 'cpu':
+            toxic_hardware = cpu
+        toxic_model = load_toxic_model(
+            guard_model_config["toxic"][hardware_config], toxic_hardware
+        )
+        jailbreak_model = load_jailbreak_model(
+            guard_model_config["jailbreak"][hardware_config], jailbreak_hardware
+        )
 
+    else:
+        task = config['prompt_guards']['input_guard'][0]['name']
 
-toxic_model = load_toxic_model(
-    guard_model_config["toxic"][hardware_config], toxic_hardware
-)
-jailbreak_model = load_jailbreak_model(
-    guard_model_config["jailbreak"][hardware_config], hardware_config
-)
+        hardware = [item for item in config['model_host_preferences'] if item['name'] == task][0]
+        if hardware == 'cpu':
+            hardware = cpu
+        if task == 'toxic':
+            toxic_model = load_toxic_model(
+                guard_model_config["toxic"][hardware_config], hardware
+            )
+            jailbreak_model = None
+        elif task == 'jailbreak':
+            jailbreak_model = load_jailbreak_model(
+                guard_model_config["jailbreak"][hardware_config], hardware
+            )
+            toxic_model = None
+    
+
 guard_handler = GuardHandler(toxic_model, jailbreak_model)
 
 app = FastAPI()
