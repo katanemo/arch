@@ -5,3 +5,4 @@ torch
 uvicorn
 gliner
 pandas
+dateparser

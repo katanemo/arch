@@ -7,7 +7,7 @@ import string
 import pandas as pd
 from load_models import load_sql
 import logging
-
+from dateparser import parse
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -234,3 +234,118 @@ async def aggregate_stats(req: AggregateStats, res: Response):
     result_df = pd.read_sql_query(query, conn)
     result = result_df.to_dict(orient='records')
     return result
+
+class PacketDropCorrelationRequest(BaseModel):
+    from_time: str = None  # Optional natural language timeframe
+    ifname: str = None     # Optional interface name filter
+    region: str = None     # Optional region filter
+    min_in_errors: int = None
+    max_in_errors: int = None
+    min_out_errors: int = None
+    max_out_errors: int = None
+    min_in_discards: int = None
+    max_in_discards: int = None
+    min_out_discards: int = None
+    max_out_discards: int = None
+
+
+@app.post("/interface_down_pkt_drop")
+async def interface_down_pkt_drop(req: PacketDropCorrelationRequest, res: Response):
+    # Step 1: Convert the from_time natural language string to a timestamp if provided
+    if req.from_time:
+        # Use `dateparser` to parse natural language timeframes
+        parsed_time = parse(req.from_time, settings={'RELATIVE_BASE': datetime.datetime.now()})
+        if not parsed_time:
+            return {"error": "Invalid from_time format. Please provide a valid time description such as 'past 7 days' or 'since last month'."}
+        from_time = parsed_time
+        logger.info(f"Using parsed from_time: {from_time}")
+    else:
+        # If no from_time is provided, use a default value (e.g., the past 7 days)
+        from_time = datetime.datetime.now() - datetime.timedelta(days=7)
+        logger.info(f"Using default from_time: {from_time}")
+
+    # Step 2: Build the dynamic SQL query based on the optional filters
+    filters = []
+    params = {"from_time": from_time}
+
+    if req.ifname:
+        filters.append("i.ifname = :ifname")
+        params["ifname"] = req.ifname
+
+    if req.region:
+        filters.append("d.region = :region")
+        params["region"] = req.region
+
+    if req.min_in_errors is not None:
+        filters.append("i.in_errors >= :min_in_errors")
+        params["min_in_errors"] = req.min_in_errors
+
+    if req.max_in_errors is not None:
+        filters.append("i.in_errors <= :max_in_errors")
+        params["max_in_errors"] = req.max_in_errors
+
+    if req.min_out_errors is not None:
+        filters.append("i.out_errors >= :min_out_errors")
+        params["min_out_errors"] = req.min_out_errors
+
+    if req.max_out_errors is not None:
+        filters.append("i.out_errors <= :max_out_errors")
+        params["max_out_errors"] = req.max_out_errors
+
+    if req.min_in_discards is not None:
+        filters.append("i.in_discards >= :min_in_discards")
+        params["min_in_discards"] = req.min_in_discards
+
+    if req.max_in_discards is not None:
+        filters.append("i.in_discards <= :max_in_discards")
+        params["max_in_discards"] = req.max_in_discards
+
+    if req.min_out_discards is not None:
+        filters.append("i.out_discards >= :min_out_discards")
+        params["min_out_discards"] = req.min_out_discards
+
+    if req.max_out_discards is not None:
+        filters.append("i.out_discards <= :max_out_discards")
+        params["max_out_discards"] = req.max_out_discards
+
+    # Join the filters using AND
+    where_clause = " AND ".join(filters)
+    if where_clause:
+        where_clause = "AND " + where_clause
+
+    # Step 3: Query packet errors and flows from interfacestats and ts_flow
+    query = f"""
+    SELECT
+      d.switchip AS device_ip_address,
+      i.in_errors,
+      i.in_discards,
+      i.out_errors,
+      i.out_discards,
+      i.ifname,
+      t.src_addr,
+      t.dst_addr,
+      t.time AS flow_time,
+      i.time AS interface_time
+    FROM
+      device d
+    INNER JOIN
+      interfacestats i
+      ON d.device_mac_address = i.device_mac_address
+    INNER JOIN
+      ts_flow t
+      ON d.switchip = t.sampler_address
+    WHERE
+      i.time >= :from_time  -- Using the converted timestamp
+      {where_clause}
+    ORDER BY
+      i.time;
+    """
+
+    correlated_data = pd.read_sql_query(query, conn, params=params)
+    
+    if correlated_data.empty:
+        return {"message": "No correlated packet drops found"}
+
+    logger.info(f"Correlated Packet Drop Data: {correlated_data}")
+
+    return correlated_data.to_dict(orient='records')
