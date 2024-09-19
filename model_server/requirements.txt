@@ -14,3 +14,5 @@ optimum-intel
 openvino
 psutil
 EETQ
+pandas
+dateparser
