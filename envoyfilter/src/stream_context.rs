@@ -21,7 +21,7 @@ use public_types::common_types::open_ai::{
     StreamOptions,
 };
 use public_types::common_types::{
-    BoltFCResponse, BoltFCToolsCall, EmbeddingType, PromptGuardRequest, PromptGuardResponse,
+    BoltFCToolsCall, EmbeddingType, PromptGuardRequest, PromptGuardResponse,
     PromptGuardTask, ToolParameter, ToolParameters, ToolsDefinition, ZeroShotClassificationRequest,
     ZeroShotClassificationResponse,
 };
@@ -714,7 +714,7 @@ impl StreamContext {
         let call_context = CallContext {
             response_handler_type: ResponseHandlerType::GetEmbeddings,
             user_message: Some(user_message),
-            prompt_target: None,
+            prompt_target_name: None,
             request_body: callout_context.request_body,
             similarity_scores: None,
         };
@@ -805,7 +805,7 @@ impl HttpContext for StreamContext {
                 let callout_context = CallContext {
                     response_handler_type: ResponseHandlerType::ArchGuard,
                     user_message: Some(user_message),
-                    prompt_target: None,
+                    prompt_target_name: None,
                     request_body: deserialized_body,
                     similarity_scores: None,
                 };
@@ -826,7 +826,7 @@ impl HttpContext for StreamContext {
                 let callout_context = CallContext {
                     response_handler_type: ResponseHandlerType::ArchGuard,
                     user_message: Some(user_message),
-                    prompt_target: None,
+                    prompt_target_name: None,
                     request_body: deserialized_body,
                     similarity_scores: None,
                 };
