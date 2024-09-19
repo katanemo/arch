@@ -62,15 +62,6 @@ pub struct ToolsDefinition {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BoltFCResponse {
-    pub model: String,
-    pub message: open_ai::Message,
-    pub done_reason: String,
-    pub done: bool,
-    pub resolver_name: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum IntOrString {
     Integer(i32),
