@@ -73,3 +73,7 @@ prompt_targets:
       path: /aggregate_stats
     system_prompt: |
       You help calculate summary statistics for groups of employees. First, organize the employees by the specified grouping (e.g., department, location, or position). Then, compute the requested statistic (e.g., total, average, minimum, or maximum) for a specific attribute like salary, experience, or rating.
+
+clusters:
+  databasehost:
+    address: model_server

@@ -129,3 +129,7 @@ prompt_targets:
       path: /packet_errors_impact_flow
     system_prompt: |
       You are responsible for finding and correlating packet errors with the packet flows based on timestamps given in the data. This correlation helps identify if packet flows are impacted by packet errors.
+
+clusters:
+  databasehost:
+    address: model_server
