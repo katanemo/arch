@@ -21,7 +21,7 @@ use public_types::common_types::open_ai::{
     StreamOptions,
 };
 use public_types::common_types::{
-    BoltFCResponse, BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
+    BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
     ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
 use public_types::configuration::{Overrides, PromptTarget, PromptType};
@@ -427,9 +427,9 @@ impl StreamContext {
         let body_str = String::from_utf8(body).unwrap();
         debug!("function_resolver response str: {:?}", body_str);
 
-        let mut boltfc_response: BoltFCResponse = serde_json::from_str(&body_str).unwrap();
+        let boltfc_response: ChatCompletionsResponse = serde_json::from_str(&body_str).unwrap();
 
-        let boltfc_response_str = boltfc_response.message.content.as_ref().unwrap();
+        let boltfc_response_str = boltfc_response.choices[0].message.content.as_ref().unwrap();
 
         let tools_call_response: BoltFCToolsCall = match serde_json::from_str(boltfc_response_str) {
             Ok(fc_resp) => fc_resp,
@@ -439,7 +439,6 @@ impl StreamContext {
                 // Let's send the response back to the user to initalize lightweight dialog for parameter collection
 
                 // add resolver name to the response so the client can send the response back to the correct resolver
-                boltfc_response.resolver_name = Some(callout_context.prompt_target_name.unwrap());
                 info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
                 let bolt_fc_dialogue_message = serde_json::to_string(&boltfc_response).unwrap();
                 self.send_http_response(
@@ -826,7 +825,7 @@ impl HttpContext for StreamContext {
                     }
                 };
 
-            self.response_tokens += chat_completions_response.usage.completions_tokens;
+            self.response_tokens += chat_completions_response.usage.completion_tokens;
         }
 
         debug!(

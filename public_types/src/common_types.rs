@@ -118,24 +118,34 @@ pub mod open_ai {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub model: Option<String>,
     }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Choice {
+        pub finish_reason: String,
+        pub index: usize,
+        pub message: Message,
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsResponse {
         pub usage: Usage,
+        pub choices: Vec<Choice>,
+        pub model: String
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Usage {
-        pub completions_tokens: usize,
+        pub completion_tokens: usize,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionChunkResponse {
         pub model: String,
-        pub choices: Vec<Choice>,
+        pub choices: Vec<ChunkChoice>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct Choice {
+    pub struct ChunkChoice {
         pub delta: Delta,
         // TODO: could this be an enum?
         pub finish_reason: Option<String>,
