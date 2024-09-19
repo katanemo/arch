@@ -136,48 +136,6 @@ static_resources:
                       address: model_server
                       port_value: 80
                   hostname: "model_server"
-    - name: weatherhost
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: weatherhost
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: model_server
-                      port_value: 80
-                  hostname: "model_server"
-    - name: nerhost
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: nerhost
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: model_server
-                      port_value: 80
-                  hostname: "model_server"
-    - name: databasehost
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: databasehost
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: model_server
-                      port_value: 80
-                  hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS
