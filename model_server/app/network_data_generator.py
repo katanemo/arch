@@ -7,17 +7,27 @@ import re
 def convert_to_ago_format(expression):
     # Define patterns for different time units
     time_units = {
-        'seconds': r'seconds',
-        'minutes': r'minutes',
-        'hours': r'hours',
-        'days': r'days',
-        'weeks': r'weeks',
-        'months': r'months',
-        'years': r'years'
+        r'seconds': 'seconds',
+        r'minutes': 'minutes',
+        r'mins': 'mins',
+        r'hrs': 'hrs',
+        r'hours': 'hours',
+        r'hour': 'hour',
+        r'hr': 'hour',
+        r'days': 'days',
+        r'day': 'day',
+        r'weeks': 'weeks',
+        r'week': 'week',
+        r'months': 'months',
+        r'month': 'month',
+        r'years': 'years',
+        r'yrs': 'years',
+        r'year': 'year',
+        r'yr': 'year',
     }
 
     # Iterate over each time unit and create regex for each phrase format
-    for unit, pattern in time_units.items():
+    for pattern, unit in time_units.items():
         # Handle "for the past X {unit}"
         match = re.search(fr'(\d+) {pattern}', expression)
         if match:
@@ -58,7 +68,7 @@ def generate_interface_stats_data(conn, device_df, n=1000):
     for _ in range(n):
         device_mac = random.choice(device_df['device_mac_address'])
         ifname = random.choice(['eth0', 'eth1', 'eth2', 'eth3'])
-        time = datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 1440))  # random timestamps in the past day
+        time = datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 1440 * 5))  # random timestamps in the past 5 day
         in_discards = random.randint(0, 1000)
         in_errors = random.randint(0, 500)
         out_discards = random.randint(0, 800)
@@ -79,7 +89,7 @@ def generate_interface_stats_data(conn, device_df, n=1000):
         })
     df = pd.DataFrame(interface_stats_data)
     df.to_sql('interfacestats', conn, index=False)
-    return 
+    return
 
 # Generate synthetic data for the ts_flow table
 def generate_flow_data(conn, device_df, n=1000):
@@ -97,7 +107,7 @@ def generate_flow_data(conn, device_df, n=1000):
         flow_end = int((datetime.now() - timedelta(days=random.randint(1, 30))).timestamp())
         bytes_transferred = random.randint(1000, 100000)
         packets = random.randint(1, 1000)
-        flow_time = datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 1440))  # random flow time
+        flow_time = datetime.now(timezone.utc) - timedelta(minutes=random.randint(0, 1440 * 5))  # random flow time
 
         flow_data.append({
             'sampler_address': sampler_address,
@@ -116,4 +126,4 @@ def generate_flow_data(conn, device_df, n=1000):
         })
     df = pd.DataFrame(flow_data)
     df.to_sql('ts_flow', conn, index=False)
-    return 
+    return

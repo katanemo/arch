@@ -1,5 +1,5 @@
 # Function calling
-This demo shows how you can use intelligent prompt gateway to do function calling. This demo assumes you are using ollama running natively. If you want to run ollama running inside docker then please update ollama endpoint in docker-compose file.
+This demo shows how you can use intelligent prompt gateway to act a copilot for calling the correct proc by capturing the required and optional parametrs from the prompt. This demo assumes you are using ollama running natively. If you want to run ollama running inside docker then please update ollama endpoint in docker-compose file.
 
 # Startig the demo
 1. Ensure that submodule is up to date
@@ -21,12 +21,8 @@ This demo shows how you can use intelligent prompt gateway to do function callin
    ollama create Bolt-Function-Calling-1B:Q4_K_M -f Bolt-FC-1B-Q4_K_M.model_file
    ```
 3. Navigate to http://localhost:18080/
-4. You can type in queries like "how is the weather in Seattle"
-   - You can also ask follow up questions like "show me sunny days"
+4. You can type in queries like "show me the top 5 employees in each department with highest salary"
+   - You can also ask follow up questions like "just show the top 2"
 5. To see metrics navigate to "http://localhost:3000/" (use admin/grafana for login)
    - Open up dahsboard named "Intelligent Gateway Overview"
    - On this dashboard you can see reuqest latency and number of requests
-
-Here is sample interaction,
-
-<img width="575" alt="image" src="https://github.com/user-attachments/assets/e0929490-3eb2-4130-ae87-a732aea4d059">

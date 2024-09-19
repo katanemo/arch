@@ -22,7 +22,7 @@ def generate_employee_data(conn):
     # Function to generate random employee data
     def generate_employee_records(count):
         employees = []
-        
+
         for _ in range(count):
             name = random.choice(names)
             position = random.choice(positions)
@@ -32,7 +32,7 @@ def generate_employee_data(conn):
             hire_date = random_hire_date()
             performance_score = round(random.uniform(1, 5), 2)  # Performance score between 1.0 and 5.0
             years_of_experience = random.randint(1, 30)  # Years of experience between 1 and 30
-            
+
             employee = {
                 "position": position,
                 "name": name,
@@ -43,9 +43,9 @@ def generate_employee_data(conn):
                 "performance_score": performance_score,
                 "years_of_experience": years_of_experience
             }
-            
+
             employees.append(employee)
-        
+
         return employees
 
     # Generate 10 random employee records
@@ -56,4 +56,4 @@ def generate_employee_data(conn):
 
     df.to_sql('employees', conn, index=False)
 
-    return 
+    return

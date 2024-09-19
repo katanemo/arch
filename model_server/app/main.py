@@ -2,7 +2,7 @@ import random
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
 from load_models import load_ner_models, load_transformers, load_zero_shot_models
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 import string
 import pandas as pd
 from load_models import load_sql
@@ -178,7 +178,7 @@ async def top_employees(req: TopEmployees, res: Response):
         req.ranking_criteria = "years_of_experience"
     elif req.ranking_criteria == "rating":
         req.ranking_criteria = "performance_score"
-    
+
     logger.info(f"{'* ' * 50}\n\nFinal Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}")
 
 
@@ -224,7 +224,7 @@ async def aggregate_stats(req: AggregateStats, res: Response):
             req.aggregate_type = "MAX"
         else:
             raise HTTPException(status_code=400, detail="Invalid aggregate type")
-    
+
     logger.info(f"{'* ' * 50}\n\nFinal Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}")
 
     query = f"""
@@ -349,9 +349,22 @@ async def interface_down_pkt_drop(req: PacketDropCorrelationRequest, res: Respon
     """
 
     correlated_data = pd.read_sql_query(query, conn, params=params)
-    
+
     if correlated_data.empty:
-        return {"message": "No correlated packet drops found"}
+        default_response = {
+            "device_ip_address": "0.0.0.0",  # Placeholder IP
+            "in_errors": 0,
+            "in_discards": 0,
+            "out_errors": 0,
+            "out_discards": 0,
+            "ifname": req.ifname or "unknown",  # Placeholder or interface provided in the request
+            "src_addr": "0.0.0.0",  # Placeholder source IP
+            "dst_addr": "0.0.0.0",  # Placeholder destination IP
+            "flow_time": str(datetime.now(timezone.utc)),  # Current timestamp or placeholder
+            "interface_time": str(datetime.now(timezone.utc))  # Current timestamp or placeholder
+        }
+        return [default_response]
+
 
     logger.info(f"Correlated Packet Drop Data: {correlated_data}")
 

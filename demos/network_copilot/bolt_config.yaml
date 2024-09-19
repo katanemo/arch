@@ -4,7 +4,7 @@ timeout_ms: 5000
 
 overrides:
   # confidence threshold for prompt target intent matching
-  prompt_target_intent_matching_threshold: 0.7
+  prompt_target_intent_matching_threshold: 0.6
 
 # should not be here
 embedding_provider:
@@ -23,7 +23,7 @@ prompt_targets:
   - type: function_resolver
     name: interface_down_pkt_drop
     description: |
-      This tool checks for packet drops due to interface down events by correlating timestamps between interfacestats and ts_flow. It allows filtering the results by timeframes, interface name, region, and packet error thresholds.
+      Checks for packet drops due to interface unavailability like reboots, shutdowns, or maintainence events. It allows filtering the results by timeframes, interface name, region, and packet error thresholds.
     parameters:
       - name: from_time
         description: An optional natural language timeframe (e.g., "past 7 days", "since a month") to define the time range for packet drop analysis.
