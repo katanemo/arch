@@ -1,4 +1,4 @@
-FROM python:3 AS base
+FROM python:3.10 AS base
 
 #
 # builder
@@ -10,13 +10,14 @@ WORKDIR /src
 COPY requirements.txt /src/
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 
+
 COPY . /src
 
 #
 # output
 #
 
-FROM python:3-slim AS output
+FROM python:3.10-slim AS output
 
 # specify list of models that will go into the image as a comma separated list
 # following models have been tested to work with this image
@@ -32,9 +33,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
   curl \
   && rm -rf /var/lib/apt/lists/*
-
 RUN huggingface-cli download katanemolabs/toxic-onnx-quantized --local-dir /app/model/toxic
-RUN huggingface-cli download katanemolabs/jailbreak_onnx_quantized_v2 --local-dir /app/model/jailbreak
+RUN huggingface-cli download katanemolabs/Bolt-Guard-v2-onnx --local-dir /app/model/jailbreak
 
 # comment it out for now as we don't want to download the model every time we build the image
 # we will mount host cache to docker image to avoid downloading the model every time

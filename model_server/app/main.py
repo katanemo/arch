@@ -19,7 +19,7 @@ transformers = load_transformers()
 ner_models = load_ner_models()
 zero_shot_models = load_zero_shot_models()
 
-with open('bolt_config.yaml', 'r') as file:
+with open('/root/bolt_config.yaml', 'r') as file:
     config = yaml.safe_load(file)
 if is_intel_cpu():
     cpu = "intel_cpu"
