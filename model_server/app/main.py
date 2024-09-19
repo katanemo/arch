@@ -251,7 +251,7 @@ class PacketDropCorrelationRequest(BaseModel):
 
 
 @app.post("/interface_down_pkt_drop")
-async def interface_down_pkt_drop(req: PacketDropCorrelationRequest, res: Response):
+async def interface_down_packet_drop(req: PacketDropCorrelationRequest, res: Response):
 
     params, filters = load_params(req)
 

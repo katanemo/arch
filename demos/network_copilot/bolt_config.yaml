@@ -4,7 +4,7 @@ timeout_ms: 5000
 
 overrides:
   # confidence threshold for prompt target intent matching
-  prompt_target_intent_matching_threshold: 0.6
+  prompt_target_intent_matching_threshold: 0.7
 
 # should not be here
 embedding_provider:
@@ -21,7 +21,7 @@ llm_providers:
 prompt_targets:
 
   - type: function_resolver
-    name: interface_down_pkt_drop
+    name: interface_down_packet_drop
     description: |
       Checks for packet drops due to interface unavailability like reboots, shutdowns, or maintainence events. It allows filtering the results by timeframes, interface name, region, and packet error thresholds.
     parameters:
@@ -71,7 +71,7 @@ prompt_targets:
         type: integer
     endpoint:
       cluster: databasehost
-      path: /interface_down_pkt_drop
+      path: /interface_down_packet_drop
     system_prompt: |
       You are responsible for correlating packet drops with interface down events by analyzing packet errors from the given data.
 
