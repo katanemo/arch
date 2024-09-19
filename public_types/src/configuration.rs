@@ -11,7 +11,6 @@ pub struct Configuration {
     pub load_balancing: LoadBalancing,
     pub timeout_ms: u64,
     pub overrides: Option<Overrides>,
-    pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
     pub prompt_guards: Option<PromptGuard>,
     pub system_prompt: Option<String>,
@@ -131,10 +130,6 @@ mod test {
 default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
-
-embedding_provider:
-  name: "SentenceTransformer"
-  model: "all-MiniLM-L6-v2"
 
 llm_providers:
   - name: "open-ai-gpt-4"
