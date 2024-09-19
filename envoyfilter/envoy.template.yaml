@@ -164,7 +164,7 @@ static_resources:
                       address: function_resolver
                       port_value: 80
                   hostname: "bolt_fc_1b"
-{% for cluster in arch_clusters %}
+{% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}
       connect_timeout: 5s
       type: STRICT_DNS

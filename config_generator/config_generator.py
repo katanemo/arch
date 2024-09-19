@@ -14,13 +14,34 @@ with open(BOLT_CONFIG_FILE, 'r') as file:
 
 config_yaml = yaml.safe_load(katanemo_config)
 
-clusters = config_yaml["clusters"]
+inferred_clusters = {}
 
-print(config_yaml)
+for prompt_target in config_yaml["prompt_targets"]:
+    cluster = prompt_target.get("endpoint", {}).get("cluster", "")
+    if cluster not in inferred_clusters:
+      inferred_clusters[cluster] = {
+          "name": cluster,
+          "address": cluster,
+          "port": 80, # default port
+      }
+
+print(inferred_clusters)
+
+clusters = config_yaml.get("clusters", {})
+
+# override the inferred clusters with the ones defined in the config
+for name, cluster in clusters.items():
+    if name in inferred_clusters:
+        print("updating cluster", cluster)
+        inferred_clusters[name].update(cluster)
+    else:
+        inferred_clusters[name] = cluster
+
+print("updated clusters", inferred_clusters)
 
 data = {
     'katanemo_config': katanemo_config,
-    'arch_clusters': clusters
+    'arch_clusters': inferred_clusters
 }
 
 rendered = template.render(data)
