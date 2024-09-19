@@ -73,4 +73,59 @@ prompt_targets:
       cluster: databasehost
       path: /interface_down_pkt_drop
     system_prompt: |
-      You are responsible for correlating packet drops with interface down events by analyzing packet errors in the interfacestats table and flows in the ts_flow table, based on optional filters like timeframe, interface name, region, and packet error thresholds.
+      You are responsible for correlating packet drops with interface down events by analyzing packet errors from the given data.
+
+  - type: function_resolver
+    name: correlate_flow_with_errors
+    description: |
+      This tool finds whether packet flows are impacted due to packet errors by correlating the timestamps between the packet errors in the interfacestats table and the flows in the ts_flow table.
+    parameters:
+      - name: from_time
+        description: An optional natural language timeframe (e.g., "past 7 days", "since a month") to define the time range for the analysis.
+        required: false
+        type: string
+      - name: ifname
+        description: An optional interface name filter to apply.
+        required: false
+        type: string
+      - name: region
+        description: An optional region filter to apply (from the device table).
+        required: false
+        type: string
+      - name: min_in_errors
+        description: Minimum number of in_errors to filter results.
+        required: false
+        type: integer
+      - name: max_in_errors
+        description: Maximum number of in_errors to filter results.
+        required: false
+        type: integer
+      - name: min_out_errors
+        description: Minimum number of out_errors to filter results.
+        required: false
+        type: integer
+      - name: max_out_errors
+        description: Maximum number of out_errors to filter results.
+        required: false
+        type: integer
+      - name: min_in_discards
+        description: Minimum number of in_discards to filter results.
+        required: false
+        type: integer
+      - name: max_in_discards
+        description: Maximum number of in_discards to filter results.
+        required: false
+        type: integer
+      - name: min_out_discards
+        description: Minimum number of out_discards to filter results.
+        required: false
+        type: integer
+      - name: max_out_discards
+        description: Maximum number of out_discards to filter results.
+        required: false
+        type: integer
+    endpoint:
+      cluster: databasehost
+      path: /correlate_flow_with_errors
+    system_prompt: |
+      You are responsible for finding and correlating packet errors with the packet flows based on timestamps given in the data. This correlation helps identify if packet flows are impacted by packet errors.

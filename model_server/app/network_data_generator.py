@@ -2,6 +2,11 @@ import pandas as pd
 import random
 from datetime import datetime, timedelta, timezone
 import re
+import logging
+from dateparser import parse
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Function to convert natural language time expressions to "X {time} ago" format
 def convert_to_ago_format(expression):
@@ -127,3 +132,69 @@ def generate_flow_data(conn, device_df, n=1000):
     df = pd.DataFrame(flow_data)
     df.to_sql('ts_flow', conn, index=False)
     return
+
+def load_params(req):
+    # Step 1: Convert the from_time natural language string to a timestamp if provided
+    if req.from_time:
+        # Use `dateparser` to parse natural language timeframes
+        logger.info(f"{'* ' * 50}\n\nCaptured from time: {req.from_time}\n\n")
+        parsed_time = parse(req.from_time, settings={'RELATIVE_BASE': datetime.now()})
+        if not parsed_time:
+            conv_time = convert_to_ago_format(req.from_time)
+            if conv_time:
+                parsed_time = parse(conv_time, settings={'RELATIVE_BASE': datetime.now()})
+            else:
+                return {"error": "Invalid from_time format. Please provide a valid time description such as 'past 7 days' or 'since last month'."}
+        logger.info(f"\n\nConverted from time: {parsed_time}\n\n{'* ' * 50}\n\n")
+        from_time = parsed_time
+        logger.info(f"Using parsed from_time: {from_time}")
+    else:
+        # If no from_time is provided, use a default value (e.g., the past 7 days)
+        from_time = datetime.now() - timedelta(days=7)
+        logger.info(f"Using default from_time: {from_time}")
+
+    # Step 2: Build the dynamic SQL query based on the optional filters
+    filters = []
+    params = {"from_time": from_time}
+
+    if req.ifname:
+        filters.append("i.ifname = :ifname")
+        params["ifname"] = req.ifname
+
+    if req.region:
+        filters.append("d.region = :region")
+        params["region"] = req.region
+
+    if req.min_in_errors is not None:
+        filters.append("i.in_errors >= :min_in_errors")
+        params["min_in_errors"] = req.min_in_errors
+
+    if req.max_in_errors is not None:
+        filters.append("i.in_errors <= :max_in_errors")
+        params["max_in_errors"] = req.max_in_errors
+
+    if req.min_out_errors is not None:
+        filters.append("i.out_errors >= :min_out_errors")
+        params["min_out_errors"] = req.min_out_errors
+
+    if req.max_out_errors is not None:
+        filters.append("i.out_errors <= :max_out_errors")
+        params["max_out_errors"] = req.max_out_errors
+
+    if req.min_in_discards is not None:
+        filters.append("i.in_discards >= :min_in_discards")
+        params["min_in_discards"] = req.min_in_discards
+
+    if req.max_in_discards is not None:
+        filters.append("i.in_discards <= :max_in_discards")
+        params["max_in_discards"] = req.max_in_discards
+
+    if req.min_out_discards is not None:
+        filters.append("i.out_discards >= :min_out_discards")
+        params["min_out_discards"] = req.min_out_discards
+
+    if req.max_out_discards is not None:
+        filters.append("i.out_discards <= :max_out_discards")
+        params["max_out_discards"] = req.max_out_discards
+
+    return params, filters
