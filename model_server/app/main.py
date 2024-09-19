@@ -369,3 +369,18 @@ async def interface_down_pkt_drop(req: PacketDropCorrelationRequest, res: Respon
     logger.info(f"Correlated Packet Drop Data: {correlated_data}")
 
     return correlated_data.to_dict(orient='records')
+class InsuranceClaimDetailsRequest(BaseModel):
+  policy_number: str
+
+@app.post("/insurance_claim_details")
+async def insurance_claim_details(req: InsuranceClaimDetailsRequest, res: Response):
+
+    claim_details = {
+        "policy_number": req.policy_number,
+        "claim_status": "Approved",
+        "claim_amount": random.randrange(1000, 10000),
+        "claim_date": str(date.today() - timedelta(days=random.randrange(1, 30))),
+        "claim_reason": "Car Accident",
+    }
+
+    return claim_details

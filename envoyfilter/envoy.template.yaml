@@ -122,7 +122,6 @@ static_resources:
             tls_params:
               tls_minimum_protocol_version: TLSv1_2
               tls_maximum_protocol_version: TLSv1_3
-
     - name: model_server
       connect_timeout: 5s
       type: STRICT_DNS
@@ -207,3 +206,19 @@ static_resources:
                       address: function_resolver
                       port_value: 80
                   hostname: "bolt_fc_1b"
+{% for _, cluster in arch_clusters.items() %}
+    - name: {{ cluster.name }}
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: {{ cluster.name }}
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: {{ cluster.address }}
+                      port_value: {{ cluster.port }}
+                  hostname: {{ cluster.address }}
+{% endfor %}
