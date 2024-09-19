@@ -76,9 +76,9 @@ prompt_targets:
       You are responsible for correlating packet drops with interface down events by analyzing packet errors from the given data.
 
   - type: function_resolver
-    name: correlate_flow_with_errors
+    name: packet_errors_impact_flow
     description: |
-      This tool finds whether packet flows are impacted due to packet errors by correlating the timestamps between the packet errors in the interfacestats table and the flows in the ts_flow table.
+      To find whether packet flows are impacted due to packet errors by correlating the timestamps between the packet errors and the flows. It allows filtering the results by timeframes, interface name, region, and packet error thresholds.
     parameters:
       - name: from_time
         description: An optional natural language timeframe (e.g., "past 7 days", "since a month") to define the time range for the analysis.
@@ -126,6 +126,6 @@ prompt_targets:
         type: integer
     endpoint:
       cluster: databasehost
-      path: /correlate_flow_with_errors
+      path: /packet_errors_impact_flow
     system_prompt: |
       You are responsible for finding and correlating packet errors with the packet flows based on timestamps given in the data. This correlation helps identify if packet flows are impacted by packet errors.
