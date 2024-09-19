@@ -43,6 +43,8 @@ html_logo = '_static/img/arch-logo.png'
 html_theme_options = {
     'logo_only': True,
     'includehidden': False,
+    'navigation_depth': 4,
+    'collapse_navigation': False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

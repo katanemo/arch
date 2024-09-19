@@ -1,31 +1,36 @@
+.. _life_of_a_request:
+
 Life of a Request
 =================
 
-Below we describe the events in the life of a request passing through an Arch gateway. We first
+.. contents::
+   :local:
+   :depth: 2
+
+Below we describe the events in the life of a request passing through an Arch gateway instance. We first
 describe how Arch fits into the request path and then the internal events that take place following 
 the arrival of a request at Arch from clients. We follow the request until the corresponding dispatch 
-downstream and the response path.
+upstream and the response path.
 
 Terminology
-------------
+-----------
 
 Arch uses the following terms through its codebase and documentation:
 
-
 * *Listeners*: Arch module responsible for binding to an IP/port, accepting new HTTP connections and orchestrating 
-  the downstream facing aspects of request processing.
-* *Downstream*: an entity connecting to Arch. This may be a local application (in a sidecar model) or
-  a network node. In non-sidecar models, this is a remote client.
-* *LLM Providers*: a set of upstream LLMs that Arch routes/forwards calls to 
+  the downstream facing aspects of request processing. 
+* *Downstream*: an entity connecting to Arch. This may be a local application (in a sidecar model) or a remote client. 
+* *LLM Providers*: a set of upstream LLMs that Arch routes/forwards prompts to. 
 * *Upstream*: A set of hosts that can recieve traffic from an instance of the Arch gateway.
-
+* *Prompt Targets*: Arch builts on to
+* 
 
 Network topology
 ----------------
 
-How a request flows through the components in a network (including Arch) depends on the network’s
-topology. Arch can be used in a wide variety of networking topologies. We focus on the inner
-operation of Arch below, but briefly we address how Arch relates to the rest of the network in
+How a request flows through the components in a network (including Arch) depends on the network’s topology. 
+Arch can be used in a wide variety of networking topologies. We focus on the inner operation of Arch below, 
+but briefly we address how Arch relates to the rest of the network in
 this section.
 
 * Ingress listeners take requests from upstream clients like a web UI or clients that forward prompts to you local application
@@ -53,10 +58,35 @@ Today, only support a static bootstrap configuration file for simplicity today:
 .. literalinclude:: /_config/getting-started.yml
     :language: yaml
 
-    
+
+High level architecture
+-----------------------
+
+The request processing path in Arch has two main parts:
+
+* :ref:`Listener subsystem <arch_overview_listeners>` which handles **downstream** request
+  processing. It is also responsible for managing the downstream request lifecycle and for the
+  response path to the client. The downstream HTTP/2 codec lives here.
+* :ref:`Prompt subsystem <arch_overview_prompt_handling>` which is responsible for selecting and
+  processing  the **upstream** connection to an endpoint. This is where knowledge of targets and
+  endpoint health, load balancing and connection pooling exists. The upstream HTTP/2 codec lives
+  here.
+
+The two subsystems are bridged with the HTTP router filter, which forwards the HTTP request from
+downstream to upstream.
+
+Arch utilizes `Envoy event-based thread model <https://blog.envoyproxy.io/envoy-threading-model-a8d44b922310>`_. 
+A main thread is responsible forthe server lifecycle, configuration processing, stats, etc. and some number 
+of :ref:`worker threads <arch_overview_threading>` process requests. All threads operate around an event 
+loop (`libevent <https://libevent.org/>`_) and any given downstream TCP connection will be handled by exactly 
+one worker thread for its lifetime. Each worker thread maintains its own pool of TCP connections to upstream 
+endpoints. Today, Arch implemenents its core functionality around prompt handling in worker threads. 
+
+Worker threads rarely share state and operate in a trivially parallel fashion. This threading model
+enables scaling to very high core count CPUs.
 
 Request Flow
--------------
+------------
 
 Overview
 ^^^^^^^^
