@@ -1,12 +1,10 @@
 {
     "toxic":{
-        "intel_cpu": "katanemolabs/toxic_ovn_4bit",
-        "non_intel_cpu": "model/toxic",
+        "cpu": "katanemolabs/toxic_ovn_4bit",
         "gpu": "katanemolabs/Bolt-Toxic-v1-eetq"
     },
     "jailbreak":{
-        "intel_cpu": "katanemolabs/jailbreak_ovn_4bit",
-        "non_intel_cpu": "model/jailbreak",
+        "cpu": "katanemolabs/jailbreak_ovn_4bit",
         "gpu": "katanemolabs/Bolt-Guard-EEtq"
     }
 }

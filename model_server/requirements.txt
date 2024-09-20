@@ -7,12 +7,11 @@ gliner
 transformers
 pyyaml
 accelerate
-huggingface_hub[cli]
 # guard inference packages
 onnxruntime
 optimum-intel
 openvino
 psutil
-#EETQ
+EETQ
 pandas
 dateparser

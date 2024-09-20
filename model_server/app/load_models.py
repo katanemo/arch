@@ -80,24 +80,12 @@ def load_jailbreak_model(
         model_name, trust_remote_code=True
     )
     jailbreak_model["model_name"] = model_name
-    if hardware_config == "intel_cpu":
+    if hardware_config == "cpu":
         from optimum.intel import OVModelForSequenceClassification
 
         device = "cpu"
         jailbreak_model["model"] = OVModelForSequenceClassification.from_pretrained(
             model_name, device_map=device, low_cpu_mem_usage=True
-        )
-    elif hardware_config == "non_intel_cpu":
-        import onnxruntime as ort
-
-        device = "cpu"
-        opts = ort.SessionOptions()
-        if "model_quantized.onnx" not in model_name:
-            model_name += "/model_quantized.onnx"
-        jailbreak_model["model"] = ort.InferenceSession(
-            model_name,
-            opts,
-            providers=["CPUExecutionProvider"],
         )
     elif hardware_config == "gpu":
         import torch

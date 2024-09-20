@@ -45,12 +45,6 @@ def is_intel_cpu():
         return False
 
 
-# Example usage
-if is_intel_cpu():
-    print("This CPU is from Intel.")
-else:
-    print("This CPU is not from Intel.")
-
 
 def softmax(x):
     return np.exp(x) / np.exp(x).sum(axis=0)
@@ -75,22 +69,8 @@ class PredictHandler:
             input_text, truncation=True, max_length=512, return_tensors="pt"
         ).to(self.device)
         with torch.no_grad():
-            if self.hardware_config == "non_intel_cpu":
-
-                feed = {
-                    "input_ids": inputs["input_ids"].numpy(),
-                    "attention_mask": inputs["attention_mask"].numpy(),
-                }
-                if self.task == "toxic":
-                    feed["token_type_ids"] = inputs["token_type_ids"].numpy()
-
-                del inputs
-                logits = self.model.run(["logits"], feed)[0][0]
-                del feed
-
-            else:
-                logits = self.model(**inputs).logits.numpy()[0]
-                del inputs
+            logits = self.model(**inputs).logits.numpy()[0]
+            del inputs
         print(logits)
         probabilities = softmax(logits)
         print(probabilities)

@@ -31,9 +31,7 @@ zero_shot_models = load_zero_shot_models()
 with open('/root/bolt_config.yaml', 'r') as file:
     config = yaml.safe_load(file)
 if is_intel_cpu():
-    cpu = "intel_cpu"
-else:
-    cpu = "intel_cpu"
+    cpu = "cpu"
 with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
