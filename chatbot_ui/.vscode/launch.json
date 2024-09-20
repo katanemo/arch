@@ -11,12 +11,6 @@
       "request": "launch",
       "program": "run.py",
       "console": "integratedTerminal",
-      "env": {
-        "FLASK_ENV": "development",
-        "FLASK_DEBUG": "1",
-        "LOG_LEVEL": "DEBUG",
-        "LOG": "DEBUG"
-      }
     },
     {
       "name": "chatbot-ui streaming",
