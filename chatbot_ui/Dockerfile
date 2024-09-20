@@ -1,10 +1,5 @@
-# copied from https://github.com/bergos/embedding-server
-
 FROM python:3 AS base
 
-#
-# builder
-#
 FROM base AS builder
 
 WORKDIR /src
