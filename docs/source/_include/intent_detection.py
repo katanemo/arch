@@ -87,7 +87,7 @@ def process_rag():
     if not client_messages or not isinstance(client_messages, list):
         return jsonify({'error': 'Messages array is required'}), 400
 
-    # Extract the intent change marker from headers
+    # Extract the intent change marker from Arch's headers if present for the current prompt
     intent_changed_header = request.headers.get('x-arch-prompt-intent-change', '').lower()
     if intent_changed_header in ['', 'false']:
         intent_changed = False

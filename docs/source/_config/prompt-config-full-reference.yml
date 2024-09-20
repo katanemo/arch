@@ -4,6 +4,12 @@ listen:
   address: 0.0.0.0  # or 127.0.0.1
   port_value: 8080  # If you configure port 443, you'll need to update the listener with your TLS certificates
   messages: "hugging-face-messages-json" # Defines how Arch should parse the content from application/json or text/pain Content-type in the http request
+  common_tls_context:
+    tls_certificates:
+      - certificate_chain:
+          filename: "/etc/arch/certs/cert.pem"
+        private_key:
+          filename: "/etc/arch/certs/key.pem"
 
 system_prompts:
   - name: "network_assistant"
@@ -45,7 +51,7 @@ prompt_guards:
 prompt_targets:
   - name: "information_extraction"
     type: "RAG"  # Retrieval Augmented Generation
-    description: "This prompt handles all information extraction scenarios."
+    description: "This prompt handles all scenarios that are question and answer in nature. Like summarization, information extraction, etc."
     path: "/agent/summary"
     parameters:
       - name: "query"
@@ -74,3 +80,6 @@ prompt_targets:
 error_target:
   name: "error_handler"
   path: "/errors"
+
+intent-detection-threshold-override: 0.60 # By default Arch uses an NLI + embedding approach to match an incomming prompt to a prompt target. 
+                                          # The intent matching threshold is kept at 0.80, you can overide this behavior if you would like 
