@@ -85,6 +85,8 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     restart: unless-stopped
+    profiles:
+      - monitoring
 
   chatbot_ui:
     build:
