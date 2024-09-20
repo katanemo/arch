@@ -22,7 +22,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
     ln -s /usr/bin/pip3 /usr/bin/pip
 
-RUN pip install --upgrade pip
+# Remove existing `pip` if it exists, then create symlinks for python and pip
+RUN rm -f /usr/bin/pip && \
+    ln -s /usr/bin/python3 /usr/bin/python && \
+    ln -s /usr/bin/pip3 /usr/bin/pip
+
 
 # Install git (needed for cloning the repository)
 RUN apt-get update && apt-get install -y git && apt-get clean
