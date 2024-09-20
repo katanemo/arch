@@ -42,7 +42,8 @@ prompt_targets:
         description: The policy number for which the insurance claim details are requested.
       - name: include_expired
         description: Include expired insurance claims in the response.
-        default: false
+        type: string
+        default: "false"
     endpoint:
       cluster: weatherhost
       path: /insurance_claim_details
