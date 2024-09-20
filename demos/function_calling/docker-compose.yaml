@@ -59,6 +59,17 @@ services:
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
 
+  api_server:
+    build:
+      context: api_server
+      dockerfile: Dockerfile
+    ports:
+      - "18083:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
+
   ollama:
     image: ollama/ollama
     container_name: ollama
