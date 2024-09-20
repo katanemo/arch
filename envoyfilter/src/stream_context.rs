@@ -487,7 +487,10 @@ impl StreamContext {
                             .contains_key(&param.name)
                     {
                         self.send_server_error(
-                            format!("missing required parameter: {}", param.name),
+                            format!(
+                                "missing required parameter: {}, for target: {}",
+                                param.name, prompt_target.name
+                            ),
                             Some(StatusCode::BAD_REQUEST),
                         )
                     }
