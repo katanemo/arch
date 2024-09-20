@@ -1,4 +1,4 @@
-FROM python:3.10 AS base
+FROM FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu20.04 AS base
 
 #
 # builder
@@ -6,6 +6,21 @@ FROM python:3.10 AS base
 FROM base AS builder
 
 WORKDIR /src
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    cmake \
+    git \
+    curl \
+    vim \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --upgrade pip
 
 # Install git (needed for cloning the repository)
@@ -31,7 +46,7 @@ COPY . /src
 # output
 #
 
-FROM python:3.10-slim AS output
+FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu20.04 AS output
 
 # specify list of models that will go into the image as a comma separated list
 # following models have been tested to work with this image
