@@ -12,6 +12,7 @@ RUN pip install --upgrade pip
 RUN apt-get update && apt-get install -y git && apt-get clean
 
 COPY requirements.txt /src/
+
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 RUN if command -v nvidia-smi >/dev/null 2>&1 && command -v nvcc >/dev/null 2>&1; then \
         echo "CUDA and NVIDIA GPU detected, installing EETQ..." && \
