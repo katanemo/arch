@@ -452,7 +452,7 @@ impl StreamContext {
 
                 // add resolver name to the response so the client can send the response back to the correct resolver
                 boltfc_response.resolver_name = Some(callout_context.prompt_target_name.unwrap());
-                info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
+                info!("some required parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
                 let bolt_fc_dialogue_message = serde_json::to_string(&boltfc_response).unwrap();
                 self.send_http_response(
                     StatusCode::OK.as_u16().into(),
