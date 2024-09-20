@@ -4,12 +4,7 @@ timeout_ms: 5000
 
 overrides:
   # confidence threshold for prompt target intent matching
-  prompt_target_intent_matching_threshold: 0.7
-
-# should not be here
-embedding_provider:
-  name: "bge-large-en-v1.5"
-  model: "BAAI/bge-large-en-v1.5"
+  prompt_target_intent_matching_threshold: 0.8
 
 llm_providers:
 
@@ -51,7 +46,7 @@ prompt_targets:
   - type: function_resolver
     name: aggregate_stats
     description: |
-       Calculate summary statistics for groups of employees. You can group employees by categories like department or location and then compute totals, averages, or other statistics like maximum and minimum for specific attributes such as salary or yoe.
+       Calculate summary statistics for groups of employees. You can group employees by categories like department or location and then compute totals, averages, or other statistics for specific attributes such as salary or yoe.
     parameters:
       - name: grouping
         description: |
