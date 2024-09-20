@@ -21,8 +21,8 @@ use public_types::common_types::open_ai::{
     StreamOptions,
 };
 use public_types::common_types::{
-    BoltFCToolsCall, EmbeddingType, PromptGuardRequest, PromptGuardResponse,
-    PromptGuardTask, ToolParameter, ToolParameters, ToolsDefinition, ZeroShotClassificationRequest,
+    BoltFCToolsCall, EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
+    ToolParameter, ToolParameters, ToolsDefinition, ZeroShotClassificationRequest,
     ZeroShotClassificationResponse,
 };
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget, PromptType};
