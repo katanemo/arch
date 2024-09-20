@@ -343,6 +343,7 @@ impl StreamContext {
                                     description: entity.description.clone(),
                                     required: entity.required,
                                     enum_values: entity.enum_values.clone(),
+                                    default: entity.default.clone(),
                                 };
                                 properties.insert(entity.name.clone(), param);
                             }

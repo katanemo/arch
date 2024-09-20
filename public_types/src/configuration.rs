@@ -105,6 +105,7 @@ pub struct Parameter {
     pub required: Option<bool>,
     #[serde(rename = "enum")]
     pub enum_values: Option<Vec<String>>,
+    pub default: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
