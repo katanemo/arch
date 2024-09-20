@@ -8,7 +8,7 @@ from load_models import (
     load_jailbreak_model,
     load_zero_shot_models,
 )
-from utils import is_intel_cpu, GuardHandler, split_text_into_chunks
+from utils import GuardHandler, split_text_into_chunks
 import json
 import string
 import torch
@@ -21,23 +21,25 @@ import logging
 from dateparser import parse
 from network_data_generator import convert_to_ago_format, load_params
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 transformers = load_transformers()
 ner_models = load_ner_models()
 zero_shot_models = load_zero_shot_models()
 
-with open('/root/bolt_config.yaml', 'r') as file:
+with open("/root/bolt_config.yaml", "r") as file:
     config = yaml.safe_load(file)
 with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
-if 'prompt_guards' in config.keys():
-    if len(config['prompt_guards']['input_guards']) == 2:
-        task = 'both'
-        jailbreak_hardware = 'gpu' if torch.cuda.is_available() else 'cpu'
-        toxic_hardware = 'gpu' if torch.cuda.is_available() else 'cpu'
+if "prompt_guards" in config.keys():
+    if len(config["prompt_guards"]["input_guards"]) == 2:
+        task = "both"
+        jailbreak_hardware = "gpu" if torch.cuda.is_available() else "cpu"
+        toxic_hardware = "gpu" if torch.cuda.is_available() else "cpu"
         toxic_model = load_toxic_model(
             guard_model_config["toxic"][jailbreak_hardware], toxic_hardware
         )
@@ -46,20 +48,20 @@ if 'prompt_guards' in config.keys():
         )
 
     else:
-        task = list(config['prompt_guards']['input_guards'].keys())[0]
+        task = list(config["prompt_guards"]["input_guards"].keys())[0]
 
-        hardware = 'gpu' if torch.cuda.is_available() else 'cpu'
-        if task == 'toxic':
+        hardware = "gpu" if torch.cuda.is_available() else "cpu"
+        if task == "toxic":
             toxic_model = load_toxic_model(
                 guard_model_config["toxic"][hardware], hardware
             )
             jailbreak_model = None
-        elif task == 'jailbreak':
+        elif task == "jailbreak":
             jailbreak_model = load_jailbreak_model(
                 guard_model_config["jailbreak"][hardware], hardware
             )
             toxic_model = None
-    
+
 
 guard_handler = GuardHandler(toxic_model, jailbreak_model)
 
@@ -146,7 +148,7 @@ async def guard(req: GuardRequest, res: Response):
             "jailbreak_verdict": jailbreak_verdict,
     """
     max_words = 300
-    if req.task in ['both', 'toxic', 'jailbreak']:
+    if req.task in ["both", "toxic", "jailbreak"]:
         guard_handler.task = req.task
     if len(req.input.split()) < max_words:
         final_result = guard_handler.guard_predict(req.input)
@@ -163,7 +165,6 @@ async def guard(req: GuardRequest, res: Response):
             "jailbreak_sentence": [],
         }
         if guard_handler.task == "both":
-
             for chunk in chunks:
                 result_chunk = guard_handler.guard_predict(chunk)
                 final_result["time"] += result_chunk["time"]
@@ -241,7 +242,6 @@ class WeatherRequest(BaseModel):
 
 @app.post("/weather")
 async def weather(req: WeatherRequest, res: Response):
-
     weather_forecast = {
         "city": req.city,
         "temperature": [],
@@ -260,14 +260,15 @@ async def weather(req: WeatherRequest, res: Response):
     return weather_forecast
 
 
-'''
+"""
 *****
 Adding new functions to test the usecases - Sampreeth
 *****
-'''
+"""
 
 conn = load_sql()
 name_col = "name"
+
 
 class TopEmployees(BaseModel):
     grouping: str
@@ -279,15 +280,18 @@ class TopEmployees(BaseModel):
 async def top_employees(req: TopEmployees, res: Response):
     name_col = "name"
     # Check if `req.ranking_criteria` is a Text object and extract its value accordingly
-    logger.info(f"{'* ' * 50}\n\nCaptured Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nCaptured Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}"
+    )
 
     if req.ranking_criteria == "yoe":
         req.ranking_criteria = "years_of_experience"
     elif req.ranking_criteria == "rating":
         req.ranking_criteria = "performance_score"
 
-    logger.info(f"{'* ' * 50}\n\nFinal Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}")
-
+    logger.info(
+        f"{'* ' * 50}\n\nFinal Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}"
+    )
 
     query = f"""
     SELECT {req.grouping}, {name_col}, {req.ranking_criteria}
@@ -299,7 +303,7 @@ async def top_employees(req: TopEmployees, res: Response):
     WHERE emp_rank <= {req.top_n};
     """
     result_df = pd.read_sql_query(query, conn)
-    result = result_df.to_dict(orient='records')
+    result = result_df.to_dict(orient="records")
     return result
 
 
@@ -308,16 +312,23 @@ class AggregateStats(BaseModel):
     aggregate_criteria: str
     aggregate_type: str
 
+
 @app.post("/aggregate_stats")
 async def aggregate_stats(req: AggregateStats, res: Response):
-    logger.info(f"{'* ' * 50}\n\nCaptured Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nCaptured Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}"
+    )
 
     if req.aggregate_criteria == "yoe":
         req.aggregate_criteria = "years_of_experience"
 
-    logger.info(f"{'* ' * 50}\n\nFinal Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nFinal Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}"
+    )
 
-    logger.info(f"{'* ' * 50}\n\nCaptured Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nCaptured Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}"
+    )
     if req.aggregate_type.lower() not in ["sum", "avg", "min", "max"]:
         if req.aggregate_type.lower() == "count":
             req.aggregate_type = "COUNT"
@@ -332,7 +343,9 @@ async def aggregate_stats(req: AggregateStats, res: Response):
         else:
             raise HTTPException(status_code=400, detail="Invalid aggregate type")
 
-    logger.info(f"{'* ' * 50}\n\nFinal Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nFinal Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}"
+    )
 
     query = f"""
     SELECT {req.grouping}, {req.aggregate_type}({req.aggregate_criteria}) as {req.aggregate_type}_{req.aggregate_criteria}
@@ -340,13 +353,14 @@ async def aggregate_stats(req: AggregateStats, res: Response):
     GROUP BY {req.grouping};
     """
     result_df = pd.read_sql_query(query, conn)
-    result = result_df.to_dict(orient='records')
+    result = result_df.to_dict(orient="records")
     return result
+
 
 class PacketDropCorrelationRequest(BaseModel):
     from_time: str = None  # Optional natural language timeframe
-    ifname: str = None     # Optional interface name filter
-    region: str = None     # Optional region filter
+    ifname: str = None  # Optional interface name filter
+    region: str = None  # Optional region filter
     min_in_errors: int = None
     max_in_errors: int = None
     min_out_errors: int = None
@@ -359,7 +373,6 @@ class PacketDropCorrelationRequest(BaseModel):
 
 @app.post("/interface_down_pkt_drop")
 async def interface_down_packet_drop(req: PacketDropCorrelationRequest, res: Response):
-
     params, filters = load_params(req)
 
     # Join the filters using AND
@@ -404,24 +417,30 @@ async def interface_down_packet_drop(req: PacketDropCorrelationRequest, res: Res
             "in_discards": 0,
             "out_errors": 0,
             "out_discards": 0,
-            "ifname": req.ifname or "unknown",  # Placeholder or interface provided in the request
+            "ifname": req.ifname
+            or "unknown",  # Placeholder or interface provided in the request
             "src_addr": "0.0.0.0",  # Placeholder source IP
             "dst_addr": "0.0.0.0",  # Placeholder destination IP
-            "flow_time": str(datetime.now(timezone.utc)),  # Current timestamp or placeholder
-            "interface_time": str(datetime.now(timezone.utc))  # Current timestamp or placeholder
+            "flow_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
+            "interface_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
         }
         return [default_response]
 
-
     logger.info(f"Correlated Packet Drop Data: {correlated_data}")
 
-    return correlated_data.to_dict(orient='records')
+    return correlated_data.to_dict(orient="records")
+
+
 class InsuranceClaimDetailsRequest(BaseModel):
-  policy_number: str
+    policy_number: str
+
 
 @app.post("/insurance_claim_details")
 async def insurance_claim_details(req: InsuranceClaimDetailsRequest, res: Response):
-
     claim_details = {
         "policy_number": req.policy_number,
         "claim_status": "Approved",
@@ -435,8 +454,8 @@ async def insurance_claim_details(req: InsuranceClaimDetailsRequest, res: Respon
 
 class FlowPacketErrorCorrelationRequest(BaseModel):
     from_time: str = None  # Optional natural language timeframe
-    ifname: str = None     # Optional interface name filter
-    region: str = None     # Optional region filter
+    ifname: str = None  # Optional interface name filter
+    region: str = None  # Optional region filter
     min_in_errors: int = None
     max_in_errors: int = None
     min_out_errors: int = None
@@ -446,9 +465,11 @@ class FlowPacketErrorCorrelationRequest(BaseModel):
     min_out_discards: int = None
     max_out_discards: int = None
 
-@app.post("/packet_errors_impact_flow")
-async def packet_errors_impact_flow(req: FlowPacketErrorCorrelationRequest, res: Response):
 
+@app.post("/packet_errors_impact_flow")
+async def packet_errors_impact_flow(
+    req: FlowPacketErrorCorrelationRequest, res: Response
+):
     params, filters = load_params(req)
 
     # Join the filters using AND
@@ -497,16 +518,21 @@ async def packet_errors_impact_flow(req: FlowPacketErrorCorrelationRequest, res:
             "in_discards": 0,
             "out_errors": 0,
             "out_discards": 0,
-            "ifname": req.ifname or "unknown",  # Placeholder or interface provided in the request
+            "ifname": req.ifname
+            or "unknown",  # Placeholder or interface provided in the request
             "src_addr": "0.0.0.0",  # Placeholder source IP
             "dst_addr": "0.0.0.0",  # Placeholder destination IP
             "src_port": 0,
             "dst_port": 0,
             "packets": 0,
-            "flow_time": str(datetime.now(timezone.utc)),  # Current timestamp or placeholder
-            "error_time": str(datetime.now(timezone.utc))  # Current timestamp or placeholder
+            "flow_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
+            "error_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
         }
         return [default_response]
 
     # Return the correlated data if found
-    return correlated_data.to_dict(orient='records')
+    return correlated_data.to_dict(orient="records")

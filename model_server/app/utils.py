@@ -1,4 +1,3 @@
-import platform
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 import time
@@ -19,41 +18,12 @@ def split_text_into_chunks(text, max_words=300):
     return chunks
 
 
-def is_intel_cpu():
-    try:
-        # Check the system's platform
-        system = platform.system()
-
-        if system == "Windows":
-            # For Windows, use the 'platform.processor()' method
-            cpu_info = platform.processor()
-        elif system == "Linux":
-            # For Linux, read from /proc/cpuinfo
-            with open("/proc/cpuinfo", "r") as f:
-                cpu_info = f.read()
-        elif system == "Darwin":  # macOS
-            # For macOS, use 'platform.processor()' method
-            cpu_info = platform.processor()
-        else:
-            return False  # Unsupported platform
-
-        # Check if the CPU is from Intel
-        return "Intel" in cpu_info
-
-    except Exception as e:
-        print(f"Error while checking CPU info: {e}")
-        return False
-
-
-
 def softmax(x):
     return np.exp(x) / np.exp(x).sum(axis=0)
 
 
-class PredictHandler:
-    def __init__(
-        self, model, tokenizer, device, task="toxic", hardware_config="intel_cpu"
-    ):
+class PredictionHandler:
+    def __init__(self, model, tokenizer, device, task="toxic", hardware_config="cpu"):
         self.model = model
         self.tokenizer = tokenizer
         self.device = device
@@ -77,12 +47,13 @@ class PredictHandler:
 
 
 class GuardHandler:
-    def __init__(self, toxic_model, jailbreak_model):
+    def __init__(self, toxic_model, jailbreak_model, threshold=0.5):
         self.toxic_model = toxic_model
         self.jailbreak_model = jailbreak_model
         self.task = "both"
+        self.threshold = threshold
         if toxic_model is not None:
-            self.toxic_handler = PredictHandler(
+            self.toxic_handler = PredictionHandler(
                 toxic_model["model"],
                 toxic_model["tokenizer"],
                 toxic_model["device"],
@@ -92,7 +63,7 @@ class GuardHandler:
         else:
             self.task = "jailbreak"
         if jailbreak_model is not None:
-            self.jailbreak_handler = PredictHandler(
+            self.jailbreak_handler = PredictionHandler(
                 jailbreak_model["model"],
                 jailbreak_model["tokenizer"],
                 jailbreak_model["device"],
@@ -106,7 +77,6 @@ class GuardHandler:
         start = time.time()
         if self.task == "both":
             with ThreadPoolExecutor() as executor:
-
                 toxic_thread = executor.submit(self.toxic_handler.predict, input_text)
                 jailbreak_thread = executor.submit(
                     self.jailbreak_handler.predict, input_text
@@ -115,13 +85,13 @@ class GuardHandler:
                 toxic_prob = toxic_thread.result()
                 jailbreak_prob = jailbreak_thread.result()
             end = time.time()
-            if toxic_prob > 0.5:
+            if toxic_prob > self.threshold:
                 toxic_verdict = True
                 toxic_sentence = input_text
             else:
                 toxic_verdict = False
                 toxic_sentence = None
-            if jailbreak_prob > 0.5:
+            if jailbreak_prob > self.threshold:
                 jailbreak_verdict = True
                 jailbreak_sentence = input_text
             else:
@@ -143,7 +113,7 @@ class GuardHandler:
                 prob = self.jailbreak_handler.predict(input_text)
             else:
                 raise Exception("No model loaded")
-            if prob > 0.5:
+            if prob > self.threshold:
                 verdict = True
                 sentence = input_text
             else:
@@ -154,5 +124,5 @@ class GuardHandler:
                 f"{self.task}_verdict": verdict,
                 f"{self.task}_sentence": sentence,
             }
-        print(result_dict['time'])
+        print(result_dict["time"])
         return result_dict

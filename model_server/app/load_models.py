@@ -4,7 +4,11 @@ from gliner import GLiNER
 from transformers import AutoTokenizer, pipeline
 import sqlite3
 from employee_data_generator import generate_employee_data
-from network_data_generator import generate_device_data, generate_interface_stats_data, generate_flow_data
+from network_data_generator import (
+    generate_device_data,
+    generate_interface_stats_data,
+    generate_flow_data,
+)
 
 
 def load_transformers(models=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
@@ -29,7 +33,6 @@ def load_toxic_model(
     model_name,
     hardware_config="cpu",
 ):
-
     toxic_model = {}
     toxic_model["tokenizer"] = AutoTokenizer.from_pretrained(
         model_name, trust_remote_code=True
@@ -54,7 +57,7 @@ def load_toxic_model(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
     toxic_model["device"] = device
-    toxic_model['hardware_config'] = hardware_config
+    toxic_model["hardware_config"] = hardware_config
     return toxic_model
 
 
@@ -62,7 +65,6 @@ def load_jailbreak_model(
     model_name,
     hardware_config="cpu",
 ):
-
     jailbreak_model = {}
     jailbreak_model["tokenizer"] = AutoTokenizer.from_pretrained(
         model_name, trust_remote_code=True
@@ -86,7 +88,7 @@ def load_jailbreak_model(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
     jailbreak_model["device"] = device
-    jailbreak_model['hardware_config'] = hardware_config
+    jailbreak_model["hardware_config"] = hardware_config
     return jailbreak_model
 
 
@@ -100,9 +102,10 @@ def load_zero_shot_models(
 
     return zero_shot_models
 
+
 def load_sql():
     # Example Usage
-    conn = sqlite3.connect(':memory:')
+    conn = sqlite3.connect(":memory:")
 
     # create and load the employees table
     generate_employee_data(conn)
@@ -115,6 +118,5 @@ def load_sql():
 
     # create and load the flow table
     generate_flow_data(conn, device_data)
-
 
     return conn
