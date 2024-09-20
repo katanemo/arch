@@ -262,26 +262,25 @@ impl StreamContext {
 
         debug!("zeroshot intent response: {:?}", zeroshot_intent_response);
 
-        let similarity_map: HashMap<String, f64> = callout_context
+        let desc_emb_similarity_map: HashMap<String, f64> = callout_context
             .similarity_scores
             .clone()
             .unwrap()
             .into_iter()
             .collect();
 
+        let pred_class_desc_emb_similarity = desc_emb_similarity_map
+            .get(&zeroshot_intent_response.predicted_class)
+            .unwrap();
+
         let prompt_target_similarity_score = zeroshot_intent_response.predicted_class_score * 0.7
-            + similarity_map
-                .get(&zeroshot_intent_response.predicted_class)
-                .unwrap()
-                * 0.3;
+            + pred_class_desc_emb_similarity * 0.3;
 
         debug!(
             "similarity score: {:.3}, intent score: {:.3}, description embedding score: {:.3}",
             prompt_target_similarity_score,
             zeroshot_intent_response.predicted_class_score,
-            similarity_map
-                .get(&zeroshot_intent_response.predicted_class)
-                .unwrap()
+            pred_class_desc_emb_similarity
         );
 
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
