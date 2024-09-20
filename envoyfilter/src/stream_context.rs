@@ -22,7 +22,7 @@ use public_types::common_types::open_ai::{
     StreamOptions,
 };
 use public_types::common_types::{
-    BoltFCResponse, BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
+    BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
     ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
 use public_types::configuration::{Overrides, PromptTarget, PromptType};
@@ -42,7 +42,7 @@ enum ResponseHandlerType {
 pub struct CallContext {
     response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
-    prompt_target: Option<PromptTarget>,
+    prompt_target_name: Option<String>,
     request_body: ChatCompletionsRequest,
     similarity_scores: Option<Vec<(String, f64)>>,
 }
@@ -335,46 +335,47 @@ impl StreamContext {
             .unwrap()
             .clone();
 
-        info!(
-            "prompt_target name: {:?}, type: {:?}",
-            prompt_target.name, prompt_target.prompt_type
-        );
+        info!("prompt_target name: {:?}", prompt_target_name);
 
         match prompt_target.prompt_type {
             PromptType::FunctionResolver => {
-                // only extract entity names
-                let properties: HashMap<String, ToolParameter> = match prompt_target.parameters {
-                    // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
-                    Some(ref entities) => {
-                        let mut properties: HashMap<String, ToolParameter> = HashMap::new();
-                        for entity in entities.iter() {
-                            let param = ToolParameter {
-                                parameter_type: entity.parameter_type.clone(),
-                                description: entity.description.clone(),
-                                required: entity.required,
-                                enum_values: entity.enum_values.clone(),
-                            };
-                            properties.insert(entity.name.clone(), param);
-                        }
-                        properties
-                    }
-                    None => HashMap::new(),
-                };
-                let tools_parameters = ToolParameters {
-                    parameters_type: "dict".to_string(),
-                    properties,
-                };
+                let mut tools_definitions: Vec<ToolsDefinition> = Vec::new();
 
-                let tools_defintion: ToolsDefinition = ToolsDefinition {
-                    name: prompt_target.name.clone(),
-                    description: prompt_target.description.clone(),
-                    parameters: tools_parameters,
-                };
+                for pt in self.prompt_targets.read().unwrap().values() {
+                    // only extract entity names
+                    let properties: HashMap<String, ToolParameter> = match pt.parameters {
+                        // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
+                        Some(ref entities) => {
+                            let mut properties: HashMap<String, ToolParameter> = HashMap::new();
+                            for entity in entities.iter() {
+                                let param = ToolParameter {
+                                    parameter_type: entity.parameter_type.clone(),
+                                    description: entity.description.clone(),
+                                    required: entity.required,
+                                    enum_values: entity.enum_values.clone(),
+                                };
+                                properties.insert(entity.name.clone(), param);
+                            }
+                            properties
+                        }
+                        None => HashMap::new(),
+                    };
+                    let tools_parameters = ToolParameters {
+                        parameters_type: "dict".to_string(),
+                        properties,
+                    };
+
+                    tools_definitions.push(ToolsDefinition {
+                        name: pt.name.clone(),
+                        description: pt.description.clone(),
+                        parameters: tools_parameters,
+                    });
+                }
 
                 let chat_completions = ChatCompletionsRequest {
                     model: GPT_35_TURBO.to_string(),
                     messages: callout_context.request_body.messages.clone(),
-                    tools: Some(vec![tools_defintion]),
+                    tools: Some(tools_definitions),
                     stream: false,
                     stream_options: None,
                 };
@@ -422,7 +423,7 @@ impl StreamContext {
 
                 self.metrics.active_http_calls.increment(1);
                 callout_context.response_handler_type = ResponseHandlerType::FunctionResolver;
-                callout_context.prompt_target = Some(prompt_target);
+                callout_context.prompt_target_name = Some(prompt_target.name);
                 if self.callouts.insert(token_id, callout_context).is_some() {
                     panic!("duplicate token_id")
                 }
@@ -436,9 +437,9 @@ impl StreamContext {
         let body_str = String::from_utf8(body).unwrap();
         debug!("function_resolver response str: {:?}", body_str);
 
-        let mut boltfc_response: BoltFCResponse = serde_json::from_str(&body_str).unwrap();
+        let boltfc_response: ChatCompletionsResponse = serde_json::from_str(&body_str).unwrap();
 
-        let boltfc_response_str = boltfc_response.message.content.as_ref().unwrap();
+        let boltfc_response_str = boltfc_response.choices[0].message.content.as_ref().unwrap();
 
         let tools_call_response: BoltFCToolsCall = match serde_json::from_str(boltfc_response_str) {
             Ok(fc_resp) => fc_resp,
@@ -448,7 +449,6 @@ impl StreamContext {
                 // Let's send the response back to the user to initalize lightweight dialog for parameter collection
 
                 // add resolver name to the response so the client can send the response back to the correct resolver
-                boltfc_response.resolver_name = Some(callout_context.prompt_target.unwrap().name);
                 info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
                 let bolt_fc_dialogue_message = serde_json::to_string(&boltfc_response).unwrap();
                 self.send_http_response(
@@ -460,11 +460,18 @@ impl StreamContext {
             }
         };
 
-        // verify required parameters are present
-        callout_context
-            .prompt_target
-            .as_ref()
+        // prompt target
+
+        let prompt_target = self
+            .prompt_targets
+            .read()
             .unwrap()
+            .get(callout_context.prompt_target_name.as_ref().unwrap())
+            .unwrap()
+            .clone();
+        // verify required parameters are present
+
+        prompt_target
             .parameters
             .as_ref()
             .unwrap()
@@ -487,10 +494,17 @@ impl StreamContext {
 
         debug!("tool_call_details: {:?}", tools_call_response);
         let tool_name = &tools_call_response.tool_calls[0].name;
+
+        // ensure that detected tool name matches the prompt target name
+        if tool_name != &prompt_target.name {
+            warn!(
+                "tool name mismatch: detected tool name: {}, expected tool name: {}",
+                tool_name, &prompt_target.name
+            );
+        }
         let tool_params = &tools_call_response.tool_calls[0].arguments;
         debug!("tool_name: {:?}", tool_name);
         debug!("tool_params: {:?}", tool_params);
-        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
         debug!("prompt_target: {:?}", prompt_target);
 
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
@@ -526,7 +540,14 @@ impl StreamContext {
         debug!("response received for function call response");
         let body_str: String = String::from_utf8(body).unwrap();
         debug!("function_call_response response str: {:?}", body_str);
-        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
+        let prompt_target_name = callout_context.prompt_target_name.unwrap();
+        let prompt_target = self
+            .prompt_targets
+            .read()
+            .unwrap()
+            .get(&prompt_target_name)
+            .unwrap()
+            .clone();
 
         let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
 
@@ -740,7 +761,7 @@ impl HttpContext for StreamContext {
         let call_context = CallContext {
             response_handler_type: ResponseHandlerType::GetEmbeddings,
             user_message: Some(user_message),
-            prompt_target: None,
+            prompt_target_name: None,
             request_body: deserialized_body,
             similarity_scores: None,
         };
@@ -836,7 +857,7 @@ impl HttpContext for StreamContext {
                     }
                 };
 
-            self.response_tokens += chat_completions_response.usage.completions_tokens;
+            self.response_tokens += chat_completions_response.usage.completion_tokens;
         }
 
         debug!(

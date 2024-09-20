@@ -147,34 +147,6 @@ static_resources:
                       address: model_server
                       port_value: 80
                   hostname: "model_server"
-    - name: weatherhost
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: weatherhost
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: model_server
-                      port_value: 80
-                  hostname: "model_server"
-    - name: nerhost
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: nerhost
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: model_server
-                      port_value: 80
-                  hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS
@@ -203,3 +175,19 @@ static_resources:
                       address: function_resolver
                       port_value: 80
                   hostname: "bolt_fc_1b"
+{% for _, cluster in arch_clusters.items() %}
+    - name: {{ cluster.name }}
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: {{ cluster.name }}
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: {{ cluster.address }}
+                      port_value: {{ cluster.port }}
+                  hostname: {{ cluster.address }}
+{% endfor %}
