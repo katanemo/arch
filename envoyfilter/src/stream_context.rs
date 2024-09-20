@@ -505,6 +505,7 @@ impl StreamContext {
 
         debug!("tool_name(s): {:?}", tool_names);
         debug!("tool_params: {}", tool_params_json_str);
+        debug!("prompt_target_name: {}", prompt_target.name);
 
         let endpoint = prompt_target.endpoint.as_ref().unwrap();
         let token_id = match self.dispatch_http_call(
