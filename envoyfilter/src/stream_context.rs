@@ -343,6 +343,7 @@ impl StreamContext {
                                     description: entity.description.clone(),
                                     required: entity.required,
                                     enum_values: entity.enum_values.clone(),
+                                    default: entity.default.clone(),
                                 };
                                 properties.insert(entity.name.clone(), param);
                             }
@@ -425,7 +426,7 @@ impl StreamContext {
         debug!("response received for function resolver");
 
         let body_str = String::from_utf8(body).unwrap();
-        debug!("function_resolver response str: {:?}", body_str);
+        debug!("function_resolver response str: {}", body_str);
 
         let boltfc_response: ChatCompletionsResponse = serde_json::from_str(&body_str).unwrap();
 
@@ -459,8 +460,8 @@ impl StreamContext {
             .get(callout_context.prompt_target_name.as_ref().unwrap())
             .unwrap()
             .clone();
-        // verify required parameters are present
 
+        // verify required parameters are present
         prompt_target
             .parameters
             .as_ref()
@@ -492,12 +493,19 @@ impl StreamContext {
                 tool_name, &prompt_target.name
             );
         }
-        let tool_params = &tools_call_response.tool_calls[0].arguments;
-        debug!("tool_name: {:?}", tool_name);
-        debug!("tool_params: {:?}", tool_params);
-        debug!("prompt_target: {:?}", prompt_target);
+        // extract all tool names
+        let tool_names: Vec<String> = tools_call_response
+            .tool_calls
+            .iter()
+            .map(|tool_call| tool_call.name.clone())
+            .collect();
 
+        let tool_params = &tools_call_response.tool_calls[0].arguments;
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
+
+        debug!("tool_name(s): {:?}", tool_names);
+        debug!("tool_params: {}", tool_params_json_str);
+        debug!("prompt_target_name: {}", prompt_target.name);
 
         let endpoint = prompt_target.endpoint.as_ref().unwrap();
         let token_id = match self.dispatch_http_call(
