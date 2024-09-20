@@ -1,0 +1,76 @@
+version: "0.1-beta"
+
+listen:
+  address: 0.0.0.0  # or 127.0.0.1
+  port_value: 8080  # If you configure port 443, you'll need to update the listener with your TLS certificates
+  messages: "hugging-face-messages-json" # Defines how Arch should parse the content from application/json or text/pain Content-type in the http request
+
+system_prompts:
+  - name: "network_assistant"
+    content: |
+      You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
+
+llm_providers:
+  - name: "OpenAI"
+    access_key: $OPEN_AI_KEY
+    model: "gpt-4"
+    default: true
+    rate_limit:
+      selector: #optional headers, to add rate limiting based on http headers like JWT tokens or API keys
+        header:
+          name: "Authorization"
+          value: ""  # Empty value means each separate value has a separate limit
+      limit:
+        tokens: 100000  # Tokens per unit
+        unit: "minute"
+  - name: "Mistral"
+    access_key: $MISTRAL_KEY
+    model: "mistral-7B"
+
+prompt_endpoints: #Arch creates a round-robin load balancing DNS between different endpoints, managed via the cluster subsystem.
+  - "http://127.0.0.2" #assumes port 8000, unless port is specified with :5000
+  - "http://127.0.0.1"
+
+prompt_guards:
+  input_guard:
+    - name: "jailbreak_detection"
+      on_exception:
+        forward_to_error_target: true
+      # Additional guard configurations can be added here
+    - name: "toxicity_detection"
+      on_exception:
+        message: "Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
+      # Additional guard configurations can be added here
+
+prompt_targets:
+  - name: "information_extraction"
+    type: "RAG"  # Retrieval Augmented Generation
+    description: "This prompt handles all information extraction scenarios."
+    path: "/agent/summary"
+    parameters:
+      - name: "query"
+        description: "The user's query for information extraction."
+        default_value: ""
+        required: true
+      - name: "context"
+        description: "Additional context to aid information extraction."
+        default_value: ""
+        required: false
+    auto-llm-dispatch-on-response: true #Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM
+
+  - name: "reboot_network_device"
+    path: "/agent/action"
+    description: "Helps network operators perform device operations like rebooting a device."
+    parameters:
+      - name: "device_id"
+        description: "Identifier of the network device to reboot."
+        default_value: ""
+        required: true
+      - name: "confirmation"
+        description: "Confirmation flag to proceed with reboot."
+        default_value: "false"
+        required: true
+
+error_target:
+  name: "error_handler"
+  path: "/errors"

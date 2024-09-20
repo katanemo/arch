@@ -3,28 +3,31 @@
 Life of a Request
 =================
 
-.. contents::
-   :local:
-   :depth: 2
-
 Below we describe the events in the life of a request passing through an Arch gateway instance. We first
 describe how Arch fits into the request path and then the internal events that take place following 
-the arrival of a request at Arch from clients. We follow the request until the corresponding dispatch 
-upstream and the response path.
+the arrival of a request at Arch from downtream clients. We follow the request until the corresponding 
+dispatch upstream and the response path.
+
+.. image:: /_static/img/network-topology-app-server.jpg
+   :width: 100%
+   :align: center
 
 Terminology
 -----------
 
-Arch uses the following terms through its codebase and documentation:
+Arch uses the following terms through its' codebase and documentation:
 
-* *Listeners*: Arch module responsible for binding to an IP/port, accepting new HTTP connections and orchestrating 
-  the downstream facing aspects of request processing. 
-* *Downstream*: an entity connecting to Arch. This may be a local application (in a sidecar model) or a remote client. 
-* *LLM Providers*: a set of upstream LLMs that Arch routes/forwards prompts to. 
+* *Listeners*: The Arch primitive responsible for binding to an IP/port, accepting new HTTP connections and orchestrating 
+  the downstream facing aspects of prompt processing. Arch relies almostly exclusively on `Envoy's Listener subsystem <arch_overview_listeners>`_.  
+* *Downstream*: an entity connecting to Arch. This may be another AI agent (side car or networked) or a remote client. 
+* *LLM Providers*: a set of upstream LLMs (API-based or network nodes) that Arch routes/forwards user and application-specific prompts to. 
+  Arch offers a simply abstract to call different LLMs via model-id, add LLM specific retry, failover and routing capabilities. 
+  Arch build's on top of Envoy's `Cluster substem <https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/cluster_manager#arch-overview-cluster-manager>`
 * *Upstream*: A set of hosts that can recieve traffic from an instance of the Arch gateway.
-* *Prompt Targets*: Arch builts on to
-* 
-
+* *Prompt Targets*: A core primitive offered in Arch. Prompt targets are endpoints that receive prompts that are processed by Arch. 
+  For example, Arch enriches incoming prompts with metadata like knowing when a request is a follow-up or clarifying prompt so that you can 
+  build faster, more accurate RAG apps. To support agentic apps, like scheduling travel plans or sharing comments on a document - via prompts, 
+  
 Network topology
 ----------------
 

@@ -3,10 +3,10 @@ What is Arch
 
 Arch is an intelligent Layer 7 gateway designed for generative AI apps, agents, and Co-pilots that work 
 with prompts. Written in `Rust <https://www.rust-lang.org/>`_, and engineered with purpose-built 
-:ref:`LLMs <llms_in_arch>`, Arch handles all the undifferentiated tasks related to accepting and processing 
-prompts, including rejecting `jailbreak <https://github.com/verazuo/jailbreak_llms>`_ attempts, intelligently 
-calling “backend” APIs to fulfill a user's request represented in a prompt, routing/disaster recovery between 
-upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
+:ref:`LLMs <llms_in_arch>`, Arch handles all the critical but undifferentiated tasks related to handling and 
+processing prompts, including rejecting `jailbreak <https://github.com/verazuo/jailbreak_llms>`_ attempts, 
+intelligently calling “backend” APIs to fulfill a user's request represented in a prompt, routing/disaster 
+recovery between upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
 
 The project was born out of the belief that:
 
@@ -38,13 +38,13 @@ functionality. This gives Arch several advantages:
 **Engineered with LLMs:** Arch is engineered with specialized LLMs that are desgined for fast, cost-effective 
 and acurrate handling of prompts. These (sub-billion parameter) :ref:`LLMs <llms_in_arch>` are designed to be 
 best-in-class for critcal but undifferentiated prompt-related tasks like 1) applying guardrails for jailbreak 
-attempts 2)extracting critical information from prompts (like follow-on, clarifying questions, etc.) so that you can 
-improve the speed and accuracy of retrieval, and be able to convert prompts into API sematics when necessary 
+attempts 2) extracting critical information from prompts (like follow-on, clarifying questions, etc.) so that 
+you can improve the speed and accuracy of retrieval, and be able to convert prompts into API sematics when necessary 
 to build text-to-action (or agentic) applications. The focus for Arch is to make prompt processing indistiguishable 
 from the processing of a traditional HTTP request before forwarding it to an application server. With our focus on 
 speed and cost, Arch uses purpose-built LLMs and will continue to invest in those to lower latency (and cost) while 
 maintaining exceptional baseline performance with frontier LLMs like `OpenAI <https:openai.com>`_, and 
-`Anthropic <https:www.anthropic.com>`.
+`Anthropic <https:www.anthropic.com>`_.
 
 **Prompt Guardrails:** Arch helps you apply prompt guardrails in a centralized way for better governance 
 hygiene. With prompt guardrails you can prevent `jailbreak <https://github.com/verazuo/jailbreak_llms>`_ 
@@ -62,11 +62,11 @@ user to gather any missing parameters and makes API calls so that you can focus 
 understand three critical aspects of your application: latency, token usage, and error rates by LLM provider. 
 Latency measures the speed at which your application is responding to users, which includes metrics like time 
 to first token (TFT), time per output token (TOT) metrics, and the total latency as perceived by users. In 
-addition, Arch offers several capabilities for calls originating from your applications to LLMs, including a 
-vendor-agnostic SDK to make LLM calls, smart retries on errors from upstream LLMs, and automatic cutover to other 
-LLMs configured for continuous availability and disaster recovery scenarios.
+addition, Arch offers several capabilities for calls originating from your applications to upstream LLMs, 
+including a vendor-agnostic SDK to make LLM calls, smart retries on errors from upstream LLMs, and automatic 
+cutover to other LLMs configured for continuous availability and disaster recovery scenarios.
 
 **Front/edge proxy support:** There is substantial benefit in using the same software at the edge (observability, 
 prompt management, load balancing algorithms, etc.) as it is . Arch has a feature set that makes it well suited 
 as an edge proxy for most modern web application use cases. This includes TLS termination, HTTP/1.1 HTTP/2 and 
-HTTP/3 support, as well as HTTP L7 routing.
+HTTP/3 support and prompt-based routing.
