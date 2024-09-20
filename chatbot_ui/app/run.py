@@ -1,10 +1,19 @@
+print ('hello world 1.0')
 import os
 from openai import OpenAI
 import gradio as gr
+import logging as log
+from dotenv import load_dotenv
+
+load_dotenv()
+
+print("hello world")
 
 OPEN_API_KEY=os.getenv("OPENAI_API_KEY")
 CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+
+log.info("CHAT_COMPLETION_ENDPOINT: ", CHAT_COMPLETION_ENDPOINT)
 
 client = OpenAI(api_key=OPEN_API_KEY, base_url=CHAT_COMPLETION_ENDPOINT)
 
@@ -14,16 +23,20 @@ def predict(message, history):
     #     history_openai_format.append({"role": "user", "content": human })
     #     history_openai_format.append({"role": "assistant", "content":assistant})
     history.append({"role": "user", "content": message})
+    log.info("CHAT_COMPLETION_ENDPOINT: ", CHAT_COMPLETION_ENDPOINT)
+    log.info("history: ", history)
 
     try:
-      response = client.chat.completions.create(model='gpt-3.5-turbo',
+      response = client.chat.completions.create(model=MODEL_NAME,
         messages= history,
         temperature=1.0
       )
     except Exception as e:
-      print(e)
+      log.info(e)
       # remove last user message in case of exception
       history.pop()
+      log.info("CHAT_COMPLETION_ENDPOINT: ", CHAT_COMPLETION_ENDPOINT)
+      log.info("Error with OpenAI API: {}".format(e.message))
       raise gr.Error("Error with OpenAI API: {}".format(e.message))
 
     # for chunk in response:
@@ -49,4 +62,4 @@ with gr.Blocks(fill_height=True, css="footer {visibility: hidden}") as demo:
 
     txt.submit(predict, [txt, state], [chatbot, state])
 
-demo.launch(server_name="0.0.0.0", server_port=8080, show_error=True)
+demo.launch(server_name="0.0.0.0", server_port=8080, show_error=True, debug=True)

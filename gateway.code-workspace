@@ -32,6 +32,10 @@
       "name": "demos/function_calling",
       "path": "./demos/function_calling",
     },
+    {
+      "name": "demos/function_calling/api_server",
+      "path": "./demos/function_calling/api_server",
+    },
   ],
   "settings": {}
 }
