@@ -1,4 +1,17 @@
-FROM python:3.10 AS base
+FROM nvidia/cuda:11.7.1-cudnn8-devel-ubuntu20.04 as base
+
+# Set environment variables for CUDA
+ENV CUDA_VERSION 11.7
+ENV CUDNN_VERSION 8
+
+# Install necessary system packages
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up Python environment
+RUN pip3 install --upgrade pip
 
 #
 # builder
