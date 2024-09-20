@@ -71,9 +71,7 @@ class PredictHandler:
         with torch.no_grad():
             logits = self.model(**inputs).logits.numpy()[0]
             del inputs
-        print(logits)
         probabilities = softmax(logits)
-        print(probabilities)
         positive_class_probabilities = probabilities[self.positive_class]
         return positive_class_probabilities
 
@@ -156,4 +154,5 @@ class GuardHandler:
                 f"{self.task}_verdict": verdict,
                 f"{self.task}_sentence": sentence,
             }
+        print(result_dict['time'])
         return result_dict

@@ -6,6 +6,10 @@ FROM python:3.10 AS base
 FROM base AS builder
 
 WORKDIR /src
+RUN pip install --upgrade pip
+
+# Install git (needed for cloning the repository)
+RUN apt-get update && apt-get install -y git && apt-get clean
 
 COPY requirements.txt /src/
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
@@ -33,7 +37,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
   curl \
   && rm -rf /var/lib/apt/lists/*
-
 
 # comment it out for now as we don't want to download the model every time we build the image
 # we will mount host cache to docker image to avoid downloading the model every time

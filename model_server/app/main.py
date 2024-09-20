@@ -30,22 +30,14 @@ zero_shot_models = load_zero_shot_models()
 
 with open('/root/bolt_config.yaml', 'r') as file:
     config = yaml.safe_load(file)
-if is_intel_cpu():
-    cpu = "cpu"
 with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
 if 'prompt_guards' in config.keys():
     if len(config['prompt_guards']['input_guards']) == 2:
         task = 'both'
-        jailbreak_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'jailbreak'][0]['host_preference'][0]
-        toxic_hardware = [item for item in config['model_host_preferences'] if item['name'] == 'toxic'][0]['host_preference'][0]
-        if jailbreak_hardware == 'cpu' or torch.cuda.is_available() == False:
-            jailbreak_hardware = cpu
-        if toxic_hardware == 'cpu' or torch.cuda.is_available() == False:
-            toxic_hardware = cpu
-
-
+        jailbreak_hardware = 'gpu' if torch.cuda.is_available() else 'cpu'
+        toxic_hardware = 'gpu' if torch.cuda.is_available() else 'cpu'
         toxic_model = load_toxic_model(
             guard_model_config["toxic"][jailbreak_hardware], toxic_hardware
         )
@@ -56,9 +48,7 @@ if 'prompt_guards' in config.keys():
     else:
         task = list(config['prompt_guards']['input_guards'].keys())[0]
 
-        hardware = [item for item in config['model_host_preferences'] if item['name'] == task][0]['host_preference'][0]
-        if hardware == 'cpu' or torch.cuda.is_available() == False:
-            hardware = cpu
+        hardware = 'gpu' if torch.cuda.is_available() else 'cpu'
         if task == 'toxic':
             toxic_model = load_toxic_model(
                 guard_model_config["toxic"][hardware], hardware

@@ -8,10 +8,8 @@ transformers
 pyyaml
 accelerate
 # guard inference packages
-onnxruntime
 optimum-intel
 openvino
 psutil
-EETQ
 pandas
 dateparser

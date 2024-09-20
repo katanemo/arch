@@ -27,7 +27,7 @@ def load_ner_models(models=os.getenv("NER_MODELS", "urchade/gliner_large-v2.1"))
 
 def load_toxic_model(
     model_name,
-    hardware_config="intel_cpu",
+    hardware_config="cpu",
 ):
 
     toxic_model = {}
@@ -35,24 +35,12 @@ def load_toxic_model(
         model_name, trust_remote_code=True
     )
     toxic_model["model_name"] = model_name
-    if hardware_config == "intel_cpu":
+    if hardware_config == "cpu":
         from optimum.intel import OVModelForSequenceClassification
 
         device = "cpu"
         toxic_model["model"] = OVModelForSequenceClassification.from_pretrained(
             model_name, device_map=device, low_cpu_mem_usage=True
-        )
-    elif hardware_config == "non_intel_cpu":
-        import onnxruntime as ort
-
-        device = "cpu"
-        opts = ort.SessionOptions()
-        if "model_quantized.onnx" not in model_name:
-            model_name += "/model_quantized.onnx"
-        toxic_model["model"] = ort.InferenceSession(
-            model_name,
-            opts,
-            providers=["CPUExecutionProvider"],
         )
     elif hardware_config == "gpu":
         from transformers import AutoModelForSequenceClassification
@@ -72,7 +60,7 @@ def load_toxic_model(
 
 def load_jailbreak_model(
     model_name,
-    hardware_config="intel_cpu",
+    hardware_config="cpu",
 ):
 
     jailbreak_model = {}
