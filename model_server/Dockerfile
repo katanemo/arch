@@ -10,15 +10,6 @@ WORKDIR /src
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 \
     python3-pip \
-    python3-dev \
-    build-essential \
-    cmake \
-    git \
-    curl \
-    vim \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
