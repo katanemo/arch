@@ -13,7 +13,6 @@ ENV PYTHONUNBUFFERED=1
 # Create a symlink so that `python` points to `python3`
 
 # Install Python packages if necessary
-RUN pip install --upgrade pip
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 \
