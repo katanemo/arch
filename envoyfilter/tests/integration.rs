@@ -9,7 +9,8 @@ use proxy_wasm_test_framework::types::{
     Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
 };
 use public_types::common_types::{
-    open_ai::Message, BoltFCResponse, BoltFCToolsCall, IntOrString, ToolCallDetail,
+    open_ai::{ChatCompletionsResponse, Choice, Message, Usage},
+    BoltFCToolsCall, IntOrString, ToolCallDetail,
 };
 use public_types::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
 use serial_test::serial;
@@ -151,10 +152,6 @@ fn default_config() -> Configuration {
 default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
-
-embedding_provider:
-  name: "SentenceTransformer"
-  model: "all-MiniLM-L6-v2"
 
 llm_providers:
   - name: "open-ai-gpt-4"
@@ -426,16 +423,20 @@ fn request_ratelimited() {
         tool_calls: tool_call_detail,
     };
 
-    let bolt_fc_resp = BoltFCResponse {
-        model: String::from("test"),
-        message: Message {
-            role: String::from("system"),
-            content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
-            model: None,
+    let bolt_fc_resp = ChatCompletionsResponse {
+        usage: Usage {
+            completion_tokens: 0,
         },
-        done_reason: String::from("test"),
-        done: true,
-        resolver_name: None,
+        choices: vec![Choice {
+            finish_reason: "test".to_string(),
+            index: 0,
+            message: Message {
+                role: "system".to_string(),
+                content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
+                model: None,
+            },
+        }],
+        model: String::from("test"),
     };
 
     let bolt_fc_resp_str = serde_json::to_string(&bolt_fc_resp).unwrap();
@@ -535,16 +536,20 @@ fn request_not_ratelimited() {
         tool_calls: tool_call_detail,
     };
 
-    let bolt_fc_resp = BoltFCResponse {
-        model: String::from("test"),
-        message: Message {
-            role: String::from("system"),
-            content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
-            model: None,
+    let bolt_fc_resp = ChatCompletionsResponse {
+        usage: Usage {
+            completion_tokens: 0,
         },
-        done_reason: String::from("test"),
-        done: true,
-        resolver_name: None,
+        choices: vec![Choice {
+            finish_reason: "test".to_string(),
+            index: 0,
+            message: Message {
+                role: "system".to_string(),
+                content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
+                model: None,
+            },
+        }],
+        model: String::from("test"),
     };
 
     let bolt_fc_resp_str = serde_json::to_string(&bolt_fc_resp).unwrap();
