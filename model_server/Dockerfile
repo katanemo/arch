@@ -6,11 +6,22 @@ FROM nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu20.04 AS base
 FROM base AS builder
 
 WORKDIR /src
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+
+# Create a symlink so that `python` points to `python3`
+
+# Install Python packages if necessary
+RUN pip3 install --upgrade pip
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 \
     python3-pip \
+    python3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/bin/python3 /usr/bin/python && \
+    ln -s /usr/bin/pip3 /usr/bin/pip
 
 RUN pip install --upgrade pip
 
