@@ -2,12 +2,6 @@ default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
 
-
-# should not be here
-embedding_provider:
-  name: "bge-large-en-v1.5"
-  model: "BAAI/bge-large-en-v1.5"
-
 llm_providers:
 
   - name: open-ai-gpt-4

@@ -79,4 +79,4 @@ services:
       - "18080:8080"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1/chat/completions
+      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1

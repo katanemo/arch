@@ -153,10 +153,6 @@ default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
 
-embedding_provider:
-  name: "SentenceTransformer"
-  model: "all-MiniLM-L6-v2"
-
 llm_providers:
   - name: "open-ai-gpt-4"
     api_key: "$OPEN_AI_API_KEY"
