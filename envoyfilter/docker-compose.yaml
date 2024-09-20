@@ -40,4 +40,4 @@ services:
     ports:
       - "18080:8080"
     environment:
-      - CHAT_COMPLETION_ENDPOINT=http://envoy:10000/v1/chat/completions
+      - CHAT_COMPLETION_ENDPOINT=http://envoy:10000/v1

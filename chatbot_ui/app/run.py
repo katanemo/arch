@@ -1,9 +1,12 @@
 import os
 from openai import OpenAI
 import gradio as gr
+from dotenv import load_dotenv
+
+load_dotenv()
 
 OPEN_API_KEY=os.getenv("OPENAI_API_KEY")
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1")
+CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
 
 client = OpenAI(api_key=OPEN_API_KEY, base_url=CHAT_COMPLETION_ENDPOINT)
