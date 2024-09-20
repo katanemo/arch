@@ -472,30 +472,30 @@ impl StreamContext {
             .unwrap()
             .clone();
 
-        // verify required parameters are present
-        prompt_target
-            .parameters
-            .as_ref()
-            .unwrap()
-            .iter()
-            .for_each(|param| match param.required {
-                None => {}
-                Some(required) => {
-                    if required
-                        && !tools_call_response.tool_calls[0]
-                            .arguments
-                            .contains_key(&param.name)
-                    {
-                        self.send_server_error(
-                            format!(
-                                "missing required parameter: {}, for target: {}",
-                                param.name, prompt_target.name
-                            ),
-                            Some(StatusCode::BAD_REQUEST),
-                        )
-                    }
-                }
-            });
+        // // verify required parameters are present
+        // prompt_target
+        //     .parameters
+        //     .as_ref()
+        //     .unwrap()
+        //     .iter()
+        //     .for_each(|param| match param.required {
+        //         None => {}
+        //         Some(required) => {
+        //             if required
+        //                 && !tools_call_response.tool_calls[0]
+        //                     .arguments
+        //                     .contains_key(&param.name)
+        //             {
+        //                 self.send_server_error(
+        //                     format!(
+        //                         "missing required parameter: {}, for target: {}",
+        //                         param.name, prompt_target.name
+        //                     ),
+        //                     Some(StatusCode::BAD_REQUEST),
+        //                 )
+        //             }
+        //         }
+        //     });
 
         debug!("tool_call_details: {:?}", tools_call_response);
         let tool_name = &tools_call_response.tool_calls[0].name;
