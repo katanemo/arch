@@ -19,8 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN ln -s /usr/bin/python3 /usr/bin/python && \
-    ln -s /usr/bin/pip3 /usr/bin/pip
+
 
 # Remove existing `pip` if it exists, then create symlinks for python and pip
 RUN rm -f /usr/bin/pip && \
