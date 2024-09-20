@@ -10,6 +10,11 @@ WORKDIR /src
 COPY requirements.txt /src/
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 
+# RUN git clone https://github.com/NetEase-FuXi/EETQ.git
+# WORKDIR /EETQ
+# #RUN git submodule update --init --recursive
+# RUN pip install setup.py
+
 
 COPY . /src
 
@@ -33,8 +38,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
   curl \
   && rm -rf /var/lib/apt/lists/*
-RUN huggingface-cli download katanemolabs/toxic-onnx-quantized --local-dir /app/model/toxic
-RUN huggingface-cli download katanemolabs/Bolt-Guard-v2-onnx --local-dir /app/model/jailbreak
+# RUN huggingface-cli download katanemolabs/toxic-onnx-quantized --local-dir /app/model/toxic
+# RUN huggingface-cli download katanemolabs/Bolt-Guard-v2-onnx --local-dir /app/model/jailbreak
 
 # comment it out for now as we don't want to download the model every time we build the image
 # we will mount host cache to docker image to avoid downloading the model every time

@@ -13,6 +13,6 @@ onnxruntime
 optimum-intel
 openvino
 psutil
-EETQ
+#EETQ
 pandas
 dateparser

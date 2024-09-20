@@ -33,7 +33,7 @@ with open('/root/bolt_config.yaml', 'r') as file:
 if is_intel_cpu():
     cpu = "intel_cpu"
 else:
-    cpu = "non_intel_cpu"
+    cpu = "intel_cpu"
 with open("guard_model_config.json") as f:
     guard_model_config = json.load(f)
 
