@@ -23,7 +23,7 @@ embedding_provider:
 llm_providers:
 
   - name: open-ai-gpt-4
-    api_key: $OPEN_AI_API_KEY
+    api_key: $OPENAI_API_KEY
     model: gpt-4
     default: true
 
