@@ -1,10 +1,10 @@
 # Use NVIDIA CUDA base image to enable GPU support
-FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu20.04 as base
+FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04 as base
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install Python 3.10
 RUN apt-get update && \
-    apt-get install -y python3-pip python3-dev python-is-python3 && \
+    apt-get install -y python3.10 python3-pip python3-dev python-is-python3 && \
     rm -rf /var/lib/apt/lists/*
 
 
