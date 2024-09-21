@@ -2,7 +2,7 @@ from fastapi import FastAPI, Response
 from bolt_handler import BoltHandler
 from common import ChatMessage
 import logging
-from ollama import Client
+from openai import OpenAI
 import os
 
 ollama_endpoint = os.getenv("OLLAMA_ENDPOINT", "localhost")
@@ -15,8 +15,12 @@ logger.info(f"using ollama endpoint: {ollama_endpoint}")
 app = FastAPI()
 handler = BoltHandler()
 
-ollama_client = Client(host=ollama_endpoint)
+client = OpenAI(
+    base_url='http://{}:11434/v1/'.format(ollama_endpoint),
 
+    # required but ignored
+    api_key='ollama',
+)
 
 @app.get("/healthz")
 async def healthz():
@@ -35,6 +39,6 @@ async def chat_completion(req: ChatMessage, res: Response):
     )
     messages.append({"role": "user", "content": req.messages[-1].content})
 
-    resp = ollama_client.chat(messages=messages, model=ollama_model, stream=False)
+    resp = client.chat.completions.create(messages=messages, model=ollama_model, stream=False)
     logger.info(f"response: {resp}")
     return resp

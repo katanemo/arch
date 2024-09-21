@@ -1,11 +1,16 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Overrides {
+  pub prompt_target_intent_matching_threshold: Option<f64>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub default_prompt_endpoint: String,
     pub load_balancing: LoadBalancing,
     pub timeout_ms: u64,
-    pub embedding_provider: EmbeddingProviver,
+    pub overrides: Option<Overrides>,
     pub llm_providers: Vec<LlmProvider>,
     pub prompt_guards: Option<PromptGuard>,
     pub system_prompt: Option<String>,
@@ -100,6 +105,7 @@ pub struct Parameter {
     pub required: Option<bool>,
     #[serde(rename = "enum")]
     pub enum_values: Option<Vec<String>>,
+    pub default: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -125,10 +131,6 @@ mod test {
 default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
-
-embedding_provider:
-  name: "SentenceTransformer"
-  model: "all-MiniLM-L6-v2"
 
 llm_providers:
   - name: "open-ai-gpt-4"

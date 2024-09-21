@@ -2,11 +2,9 @@ default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
 
-
-# should not be here
-embedding_provider:
-  name: "bge-large-en-v1.5"
-  model: "BAAI/bge-large-en-v1.5"
+overrides:
+  # confidence threshold for prompt target intent matching
+  prompt_target_intent_matching_threshold: 0.6
 
 llm_providers:
 
@@ -20,10 +18,6 @@ prompt_targets:
   - type: function_resolver
     name: weather_forecast
     description: This function resolver provides weather forecast information for a given city.
-    few_shot_examples:
-      - what is the weather in New York?
-      - how is the weather in San Francisco?
-      - what is the forecast in Chicago?
     parameters:
       - name: city
         required: true
@@ -33,9 +27,26 @@ prompt_targets:
       - name: units
         description: The units in which the weather forecast is requested.
     endpoint:
-      cluster: weatherhost
+      cluster: api_server
       path: /weather
     system_prompt: |
       You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
       - Use farenheight for temperature
       - Use miles per hour for wind speed
+  - type: function_resolver
+    name: insurance_claim_details
+    description: This function resolver provides insurance claim details for a given policy number.
+    parameters:
+      - name: policy_number
+        required: true
+        description: The policy number for which the insurance claim details are requested.
+      - name: include_expired
+        description: Include expired insurance claims in the response.
+        type: string
+        default: "false"
+    endpoint:
+      cluster: api_server
+      path: /insurance_claim_details
+    system_prompt: |
+      You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
+      - Use policy number to retrieve insurance claim details
