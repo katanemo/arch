@@ -3,7 +3,7 @@ Retrieval-Augmented Generation (RAG)
 
 The following section describes how Arch can help you build faster, more smarter Retrieval-Augmented Generation (RAG) applications.
 
-Intent Detection (Multi-Turn Chat)
+Intent Markers (Multi-Turn Chat)
 ----------------------------------
 
 Developers struggle to handle follow-up questions, or clarifying questions from users in their AI applications. Specifically, when 
@@ -20,6 +20,7 @@ to process from the history to improve the retrieval and speed of their applicat
 
 .. literalinclude:: /_include/intent_detection.py
     :language: python
+    :linenos:
     :lines: 77-
     :emphasize-lines: 15-22
     :caption: :download:`intent-detection-python-example.py </_include/intent_detection.py>`

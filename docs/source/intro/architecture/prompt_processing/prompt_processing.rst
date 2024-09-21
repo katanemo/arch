@@ -11,8 +11,8 @@ Arch's model serving process is designed to securely handle incoming prompts by 
 processing the prompts, and routing them to appropriate functions or prompt targets based on intent detection. 
 The serving workflow integrates several key components, each playing a crucial role in managing generative AI interactions:
 
-1. Jailbreak Attempts and Toxicity Guardrails (Arch-Guard):
------------------------------------------------------------
+Jailbreak and Toxicity Guardrails
+---------------------------------
    
    Arch employs Arch-Guard, a security layer powered by a compact and high-performimg LLM that monitors incoming prompts to detect 
    and reject jailbreak attempts, ensuring that unauthorized or harmful behaviors are intercepted early in the process. Arch-Guard 
@@ -26,8 +26,8 @@ The serving workflow integrates several key components, each playing a crucial r
     :caption: :download:`arch-getting-started.yml </_config/getting-started.yml>`
 
 
-2. Prompt Targets and Function Calls (Arch-FC1B):
--------------------------------------------------
+Prompt Targets
+---------------
    
    Once a prompt passes the security checks, Arch processes the content and identifies if any specific functions need to be called. 
    Arch-FC1B, a dedicated function calling module, extracts critical information from the prompt and executes the necessary 
@@ -38,8 +38,8 @@ The serving workflow integrates several key components, each playing a crucial r
    :width: 100%
    :align: center
 
-3. Intent Detection and Prompt Matching:
------------------------------------------------
+Intent Detection and Prompt Matching:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    Arch uses Natural Language Inference (NLI) and embedding-based approaches to detect the intent of each incoming prompt. 
    This intent detection phase analyzes the prompt's content and matches it against predefined prompt targets, ensuring that each prompt 
@@ -52,8 +52,8 @@ The serving workflow integrates several key components, each playing a crucial r
    - **NLI Integration**: Natural Language Inference techniques further refine the matching process by evaluating the semantic alignment 
      between the prompt and potential targets.
 
-4. Forwarding Prompts to Downstream Targets:
---------------------------------------------
+Forwarding Prompts to Downstream Targets:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    After determining the correct target, Arch forwards the prompt to the designated endpoint, such as an LLM host or API service. 
    This seamless routing mechanism integrates with Arch's broader ecosystem, enabling efficient communication and response generation tailored to the user's intent.
 

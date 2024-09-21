@@ -1,10 +1,10 @@
 version: "0.1-beta"
 
-listen:
+listener:
   address: 0.0.0.0  # or 127.0.0.1
-  port_value: 8080  # If you configure port 443, you'll need to update the listener with your TLS certificates
+  port_value: 8080  
   messages: "hugging-face-messages-json" # Defines how Arch should parse the content from application/json or text/pain Content-type in the http request
-  common_tls_context:
+  common_tls_context: # If you configure port 443, you'll need to update the listener with your TLS certificates
     tls_certificates:
       - certificate_chain:
           filename: "/etc/arch/certs/cert.pem"
@@ -16,52 +16,44 @@ system_prompts:
     content: |
       You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
+#Centralized way to manage LLM providers that the application has access to. Manage keys retry logic, failover, and limits in a central way
 llm_providers:
   - name: "OpenAI"
-    access_key: $OPEN_AI_KEY
-    model: "gpt-4"
+    access_key: $OPENAI_API_KEY
+    model: "gpt-40"
     default: true
+    stream: true
     rate_limit:
       selector: #optional headers, to add rate limiting based on http headers like JWT tokens or API keys
-        header:
+        http-header:
           name: "Authorization"
           value: ""  # Empty value means each separate value has a separate limit
       limit:
         tokens: 100000  # Tokens per unit
         unit: "minute"
   - name: "Mistral"
-    access_key: $MISTRAL_KEY
+    access_key: $MISTRAL_API_KEY
     model: "mistral-7B"
 
-prompt_endpoints: #Arch creates a round-robin load balancing DNS between different endpoints, managed via the cluster subsystem.
+prompt_endpoints: #Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
   - "http://127.0.0.2" #assumes port 8000, unless port is specified with :5000
-  - "http://127.0.0.1"
+  - "http://127.0.0.1:5000"
 
 prompt_guards:
   input_guard:
-    - name: "jailbreak_detection"
+    - name: "jailbreak"
       on_exception:
         forward_to_error_target: true
       # Additional guard configurations can be added here
-    - name: "toxicity_detection"
+    - name: "toxicity"
       on_exception:
         message: "Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
-      # Additional guard configurations can be added here
 
 prompt_targets:
   - name: "information_extraction"
-    type: "RAG"  # Retrieval Augmented Generation
+    type: "default"
     description: "This prompt handles all scenarios that are question and answer in nature. Like summarization, information extraction, etc."
     path: "/agent/summary"
-    parameters:
-      - name: "query"
-        description: "The user's query for information extraction."
-        default_value: ""
-        required: true
-      - name: "context"
-        description: "Additional context to aid information extraction."
-        default_value: ""
-        required: false
     auto-llm-dispatch-on-response: true #Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM
 
   - name: "reboot_network_device"
@@ -69,12 +61,13 @@ prompt_targets:
     description: "Helps network operators perform device operations like rebooting a device."
     parameters:
       - name: "device_id"
+        type: "string" # additional type options include: integer | float | list | dictionary | set
         description: "Identifier of the network device to reboot."
         default_value: ""
         required: true
       - name: "confirmation"
+        type: "integer" # additional type options include: integer | float | list | dictionary | set
         description: "Confirmation flag to proceed with reboot."
-        default_value: "false"
         required: true
 
 error_target:
