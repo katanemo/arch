@@ -3,7 +3,7 @@ import sentence_transformers
 from gliner import GLiNER
 from transformers import pipeline
 import sqlite3
-from employee_data_generator import generate_employee_data
+from employee_data_generator import generate_employee_data, generate_certifications, generate_salary_history, generate_project_data
 from network_data_generator import generate_device_data, generate_interface_stats_data, generate_flow_data
 
 def load_transformers(models = os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
