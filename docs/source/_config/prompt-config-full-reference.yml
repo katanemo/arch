@@ -16,18 +16,17 @@ system_prompts:
     content: |
       You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
-#Centralized way to manage LLM providers that the application has access to. Manage keys retry logic, failover, and limits in a central way
-llm_providers:
+llm_providers: #Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
   - name: "OpenAI"
     access_key: $OPENAI_API_KEY
-    model: "gpt-40"
+    model: gpt-4o 
     default: true
     stream: true
     rate_limit:
       selector: #optional headers, to add rate limiting based on http headers like JWT tokens or API keys
         http-header:
           name: "Authorization"
-          value: ""  # Empty value means each separate value has a separate limit
+          value: "" # Empty value means each separate value has a separate limit
       limit:
         tokens: 100000  # Tokens per unit
         unit: "minute"
@@ -44,7 +43,6 @@ prompt_guards:
     - name: "jailbreak"
       on_exception:
         forward_to_error_target: true
-      # Additional guard configurations can be added here
     - name: "toxicity"
       on_exception:
         message: "Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
