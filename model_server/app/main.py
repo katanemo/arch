@@ -4,8 +4,7 @@ from pydantic import BaseModel
 from load_models import (
     load_ner_models,
     load_transformers,
-    load_toxic_model,
-    load_jailbreak_model,
+    load_guard_model,
     load_zero_shot_models,
 )
 from utils import GuardHandler, split_text_into_chunks
@@ -40,10 +39,10 @@ if "prompt_guards" in config.keys():
         task = "both"
         jailbreak_hardware = "gpu" if torch.cuda.is_available() else "cpu"
         toxic_hardware = "gpu" if torch.cuda.is_available() else "cpu"
-        toxic_model = load_toxic_model(
+        toxic_model = load_guard_model(
             guard_model_config["toxic"][jailbreak_hardware], toxic_hardware
         )
-        jailbreak_model = load_jailbreak_model(
+        jailbreak_model = load_guard_model(
             guard_model_config["jailbreak"][toxic_hardware], jailbreak_hardware
         )
 
@@ -52,12 +51,12 @@ if "prompt_guards" in config.keys():
 
         hardware = "gpu" if torch.cuda.is_available() else "cpu"
         if task == "toxic":
-            toxic_model = load_toxic_model(
+            toxic_model = load_guard_model(
                 guard_model_config["toxic"][hardware], hardware
             )
             jailbreak_model = None
         elif task == "jailbreak":
-            jailbreak_model = load_jailbreak_model(
+            jailbreak_model = load_guard_model(
                 guard_model_config["jailbreak"][hardware], hardware
             )
             toxic_model = None

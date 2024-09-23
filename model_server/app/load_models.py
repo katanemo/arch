@@ -29,20 +29,20 @@ def load_ner_models(models=os.getenv("NER_MODELS", "urchade/gliner_large-v2.1"))
     return ner_models
 
 
-def load_toxic_model(
+def load_guard_model(
     model_name,
     hardware_config="cpu",
 ):
-    toxic_model = {}
-    toxic_model["tokenizer"] = AutoTokenizer.from_pretrained(
+    guard_mode = {}
+    guard_mode["tokenizer"] = AutoTokenizer.from_pretrained(
         model_name, trust_remote_code=True
     )
-    toxic_model["model_name"] = model_name
+    guard_mode["model_name"] = model_name
     if hardware_config == "cpu":
         from optimum.intel import OVModelForSequenceClassification
 
         device = "cpu"
-        toxic_model["model"] = OVModelForSequenceClassification.from_pretrained(
+        guard_mode["model"] = OVModelForSequenceClassification.from_pretrained(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
     elif hardware_config == "gpu":
@@ -50,46 +50,13 @@ def load_toxic_model(
         import torch
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        if device == "cpu":
-            print("No GPU found, using CPU...")
-
-        toxic_model["model"] = AutoModelForSequenceClassification.from_pretrained(
+        guard_mode["model"] = AutoModelForSequenceClassification.from_pretrained(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
-    toxic_model["device"] = device
-    toxic_model["hardware_config"] = hardware_config
-    return toxic_model
+    guard_mode["device"] = device
+    guard_mode["hardware_config"] = hardware_config
+    return guard_mode
 
-
-def load_jailbreak_model(
-    model_name,
-    hardware_config="cpu",
-):
-    jailbreak_model = {}
-    jailbreak_model["tokenizer"] = AutoTokenizer.from_pretrained(
-        model_name, trust_remote_code=True
-    )
-    jailbreak_model["model_name"] = model_name
-    if hardware_config == "cpu":
-        from optimum.intel import OVModelForSequenceClassification
-
-        device = "cpu"
-        jailbreak_model["model"] = OVModelForSequenceClassification.from_pretrained(
-            model_name, device_map=device, low_cpu_mem_usage=True
-        )
-    elif hardware_config == "gpu":
-        import torch
-        from transformers import AutoModelForSequenceClassification
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        if device == "cpu":
-            print("No GPU found, using CPU...")
-        jailbreak_model["model"] = AutoModelForSequenceClassification.from_pretrained(
-            model_name, device_map=device, low_cpu_mem_usage=True
-        )
-    jailbreak_model["device"] = device
-    jailbreak_model["hardware_config"] = hardware_config
-    return jailbreak_model
 
 
 def load_zero_shot_models(
