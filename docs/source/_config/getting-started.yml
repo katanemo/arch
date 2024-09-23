@@ -2,13 +2,13 @@ version: "0.1-beta"
 listen:
   address: 127.0.0.1 | 0.0.0.0
   port_value: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
-  messages: tuple | hugging-face-messages-api 
+  messages: tuple | hugging-face-messages-api
 
 system_prompts:
   - name: network_assistant
     content: You are a network assistant that just offers facts about the operational health of the network
 
-llm_providers: 
+llm_providers:
     - name: "OpenAI"
       access_key: $OPEN_AI_KEY
       model: gpt-4o
@@ -24,18 +24,18 @@ prompt_endpoints:
 prompt_guards:
    input-guard:
      - name: #jailbreak
-       on-exception-message: Looks like you are curious about my abilities. But I can only 
+       on-exception-message: Looks like you are curious about my abilities. But I can only
 
-prompt_targets:   
+prompt_targets:
    - name: information_extraction
-     type: RAG 
+     type: RAG
      description: this prompt handles all information extractions scenarios
      path: /agent/summary
 
    - name: reboot_network_device
      path: /agent/action
      description: used to help network operators with perform device operations like rebooting a device.
-     parameters: 
-error_target: #handle errors from Bolt or upstream LLMs 
+     parameters:
+error_target: #handle errors from Bolt or upstream LLMs
     name: “error_handler”
-    path: /errors   
+    path: /errors

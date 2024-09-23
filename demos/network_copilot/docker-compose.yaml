@@ -1,4 +1,3 @@
-
 services:
 
   config_generator:
@@ -56,7 +55,7 @@ services:
       - ~/.cache/huggingface:/root/.cache/huggingface
     environment:
       # use ollama endpoint that is hosted by host machine (no virtualization)
-      - OLLAMA_ENDPOINT=host.docker.internal
+      - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
 
@@ -71,6 +70,22 @@ services:
     profiles:
       - manual
 
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
+    container_name: open-webui
+    volumes:
+      - ./open-webui:/app/backend/data
+    # depends_on:
+      # - ollama
+    ports:
+      - 18090:8080
+    environment:
+      - OLLAMA_BASE_URL=http://${OLLAMA_ENDPOINT:-host.docker.internal}:11434
+      - WEBUI_AUTH=false
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+
   chatbot_ui:
     build:
       context: ../../chatbot_ui
@@ -78,5 +93,35 @@ services:
     ports:
       - "18080:8080"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
       - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - ./prom_data:/prometheus
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    profiles:
+      - monitoring

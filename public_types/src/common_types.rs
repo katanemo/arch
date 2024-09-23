@@ -45,6 +45,8 @@ pub struct ToolParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "enum")]
     pub enum_values: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,15 +61,6 @@ pub struct ToolsDefinition {
     pub name: String,
     pub description: String,
     pub parameters: ToolParameters,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BoltFCResponse {
-    pub model: String,
-    pub message: open_ai::Message,
-    pub done_reason: String,
-    pub done: bool,
-    pub resolver_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,12 +87,21 @@ pub mod open_ai {
     use super::ToolsDefinition;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct ChatCompletions {
+    pub struct ChatCompletionsRequest {
         #[serde(default)]
         pub model: String,
         pub messages: Vec<Message>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tools: Option<Vec<ToolsDefinition>>,
+        #[serde(default)]
+        pub stream: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub stream_options: Option<StreamOptions>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct StreamOptions {
+        pub include_usage: bool,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -108,6 +110,43 @@ pub mod open_ai {
         pub content: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub model: Option<String>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Choice {
+        pub finish_reason: String,
+        pub index: usize,
+        pub message: Message,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ChatCompletionsResponse {
+        pub usage: Usage,
+        pub choices: Vec<Choice>,
+        pub model: String
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Usage {
+        pub completion_tokens: usize,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ChatCompletionChunkResponse {
+        pub model: String,
+        pub choices: Vec<ChunkChoice>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ChunkChoice {
+        pub delta: Delta,
+        // TODO: could this be an enum?
+        pub finish_reason: Option<String>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Delta {
+        pub content: Option<String>,
     }
 }
 

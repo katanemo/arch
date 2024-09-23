@@ -1,6 +1,6 @@
 use crate::consts::{
     BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME, OPENAI_CHAT_COMPLETIONS_PATH,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
@@ -10,18 +10,21 @@ use crate::stats::IncrementingMetric;
 use crate::tokenizer;
 use acap::cos;
 use http::StatusCode;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use open_message_format_embeddings::models::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use public_types::common_types::open_ai::{ChatCompletions, Message};
+use public_types::common_types::open_ai::{
+    ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse, Message,
+    StreamOptions,
+};
 use public_types::common_types::{
-    BoltFCResponse, BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
+    BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
     ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
-use public_types::configuration::{PromptTarget, PromptType};
+use public_types::configuration::{Overrides, PromptTarget, PromptType};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
@@ -38,20 +41,44 @@ enum ResponseHandlerType {
 pub struct CallContext {
     response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
-    prompt_target: Option<PromptTarget>,
-    request_body: ChatCompletions,
+    prompt_target_name: Option<String>,
+    request_body: ChatCompletionsRequest,
     similarity_scores: Option<Vec<(String, f64)>>,
 }
 
 pub struct StreamContext {
-    pub host_header: Option<String>,
-    pub ratelimit_selector: Option<Header>,
-    pub callouts: HashMap<u32, CallContext>,
+    pub context_id: u32,
     pub metrics: Rc<WasmMetrics>,
     pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    pub overrides: Rc<Option<Overrides>>,
+    callouts: HashMap<u32, CallContext>,
+    host_header: Option<String>,
+    ratelimit_selector: Option<Header>,
+    streaming_response: bool,
+    response_tokens: usize,
+    chat_completions_request: bool,
 }
 
 impl StreamContext {
+    pub fn new(
+        context_id: u32,
+        metrics: Rc<WasmMetrics>,
+        prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+        overrides: Rc<Option<Overrides>>,
+    ) -> Self {
+        StreamContext {
+            context_id,
+            metrics,
+            prompt_targets,
+            callouts: HashMap::new(),
+            host_header: None,
+            ratelimit_selector: None,
+            streaming_response: false,
+            response_tokens: 0,
+            chat_completions_request: false,
+            overrides,
+        }
+    }
     fn save_host_header(&mut self) {
         // Save the host header to be used by filter logic later on.
         self.host_header = self.get_http_request_header(":host");
@@ -70,7 +97,8 @@ impl StreamContext {
             // The gateway can start gathering information necessary for routing. For now change the path to an
             // OpenAI API path.
             Some(path) if path == "/llmrouting" => {
-                self.set_http_request_header(":path", Some("/v1/chat/completions"));
+                self.set_http_request_header(":path", Some(OPENAI_CHAT_COMPLETIONS_PATH));
+                self.chat_completions_request = true;
             }
             // Otherwise let the filter continue.
             _ => (),
@@ -86,21 +114,26 @@ impl StreamContext {
             });
     }
 
-    fn send_server_error(&self, error: String) {
+    fn send_server_error(&self, error: String, override_status_code: Option<StatusCode>) {
         debug!("server error occurred: {}", error);
         self.send_http_response(
-            StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
+            override_status_code
+                .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
+                .as_u16()
+                .into(),
             vec![],
             Some(error.as_bytes()),
-        )
+        );
     }
 
     fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
         let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
             Ok(embedding_response) => embedding_response,
             Err(e) => {
-                self.send_server_error(format!("Error deserializing embedding response: {:?}", e));
-                return;
+                return self.send_server_error(
+                    format!("Error deserializing embedding response: {:?}", e),
+                    None,
+                );
             }
         };
 
@@ -115,19 +148,15 @@ impl StreamContext {
         let prompt_target_embeddings = match embeddings_store().read() {
             Ok(embeddings) => embeddings,
             Err(e) => {
-                let error_message = format!("Error reading embeddings store: {:?}", e);
-                warn!("{}", error_message);
-                self.send_server_error(error_message);
-                return;
+                return self
+                    .send_server_error(format!("Error reading embeddings store: {:?}", e), None);
             }
         };
 
         let prompt_targets = match self.prompt_targets.read() {
             Ok(prompt_targets) => prompt_targets,
             Err(e) => {
-                let error_message = format!("Error reading prompt targets: {:?}", e);
-                warn!("{}", error_message);
-                self.send_server_error(error_message);
+                self.send_server_error(format!("Error reading prompt targets: {:?}", e), None);
                 return;
             }
         };
@@ -220,26 +249,38 @@ impl StreamContext {
             match serde_json::from_slice(&body) {
                 Ok(zeroshot_response) => zeroshot_response,
                 Err(e) => {
-                    warn!(
-                        "Error deserializing zeroshot intent detection response: {:?}",
-                        e
+                    self.send_server_error(
+                        format!(
+                            "Error deserializing zeroshot intent detection response: {:?}",
+                            e
+                        ),
+                        None,
                     );
-                    info!("body: {:?}", String::from_utf8(body).unwrap());
-                    self.resume_http_request();
                     return;
                 }
             };
 
         debug!("zeroshot intent response: {:?}", zeroshot_intent_response);
 
+        let desc_emb_similarity_map: HashMap<String, f64> = callout_context
+            .similarity_scores
+            .clone()
+            .unwrap()
+            .into_iter()
+            .collect();
+
+        let pred_class_desc_emb_similarity = desc_emb_similarity_map
+            .get(&zeroshot_intent_response.predicted_class)
+            .unwrap();
+
         let prompt_target_similarity_score = zeroshot_intent_response.predicted_class_score * 0.7
-            + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
+            + pred_class_desc_emb_similarity * 0.3;
 
         debug!(
-            "similarity score: {}, intent score: {}, description embedding score: {}",
+            "similarity score: {:.3}, intent score: {:.3}, description embedding score: {:.3}",
             prompt_target_similarity_score,
             zeroshot_intent_response.predicted_class_score,
-            callout_context.similarity_scores.as_ref().unwrap()[0].1
+            pred_class_desc_emb_similarity
         );
 
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
@@ -259,16 +300,28 @@ impl StreamContext {
             info!("no assistant message found, probably first interaction");
         }
 
+        // get prompt target similarity thresold from overrides
+        let prompt_target_intent_matching_threshold = match self.overrides.as_ref() {
+            Some(overrides) => match overrides.prompt_target_intent_matching_threshold {
+                Some(threshold) => threshold,
+                None => DEFAULT_PROMPT_TARGET_THRESHOLD,
+            },
+            None => DEFAULT_PROMPT_TARGET_THRESHOLD,
+        };
+
         // check to ensure that the prompt target similarity score is above the threshold
-        if prompt_target_similarity_score < DEFAULT_PROMPT_TARGET_THRESHOLD && !bolt_assistant {
+        if prompt_target_similarity_score < prompt_target_intent_matching_threshold
+            && !bolt_assistant
+        {
             // if bolt fc responded to the user message, then we don't need to check the similarity score
             // it may be that bolt fc is handling the conversation for parameter collection
             if bolt_assistant {
                 info!("bolt assistant is handling the conversation");
             } else {
                 info!(
-                    "prompt target below threshold: {}, continue conversation with user",
+                    "prompt target below limit: {:.3}, threshold: {:.3}, continue conversation with user",
                     prompt_target_similarity_score,
+                    prompt_target_intent_matching_threshold
                 );
                 self.resume_http_request();
                 return;
@@ -283,46 +336,50 @@ impl StreamContext {
             .unwrap()
             .clone();
 
-        info!(
-            "prompt_target name: {:?}, type: {:?}",
-            prompt_target.name, prompt_target.prompt_type
-        );
+        info!("prompt_target name: {:?}", prompt_target_name);
 
         match prompt_target.prompt_type {
             PromptType::FunctionResolver => {
-                // only extract entity names
-                let properties: HashMap<String, ToolParameter> = match prompt_target.parameters {
-                    // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
-                    Some(ref entities) => {
-                        let mut properties: HashMap<String, ToolParameter> = HashMap::new();
-                        for entity in entities.iter() {
-                            let param = ToolParameter {
-                                parameter_type: entity.parameter_type.clone(),
-                                description: entity.description.clone(),
-                                required: entity.required,
-                                enum_values: entity.enum_values.clone(),
-                            };
-                            properties.insert(entity.name.clone(), param);
+                let mut tools_definitions: Vec<ToolsDefinition> = Vec::new();
+
+                for pt in self.prompt_targets.read().unwrap().values() {
+                    // only extract entity names
+                    let properties: HashMap<String, ToolParameter> = match pt.parameters {
+                        // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
+                        Some(ref entities) => {
+                            let mut properties: HashMap<String, ToolParameter> = HashMap::new();
+                            for entity in entities.iter() {
+                                let param = ToolParameter {
+                                    parameter_type: entity.parameter_type.clone(),
+                                    description: entity.description.clone(),
+                                    required: entity.required,
+                                    enum_values: entity.enum_values.clone(),
+                                    default: entity.default.clone(),
+                                };
+                                properties.insert(entity.name.clone(), param);
+                            }
+                            properties
                         }
-                        properties
-                    }
-                    None => HashMap::new(),
-                };
-                let tools_parameters = ToolParameters {
-                    parameters_type: "dict".to_string(),
-                    properties,
-                };
+                        None => HashMap::new(),
+                    };
+                    let tools_parameters = ToolParameters {
+                        parameters_type: "dict".to_string(),
+                        properties,
+                    };
 
-                let tools_defintion: ToolsDefinition = ToolsDefinition {
-                    name: prompt_target.name.clone(),
-                    description: prompt_target.description.clone(),
-                    parameters: tools_parameters,
-                };
+                    tools_definitions.push(ToolsDefinition {
+                        name: pt.name.clone(),
+                        description: pt.description.clone(),
+                        parameters: tools_parameters,
+                    });
+                }
 
-                let chat_completions = ChatCompletions {
+                let chat_completions = ChatCompletionsRequest {
                     model: GPT_35_TURBO.to_string(),
                     messages: callout_context.request_body.messages.clone(),
-                    tools: Some(vec![tools_defintion]),
+                    tools: Some(tools_definitions),
+                    stream: false,
+                    stream_options: None,
                 };
 
                 let msg_body = match serde_json::to_string(&chat_completions) {
@@ -331,11 +388,10 @@ impl StreamContext {
                         msg_body
                     }
                     Err(e) => {
-                        self.send_server_error(format!(
-                            "Error serializing request_params: {:?}",
-                            e
-                        ));
-                        return;
+                        return self.send_server_error(
+                            format!("Error serializing request_params: {:?}", e),
+                            None,
+                        );
                     }
                 };
 
@@ -368,7 +424,7 @@ impl StreamContext {
                 );
 
                 callout_context.response_handler_type = ResponseHandlerType::FunctionResolver;
-                callout_context.prompt_target = Some(prompt_target);
+                callout_context.prompt_target_name = Some(prompt_target.name);
                 if self.callouts.insert(token_id, callout_context).is_some() {
                     panic!("duplicate token_id")
                 }
@@ -381,11 +437,11 @@ impl StreamContext {
         debug!("response received for function resolver");
 
         let body_str = String::from_utf8(body).unwrap();
-        debug!("function_resolver response str: {:?}", body_str);
+        debug!("function_resolver response str: {}", body_str);
 
-        let mut boltfc_response: BoltFCResponse = serde_json::from_str(&body_str).unwrap();
+        let boltfc_response: ChatCompletionsResponse = serde_json::from_str(&body_str).unwrap();
 
-        let boltfc_response_str = boltfc_response.message.content.as_ref().unwrap();
+        let boltfc_response_str = boltfc_response.choices[0].message.content.as_ref().unwrap();
 
         let tools_call_response: BoltFCToolsCall = match serde_json::from_str(boltfc_response_str) {
             Ok(fc_resp) => fc_resp,
@@ -395,7 +451,6 @@ impl StreamContext {
                 // Let's send the response back to the user to initalize lightweight dialog for parameter collection
 
                 // add resolver name to the response so the client can send the response back to the correct resolver
-                boltfc_response.resolver_name = Some(callout_context.prompt_target.unwrap().name);
                 info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
                 let bolt_fc_dialogue_message = serde_json::to_string(&boltfc_response).unwrap();
                 self.send_http_response(
@@ -407,42 +462,64 @@ impl StreamContext {
             }
         };
 
-        // verify required parameters are present
-        callout_context
-            .prompt_target
-            .as_ref()
+        // prompt target
+
+        let prompt_target = self
+            .prompt_targets
+            .read()
             .unwrap()
-            .parameters
-            .as_ref()
+            .get(callout_context.prompt_target_name.as_ref().unwrap())
             .unwrap()
-            .iter()
-            .for_each(|param| match param.required {
-                None => {}
-                Some(required) => {
-                    if required
-                        && !tools_call_response.tool_calls[0]
-                            .arguments
-                            .contains_key(&param.name)
-                    {
-                        warn!("boltfc did not extract required parameter: {}", param.name);
-                        return self.send_http_response(
-                            StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                            vec![],
-                            Some("missing required parameter".as_bytes()),
-                        );
-                    }
-                }
-            });
+            .clone();
+
+        // // verify required parameters are present
+        // prompt_target
+        //     .parameters
+        //     .as_ref()
+        //     .unwrap()
+        //     .iter()
+        //     .for_each(|param| match param.required {
+        //         None => {}
+        //         Some(required) => {
+        //             if required
+        //                 && !tools_call_response.tool_calls[0]
+        //                     .arguments
+        //                     .contains_key(&param.name)
+        //             {
+        //                 self.send_server_error(
+        //                     format!(
+        //                         "missing required parameter: {}, for target: {}",
+        //                         param.name, prompt_target.name
+        //                     ),
+        //                     Some(StatusCode::BAD_REQUEST),
+        //                 )
+        //             }
+        //         }
+        //     });
 
         debug!("tool_call_details: {:?}", tools_call_response);
         let tool_name = &tools_call_response.tool_calls[0].name;
-        let tool_params = &tools_call_response.tool_calls[0].arguments;
-        debug!("tool_name: {:?}", tool_name);
-        debug!("tool_params: {:?}", tool_params);
-        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
-        debug!("prompt_target: {:?}", prompt_target);
 
+        // ensure that detected tool name matches the prompt target name
+        if tool_name != &prompt_target.name {
+            warn!(
+                "tool name mismatch: detected tool name: {}, expected tool name: {}",
+                tool_name, &prompt_target.name
+            );
+        }
+        // extract all tool names
+        let tool_names: Vec<String> = tools_call_response
+            .tool_calls
+            .iter()
+            .map(|tool_call| tool_call.name.clone())
+            .collect();
+
+        let tool_params = &tools_call_response.tool_calls[0].arguments;
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
+
+        debug!("tool_name(s): {:?}", tool_names);
+        debug!("tool_params: {}", tool_params_json_str);
+        debug!("prompt_target_name: {}", prompt_target.name);
 
         let endpoint = prompt_target.endpoint.as_ref().unwrap();
         let token_id = match self.dispatch_http_call(
@@ -475,7 +552,14 @@ impl StreamContext {
         debug!("response received for function call response");
         let body_str: String = String::from_utf8(body).unwrap();
         debug!("function_call_response response str: {:?}", body_str);
-        let prompt_target = callout_context.prompt_target.as_ref().unwrap();
+        let prompt_target_name = callout_context.prompt_target_name.unwrap();
+        let prompt_target = self
+            .prompt_targets
+            .read()
+            .unwrap()
+            .get(&prompt_target_name)
+            .unwrap()
+            .clone();
 
         let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
 
@@ -510,17 +594,19 @@ impl StreamContext {
             }
         });
 
-        let request_message: ChatCompletions = ChatCompletions {
+        let chat_completions_request: ChatCompletionsRequest = ChatCompletionsRequest {
             model: GPT_35_TURBO.to_string(),
             messages,
             tools: None,
+            stream: callout_context.request_body.stream,
+            stream_options: callout_context.request_body.stream_options,
         };
 
-        let json_string = match serde_json::to_string(&request_message) {
+        let json_string = match serde_json::to_string(&chat_completions_request) {
             Ok(json_string) => json_string,
             Err(e) => {
-                self.send_server_error(format!("Error serializing request_body: {:?}", e));
-                return;
+                return self
+                    .send_server_error(format!("Error serializing request_body: {:?}", e), None);
             }
         };
         debug!(
@@ -528,22 +614,21 @@ impl StreamContext {
             json_string
         );
 
-        let request_body = callout_context.request_body;
-
         // Tokenize and Ratelimit.
         if let Some(selector) = self.ratelimit_selector.take() {
-            if let Ok(token_count) = tokenizer::token_count(&request_body.model, &json_string) {
+            if let Ok(token_count) =
+                tokenizer::token_count(&chat_completions_request.model, &json_string)
+            {
                 match ratelimit::ratelimits(None).read().unwrap().check_limit(
-                    request_body.model,
+                    chat_completions_request.model,
                     selector,
                     NonZero::new(token_count as u32).unwrap(),
                 ) {
                     Ok(_) => (),
                     Err(err) => {
-                        self.send_http_response(
-                            StatusCode::TOO_MANY_REQUESTS.as_u16().into(),
-                            vec![],
-                            Some(format!("Exceeded Ratelimit: {}", err).as_bytes()),
+                        self.send_server_error(
+                            format!("Exceeded Ratelimit: {}", err),
+                            Some(StatusCode::TOO_MANY_REQUESTS),
                         );
                         self.metrics.ratelimited_rq.increment(1);
                         return;
@@ -583,31 +668,36 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let deserialized_body: ChatCompletions = match self.get_http_request_body(0, body_size) {
-            Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
-                Ok(deserialized) => deserialized,
-                Err(msg) => {
-                    self.send_http_response(
-                        StatusCode::BAD_REQUEST.as_u16().into(),
-                        vec![],
-                        Some(format!("Failed to deserialize: {}", msg).as_bytes()),
+        let mut deserialized_body: ChatCompletionsRequest =
+            match self.get_http_request_body(0, body_size) {
+                Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
+                    Ok(deserialized) => deserialized,
+                    Err(msg) => {
+                        self.send_server_error(
+                            format!("Failed to deserialize: {}", msg),
+                            Some(StatusCode::BAD_REQUEST),
+                        );
+                        return Action::Pause;
+                    }
+                },
+                None => {
+                    self.send_server_error(
+                        format!(
+                            "Failed to obtain body bytes even though body_size is {}",
+                            body_size
+                        ),
+                        None,
                     );
                     return Action::Pause;
                 }
-            },
-            None => {
-                self.send_http_response(
-                    StatusCode::INTERNAL_SERVER_ERROR.as_u16().into(),
-                    vec![],
-                    None,
-                );
-                error!(
-                    "Failed to obtain body bytes even though body_size is {}",
-                    body_size
-                );
-                return Action::Pause;
-            }
-        };
+            };
+
+        self.streaming_response = deserialized_body.stream;
+        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
+            deserialized_body.stream_options = Some(StreamOptions {
+                include_usage: true,
+            });
+        }
 
         let user_message = match deserialized_body
             .messages
@@ -667,7 +757,7 @@ impl HttpContext for StreamContext {
         let call_context = CallContext {
             response_handler_type: ResponseHandlerType::GetEmbeddings,
             user_message: Some(user_message),
-            prompt_target: None,
+            prompt_target_name: None,
             request_body: deserialized_body,
             similarity_scores: None,
         };
@@ -681,6 +771,92 @@ impl HttpContext for StreamContext {
         self.metrics.active_http_calls.increment(1);
 
         Action::Pause
+    }
+
+    fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
+        if !self.chat_completions_request {
+            return Action::Continue;
+        }
+
+        debug!(
+            "recv [S={}] bytes={} end_stream={}",
+            self.context_id, body_size, end_of_stream
+        );
+
+        if !end_of_stream && !self.streaming_response {
+            return Action::Pause;
+        }
+
+        let body = self
+            .get_http_response_body(0, body_size)
+            .expect("cant get response body");
+
+        let body_str = String::from_utf8(body).expect("body is not utf-8");
+
+        if self.streaming_response {
+            debug!("streaming response");
+            let chat_completions_data = match body_str.split_once("data: ") {
+                Some((_, chat_completions_data)) => chat_completions_data,
+                None => {
+                    self.send_server_error(String::from("parsing error in streaming data"), None);
+                    return Action::Pause;
+                }
+            };
+
+            let chat_completions_chunk_response: ChatCompletionChunkResponse =
+                match serde_json::from_str(chat_completions_data) {
+                    Ok(de) => de,
+                    Err(_) => {
+                        if chat_completions_data != "[NONE]" {
+                            self.send_server_error(
+                                String::from("error in streaming response"),
+                                None,
+                            );
+                            return Action::Continue;
+                        }
+                        return Action::Continue;
+                    }
+                };
+
+            if let Some(content) = chat_completions_chunk_response
+                .choices
+                .first()
+                .unwrap()
+                .delta
+                .content
+                .as_ref()
+            {
+                let model = &chat_completions_chunk_response.model;
+                let token_count = tokenizer::token_count(model, content).unwrap_or(0);
+                self.response_tokens += token_count;
+            }
+        } else {
+            debug!("non streaming response");
+            let chat_completions_response: ChatCompletionsResponse =
+                match serde_json::from_str(&body_str) {
+                    Ok(de) => de,
+                    Err(e) => {
+                        self.send_server_error(
+                            format!(
+                                "error in non-streaming response: {}\n response was={}",
+                                e, body_str
+                            ),
+                            None,
+                        );
+                        return Action::Pause;
+                    }
+                };
+
+            self.response_tokens += chat_completions_response.usage.completion_tokens;
+        }
+
+        debug!(
+            "recv [S={}] total_tokens={} end_stream={}",
+            self.context_id, self.response_tokens, end_of_stream
+        );
+
+        // TODO:: ratelimit based on response tokens.
+        Action::Continue
     }
 }
 
@@ -711,9 +887,10 @@ impl Context for StreamContext {
                 }
             }
         } else {
-            let error_message = "No response body in inline HTTP request";
-            warn!("{}", error_message);
-            self.send_server_error(error_message.to_owned());
+            self.send_server_error(
+                String::from("No response body in inline HTTP request"),
+                None,
+            );
         }
     }
 }
