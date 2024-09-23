@@ -32,7 +32,7 @@ services:
   model_server:
     build:
       context: ../../model_server
-      dockerfile: gpu_Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "18081:80"
     healthcheck:
