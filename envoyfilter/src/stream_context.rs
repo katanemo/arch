@@ -838,7 +838,7 @@ impl HttpContext for StreamContext {
 
         let prompt_guard_task = match (
             prompt_guards.input_guards.toxicity.is_some(),
-            prompt_guards.input_guards.toxicity.unwrap(),
+            prompt_guards.input_guards.jailbreak.is_some(),
         ) {
             (true, true) => PromptGuardTask::Both,
             (true, false) => PromptGuardTask::Toxicity,
