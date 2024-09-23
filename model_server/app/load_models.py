@@ -58,7 +58,6 @@ def load_guard_model(
     return guard_mode
 
 
-
 def load_zero_shot_models(
     models=os.getenv("ZERO_SHOT_MODELS", "tasksource/deberta-base-long-nli")
 ):

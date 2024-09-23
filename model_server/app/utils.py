@@ -124,5 +124,5 @@ class GuardHandler:
                 f"{self.task}_verdict": verdict,
                 f"{self.task}_sentence": sentence,
             }
-        print("Guard time  : ",result_dict["time"])
+        print("Guard time  : ", result_dict["time"])
         return result_dict
