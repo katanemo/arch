@@ -4,5 +4,12 @@ sentence-transformers
 torch
 uvicorn
 gliner
+transformers
+pyyaml
+accelerate
+# guard inference packages
+optimum-intel
+openvino
+psutil
 pandas
 dateparser

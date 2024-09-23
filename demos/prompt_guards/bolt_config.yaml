@@ -2,29 +2,30 @@ default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
 
+# should not be here
+embedding_provider:
+  name: "bge-large-en-v1.5"
+  model: "BAAI/bge-large-en-v1.5"
+
 llm_providers:
 
   - name: open-ai-gpt-4
-    api_key: $OPEN_AI_API_KEY
+    api_key: $OPENAI_API_KEY
     model: gpt-4
     default: true
 
 prompt_guards:
-   input_guard:
-     - name: jailbreak
-       on_exception_message: Looks like you are curious about my abilities…
-     - name: toxic
-       on_exception_message: Looks like you are curious about my toxic detection abilities…
+   input_guards:
+      jailbreak:
+        on_exception_message: Looks like you are curious about my jailbreak detection abilities.
+      toxicity:
+        on_exception_message: Looks like you are curious about my toxicity detection abilities.
 
 prompt_targets:
 
   - type: function_resolver
     name: weather_forecast
     description: This function resolver provides weather forecast information for a given city.
-    few_shot_examples:
-      - what is the weather in New York?
-      - how is the weather in San Francisco?
-      - what is the forecast in Chicago?
     parameters:
       - name: city
         required: true
