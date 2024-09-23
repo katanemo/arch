@@ -39,7 +39,7 @@ class PredictionHandler:
             input_text, truncation=True, max_length=512, return_tensors="pt"
         ).to(self.device)
         with torch.no_grad():
-            logits = self.model(**inputs).logits.numpy()[0]
+            logits = self.model(**inputs).logits.cpu().detach().numpy()[0]
             del inputs
         probabilities = softmax(logits)
         positive_class_probabilities = probabilities[self.positive_class]
