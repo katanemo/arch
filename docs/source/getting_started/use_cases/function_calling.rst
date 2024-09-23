@@ -3,7 +3,7 @@ Agentic (Text-to-Action) Apps
 
 Arch helps you easily personalize your applications by enabling calls to application-specific (API) operations 
 via user prompts. This involves any predefined functions or APIs you want to expose to users to perform tasks, 
-gather information, or manipulate data. With function calling, you have flexibility to support “agentic” experiences 
+gather information, or manipulate data. With function calling, you have flexibility to support “agentic” apps 
 tailored to specific use cases - from updating insurance claims to creating ad campaigns - via prompts. 
 
 Arch analyzes prompts, extracts critical information from prompts, engages in lightweight conversation with 

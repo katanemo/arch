@@ -8,7 +8,7 @@ describe how Arch fits into the request path and then the internal events that t
 the arrival of a request at Arch from downtream clients. We follow the request until the corresponding 
 dispatch upstream and the response path.
 
-.. image:: /_static/img/network-topology-app-server.jpg
+.. image:: /_static/img/network-topology-ingress-egress.jpg
    :width: 100%
    :align: center
 
@@ -42,7 +42,7 @@ this section.
 * Egress listeners take requests from the local application and forward them to LLMs. These receiving nodes 
   will also be typically running Arch and accepting the request via their ingress listeners.
 
-.. image:: /_static/img/network-topology-app-server.jpg
+.. image:: /_static/img/network-topology-ingress-egress.jpg
    :width: 100%
    :align: center
 
