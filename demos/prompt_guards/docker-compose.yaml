@@ -42,14 +42,15 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./bolt_config.yaml:/root/bolt_config.yaml
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
-    runtime: nvidia  # Enables GPU support
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all  # Use all available GPUs
+    # Uncomment following lines to enable GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
+    # runtime: nvidia  # Enables GPU support
+    # environment:
+    #   - NVIDIA_VISIBLE_DEVICES=all  # Use all available GPUs
 
 
   function_resolver:
