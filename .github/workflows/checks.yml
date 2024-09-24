@@ -9,10 +9,6 @@ jobs:
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: 'true'
-          # TODO: Remove this once the repo is public
-          token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Run Clippy
@@ -25,10 +21,6 @@ jobs:
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: 'true'
-          # TODO: Remove this once the repo is public
-          token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Run Rustfmt
@@ -40,10 +32,6 @@ jobs:
     steps:
       - name: Setup | Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: 'true'
-          # TODO: Remove this once the repo is public
-          token: ${{ secrets.ADIL_GITHUB_TOKEN }}
       - name: Setup | Rust
         run: rustup toolchain install stable --profile minimal
       - name: Setup | Install wasm toolchain

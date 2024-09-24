@@ -3,13 +3,13 @@ use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
 use log::debug;
-use open_message_format_embeddings::models::{
-    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
-};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::EmbeddingType;
 use public_types::configuration::{Configuration, Overrides, PromptGuards, PromptTarget};
+use public_types::embeddings::{
+    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
+};
 use serde_json::to_string;
 use std::collections::HashMap;
 use std::rc::Rc;
