@@ -11,9 +11,6 @@ use crate::tokenizer;
 use acap::cos;
 use http::StatusCode;
 use log::{debug, info, warn};
-use open_message_format_embeddings::models::{
-    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
-};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
@@ -26,6 +23,9 @@ use public_types::common_types::{
     ZeroShotClassificationResponse,
 };
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget, PromptType};
+use public_types::embeddings::{
+    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
+};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
