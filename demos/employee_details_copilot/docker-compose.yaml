@@ -40,6 +40,7 @@ services:
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
+      - ./bolt_config.yaml:/root/bolt_config.yaml
 
   function_resolver:
     build:
@@ -58,6 +59,7 @@ services:
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
+      - OLLAMA_MODEL=Bolt-Function-Calling-1B:Q4_K_M
 
   ollama:
     image: ollama/ollama

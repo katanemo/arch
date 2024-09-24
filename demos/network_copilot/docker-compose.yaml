@@ -40,6 +40,7 @@ services:
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
+      - ./bolt_config.yaml:/root/bolt_config.yaml
 
   function_resolver:
     build:
