@@ -38,7 +38,7 @@ prompt_targets:
         description: |
           Enter how many of the top employees you want to see in each group. For example, if you enter 3, the tool will show you the top 3 employees for each group you selected.
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /top_employees
     system_prompt: |
       You are responsible for retrieving the top N employees per group ranked by a constraint.
@@ -64,7 +64,7 @@ prompt_targets:
         required: true
         enum: [SUM, AVG, MIN, MAX]
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /aggregate_stats
     system_prompt: |
       You help calculate summary statistics for groups of employees. First, organize the employees by the specified grouping (e.g., department, location, or position). Then, compute the requested statistic (e.g., total, average, minimum, or maximum) for a specific attribute like salary, experience, or rating.
@@ -96,7 +96,7 @@ prompt_targets:
         required: false
         type: integer
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /employees_projects
     system_prompt: |
       You are responsible for retrieving the top N employees ranked by performance and project participation. Use filters for experience and optional project criteria.
@@ -117,7 +117,7 @@ prompt_targets:
         required: false
         type: string
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /salary_growth
     system_prompt: |
       You are responsible for retrieving employees with the highest salary growth since their last promotion. Filter by minimum salary increase percentage and department.
@@ -141,7 +141,7 @@ prompt_targets:
         required: false
         type: string
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /promotions_increases
     system_prompt: |
       You are responsible for fetching employees who were promoted and received a salary increase in a specific year. Apply filters for salary increase percentage and department.
@@ -166,7 +166,7 @@ prompt_targets:
         required: false
         type: string
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /avg_project_performance
     system_prompt: |
       You are responsible for fetching employees with the highest average performance across all projects they’ve worked on. Apply filters for minimum project count, performance score, and department.
@@ -191,11 +191,7 @@ prompt_targets:
         required: false
         type: string
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /certifications_experience
     system_prompt: |
       You are responsible for fetching employees who have the required certifications and meet the minimum years of experience. Optionally, filter by department.
-
-clusters:
-  databasehost:
-    address: model_server
