@@ -4,6 +4,26 @@ import datetime
 
 # Function to generate random employee data with `eid` as the primary key
 def generate_employee_data(conn):
+    # List of possible names, positions, departments, and locations
+    names = [
+        "Alice",
+        "Bob",
+        "Charlie",
+        "David",
+        "Eve",
+        "Frank",
+        "Grace",
+        "Hank",
+        "Ivy",
+        "Jack",
+    ]
+    positions = [
+        "Manager",
+        "Engineer",
+        "Salesperson",
+        "HR Specialist",
+        "Marketing Analyst",
+    ]
     # List of possible names, positions, departments, locations, and certifications
     names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy", "Jack"]
     positions = ["Manager", "Engineer", "Salesperson", "HR Specialist", "Marketing Analyst"]

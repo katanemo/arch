@@ -29,6 +29,7 @@ fn wasm_module() -> String {
 fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
     module
         .call_proxy_on_context_create(http_context, filter_context)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -84,6 +85,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .returning(Some(1))
         .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Info), None)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
 
@@ -230,6 +232,7 @@ fn successful_request_to_open_ai_chat_completions() {
 
     module
         .call_proxy_on_context_create(http_context, root_context)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -279,6 +282,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Info), None)
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
@@ -316,6 +320,7 @@ fn bad_request_to_open_ai_chat_completions() {
 
     module
         .call_proxy_on_context_create(http_context, root_context)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -451,6 +456,7 @@ fn request_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(Some("weatherhost"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
@@ -463,6 +469,9 @@ fn request_ratelimited() {
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Warn), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -564,6 +573,7 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(Some("weatherhost"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
@@ -577,12 +587,14 @@ fn request_not_ratelimited() {
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Warn), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
-        // .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 }

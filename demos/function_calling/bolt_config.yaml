@@ -40,6 +40,7 @@ prompt_targets:
       - name: policy_number
         required: true
         description: The policy number for which the insurance claim details are requested.
+        type: string
       - name: include_expired
         description: Include expired insurance claims in the response.
         type: string

@@ -1,4 +1,4 @@
-FROM python:3 AS base
+FROM python:3.10 AS base
 
 #
 # builder
@@ -6,8 +6,13 @@ FROM python:3 AS base
 FROM base AS builder
 
 WORKDIR /src
+RUN pip install --upgrade pip
+
+# Install git (needed for cloning the repository)
+RUN apt-get update && apt-get install -y git && apt-get clean
 
 COPY requirements.txt /src/
+
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 
 COPY . /src
@@ -16,7 +21,7 @@ COPY . /src
 # output
 #
 
-FROM python:3-slim AS output
+FROM python:3.10-slim AS output
 
 # specify list of models that will go into the image as a comma separated list
 # following models have been tested to work with this image

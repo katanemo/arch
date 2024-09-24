@@ -1,7 +1,17 @@
 import random
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
-from load_models import load_ner_models, load_transformers, load_zero_shot_models
+from load_models import (
+    load_ner_models,
+    load_transformers,
+    load_guard_model,
+    load_zero_shot_models,
+)
+from utils import GuardHandler, split_text_into_chunks
+import json
+import string
+import torch
+import yaml
 from datetime import datetime, date, timedelta, timezone
 import string
 import pandas as pd
@@ -11,39 +21,75 @@ from dateparser import parse
 from network_data_generator import convert_to_ago_format, load_params
 from typing import List
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 transformers = load_transformers()
 ner_models = load_ner_models()
 zero_shot_models = load_zero_shot_models()
 
+with open("/root/bolt_config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+with open("guard_model_config.json") as f:
+    guard_model_config = json.load(f)
+
+if "prompt_guards" in config.keys():
+    if len(config["prompt_guards"]["input_guards"]) == 2:
+        task = "both"
+        jailbreak_hardware = "gpu" if torch.cuda.is_available() else "cpu"
+        toxic_hardware = "gpu" if torch.cuda.is_available() else "cpu"
+        toxic_model = load_guard_model(
+            guard_model_config["toxic"][jailbreak_hardware], toxic_hardware
+        )
+        jailbreak_model = load_guard_model(
+            guard_model_config["jailbreak"][toxic_hardware], jailbreak_hardware
+        )
+
+    else:
+        task = list(config["prompt_guards"]["input_guards"].keys())[0]
+
+        hardware = "gpu" if torch.cuda.is_available() else "cpu"
+        if task == "toxic":
+            toxic_model = load_guard_model(
+                guard_model_config["toxic"][hardware], hardware
+            )
+            jailbreak_model = None
+        elif task == "jailbreak":
+            jailbreak_model = load_guard_model(
+                guard_model_config["jailbreak"][hardware], hardware
+            )
+            toxic_model = None
+
+
+    guard_handler = GuardHandler(toxic_model, jailbreak_model)
+
 app = FastAPI()
 
+
 class EmbeddingRequest(BaseModel):
-  input: str
-  model: str
+    input: str
+    model: str
+
 
 @app.get("/healthz")
 async def healthz():
-    return {
-        "status": "ok"
-    }
+    import os
+
+    print(os.getcwd())
+    return {"status": "ok"}
+
 
 @app.get("/models")
 async def models():
     models = []
 
     for model in transformers.keys():
-        models.append({
-            "id": model,
-            "object": "model"
-        })
+        models.append({"id": model, "object": "model"})
 
-    return {
-        "data": models,
-        "object": "list"
-    }
+    return {"data": models, "object": "list"}
+
 
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
@@ -55,27 +101,19 @@ async def embedding(req: EmbeddingRequest, res: Response):
     data = []
 
     for embedding in embeddings.tolist():
-        data.append({
-            "object": "embedding",
-            "embedding": embedding,
-            "index": len(data)
-        })
+        data.append({"object": "embedding", "embedding": embedding, "index": len(data)})
 
     usage = {
         "prompt_tokens": 0,
         "total_tokens": 0,
     }
-    return {
-        "data": data,
-        "model": req.model,
-        "object": "list",
-        "usage": usage
-    }
+    return {"data": data, "model": req.model, "object": "list", "usage": usage}
+
 
 class NERRequest(BaseModel):
-  input: str
-  labels: list[str]
-  model: str
+    input: str
+    labels: list[str]
+    model: str
 
 
 @app.post("/ner")
@@ -92,10 +130,78 @@ async def ner(req: NERRequest, res: Response):
         "object": "list",
     }
 
+
+class GuardRequest(BaseModel):
+    input: str
+    task: str
+
+
+@app.post("/guard")
+async def guard(req: GuardRequest, res: Response):
+    """
+    Guard API, take input as text and return the prediction of toxic and jailbreak
+    result format: dictionary
+            "toxic_prob": toxic_prob,
+            "jailbreak_prob": jailbreak_prob,
+            "time": end - start,
+            "toxic_verdict": toxic_verdict,
+            "jailbreak_verdict": jailbreak_verdict,
+    """
+    max_words = 300
+    if req.task in ["both", "toxic", "jailbreak"]:
+        guard_handler.task = req.task
+    if len(req.input.split()) < max_words:
+        final_result = guard_handler.guard_predict(req.input)
+    else:
+        # text is long, split into chunks
+        chunks = split_text_into_chunks(req.input)
+        final_result = {
+            "toxic_prob": [],
+            "jailbreak_prob": [],
+            "time": 0,
+            "toxic_verdict": False,
+            "jailbreak_verdict": False,
+            "toxic_sentence": [],
+            "jailbreak_sentence": [],
+        }
+        if guard_handler.task == "both":
+            for chunk in chunks:
+                result_chunk = guard_handler.guard_predict(chunk)
+                final_result["time"] += result_chunk["time"]
+                if result_chunk["toxic_verdict"]:
+                    final_result["toxic_verdict"] = True
+                    final_result["toxic_sentence"].append(
+                        result_chunk["toxic_sentence"]
+                    )
+                    final_result["toxic_prob"].append(result_chunk["toxic_prob"].item())
+                if result_chunk["jailbreak_verdict"]:
+                    final_result["jailbreak_verdict"] = True
+                    final_result["jailbreak_sentence"].append(
+                        result_chunk["jailbreak_sentence"]
+                    )
+                    final_result["jailbreak_prob"].append(
+                        result_chunk["jailbreak_prob"]
+                    )
+        else:
+            task = guard_handler.task
+            for chunk in chunks:
+                result_chunk = guard_handler.guard_predict(chunk)
+                final_result["time"] += result_chunk["time"]
+                if result_chunk[f"{task}_verdict"]:
+                    final_result[f"{task}_verdict"] = True
+                    final_result[f"{task}_sentence"].append(
+                        result_chunk[f"{task}_sentence"]
+                    )
+                    final_result[f"{task}_prob"].append(
+                        result_chunk[f"{task}_prob"].item()
+                    )
+    return final_result
+
+
 class ZeroShotRequest(BaseModel):
-  input: str
-  labels: list[str]
-  model: str
+    input: str
+    labels: list[str]
+    model: str
 
 
 def remove_punctuations(s, lower=True):
@@ -113,7 +219,9 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
 
     classifier = zero_shot_models[req.model]
     labels_without_punctuations = [remove_punctuations(label) for label in req.labels]
-    predicted_classes = classifier(req.input, candidate_labels=labels_without_punctuations, multi_label=True)
+    predicted_classes = classifier(
+        req.input, candidate_labels=labels_without_punctuations, multi_label=True
+    )
     label_map = dict(zip(labels_without_punctuations, req.labels))
 
     orig_map = [label_map[label] for label in predicted_classes["labels"]]
@@ -132,10 +240,11 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
 *****
 Adding new functions to test the usecases - Sampreeth
 *****
-'''
+"""
 
 conn = load_sql()
 name_col = "name"
+
 
 class TopEmployees(BaseModel):
     grouping: str
@@ -147,15 +256,18 @@ class TopEmployees(BaseModel):
 async def top_employees(req: TopEmployees, res: Response):
     name_col = "name"
     # Check if `req.ranking_criteria` is a Text object and extract its value accordingly
-    logger.info(f"{'* ' * 50}\n\nCaptured Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nCaptured Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}"
+    )
 
     if req.ranking_criteria == "yoe":
         req.ranking_criteria = "years_of_experience"
     elif req.ranking_criteria == "rating":
         req.ranking_criteria = "performance_score"
 
-    logger.info(f"{'* ' * 50}\n\nFinal Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}")
-
+    logger.info(
+        f"{'* ' * 50}\n\nFinal Ranking Criteria: {req.ranking_criteria}\n\n{'* ' * 50}"
+    )
 
     query = f"""
     SELECT {req.grouping}, {name_col}, {req.ranking_criteria}
@@ -167,7 +279,7 @@ async def top_employees(req: TopEmployees, res: Response):
     WHERE emp_rank <= {req.top_n};
     """
     result_df = pd.read_sql_query(query, conn)
-    result = result_df.to_dict(orient='records')
+    result = result_df.to_dict(orient="records")
     return result
 
 
@@ -176,16 +288,23 @@ class AggregateStats(BaseModel):
     aggregate_criteria: str
     aggregate_type: str
 
+
 @app.post("/aggregate_stats")
 async def aggregate_stats(req: AggregateStats, res: Response):
-    logger.info(f"{'* ' * 50}\n\nCaptured Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nCaptured Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}"
+    )
 
     if req.aggregate_criteria == "yoe":
         req.aggregate_criteria = "years_of_experience"
 
-    logger.info(f"{'* ' * 50}\n\nFinal Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nFinal Aggregate Criteria: {req.aggregate_criteria}\n\n{'* ' * 50}"
+    )
 
-    logger.info(f"{'* ' * 50}\n\nCaptured Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nCaptured Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}"
+    )
     if req.aggregate_type.lower() not in ["sum", "avg", "min", "max"]:
         if req.aggregate_type.lower() == "count":
             req.aggregate_type = "COUNT"
@@ -200,7 +319,9 @@ async def aggregate_stats(req: AggregateStats, res: Response):
         else:
             raise HTTPException(status_code=400, detail="Invalid aggregate type")
 
-    logger.info(f"{'* ' * 50}\n\nFinal Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}")
+    logger.info(
+        f"{'* ' * 50}\n\nFinal Aggregate Type: {req.aggregate_type}\n\n{'* ' * 50}"
+    )
 
     query = f"""
     SELECT {req.grouping}, {req.aggregate_type}({req.aggregate_criteria}) as {req.aggregate_type}_{req.aggregate_criteria}
@@ -208,13 +329,14 @@ async def aggregate_stats(req: AggregateStats, res: Response):
     GROUP BY {req.grouping};
     """
     result_df = pd.read_sql_query(query, conn)
-    result = result_df.to_dict(orient='records')
+    result = result_df.to_dict(orient="records")
     return result
+
 
 class PacketDropCorrelationRequest(BaseModel):
     from_time: str = None  # Optional natural language timeframe
-    ifname: str = None     # Optional interface name filter
-    region: str = None     # Optional region filter
+    ifname: str = None  # Optional interface name filter
+    region: str = None  # Optional region filter
     min_in_errors: int = None
     max_in_errors: int = None
     min_out_errors: int = None
@@ -227,7 +349,6 @@ class PacketDropCorrelationRequest(BaseModel):
 
 @app.post("/interface_down_pkt_drop")
 async def interface_down_packet_drop(req: PacketDropCorrelationRequest, res: Response):
-
     params, filters = load_params(req)
 
     # Join the filters using AND
@@ -272,14 +393,18 @@ async def interface_down_packet_drop(req: PacketDropCorrelationRequest, res: Res
             "in_discards": 0,
             "out_errors": 0,
             "out_discards": 0,
-            "ifname": req.ifname or "unknown",  # Placeholder or interface provided in the request
+            "ifname": req.ifname
+            or "unknown",  # Placeholder or interface provided in the request
             "src_addr": "0.0.0.0",  # Placeholder source IP
             "dst_addr": "0.0.0.0",  # Placeholder destination IP
-            "flow_time": str(datetime.now(timezone.utc)),  # Current timestamp or placeholder
-            "interface_time": str(datetime.now(timezone.utc))  # Current timestamp or placeholder
+            "flow_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
+            "interface_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
         }
         return [default_response]
-
 
     logger.info(f"Correlated Packet Drop Data: {correlated_data}")
 
@@ -288,8 +413,8 @@ async def interface_down_packet_drop(req: PacketDropCorrelationRequest, res: Res
 
 class FlowPacketErrorCorrelationRequest(BaseModel):
     from_time: str = None  # Optional natural language timeframe
-    ifname: str = None     # Optional interface name filter
-    region: str = None     # Optional region filter
+    ifname: str = None  # Optional interface name filter
+    region: str = None  # Optional region filter
     min_in_errors: int = None
     max_in_errors: int = None
     min_out_errors: int = None
@@ -299,9 +424,11 @@ class FlowPacketErrorCorrelationRequest(BaseModel):
     min_out_discards: int = None
     max_out_discards: int = None
 
-@app.post("/packet_errors_impact_flow")
-async def packet_errors_impact_flow(req: FlowPacketErrorCorrelationRequest, res: Response):
 
+@app.post("/packet_errors_impact_flow")
+async def packet_errors_impact_flow(
+    req: FlowPacketErrorCorrelationRequest, res: Response
+):
     params, filters = load_params(req)
 
     # Join the filters using AND
@@ -350,14 +477,19 @@ async def packet_errors_impact_flow(req: FlowPacketErrorCorrelationRequest, res:
             "in_discards": 0,
             "out_errors": 0,
             "out_discards": 0,
-            "ifname": req.ifname or "unknown",  # Placeholder or interface provided in the request
+            "ifname": req.ifname
+            or "unknown",  # Placeholder or interface provided in the request
             "src_addr": "0.0.0.0",  # Placeholder source IP
             "dst_addr": "0.0.0.0",  # Placeholder destination IP
             "src_port": 0,
             "dst_port": 0,
             "packets": 0,
-            "flow_time": str(datetime.now(timezone.utc)),  # Current timestamp or placeholder
-            "error_time": str(datetime.now(timezone.utc))  # Current timestamp or placeholder
+            "flow_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
+            "error_time": str(
+                datetime.now(timezone.utc)
+            ),  # Current timestamp or placeholder
         }
         return [default_response]
 
@@ -542,3 +674,4 @@ async def certifications_experience(req: CertificationsExperienceRequest, res: R
 
     result_df = pd.read_sql_query(query, conn, params=params)
     return result_df.to_dict(orient='records')
+'''
