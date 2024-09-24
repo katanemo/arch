@@ -2,10 +2,11 @@ Arch Documentation
 ==================
 
 .. toctree::
-  :maxdepth: 3
+  :maxdepth: 2
 
   intro/intro
+  getting_started/getting_started
+  getting_started/use_cases
+  observability/observability
   llms/llms
   configuration_reference
-  getting_started/getting_started
-  getting_started/sample_apps

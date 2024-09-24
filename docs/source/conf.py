@@ -35,14 +35,12 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_favicon = '_static/favicon.ico'
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = 'sphinx_rtd_theme'  # You can change the theme to 'sphinx_rtd_theme' or another of your choice.
+html_theme = 'sphinx_book_theme'  # You can change the theme to 'sphinx_rtd_theme' or another of your choice.
 
 # Specify the path to the logo image file (make sure the logo is in the _static directory)
 html_logo = '_static/img/arch-logo.png'
 
 html_theme_options = {
-    'logo_only': True,
-    'includehidden': False,
     'navigation_depth': 4,
     'collapse_navigation': False,
 }
@@ -52,4 +50,4 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_style = 'css/arch.css'
+#html_style = 'css/arch.css'

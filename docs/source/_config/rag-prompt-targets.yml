@@ -1,0 +1,40 @@
+version: "0.1-beta"
+listen:
+  address: 127.0.0.1 | 0.0.0.0
+  port_value: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
+
+system_prompts:
+  - name: network_assistant
+    content: You are a network assistant that just offers facts about the operational health of the network
+    
+llm_providers: 
+    - name: "OpenAI"
+      access_key: $OPEN_AI_KEY
+      model: gpt-4o
+      default: true
+
+prompt_targets:
+  - name: get_device_statistics
+    description: > 
+      This prompt target ensures that when users request device-related statistics, the system accurately retrieves and presents the relevant data 
+      based on the specified devices and time range. Examples of user prompts, include:
+
+      - "Show me the performance stats for device 12345 over the past week."
+      - "What are the error rates for my devices in the last 24 hours?"
+      - "I need statistics on device 789 over the last 10 days."
+
+    path: /agent/device_summary
+    parameters:
+      - name: "device_ids"
+        type: list  # Options: integer | float | list | dictionary | set
+        description: "A list of device identifiers (IDs) for which the statistics are requested."
+        required: true
+      - name: "time_range"
+        type: integer  # Options: integer | float | list | dictionary | set
+        description: "The number of days in the past over which to retrieve device statistics. Defaults to 7 days if not specified."
+        required: false
+        default: 7
+
+prompt_endpoints:
+  - "http://127.0.0.2"
+  - "http://127.0.0.1"
