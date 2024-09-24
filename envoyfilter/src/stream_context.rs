@@ -468,7 +468,7 @@ impl StreamContext {
             }
         };
 
-        debug!("tool_call_details: {:?}", tools_call_response);
+        debug!("tool_call_details: {}", boltfc_response_str);
         // extract all tool names
         let tool_names: Vec<String> = tools_call_response
             .tool_calls
@@ -546,7 +546,7 @@ impl StreamContext {
         }
         debug!("response received for function call response");
         let body_str: String = String::from_utf8(body).unwrap();
-        debug!("function_call_response response str: {:?}", body_str);
+        debug!("function_call_response response str: {}", body_str);
         let prompt_target_name = callout_context.prompt_target_name.unwrap();
         let prompt_target = self
             .prompt_targets
