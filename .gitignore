@@ -15,3 +15,7 @@ demos/function_calling/ollama/models/
 demos/function_calling/ollama/id_ed*
 docs/build/
 demos/function_calling/open-webui/
+demos/employee_details_copilot/open-webui/*
+demos/network_copilot/open-webui/*
+demos/employee_details_copilot/ollama/models/
+demos/network_copilot/ollama/models/*
