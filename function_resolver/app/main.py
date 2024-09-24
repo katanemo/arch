@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Response
 from bolt_handler import BoltHandler
+from arch_handler import ArchHandler
 from common import ChatMessage
 import logging
 from openai import OpenAI
@@ -13,7 +14,8 @@ logger.info(f"using model: {ollama_model}")
 logger.info(f"using ollama endpoint: {ollama_endpoint}")
 
 app = FastAPI()
-handler = BoltHandler()
+bolt_handler = BoltHandler()
+arch_handler = ArchHandler()
 
 client = OpenAI(
     base_url='http://{}:11434/v1/'.format(ollama_endpoint),
@@ -32,6 +34,10 @@ async def healthz():
 @app.post("/v1/chat/completions")
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
+    if ollama_model.startswith("Bolt"):
+        handler = bolt_handler
+    else:
+        handler = arch_handler
     tools_encoded = handler._format_system(req.tools)
     messages = []
     messages.append(
