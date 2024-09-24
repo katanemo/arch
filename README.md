@@ -1,5 +1,5 @@
 <p>
-  <img src="docs/source/_static/img/arch-logo.png" alt="Arch Gateway Logo" title="Arch Gateway Logo" width="50%">
+  <img src="docs/source/_static/img/arch-logo.png" alt="Arch Gateway Logo" title="Arch Gateway Logo">
 </p>
 
 <h2>Build fast, robust, and personalized GenAI applications.</h2>
