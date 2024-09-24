@@ -42,6 +42,17 @@ services:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./bolt_config.yaml:/root/bolt_config.yaml
 
+  api_server:
+    build:
+      context: api_server
+      dockerfile: Dockerfile
+    ports:
+      - "18083:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
+
   function_resolver:
     build:
       context: ../../function_resolver
