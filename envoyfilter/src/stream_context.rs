@@ -518,6 +518,7 @@ impl StreamContext {
                     "Error dispatching call to cluster: {}, path: {}, err: {:?}",
                     &endpoint.cluster, path, e
                 );
+                debug!("{}", error_msg);
                 return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
             }
         };
