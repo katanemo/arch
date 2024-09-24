@@ -46,6 +46,8 @@ pub struct CallContext {
     prompt_target_name: Option<String>,
     request_body: ChatCompletionsRequest,
     similarity_scores: Option<Vec<(String, f64)>>,
+    up_stream_cluster: Option<String>,
+    up_stream_cluster_path: Option<String>,
 }
 
 pub struct StreamContext {
@@ -523,6 +525,8 @@ impl StreamContext {
             }
         };
 
+        callout_context.up_stream_cluster = Some(endpoint.cluster);
+        callout_context.up_stream_cluster_path = Some(path);
         callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
@@ -532,11 +536,12 @@ impl StreamContext {
 
     fn function_call_response_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
         let headers = self.get_http_call_response_headers();
-        debug!("response headers: {:?}", headers);
         if let Some(http_status) = headers.iter().find(|(key, _)| key == ":status") {
             if http_status.1 != StatusCode::OK.as_str() {
                 let error_msg = format!(
-                    "Error in function call response: status code: {}",
+                    "Error in function call response: cluster: {}, path: {}, status code: {}",
+                    callout_context.up_stream_cluster.unwrap(),
+                    callout_context.up_stream_cluster_path.unwrap(),
                     http_status.1
                 );
                 return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
@@ -729,6 +734,8 @@ impl StreamContext {
             prompt_target_name: None,
             request_body: callout_context.request_body,
             similarity_scores: None,
+            up_stream_cluster: None,
+            up_stream_cluster_path: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(
@@ -820,6 +827,8 @@ impl HttpContext for StreamContext {
                     prompt_target_name: None,
                     request_body: deserialized_body,
                     similarity_scores: None,
+                    up_stream_cluster: None,
+                    up_stream_cluster_path: None,
                 };
                 self.get_embeddings(callout_context);
                 return Action::Pause;
@@ -841,6 +850,8 @@ impl HttpContext for StreamContext {
                     prompt_target_name: None,
                     request_body: deserialized_body,
                     similarity_scores: None,
+                    up_stream_cluster: None,
+                    up_stream_cluster_path: None,
                 };
                 self.get_embeddings(callout_context);
                 return Action::Pause;
@@ -890,6 +901,8 @@ impl HttpContext for StreamContext {
             prompt_target_name: None,
             request_body: deserialized_body,
             similarity_scores: None,
+            up_stream_cluster: None,
+            up_stream_cluster_path: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(
