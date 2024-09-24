@@ -457,7 +457,7 @@ impl StreamContext {
                 // Let's send the response back to the user to initalize lightweight dialog for parameter collection
 
                 // add resolver name to the response so the client can send the response back to the correct resolver
-                info!("some requred parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
+                info!("some required parameters are missing, sending response from Bolt FC back to user for parameter collection: {}", e);
                 let bolt_fc_dialogue_message = serde_json::to_string(&boltfc_response).unwrap();
                 self.send_http_response(
                     StatusCode::OK.as_u16().into(),
