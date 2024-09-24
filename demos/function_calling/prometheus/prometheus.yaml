@@ -18,6 +18,6 @@ scrape_configs:
   scheme: http
   static_configs:
   - targets:
-    - envoy:9901
+    - bolt:9901
   params:
     format: ['prometheus']
