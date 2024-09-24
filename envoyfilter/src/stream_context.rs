@@ -515,7 +515,7 @@ impl StreamContext {
             Ok(token_id) => token_id,
             Err(e) => {
                 let error_msg = format!(
-                    "Error dispatching call cluster: {}, path: {}, err: {:?}",
+                    "Error dispatching call to cluster: {}, path: {}, err: {:?}",
                     &endpoint.cluster, path, e
                 );
                 return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
