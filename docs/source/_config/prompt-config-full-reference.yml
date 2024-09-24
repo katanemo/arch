@@ -72,5 +72,7 @@ error_target:
   name: "error_handler"
   path: "/errors"
 
+tracing: 100 #sampling rate. Note by default Arch works on OpenTelemetry compatible tracing. 
+
 intent-detection-threshold-override: 0.60 # By default Arch uses an NLI + embedding approach to match an incomming prompt to a prompt target.
                                           # The intent matching threshold is kept at 0.80, you can overide this behavior if you would like

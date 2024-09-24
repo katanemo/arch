@@ -11,7 +11,7 @@ in a centralized way.
 
 **The project was born out of the belief that:**
 
-  *Prompts are nuanced and opaque user requests that require the same capabilities as in modern applications,
+  *Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests 
   including secure handling, intelligent routing, robust observability, and integration with backend (API)
   systems for personalization - all outside business logic.*
 
@@ -34,11 +34,8 @@ functionality exclusively for prompts and LLMs. This gives Arch several advantag
 * Arch works with any application language. A single Arch deployment can act as gateway for AI applications
   written in Python, Java, C++, Go, Php, etc.
 
-* As anyone that has worked with a modern application architecture knows, deploying library upgrades can be
-  incredibly painful. Arch can be deployed and upgraded quickly across your infrastructure transparently.
-
-* Arch extends Envoy's HTTP tracing and stats subsystems to offer robust "prompt" related metrics and tracing that
-  integrates with a wide set of DevOps tooling ecosystem out of the box.
+* Arch can be deployed and upgraded quickly across your infrastructure transparently without horrid pain of 
+  deploying library upgrades in your applications.
 
 **Engineered with Fast LLMs:** Arch is engineered with specialized (sub-billion) LLMs that are desgined for fast,
 cost-effective and acurrate handling of prompts. These :ref:`LLMs <llms_in_arch>` are designed to be
@@ -76,7 +73,13 @@ traffic shaping alogirithms, applying guardrails, etc.) as for outbound LLM infe
 that makes it exceptionally well suited as an edge gateway for AI applications. This includes TLS termination, rate limiting,
 and prompt-based routing.
 
-**Best-In Class Monitoring and End-to-End Tracing:** Arch offers several monitoring metrics that help you understand three
+**Best-In Class Monitoring:** Arch offers several monitoring metrics that help you understand three
 critical aspects of your application: latency, token usage, and error rates by an upstream LLM provider. Latency
 measures the speed at which your application is responding to users, which includes metrics like time to first
 token (TFT), time per output token (TOT) metrics, and the total latency as perceived by users.
+
+**End-to-End Tracing:** Arch propagates trace context using the W3C Trace Context standard, specifically through 
+the ``traceparent`` header. This allows each component in the system to record its part of the request flow, 
+enabling **end-to-end tracing** across the entire application. By using OpenTelemetry, Arch ensures that
+developers can capture this trace data consistently and in a format compatible with various observability tools.
+For more details, read :ref:`tracing <arch_overview_tracing>`.
