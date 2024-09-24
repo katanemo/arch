@@ -253,6 +253,10 @@ impl RootContext for FilterContext {
     }
 
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
+        debug!(
+            "||| create_http_context called with context_id: {:?} |||",
+            context_id
+        );
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),

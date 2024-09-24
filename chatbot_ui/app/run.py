@@ -33,8 +33,8 @@ def predict(message, history):
       # remove last user message in case of exception
       history.pop()
       log.info("CHAT_COMPLETION_ENDPOINT: ", CHAT_COMPLETION_ENDPOINT)
-      log.info("Error with OpenAI API: {}".format(e.message))
-      raise gr.Error("Error with OpenAI API: {}".format(e.message))
+      log.info("Error calling gateway API: {}".format(e.message))
+      raise gr.Error("Error calling gateway API: {}".format(e.message))
 
     # for chunk in response:
     #     if chunk.choices[0].delta.content is not None:
