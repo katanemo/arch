@@ -62,7 +62,7 @@ if "prompt_guards" in config.keys():
             toxic_model = None
 
 
-guard_handler = GuardHandler(toxic_model, jailbreak_model)
+    guard_handler = GuardHandler(toxic_model, jailbreak_model)
 
 app = FastAPI()
 
