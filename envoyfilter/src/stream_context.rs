@@ -497,12 +497,13 @@ impl StreamContext {
         debug!("tool_name(s): {:?}", tool_names);
         debug!("tool_params: {}", tool_params_json_str);
 
-        let endpoint = prompt_target.endpoint.as_ref().unwrap();
+        let endpoint = prompt_target.endpoint.unwrap();
+        let path = endpoint.path.unwrap_or(String::from("/"));
         let token_id = match self.dispatch_http_call(
             &endpoint.cluster,
             vec![
                 (":method", "POST"),
-                (":path", endpoint.path.as_ref().unwrap_or(&"/".to_string())),
+                (":path", path.as_ref()),
                 (":authority", endpoint.cluster.as_str()),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
@@ -513,7 +514,12 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call for function_resolver: {:?}", e);
+                let error_msg = format!(
+                    "Error dispatching call to cluster: {}, path: {}, err: {:?}",
+                    &endpoint.cluster, path, e
+                );
+                debug!("{}", error_msg);
+                return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
             }
         };
 
