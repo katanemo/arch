@@ -1,7 +1,7 @@
 # Function calling
 This demo shows how you can use intelligent prompt gateway to act a copilot for calling the correct proc by capturing the required and optional parametrs from the prompt. This demo assumes you are using ollama running natively. If you want to run ollama running inside docker then please update ollama endpoint in docker-compose file.
 
-# Startig the demo
+# Starting the demo
 1. Ensure that submodule is up to date
    ```sh
    git submodule sync --recursive
