@@ -4,12 +4,27 @@ from datetime import datetime, timedelta, timezone
 import re
 import logging
 from dateparser import parse
+import sqlite3
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
+def load_sql():
+    # Example Usage
+    conn = sqlite3.connect(":memory:")
+
+    # create and load the devices table
+    device_data = generate_device_data(conn)
+
+    # create and load the interface_stats table
+    generate_interface_stats_data(conn, device_data)
+
+    # create and load the flow table
+    generate_flow_data(conn, device_data)
+
+    return conn
 
 # Function to convert natural language time expressions to "X {time} ago" format
 def convert_to_ago_format(expression):

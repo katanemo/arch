@@ -11,5 +11,3 @@ accelerate
 optimum-intel
 openvino
 psutil
-pandas
-dateparser

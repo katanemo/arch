@@ -1,6 +1,25 @@
 import pandas as pd
 import random
 import datetime
+import sqlite3
+
+def load_sql():
+    # Example Usage
+    conn = sqlite3.connect(":memory:")
+
+    # create and load the employees table
+    generate_employee_data(conn)
+
+    # create and load the projects table
+    generate_project_data(conn)
+
+    # create and load the salary_history table
+    generate_salary_history(conn)
+
+    # create and load the certifications table
+    generate_certifications(conn)
+
+    return conn
 
 # Function to generate random employee data with `eid` as the primary key
 def generate_employee_data(conn):

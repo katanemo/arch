@@ -2,14 +2,6 @@ import os
 import sentence_transformers
 from gliner import GLiNER
 from transformers import AutoTokenizer, pipeline
-import sqlite3
-from employee_data_generator import generate_employee_data, generate_certifications, generate_salary_history, generate_project_data
-from network_data_generator import (
-    generate_device_data,
-    generate_interface_stats_data,
-    generate_flow_data,
-)
-
 
 def load_transformers(models=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
     transformers = {}
@@ -67,22 +59,3 @@ def load_zero_shot_models(
         zero_shot_models[model] = pipeline("zero-shot-classification", model=model)
 
     return zero_shot_models
-
-
-def load_sql():
-    # Example Usage
-    conn = sqlite3.connect(":memory:")
-
-    # create and load the employees table
-    generate_employee_data(conn)
-
-    # create and load the devices table
-    device_data = generate_device_data(conn)
-
-    # create and load the interface_stats table
-    generate_interface_stats_data(conn, device_data)
-
-    # create and load the flow table
-    generate_flow_data(conn, device_data)
-
-    return conn
