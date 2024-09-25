@@ -1,9 +1,4 @@
 use http::StatusCode;
-use open_message_format_embeddings::models::{
-    create_embedding_response::{self, CreateEmbeddingResponse},
-    create_embedding_response_usage::CreateEmbeddingResponseUsage,
-    embedding, Embedding,
-};
 use proxy_wasm_test_framework::tester::{self, Tester};
 use proxy_wasm_test_framework::types::{
     Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
@@ -11,6 +6,10 @@ use proxy_wasm_test_framework::types::{
 use public_types::common_types::{
     open_ai::{ChatCompletionsResponse, Choice, Message, Usage},
     BoltFCToolsCall, IntOrString, ToolCallDetail,
+};
+use public_types::embeddings::embedding::Object;
+use public_types::embeddings::{
+    create_embedding_response, CreateEmbeddingResponse, CreateEmbeddingResponseUsage, Embedding,
 };
 use public_types::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
 use serial_test::serial;
@@ -93,7 +92,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         data: vec![Embedding {
             index: 0,
             embedding: vec![],
-            object: embedding::Object::default(),
+            object: Object::default(),
         }],
         model: String::from("test"),
         object: create_embedding_response::Object::default(),
@@ -469,7 +468,6 @@ fn request_ratelimited() {
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Warn), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -586,7 +584,6 @@ fn request_not_ratelimited() {
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Warn), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)

@@ -1,0 +1,24 @@
+FROM Bolt-Function-Calling-1B-Q4_K_M.gguf
+
+# Set the size of the context window used to generate the next token
+PARAMETER num_ctx 4096
+
+# Set parameters for response generation
+PARAMETER num_predict 1024
+PARAMETER temperature 0.1
+PARAMETER top_p 0.5
+PARAMETER top_k 32022
+PARAMETER repeat_penalty 1.0
+PARAMETER stop "<|EOT|>"
+
+# Set the random number seed to use for generation
+PARAMETER seed 42
+
+# Set the prompt template to be passed into the model
+TEMPLATE """{{ if .System }}<｜begin▁of▁sentence｜>
+{{ .System }}
+{{ end }}{{ if .Prompt }}### Instruction:
+{{ .Prompt }}
+{{ end }}### Response:
+{{ .Response }}
+<|EOT|>"""
