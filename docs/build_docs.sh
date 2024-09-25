@@ -1,2 +1,2 @@
 docker build -f Dockerfile . -t sphinx
-docker run --rm -v ./:/docs sphinx make html
+docker run --rm -v $(pwd):/docs sphinx make html
