@@ -68,6 +68,7 @@ pub struct ToolsDefinition {
 pub enum IntOrString {
     Integer(i32),
     Text(String),
+    Float(f64),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
