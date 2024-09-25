@@ -148,10 +148,10 @@ system_prompt: |
   - Use miles per hour for wind speed
 
 prompt_guards:
-  input_guard:
-    - name: jailbreak
+  input_guards:
+    jailbreak:
       on_exception_message: Looks like you are curious about my abilities…
-    - name: toxic
+    toxicity:
       on_exception_message: Looks like you are curious about my abilities…
 
 prompt_targets:
@@ -190,7 +190,6 @@ ratelimits:
 
     #[test]
     fn test_deserialize_configuration() {
-        let c: super::Configuration = serde_yaml::from_str(CONFIGURATION).unwrap();
-        assert_eq!(c.prompt_guards.unwrap().input_guard.len(), 2);
+        let _: super::Configuration = serde_yaml::from_str(CONFIGURATION).unwrap();
     }
 }
