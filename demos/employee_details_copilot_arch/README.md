@@ -1,5 +1,5 @@
 # Function calling
-This demo shows how you can use intelligent prompt gateway to act a copilot for calling the correct proc by capturing the required and optional parametrs from the prompt. This demo assumes you are using ollama running natively. If you want to run ollama running inside docker then please update ollama endpoint in docker-compose file.
+This demo shows how you can use intelligent prompt gateway as copilot to explore employee data by calling the correct api functions. It calls appropriate function and also engages with user to extract required parameters. This demo assumes you are using ollama natively.
 
 # Starting the demo
 1. Ensure that submodule is up to date
