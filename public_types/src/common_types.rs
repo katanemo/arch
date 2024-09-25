@@ -25,6 +25,7 @@ pub struct StoreVectorEmbeddingsRequest {
     pub points: Vec<VectorPoint>,
 }
 
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchPointResult {
     pub id: String,
@@ -120,9 +121,9 @@ pub mod open_ai {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsResponse {
-        pub usage: Option<Usage>,
+        pub usage: Usage,
         pub choices: Vec<Choice>,
-        pub model: String,
+        pub model: String
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -171,7 +172,7 @@ pub enum PromptGuardTask {
     #[serde(rename = "toxicity")]
     Toxicity,
     #[serde(rename = "both")]
-    Both,
+    Both
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

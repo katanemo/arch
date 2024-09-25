@@ -73,6 +73,13 @@ pub enum LoadBalancing {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 //TODO: use enum for model, but if there is a new model, we need to update the code
+pub struct EmbeddingProviver {
+    pub name: String,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+//TODO: use enum for model, but if there is a new model, we need to update the code
 pub struct LlmProvider {
     pub name: String,
     pub api_key: Option<String>,
