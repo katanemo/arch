@@ -161,6 +161,7 @@ prompt_targets:
         description: Minimum performance score to filter employees.
         required: true
         type: float
+        default: 4.0
       - name: department
         description: Department to filter by (optional).
         required: false
@@ -190,6 +191,7 @@ prompt_targets:
         description: Department to filter employees by (optional).
         required: false
         type: string
+        default: "Engineering"
     endpoint:
       cluster: api_server
       path: /certifications_experience
