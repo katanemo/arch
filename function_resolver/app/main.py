@@ -1,6 +1,7 @@
 import json
 from fastapi import FastAPI, Response
 from bolt_handler import BoltHandler
+from arch_handler import ArchHandler
 from common import ChatMessage
 import logging
 from openai import OpenAI
@@ -14,7 +15,12 @@ logger.info(f"using model: {ollama_model}")
 logger.info(f"using ollama endpoint: {ollama_endpoint}")
 
 app = FastAPI()
-handler = BoltHandler()
+
+handler = None
+if ollama_model.startswith("Arch"):
+  handler = ArchHandler()
+else:
+  handler = BoltHandler()
 
 client = OpenAI(
     base_url='http://{}:11434/v1/'.format(ollama_endpoint),
@@ -40,5 +46,7 @@ async def chat_completion(req: ChatMessage, res: Response):
         messages.append({"role": message.role, "content": message.content})
     logger.info(f"request model: {ollama_model}, messages: {json.dumps(messages)}")
     resp = client.chat.completions.create(messages=messages, model=ollama_model, stream=False)
-    logger.info(f"response: {resp.to_json()}")
+    tools = handler.extract_tools(resp.choices[0].message.content)
+    logger.info(f"response: {json.dumps(tools())}")
+    logger.info(f"response: {json.dumps(resp.to_dict())}")
     return resp

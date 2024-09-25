@@ -51,10 +51,10 @@ class BoltHandler:
 
         tool_text = []
         for tool in tools:
-            param_text = self.get_param_text(tool.parameters)
+            param_text = self.get_param_text(tool["parameters"])
             tool_text.append(
                 TOOL_DESC.format(
-                    name=tool.name, desc=tool.description, args=param_text
+                    name=tool["name"], desc=tool["description"], args=param_text
                 )
             )
 
