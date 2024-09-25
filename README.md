@@ -2,11 +2,11 @@
   <img src="docs/source/_static/img/arch-logo.png" alt="Arch Gateway Logo" title="Arch Gateway Logo">
 </p>
 
-<h2>Build fast, robust, and personalized GenAI applications.</h2>
+<h2>Build fast, robust, and personalized GenAI applications (agents, assistants, etc.)</h2>
 
 Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed for generative AI apps, AI agents, and co-pilots that work with prompts. Engineered with purpose-built LLMs, Arch handles the critical but undifferentiated tasks related to the handling and processing of prompts, including detecting and rejecting [jailbreak](https://github.com/verazuo/jailbreak_llms) attempts, intelligently calling "backend" APIs to fulfill the user's request represented in a prompt, routing to and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
 
- Arch is built on and by the core contributors of the popular [Envoy Distributed Proxy](https://www.envoyproxy.io/) with the belief that:
+ Arch is built on (and by the core contributors of) the wildly popular and robust [Envoy Proxy](https://www.envoyproxy.io/) with the belief that:
 
 *Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization – all outside business logic.*
 

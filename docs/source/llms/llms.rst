@@ -1,20 +1,22 @@
 .. _llms_in_arch:
 
-LLMs
-====
-Arch utilizes purpose-built, industry leading, LLMs to handle the crufty and undifferentiated 
-work around accepting, handling and processing prompts. The following   
+LLMs and ML Models
+==================
 
-Arch-Guard
-----------
-LLM-powered applications are susceptible to prompt attacks, which are prompts intentionally designed to subvert the developer’s 
-intended behavior of the LLM.Arch-Guard is a classifier model trained on a large corpus of attacks, capable of detecting explicitly 
-malicious prompts (and toxicity). 
+Arch utilizes purpose-built, industry leading, LLMs to handle the crufty and undifferentiated work around 
+accepting, handling and processing prompts. The following sections talk about some of the core models that
+are built-in Arch. 
 
-The model is useful as a starting point for identifying and guardrailing against the most risky realistic inputs to
-LLM-powered applications. Our goal in embedding Arch-Guard in the Arch gateway is to enable developers to focus on their business logic
-and factor out security and safety outside application logic. Wth Arch-Guard= developers can take to significantly reduce prompt attack 
-risk while maintaining control over the user experience.
+Arch-Guard-v1
+-------------
+LLM-powered applications are susceptible to prompt attacks, which are prompts intentionally designed to 
+subvert the developer’s intended behavior of the LLM. Arch-Guard-v1 is a classifier model trained on a large 
+corpus of attacks, capable of detecting explicitly malicious prompts (and toxicity). 
+
+The model is useful as a starting point for identifying and guardrailing against the most risky realistic 
+inputs to LLM-powered applications. Our goal in embedding Arch-Guard in the Arch gateway is to enable developers 
+to focus on their business logic and factor out security and safety outside application logic. Wth Arch-Guard-v1 
+developers can take to significantly reduce prompt attack risk while maintaining control over the user experience.
 
 Below is our test results of the strength of our model as compared to Prompt-Guard from `Meta LLama <https://huggingface.co/meta-llama/Prompt-Guard-86M>`_.
 
@@ -135,5 +137,5 @@ Below is our test results of the strength of our model as compared to Prompt-Gua
 
 
 
-Arch-FC1B
----------
+Arch-Agent
+----------
