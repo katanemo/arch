@@ -511,18 +511,7 @@ impl StreamContext {
             }
         };
 
-        let endpoint = match prompt_target.endpoint {
-            Some(endpoint) => endpoint,
-            None => {
-                return self.send_server_error(
-                    format!(
-                        "endpoint not found for prompt target: {}",
-                        prompt_target.name
-                    ),
-                    Some(StatusCode::BAD_REQUEST),
-                );
-            }
-        };
+        let endpoint = prompt_target.endpoint.unwrap();
         let path = endpoint.path.unwrap_or(String::from("/"));
         let token_id = match self.dispatch_http_call(
             &endpoint.cluster,
