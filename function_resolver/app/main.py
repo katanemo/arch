@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI, Response
 from bolt_handler import BoltHandler
 from common import ChatMessage
@@ -33,13 +34,15 @@ async def healthz():
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
     tools_encoded = handler._format_system(req.tools)
-    messages = req.messages
+    messages = []
+    for message in req.messages:
+        messages.append({"role": message.role, "content": message.content})
     latest_message = messages.pop()
     messages.append(
         {"role": "system", "content": tools_encoded}
     )
-    messages.append({"role": "user", "content": latest_message})
-    logger.info(f"request model: {ollama_model}, messages: {messages}")
+    messages.append({"role": "user", "content": latest_message["content"]})
+    logger.info(f"request model: {ollama_model}, messages: {json.dumps(messages)}")
     resp = client.chat.completions.create(messages=messages, model=ollama_model, stream=False)
-    logger.info(f"response: {resp}")
+    logger.info(f"response: {resp.to_json()}")
     return resp
