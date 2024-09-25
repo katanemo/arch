@@ -1,6 +1,7 @@
 import random
 from typing import List
 from fastapi import FastAPI, HTTPException, Response
+from datetime import datetime, date, timedelta, timezone
 import logging
 from pydantic import BaseModel
 from utils import load_sql
@@ -117,7 +118,7 @@ class TopEmployeesProjects(BaseModel):
     months_range: int = None  # Optional (for filtering recent projects)
 
 
-@app.post("/employees_projects")
+@app.post("/top_employees_projects")
 async def employees_projects(req: TopEmployeesProjects, res: Response):
     params, filters = {}, []
 
@@ -224,8 +225,8 @@ class AvgProjPerformanceRequest(BaseModel):
     department: str = None  # Optional
 
 
-@app.post("/project_performance")
-async def project_performance(req: AvgProjPerformanceRequest, res: Response):
+@app.post("/avg_project_performance")
+async def avg_project_performance(req: AvgProjPerformanceRequest, res: Response):
     params, filters = {}, []
 
     if req.department:
@@ -256,7 +257,7 @@ class CertificationsExperienceRequest(BaseModel):
     min_years_experience: int
     department: str = None  # Optional
 
-@app.post("/certifications_experience")
+@app.post("/employees_certifications_experience")
 async def certifications_experience(req: CertificationsExperienceRequest, res: Response):
     # Convert the list of certifications into a format for SQL query
     certs_filter = ', '.join([f"'{cert}'" for cert in req.certifications])
