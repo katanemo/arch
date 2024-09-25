@@ -19,6 +19,15 @@ static_resources:
               route_config:
                 name: local_routes
                 virtual_hosts:
+                  - name: openai
+                    domains:
+                      - "api.openai.com"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          auto_host_rewrite: true
+                          cluster: openai
                   - name: local_service
                     domains:
                       - "*"
@@ -39,23 +48,28 @@ static_resources:
                       - match:
                           prefix: "/v1/chat/completions"
                           headers:
-                            - name: "x-bolt-llm-provider"
-                              string_match:
-                                exact: openai
+                            name: "Authorization"
+                            present_match: true
                         route:
                           auto_host_rewrite: true
                           cluster: openai
                           timeout: 60s
                       - match:
                           prefix: "/v1/chat/completions"
-                          headers:
-                            - name: "x-bolt-llm-provider"
-                              string_match:
-                                exact: mistral
                         route:
                           auto_host_rewrite: true
-                          cluster: mistral
+                          cluster: mistral_7b_instruct
                           timeout: 60s
+                      - match:
+                          prefix: "/embeddings"
+                        route:
+                          cluster: model_server
+                      - match:
+                          prefix: "/"
+                        direct_response:
+                          status: 200
+                          body:
+                            inline_string: "Inspect the HTTP header: custom-header.\n"
               http_filters:
                 - name: envoy.filters.http.wasm
                   typed_config:
@@ -108,31 +122,6 @@ static_resources:
             tls_params:
               tls_minimum_protocol_version: TLSv1_2
               tls_maximum_protocol_version: TLSv1_3
-    - name: mistral
-      connect_timeout: 5s
-      dns_lookup_family: V4_ONLY
-      type: LOGICAL_DNS
-      lb_policy: ROUND_ROBIN
-      typed_extension_protocol_options:
-        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-          explicit_http_config:
-            http2_protocol_options: {}
-      load_assignment:
-        cluster_name: mistral
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: api.mistral.ai
-                      port_value: 443
-                  hostname: "api.mistral.ai"
-      transport_socket:
-        name: envoy.transport_sockets.tls
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-          sni: api.mistral.ai
     - name: model_server
       connect_timeout: 5s
       type: STRICT_DNS
