@@ -1022,7 +1022,10 @@ impl HttpContext for StreamContext {
                     }
                 };
 
-            self.response_tokens += chat_completions_response.usage.completion_tokens;
+            self.response_tokens += chat_completions_response
+                .usage
+                .expect("Third Party should provide usage details")
+                .completion_tokens;
         }
 
         debug!(

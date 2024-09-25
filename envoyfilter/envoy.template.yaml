@@ -77,8 +77,6 @@ static_resources:
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
   clusters:
-    # LLM Host
-    # Embedding Providers
     # External LLM Providers
     - name: openai
       connect_timeout: 5s
