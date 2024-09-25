@@ -494,22 +494,35 @@ impl StreamContext {
         );
         //HACK: for now we only support one tool call, we will support multiple tool calls in the future
         let tool_params = &tools_call_response.tool_calls[0].arguments;
-        let tools_call_name = tools_call_response.tool_calls[0].name.clone();
+        let prompt_target_name = tools_call_response.tool_calls[0].name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
-        let prompt_target = self
-            .prompt_targets
-            .read()
-            .unwrap()
-            .get(&tools_call_name)
-            .unwrap()
-            .clone();
-
-        debug!("prompt_target_name: {}", prompt_target.name);
+        debug!("prompt_target_name: {}", prompt_target_name);
         debug!("tool_name(s): {:?}", tool_names);
         debug!("tool_params: {}", tool_params_json_str);
 
-        let endpoint = prompt_target.endpoint.unwrap();
+        let prompt_target = match self.prompt_targets.read().unwrap().get(&prompt_target_name) {
+            Some(prompt_target) => prompt_target.clone(),
+            None => {
+                return self.send_server_error(
+                    format!("prompt target not found: {}", prompt_target_name),
+                    Some(StatusCode::BAD_REQUEST),
+                );
+            }
+        };
+
+        let endpoint = match prompt_target.endpoint {
+            Some(endpoint) => endpoint,
+            None => {
+                return self.send_server_error(
+                    format!(
+                        "endpoint not found for prompt target: {}",
+                        prompt_target.name
+                    ),
+                    Some(StatusCode::BAD_REQUEST),
+                );
+            }
+        };
         let path = endpoint.path.unwrap_or(String::from("/"));
         let token_id = match self.dispatch_http_call(
             &endpoint.cluster,
