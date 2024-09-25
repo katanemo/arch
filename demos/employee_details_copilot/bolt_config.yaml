@@ -79,6 +79,7 @@ prompt_targets:
         description: Minimum performance score to filter employees.
         required: true
         type: float
+        default: 4.0
       - name: min_years_experience
         description: Minimum years of experience to filter employees.
         required: true
@@ -91,6 +92,7 @@ prompt_targets:
         description: Minimum number of projects employees participated in (optional).
         required: false
         type: integer
+        default: 3
       - name: months_range
         description: Timeframe (in months) for filtering recent projects (optional).
         required: false
