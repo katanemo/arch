@@ -1,7 +1,6 @@
 import random
 from typing import List
 from fastapi import FastAPI, HTTPException, Response
-from datetime import datetime, date, timedelta, timezone
 import logging
 from pydantic import BaseModel
 from utils import load_sql
