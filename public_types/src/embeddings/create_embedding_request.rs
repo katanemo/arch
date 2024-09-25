@@ -30,7 +30,10 @@ pub struct CreateEmbeddingRequest {
 }
 
 impl CreateEmbeddingRequest {
-    pub fn new(input: embeddings::CreateEmbeddingRequestInput, model: String) -> CreateEmbeddingRequest {
+    pub fn new(
+        input: embeddings::CreateEmbeddingRequestInput,
+        model: String,
+    ) -> CreateEmbeddingRequest {
         CreateEmbeddingRequest {
             input: Box::new(input),
             model,

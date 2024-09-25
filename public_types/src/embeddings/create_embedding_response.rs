@@ -27,7 +27,12 @@ pub struct CreateEmbeddingResponse {
 }
 
 impl CreateEmbeddingResponse {
-    pub fn new(data: Vec<embeddings::Embedding>, model: String, object: Object, usage: embeddings::CreateEmbeddingResponseUsage) -> CreateEmbeddingResponse {
+    pub fn new(
+        data: Vec<embeddings::Embedding>,
+        model: String,
+        object: Object,
+        usage: embeddings::CreateEmbeddingResponseUsage,
+    ) -> CreateEmbeddingResponse {
         CreateEmbeddingResponse {
             data,
             model,
