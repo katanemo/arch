@@ -1,13 +1,14 @@
 use crate::consts::{
-    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME, OPENAI_CHAT_COMPLETIONS_PATH,
+    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, BOLT_ROUTING_HEADER, DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
-use crate::ratelimit;
+use crate::llm_providers::{LlmProvider, LlmProviders};
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
+use crate::{ratelimit, routing};
 use acap::cos;
 use http::StatusCode;
 use log::{debug, info, warn};
@@ -56,11 +57,11 @@ pub struct StreamContext {
     pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
     pub overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
-    host_header: Option<String>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
     chat_completions_request: bool,
+    llm_provider: Option<&'static LlmProvider<'static>>,
     prompt_guards: Rc<Option<PromptGuards>>,
 }
 
@@ -77,18 +78,39 @@ impl StreamContext {
             metrics,
             prompt_targets,
             callouts: HashMap::new(),
-            host_header: None,
             ratelimit_selector: None,
             streaming_response: false,
             response_tokens: 0,
             chat_completions_request: false,
+            llm_provider: None,
             prompt_guards,
             overrides,
         }
     }
-    fn save_host_header(&mut self) {
-        // Save the host header to be used by filter logic later on.
-        self.host_header = self.get_http_request_header(":host");
+    fn llm_provider(&self) -> &LlmProvider {
+        self.llm_provider
+            .expect("the provider should be set when asked for it")
+    }
+
+    fn add_routing_header(&mut self) {
+        self.add_http_request_header(BOLT_ROUTING_HEADER, self.llm_provider().as_ref());
+    }
+
+    fn modify_auth_headers(&mut self) -> Result<(), String> {
+        let llm_provider_api_key_value = self
+            .get_http_request_header(self.llm_provider().api_key_header())
+            .ok_or(format!("missing {} api key", self.llm_provider()))?;
+
+        let authorization_header_value = format!("Bearer {}", llm_provider_api_key_value);
+
+        self.set_http_request_header("Authorization", Some(&authorization_header_value));
+
+        // sanitize passed in api keys
+        for provider in LlmProviders::VARIANTS.iter() {
+            self.set_http_request_header(provider.api_key_header(), None);
+        }
+
+        Ok(())
     }
 
     fn delete_content_length_header(&mut self) {
@@ -97,19 +119,6 @@ impl StreamContext {
         // However, a missing Content-Length header is not grounds for bad requests given that intermediary hops could
         // manipulate the body in benign ways e.g., compression.
         self.set_http_request_header("content-length", None);
-    }
-
-    fn modify_path_header(&mut self) {
-        match self.get_http_request_header(":path") {
-            // The gateway can start gathering information necessary for routing. For now change the path to an
-            // OpenAI API path.
-            Some(path) if path == "/llmrouting" => {
-                self.set_http_request_header(":path", Some(OPENAI_CHAT_COMPLETIONS_PATH));
-                self.chat_completions_request = true;
-            }
-            // Otherwise let the filter continue.
-            _ => (),
-        }
     }
 
     fn save_ratelimit_header(&mut self) {
@@ -237,6 +246,7 @@ impl StreamContext {
             token_id
         );
 
+        self.metrics.active_http_calls.increment(1);
         callout_context.response_handler_type = ResponseHandlerType::ZeroShotIntent;
 
         if self.callouts.insert(token_id, callout_context).is_some() {
@@ -431,6 +441,7 @@ impl StreamContext {
                     BOLT_FC_CLUSTER, token_id
                 );
 
+                self.metrics.active_http_calls.increment(1);
                 callout_context.response_handler_type = ResponseHandlerType::FunctionResolver;
                 callout_context.prompt_target_name = Some(prompt_target.name);
                 if self.callouts.insert(token_id, callout_context).is_some() {
@@ -438,7 +449,6 @@ impl StreamContext {
                 }
             }
         }
-        self.metrics.active_http_calls.increment(1);
     }
 
     fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
@@ -595,7 +605,7 @@ impl StreamContext {
         });
 
         let chat_completions_request: ChatCompletionsRequest = ChatCompletionsRequest {
-            model: GPT_35_TURBO.to_string(),
+            model: callout_context.request_body.model,
             messages,
             tools: None,
             stream: callout_context.request_body.stream,
@@ -751,10 +761,23 @@ impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        self.save_host_header();
+        let provider_hint = self
+            .get_http_request_header("x-bolt-deterministic-provider")
+            .is_some();
+        self.llm_provider = Some(routing::get_llm_provider(provider_hint));
+
+        self.add_routing_header();
+        if let Err(error) = self.modify_auth_headers() {
+            self.send_server_error(error, Some(StatusCode::BAD_REQUEST));
+        }
         self.delete_content_length_header();
-        self.modify_path_header();
         self.save_ratelimit_header();
+
+        debug!(
+            "S[{}] req_headers={:?}",
+            self.context_id,
+            self.get_http_request_headers()
+        );
 
         Action::Continue
     }
@@ -795,6 +818,9 @@ impl HttpContext for StreamContext {
                     return Action::Pause;
                 }
             };
+
+        // Set the model based on the chosen LLM Provider
+        deserialized_body.model = String::from(self.llm_provider().choose_model());
 
         self.streaming_response = deserialized_body.stream;
         if deserialized_body.stream && deserialized_body.stream_options.is_none() {
@@ -917,14 +943,20 @@ impl HttpContext for StreamContext {
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
-        if !self.chat_completions_request {
-            return Action::Continue;
-        }
-
         debug!(
             "recv [S={}] bytes={} end_stream={}",
             self.context_id, body_size, end_of_stream
         );
+
+        if !self.chat_completions_request {
+            if let Some(body_str) = self
+                .get_http_response_body(0, body_size)
+                .and_then(|bytes| String::from_utf8(bytes).ok())
+            {
+                debug!("recv [S={}] body_str={}", self.context_id, body_str);
+            }
+            return Action::Continue;
+        }
 
         if !end_of_stream && !self.streaming_response {
             return Action::Pause;
