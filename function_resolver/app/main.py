@@ -34,14 +34,10 @@ async def healthz():
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
     tools_encoded = handler._format_system(req.tools)
-    messages = []
+    # append system prompt with tools to messages
+    messages = [{"role": "system", "content": tools_encoded}]
     for message in req.messages:
         messages.append({"role": message.role, "content": message.content})
-    latest_message = messages.pop()
-    messages.append(
-        {"role": "system", "content": tools_encoded}
-    )
-    messages.append({"role": "user", "content": latest_message["content"]})
     logger.info(f"request model: {ollama_model}, messages: {json.dumps(messages)}")
     resp = client.chat.completions.create(messages=messages, model=ollama_model, stream=False)
     logger.info(f"response: {resp.to_json()}")
