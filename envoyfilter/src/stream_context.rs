@@ -494,18 +494,18 @@ impl StreamContext {
         );
         //HACK: for now we only support one tool call, we will support multiple tool calls in the future
         let tool_params = &tools_call_response.tool_calls[0].arguments;
-        let prompt_target_name = tools_call_response.tool_calls[0].name.clone();
+        let tool_call_name = tools_call_response.tool_calls[0].name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
-        debug!("prompt_target_name: {}", prompt_target_name);
+        debug!("tool_call_name: {}", tool_call_name);
         debug!("tool_name(s): {:?}", tool_names);
         debug!("tool_params: {}", tool_params_json_str);
 
-        let prompt_target = match self.prompt_targets.read().unwrap().get(&prompt_target_name) {
+        let prompt_target = match self.prompt_targets.read().unwrap().get(&tool_call_name) {
             Some(prompt_target) => prompt_target.clone(),
             None => {
                 return self.send_server_error(
-                    format!("prompt target not found: {}", prompt_target_name),
+                    format!("prompt target not found: {}", tool_call_name),
                     Some(StatusCode::BAD_REQUEST),
                 );
             }
