@@ -33,12 +33,13 @@ async def healthz():
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
     tools_encoded = handler._format_system(req.tools)
-    messages = []
+    messages = req.messages
+    latest_message = messages.pop()
     messages.append(
         {"role": "system", "content": tools_encoded}
     )
-    messages.append({"role": "user", "content": req.messages[-1].content})
-
+    messages.append({"role": "user", "content": latest_message})
+    logger.info(f"request model: {ollama_model}, messages: {messages}")
     resp = client.chat.completions.create(messages=messages, model=ollama_model, stream=False)
     logger.info(f"response: {resp}")
     return resp
