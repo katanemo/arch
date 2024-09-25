@@ -1,0 +1,70 @@
+# Use NVIDIA CUDA base image to enable GPU support
+FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04 as base
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Python 3.10
+RUN apt-get update && \
+    apt-get install -y python3.10 python3-pip python3-dev python-is-python3 && \
+    rm -rf /var/lib/apt/lists/*
+
+
+
+#
+# builder
+#
+FROM base AS builder
+
+WORKDIR /src
+
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Install git for cloning repositories
+RUN apt-get update && apt-get install -y git && apt-get clean
+
+# Copy requirements.txt
+COPY requirements.txt /src/
+
+# Install Python dependencies
+RUN pip install --force-reinstall -r requirements.txt
+
+RUN apt-get update && \
+    apt-get install -y cuda-toolkit-12-2
+
+# Check for NVIDIA GPU and CUDA support and install EETQ if detected
+RUN if command -v nvcc >/dev/null 2>&1; then \
+        echo "CUDA and NVIDIA GPU detected, installing EETQ..." && \
+        git clone https://github.com/NetEase-FuXi/EETQ.git && \
+        cd EETQ && \
+        git submodule update --init --recursive && \
+        pip install .; \
+    else \
+        echo "CUDA or NVIDIA GPU not detected, skipping EETQ installation."; \
+    fi
+
+COPY . /src
+
+#
+# output
+#
+
+
+# Specify list of models that will go into the image as a comma separated list
+ENV MODELS="BAAI/bge-large-en-v1.5"
+ENV NER_MODELS="urchade/gliner_large-v2.1"
+ENV DEBIAN_FRONTEND=noninteractive
+
+COPY /app /app
+WORKDIR /app
+
+# Install required tools
+RUN apt-get update && apt-get install -y \
+  curl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Uncomment if you want to install the model during the image build
+# RUN python install.py && \
+#   find /root/.cache/torch/sentence_transformers/ -name onnx -exec rm -rf {} +
+
+# Set the default command to run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

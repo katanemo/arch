@@ -3,13 +3,13 @@ use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
 use log::debug;
-use open_message_format_embeddings::models::{
-    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
-};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::EmbeddingType;
-use public_types::configuration::{Configuration, Overrides, PromptTarget};
+use public_types::configuration::{Configuration, Overrides, PromptGuards, PromptTarget};
+use public_types::embeddings::{
+    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
+};
 use serde_json::to_string;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -47,6 +47,7 @@ pub struct FilterContext {
     config: Option<Configuration>,
     overrides: Rc<Option<Overrides>>,
     prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    prompt_guards: Rc<Option<PromptGuards>>,
 }
 
 pub fn embeddings_store() -> &'static RwLock<HashMap<String, EmbeddingTypeMap>> {
@@ -65,6 +66,7 @@ impl FilterContext {
             metrics: Rc::new(WasmMetrics::new()),
             prompt_targets: Rc::new(RwLock::new(HashMap::new())),
             overrides: Rc::new(None),
+            prompt_guards: Rc::new(Some(PromptGuards::default())),
         }
     }
 
@@ -238,15 +240,28 @@ impl RootContext for FilterContext {
             {
                 ratelimit::ratelimits(Some(std::mem::take(ratelimits_config)));
             }
+
+            if let Some(prompt_guards) = self
+                .config
+                .as_mut()
+                .and_then(|config| config.prompt_guards.as_mut())
+            {
+                self.prompt_guards = Rc::new(Some(std::mem::take(prompt_guards)));
+            }
         }
         true
     }
 
     fn create_http_context(&self, context_id: u32) -> Option<Box<dyn HttpContext>> {
+        debug!(
+            "||| create_http_context called with context_id: {:?} |||",
+            context_id
+        );
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
             Rc::clone(&self.prompt_targets),
+            Rc::clone(&self.prompt_guards),
             Rc::clone(&self.overrides),
         )))
     }

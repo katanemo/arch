@@ -6,11 +6,6 @@ overrides:
   # confidence threshold for prompt target intent matching
   prompt_target_intent_matching_threshold: 0.7
 
-# should not be here
-embedding_provider:
-  name: "bge-large-en-v1.5"
-  model: "BAAI/bge-large-en-v1.5"
-
 llm_providers:
 
   - name: open-ai-gpt-4
@@ -70,7 +65,7 @@ prompt_targets:
         required: false
         type: integer
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /interface_down_packet_drop
     system_prompt: |
       You are responsible for correlating packet drops with interface down events by analyzing packet errors from the given data.
@@ -125,11 +120,7 @@ prompt_targets:
         required: false
         type: integer
     endpoint:
-      cluster: databasehost
+      cluster: api_server
       path: /packet_errors_impact_flow
     system_prompt: |
       You are responsible for finding and correlating packet errors with the packet flows based on timestamps given in the data. This correlation helps identify if packet flows are impacted by packet errors.
-
-clusters:
-  databasehost:
-    address: model_server

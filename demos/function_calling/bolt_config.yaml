@@ -6,11 +6,6 @@ overrides:
   # confidence threshold for prompt target intent matching
   prompt_target_intent_matching_threshold: 0.6
 
-# should not be here
-embedding_provider:
-  name: "bge-large-en-v1.5"
-  model: "BAAI/bge-large-en-v1.5"
-
 llm_providers:
 
   - name: open-ai-gpt-4
@@ -32,7 +27,7 @@ prompt_targets:
       - name: units
         description: The units in which the weather forecast is requested.
     endpoint:
-      cluster: weatherhost
+      cluster: api_server
       path: /weather
     system_prompt: |
       You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
@@ -45,13 +40,14 @@ prompt_targets:
       - name: policy_number
         required: true
         description: The policy number for which the insurance claim details are requested.
+        type: string
+      - name: include_expired
+        description: Include expired insurance claims in the response.
+        type: string
+        default: "false"
     endpoint:
-      cluster: weatherhost
+      cluster: api_server
       path: /insurance_claim_details
     system_prompt: |
       You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
       - Use policy number to retrieve insurance claim details
-
-clusters:
-  weatherhost:
-    address: model_server

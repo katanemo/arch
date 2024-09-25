@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
-  pub prompt_target_intent_matching_threshold: Option<f64>,
+    pub prompt_target_intent_matching_threshold: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,23 +11,27 @@ pub struct Configuration {
     pub load_balancing: LoadBalancing,
     pub timeout_ms: u64,
     pub overrides: Option<Overrides>,
-    pub embedding_provider: EmbeddingProviver,
     pub llm_providers: Vec<LlmProvider>,
-    pub prompt_guards: Option<PromptGuard>,
+    pub prompt_guards: Option<PromptGuards>,
     pub system_prompt: Option<String>,
     pub prompt_targets: Vec<PromptTarget>,
     pub ratelimits: Option<Vec<Ratelimit>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PromptGuard {
-    pub input_guard: Vec<InputGuard>,
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PromptGuards {
+    pub input_guards: InputGuards,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InputGuard {
-    pub name: String,
-    pub on_exception_message: String,
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct InputGuards {
+    pub jailbreak: Option<GuardOptions>,
+    pub toxicity: Option<GuardOptions>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GuardOptions {
+    pub on_exception_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,6 +110,7 @@ pub struct Parameter {
     pub required: Option<bool>,
     #[serde(rename = "enum")]
     pub enum_values: Option<Vec<String>>,
+    pub default: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,10 +136,6 @@ mod test {
 default_prompt_endpoint: "127.0.0.1"
 load_balancing: "round_robin"
 timeout_ms: 5000
-
-embedding_provider:
-  name: "SentenceTransformer"
-  model: "all-MiniLM-L6-v2"
 
 llm_providers:
   - name: "open-ai-gpt-4"

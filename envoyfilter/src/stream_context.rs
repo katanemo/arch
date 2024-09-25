@@ -12,9 +12,6 @@ use crate::{ratelimit, routing};
 use acap::cos;
 use http::StatusCode;
 use log::{debug, info, warn};
-use open_message_format_embeddings::models::{
-    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
-};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
@@ -22,10 +19,14 @@ use public_types::common_types::open_ai::{
     StreamOptions,
 };
 use public_types::common_types::{
-    BoltFCToolsCall, EmbeddingType, ToolParameter, ToolParameters, ToolsDefinition,
-    ZeroShotClassificationRequest, ZeroShotClassificationResponse,
+    BoltFCToolsCall, EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
+    ToolParameter, ToolParameters, ToolsDefinition, ZeroShotClassificationRequest,
+    ZeroShotClassificationResponse,
 };
-use public_types::configuration::{Overrides, PromptTarget, PromptType};
+use public_types::configuration::{Overrides, PromptGuards, PromptTarget, PromptType};
+use public_types::embeddings::{
+    CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
+};
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
@@ -37,6 +38,7 @@ enum ResponseHandlerType {
     FunctionResolver,
     FunctionCall,
     ZeroShotIntent,
+    ArchGuard,
 }
 
 pub struct CallContext {
@@ -58,6 +60,7 @@ pub struct StreamContext {
     response_tokens: usize,
     chat_completions_request: bool,
     llm_provider: Option<&'static LlmProvider<'static>>,
+    prompt_guards: Rc<Option<PromptGuards>>,
 }
 
 impl StreamContext {
@@ -65,6 +68,7 @@ impl StreamContext {
         context_id: u32,
         metrics: Rc<WasmMetrics>,
         prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+        prompt_guards: Rc<Option<PromptGuards>>,
         overrides: Rc<Option<Overrides>>,
     ) -> Self {
         StreamContext {
@@ -77,6 +81,7 @@ impl StreamContext {
             response_tokens: 0,
             chat_completions_request: false,
             llm_provider: None,
+            prompt_guards,
             overrides,
         }
     }
@@ -272,14 +277,26 @@ impl StreamContext {
 
         debug!("zeroshot intent response: {:?}", zeroshot_intent_response);
 
+        let desc_emb_similarity_map: HashMap<String, f64> = callout_context
+            .similarity_scores
+            .clone()
+            .unwrap()
+            .into_iter()
+            .collect();
+
+        let pred_class_desc_emb_similarity = desc_emb_similarity_map
+            .get(&zeroshot_intent_response.predicted_class)
+            .unwrap();
+
         let prompt_target_similarity_score = zeroshot_intent_response.predicted_class_score * 0.7
-            + callout_context.similarity_scores.as_ref().unwrap()[0].1 * 0.3;
+            + pred_class_desc_emb_similarity * 0.3;
 
         debug!(
-            "similarity score: {:.3}, intent score: {:.3}, description embedding score: {:.3}",
+            "similarity score: {:.3}, intent score: {:.3}, description embedding score: {:.3}, prompt: {}",
             prompt_target_similarity_score,
             zeroshot_intent_response.predicted_class_score,
-            callout_context.similarity_scores.as_ref().unwrap()[0].1
+            pred_class_desc_emb_similarity,
+            callout_context.user_message.as_ref().unwrap()
         );
 
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
@@ -353,6 +370,7 @@ impl StreamContext {
                                     description: entity.description.clone(),
                                     required: entity.required,
                                     enum_values: entity.enum_values.clone(),
+                                    default: entity.default.clone(),
                                 };
                                 properties.insert(entity.name.clone(), param);
                             }
@@ -435,7 +453,7 @@ impl StreamContext {
         debug!("response received for function resolver");
 
         let body_str = String::from_utf8(body).unwrap();
-        debug!("function_resolver response str: {:?}", body_str);
+        debug!("function_resolver response str: {}", body_str);
 
         let boltfc_response: ChatCompletionsResponse = serde_json::from_str(&body_str).unwrap();
 
@@ -460,61 +478,42 @@ impl StreamContext {
             }
         };
 
-        // prompt target
+        debug!("tool_call_details: {}", boltfc_response_str);
+        // extract all tool names
+        let tool_names: Vec<String> = tools_call_response
+            .tool_calls
+            .iter()
+            .map(|tool_call| tool_call.name.clone())
+            .collect();
+
+        debug!(
+            "call context similarity score: {:?}",
+            callout_context.similarity_scores
+        );
+        //HACK: for now we only support one tool call, we will support multiple tool calls in the future
+        let tool_params = &tools_call_response.tool_calls[0].arguments;
+        let tools_call_name = tools_call_response.tool_calls[0].name.clone();
+        let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
         let prompt_target = self
             .prompt_targets
             .read()
             .unwrap()
-            .get(callout_context.prompt_target_name.as_ref().unwrap())
+            .get(&tools_call_name)
             .unwrap()
             .clone();
-        // verify required parameters are present
 
-        prompt_target
-            .parameters
-            .as_ref()
-            .unwrap()
-            .iter()
-            .for_each(|param| match param.required {
-                None => {}
-                Some(required) => {
-                    if required
-                        && !tools_call_response.tool_calls[0]
-                            .arguments
-                            .contains_key(&param.name)
-                    {
-                        self.send_server_error(
-                            format!("missing required parameter: {}", param.name),
-                            Some(StatusCode::BAD_REQUEST),
-                        )
-                    }
-                }
-            });
+        debug!("prompt_target_name: {}", prompt_target.name);
+        debug!("tool_name(s): {:?}", tool_names);
+        debug!("tool_params: {}", tool_params_json_str);
 
-        debug!("tool_call_details: {:?}", tools_call_response);
-        let tool_name = &tools_call_response.tool_calls[0].name;
-
-        // ensure that detected tool name matches the prompt target name
-        if tool_name != &prompt_target.name {
-            warn!(
-                "tool name mismatch: detected tool name: {}, expected tool name: {}",
-                tool_name, &prompt_target.name
-            );
-        }
-        let tool_params = &tools_call_response.tool_calls[0].arguments;
-        debug!("tool_name: {:?}", tool_name);
-        debug!("tool_params: {:?}", tool_params);
-        debug!("prompt_target: {:?}", prompt_target);
-
-        let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
-
-        let endpoint = prompt_target.endpoint.as_ref().unwrap();
+        let endpoint = prompt_target.endpoint.unwrap();
+        let path = endpoint.path.unwrap_or(String::from("/"));
         let token_id = match self.dispatch_http_call(
             &endpoint.cluster,
             vec![
                 (":method", "POST"),
-                (":path", endpoint.path.as_ref().unwrap_or(&"/".to_string())),
+                (":path", path.as_ref()),
                 (":authority", endpoint.cluster.as_str()),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
@@ -525,7 +524,12 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call for function_resolver: {:?}", e);
+                let error_msg = format!(
+                    "Error dispatching call to cluster: {}, path: {}, err: {:?}",
+                    &endpoint.cluster, path, e
+                );
+                debug!("{}", error_msg);
+                return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
             }
         };
 
@@ -537,9 +541,22 @@ impl StreamContext {
     }
 
     fn function_call_response_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
+        let headers = self.get_http_call_response_headers();
+        debug!("response headers: {:?}", headers);
+        if let Some(http_status) = headers.iter().find(|(key, _)| key == ":status") {
+            if http_status.1 != StatusCode::OK.as_str() {
+                let error_msg = format!(
+                    "Error in function call response: status code: {}",
+                    http_status.1
+                );
+                return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
+            }
+        } else {
+            warn!("http status code not found in api response");
+        }
         debug!("response received for function call response");
         let body_str: String = String::from_utf8(body).unwrap();
-        debug!("function_call_response response str: {:?}", body_str);
+        debug!("function_call_response response str: {}", body_str);
         let prompt_target_name = callout_context.prompt_target_name.unwrap();
         let prompt_target = self
             .prompt_targets
@@ -628,6 +645,108 @@ impl StreamContext {
         self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
         self.resume_http_request();
     }
+
+    fn arch_guard_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
+        debug!("response received for arch guard");
+        let prompt_guard_resp: PromptGuardResponse = serde_json::from_slice(&body).unwrap();
+        debug!("prompt_guard_resp: {:?}", prompt_guard_resp);
+
+        if prompt_guard_resp.jailbreak_verdict.is_some()
+            && prompt_guard_resp.jailbreak_verdict.unwrap()
+        {
+            let default_err = "Jailbreak detected. Please refrain from discussing jailbreaking.";
+            let error_msg = match self.prompt_guards.as_ref() {
+                Some(prompt_guards) => match prompt_guards.input_guards.jailbreak.as_ref() {
+                    Some(jailbreak) => match jailbreak.on_exception_message.as_ref() {
+                        Some(error_msg) => error_msg,
+                        None => default_err,
+                    },
+                    None => default_err,
+                },
+                None => default_err,
+            };
+
+            return self.send_server_error(error_msg.to_string(), Some(StatusCode::BAD_REQUEST));
+        }
+
+        if prompt_guard_resp.toxic_verdict.is_some() && prompt_guard_resp.toxic_verdict.unwrap() {
+            let default_err = "Toxicity detected. Please refrain from using toxic language.";
+            let error_msg = match self.prompt_guards.as_ref() {
+                Some(prompt_guards) => match prompt_guards.input_guards.toxicity.as_ref() {
+                    Some(toxicity) => match toxicity.on_exception_message.as_ref() {
+                        Some(error_msg) => error_msg,
+                        None => default_err,
+                    },
+                    None => default_err,
+                },
+                None => default_err,
+            };
+
+            return self.send_server_error(error_msg.to_string(), Some(StatusCode::BAD_REQUEST));
+        }
+
+        self.get_embeddings(callout_context);
+    }
+
+    fn get_embeddings(&mut self, callout_context: CallContext) {
+        let user_message = callout_context.user_message.unwrap();
+        let get_embeddings_input = CreateEmbeddingRequest {
+            // Need to clone into input because user_message is used below.
+            input: Box::new(CreateEmbeddingRequestInput::String(user_message.clone())),
+            model: String::from(DEFAULT_EMBEDDING_MODEL),
+            encoding_format: None,
+            dimensions: None,
+            user: None,
+        };
+
+        let json_data: String = match serde_json::to_string(&get_embeddings_input) {
+            Ok(json_data) => json_data,
+            Err(error) => {
+                panic!("Error serializing embeddings input: {}", error);
+            }
+        };
+
+        let token_id = match self.dispatch_http_call(
+            MODEL_SERVER_NAME,
+            vec![
+                (":method", "POST"),
+                (":path", "/embeddings"),
+                (":authority", MODEL_SERVER_NAME),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ],
+            Some(json_data.as_bytes()),
+            vec![],
+            Duration::from_secs(5),
+        ) {
+            Ok(token_id) => token_id,
+            Err(e) => {
+                panic!(
+                    "Error dispatching embedding server HTTP call for get-embeddings: {:?}",
+                    e
+                );
+            }
+        };
+        debug!(
+            "dispatched HTTP call to embedding server token_id={}",
+            token_id
+        );
+
+        let call_context = CallContext {
+            response_handler_type: ResponseHandlerType::GetEmbeddings,
+            user_message: Some(user_message),
+            prompt_target_name: None,
+            request_body: callout_context.request_body,
+            similarity_scores: None,
+        };
+        if self.callouts.insert(token_id, call_context).is_some() {
+            panic!(
+                "duplicate token_id={} in embedding server requests",
+                token_id
+            )
+        }
+    }
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
@@ -715,16 +834,51 @@ impl HttpContext for StreamContext {
             }
         };
 
-        let get_embeddings_input = CreateEmbeddingRequest {
-            // Need to clone into input because user_message is used below.
-            input: Box::new(CreateEmbeddingRequestInput::String(user_message.clone())),
-            model: String::from(DEFAULT_EMBEDDING_MODEL),
-            encoding_format: None,
-            dimensions: None,
-            user: None,
+        let prompt_guards = match self.prompt_guards.as_ref() {
+            Some(prompt_guards) => {
+                debug!("prompt guards: {:?}", prompt_guards);
+                prompt_guards
+            }
+            None => {
+                let callout_context = CallContext {
+                    response_handler_type: ResponseHandlerType::ArchGuard,
+                    user_message: Some(user_message),
+                    prompt_target_name: None,
+                    request_body: deserialized_body,
+                    similarity_scores: None,
+                };
+                self.get_embeddings(callout_context);
+                return Action::Pause;
+            }
         };
 
-        let json_data: String = match serde_json::to_string(&get_embeddings_input) {
+        let prompt_guard_task = match (
+            prompt_guards.input_guards.toxicity.is_some(),
+            prompt_guards.input_guards.jailbreak.is_some(),
+        ) {
+            (true, true) => PromptGuardTask::Both,
+            (true, false) => PromptGuardTask::Toxicity,
+            (false, true) => PromptGuardTask::Jailbreak,
+            (false, false) => {
+                info!("Input guards set but no prompt guards were found");
+                let callout_context = CallContext {
+                    response_handler_type: ResponseHandlerType::ArchGuard,
+                    user_message: Some(user_message),
+                    prompt_target_name: None,
+                    request_body: deserialized_body,
+                    similarity_scores: None,
+                };
+                self.get_embeddings(callout_context);
+                return Action::Pause;
+            }
+        };
+
+        let get_prompt_guards_request = PromptGuardRequest {
+            input: user_message.clone(),
+            task: prompt_guard_task,
+        };
+
+        let json_data: String = match serde_json::to_string(&get_prompt_guards_request) {
             Ok(json_data) => json_data,
             Err(error) => {
                 panic!("Error serializing embeddings input: {}", error);
@@ -735,7 +889,7 @@ impl HttpContext for StreamContext {
             MODEL_SERVER_NAME,
             vec![
                 (":method", "POST"),
-                (":path", "/embeddings"),
+                (":path", "/guard"),
                 (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
@@ -753,13 +907,11 @@ impl HttpContext for StreamContext {
                 );
             }
         };
-        debug!(
-            "dispatched HTTP call to embedding server token_id={}",
-            token_id
-        );
+
+        debug!("dispatched HTTP call to bolt_guard token_id={}", token_id);
 
         let call_context = CallContext {
-            response_handler_type: ResponseHandlerType::GetEmbeddings,
+            response_handler_type: ResponseHandlerType::ArchGuard,
             user_message: Some(user_message),
             prompt_target_name: None,
             request_body: deserialized_body,
@@ -886,15 +1038,16 @@ impl Context for StreamContext {
                 ResponseHandlerType::GetEmbeddings => {
                     self.embeddings_handler(body, callout_context)
                 }
+                ResponseHandlerType::ZeroShotIntent => {
+                    self.zero_shot_intent_detection_resp_handler(body, callout_context)
+                }
                 ResponseHandlerType::FunctionResolver => {
                     self.function_resolver_handler(body, callout_context)
                 }
                 ResponseHandlerType::FunctionCall => {
                     self.function_call_response_handler(body, callout_context)
                 }
-                ResponseHandlerType::ZeroShotIntent => {
-                    self.zero_shot_intent_detection_resp_handler(body, callout_context)
-                }
+                ResponseHandlerType::ArchGuard => self.arch_guard_handler(body, callout_context),
             }
         } else {
             self.send_server_error(
