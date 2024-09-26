@@ -149,7 +149,7 @@ prompt_targets:
 
   # 5. Employees with Highest Average Project Performance
   - type: function_resolver
-    name: project_performance
+    name: avg_project_performance
     description: |
       Fetch employees with the highest average performance across all projects they have worked on over time. You can filter by minimum project count, department, and minimum performance score.
     parameters:
@@ -161,14 +161,13 @@ prompt_targets:
         description: Minimum performance score to filter employees.
         required: true
         type: float
-        default: 4.0
       - name: department
         description: Department to filter by (optional).
         required: false
         type: string
     endpoint:
       cluster: api_server
-      path: /project_performance
+      path: /avg_project_performance
     system_prompt: |
       You are responsible for fetching employees with the highest average performance across all projects they’ve worked on. Apply filters for minimum project count, performance score, and department.
 
@@ -191,7 +190,6 @@ prompt_targets:
         description: Department to filter employees by (optional).
         required: false
         type: string
-        default: "Engineering"
     endpoint:
       cluster: api_server
       path: /certifications_experience
