@@ -20,6 +20,7 @@ services:
     volumes:
       - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+      - ./arch_log:/var/log/
     depends_on:
       config_generator:
         condition: service_completed_successfully
