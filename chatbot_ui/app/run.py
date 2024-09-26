@@ -24,6 +24,7 @@ def predict(message, history):
     custom_headers = {
         'x-bolt-openai-api-key': f"{OPENAI_API_KEY}",
         'x-bolt-mistral-api-key': f"{MISTRAL_API_KEY}",
+        'x-bolt-deterministic-provider': 'openai',
     }
 
     try:
