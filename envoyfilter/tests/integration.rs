@@ -3,15 +3,14 @@ use proxy_wasm_test_framework::tester::{self, Tester};
 use proxy_wasm_test_framework::types::{
     Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
 };
-use public_types::common_types::{
-    open_ai::{ChatCompletionsResponse, Choice, Message, Usage},
-    BoltFCToolsCall, IntOrString, ToolCallDetail,
-};
+use public_types::common_types::open_ai::{ChatCompletionsResponse, Choice, Message, Usage};
+use public_types::common_types::open_ai::{FunctionCallDetail, ToolCall, ToolType};
 use public_types::embeddings::embedding::Object;
 use public_types::embeddings::{
     create_embedding_response, CreateEmbeddingResponse, CreateEmbeddingResponseUsage, Embedding,
 };
 use public_types::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
+use serde_yaml::Value;
 use serial_test::serial;
 use std::collections::HashMap;
 use std::path::Path;
@@ -415,18 +414,6 @@ fn request_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let tool_call_detail = vec![ToolCallDetail {
-        name: String::from("weather_forecast"),
-        arguments: HashMap::from([(
-            String::from("city"),
-            IntOrString::Text(String::from("seattle")),
-        )]),
-    }];
-
-    let boltfc_tools_call = BoltFCToolsCall {
-        tool_calls: tool_call_detail,
-    };
-
     let bolt_fc_resp = ChatCompletionsResponse {
         usage: Usage {
             completion_tokens: 0,
@@ -436,7 +423,18 @@ fn request_ratelimited() {
             index: 0,
             message: Message {
                 role: "system".to_string(),
-                content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
+                content: None,
+                tool_calls: Some(vec![ToolCall {
+                    id: String::from("test"),
+                    tool_type: ToolType::Function,
+                    function: FunctionCallDetail {
+                        name: String::from("weather_forecast"),
+                        arguments: HashMap::from([(
+                            String::from("city"),
+                            Value::String(String::from("seattle")),
+                        )]),
+                    },
+                }]),
                 model: None,
             },
         }],
@@ -531,18 +529,6 @@ fn request_not_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let tool_call_detail = vec![ToolCallDetail {
-        name: String::from("weather_forecast"),
-        arguments: HashMap::from([(
-            String::from("city"),
-            IntOrString::Text(String::from("seattle")),
-        )]),
-    }];
-
-    let boltfc_tools_call = BoltFCToolsCall {
-        tool_calls: tool_call_detail,
-    };
-
     let bolt_fc_resp = ChatCompletionsResponse {
         usage: Usage {
             completion_tokens: 0,
@@ -552,7 +538,18 @@ fn request_not_ratelimited() {
             index: 0,
             message: Message {
                 role: "system".to_string(),
-                content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
+                content: None,
+                tool_calls: Some(vec![ToolCall {
+                    id: String::from("test"),
+                    tool_type: ToolType::Function,
+                    function: FunctionCallDetail {
+                        name: String::from("weather_forecast"),
+                        arguments: HashMap::from([(
+                            String::from("city"),
+                            Value::String(String::from("seattle")),
+                        )]),
+                    },
+                }]),
                 model: None,
             },
         }],
