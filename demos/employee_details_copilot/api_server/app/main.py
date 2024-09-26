@@ -128,21 +128,21 @@ async def employees_projects(req: TopEmployeesProjects, res: Response):
 
     # Add project count filter if provided
     if req.min_project_count:
-        filters.append(f"COUNT(p.project_id) >= {req.min_project_count}")
+        filters.append(f"COUNT(p.project_name) >= {req.min_project_count}")
 
     where_clause = " AND ".join(filters)
     if where_clause:
         where_clause = "AND " + where_clause
 
     query = f"""
-    SELECT e.name, e.department, e.years_of_experience, e.performance_score, COUNT(p.project_id) as project_count
+    SELECT e.name, e.department, e.years_of_experience, e.performance_score, COUNT(p.project_name) as project_count
     FROM employees e
     LEFT JOIN projects p ON e.eid = p.eid
     WHERE e.performance_score >= {req.min_performance_score}
       AND e.years_of_experience >= {req.min_years_experience}
       AND e.department = '{req.department}'
       {where_clause}
-    GROUP BY e.eid, e.name, e.department, e.years_of_experience, e.performance_score
+    GROUP BY e.name, e.department, e.years_of_experience, e.performance_score
     ORDER BY e.performance_score DESC;
     """
 
@@ -237,12 +237,12 @@ async def project_performance(req: AvgProjPerformanceRequest, res: Response):
     where_clause = " AND ".join(filters)
 
     query = f"""
-    SELECT e.name, e.department, AVG(p.performance_score) as avg_performance_score, COUNT(p.project_id) as project_count
+    SELECT e.name, e.department, AVG(p.performance_score) as avg_performance_score, COUNT(p.project_name) as project_count
     FROM employees e
     JOIN projects p ON e.eid = p.eid
     WHERE {where_clause}
     GROUP BY e.eid, e.name, e.department
-    HAVING COUNT(p.project_id) >= {req.min_project_count}
+    HAVING COUNT(p.project_name) >= {req.min_project_count}
     ORDER BY avg_performance_score DESC;
     """
 
