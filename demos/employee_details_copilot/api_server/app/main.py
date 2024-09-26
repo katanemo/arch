@@ -126,14 +126,7 @@ async def employees_projects(req: TopEmployeesProjects, res: Response):
         params['months_range'] = req.months_range
         filters.append(f"p.start_date >= DATE('now', '-{req.months_range} months')")
 
-    # Add project count filter if provided
-    if req.min_project_count:
-        filters.append(f"COUNT(p.project_name) >= {req.min_project_count}")
-
-    where_clause = " AND ".join(filters)
-    if where_clause:
-        where_clause = "AND " + where_clause
-
+    # Prepare the base query
     query = f"""
     SELECT e.name, e.department, e.years_of_experience, e.performance_score, COUNT(p.project_name) as project_count
     FROM employees e
@@ -141,13 +134,24 @@ async def employees_projects(req: TopEmployeesProjects, res: Response):
     WHERE e.performance_score >= {req.min_performance_score}
       AND e.years_of_experience >= {req.min_years_experience}
       AND e.department = '{req.department}'
-      {where_clause}
     GROUP BY e.name, e.department, e.years_of_experience, e.performance_score
-    ORDER BY e.performance_score DESC;
     """
 
+    # Add HAVING clause for project count, if provided
+    having_clause = ""
+    if req.min_project_count:
+        having_clause = f"HAVING COUNT(p.project_name) >= {req.min_project_count}"
+
+    # Add ORDER BY clause
+    order_by_clause = "ORDER BY e.performance_score DESC"
+
+    # Combine all parts of the query
+    query = f"{query} {having_clause} {order_by_clause};"
+
+    # Execute the query and return the result
     result_df = pd.read_sql_query(query, conn, params=params)
     return result_df.to_dict(orient='records')
+
 
 
 # 2. Employees with Salary Growth Since Last Promotion
@@ -164,22 +168,23 @@ async def salary_growth(req: SalaryGrowthRequest, res: Response):
         filters.append("e.department = :department")
         params['department'] = req.department
 
+    filters.append("s.salary_increase_percentage >= :min_salary_increase_percentage")
+    params['min_salary_increase_percentage'] = req.min_salary_increase_percentage
+
     where_clause = " AND ".join(filters)
-    if where_clause:
-        where_clause = "AND " + where_clause
 
     query = f"""
     SELECT e.name, e.department, s.salary_increase_percentage
     FROM employees e
     JOIN salary_history s ON e.eid = s.eid
-    WHERE s.salary_increase_percentage >= {req.min_salary_increase_percentage}
-      AND s.promotion_date IS NOT NULL
+    WHERE s.promotion_date IS NOT NULL
       {where_clause}
     ORDER BY s.salary_increase_percentage DESC;
     """
 
     result_df = pd.read_sql_query(query, conn, params=params)
     return result_df.to_dict(orient='records')
+
 
 
 # 4. Employees with Promotions and Salary Increases
@@ -193,8 +198,11 @@ class PromotionsIncreasesRequest(BaseModel):
 async def promotions_increases(req: PromotionsIncreasesRequest, res: Response):
     params, filters = {}, []
 
+    params['year'] = str(req.year)
+
     if req.min_salary_increase_percentage:
-        filters.append(f"s.salary_increase_percentage >= {req.min_salary_increase_percentage}")
+        filters.append(f"s.salary_increase_percentage >= :min_salary_increase_percentage")
+        params['min_salary_increase_percentage'] = req.min_salary_increase_percentage
 
     if req.department:
         filters.append("e.department = :department")
@@ -208,7 +216,7 @@ async def promotions_increases(req: PromotionsIncreasesRequest, res: Response):
     SELECT e.name, e.department, s.salary_increase_percentage, s.promotion_date
     FROM employees e
     JOIN salary_history s ON e.eid = s.eid
-    WHERE strftime('%Y', s.promotion_date) = '{req.year}'
+    WHERE strftime('%Y', s.promotion_date) = :year
       {where_clause}
     ORDER BY s.salary_increase_percentage DESC;
     """
@@ -232,7 +240,8 @@ async def project_performance(req: AvgProjPerformanceRequest, res: Response):
         filters.append("e.department = :department")
         params['department'] = req.department
 
-    filters.append(f"p.performance_score >= {req.min_performance_score}")
+    filters.append("p.performance_score >= :min_performance_score")
+    params['min_performance_score'] = req.min_performance_score
 
     where_clause = " AND ".join(filters)
 
@@ -242,10 +251,11 @@ async def project_performance(req: AvgProjPerformanceRequest, res: Response):
     JOIN projects p ON e.eid = p.eid
     WHERE {where_clause}
     GROUP BY e.eid, e.name, e.department
-    HAVING COUNT(p.project_name) >= {req.min_project_count}
+    HAVING COUNT(p.project_name) >= :min_project_count
     ORDER BY avg_performance_score DESC;
     """
 
+    params['min_project_count'] = req.min_project_count
     result_df = pd.read_sql_query(query, conn, params=params)
     return result_df.to_dict(orient='records')
 
@@ -258,12 +268,8 @@ class CertificationsExperienceRequest(BaseModel):
 
 @app.post("/certifications_experience")
 async def certifications_experience(req: CertificationsExperienceRequest, res: Response):
-    # Convert the list of certifications into a format for SQL query
-    certs_filter = ', '.join([f"'{cert}'" for cert in req.certifications])
-
     params, filters = {}, []
 
-    # Add department filter if provided
     if req.department:
         filters.append("e.department = :department")
         params['department'] = req.department
@@ -273,11 +279,16 @@ async def certifications_experience(req: CertificationsExperienceRequest, res: R
 
     where_clause = " AND ".join(filters)
 
+    # Build the placeholders for the certifications list
+    certs_placeholders = ", ".join([f":cert_{i}" for i in range(len(req.certifications))])
+    for i, cert in enumerate(req.certifications):
+        params[f"cert_{i}"] = cert
+
     query = f"""
     SELECT e.name, e.department, e.years_of_experience, COUNT(c.certification_name) as cert_count
     FROM employees e
     JOIN certifications c ON e.eid = c.eid
-    WHERE c.certification_name IN ({certs_filter})
+    WHERE c.certification_name IN ({certs_placeholders})
       AND {where_clause}
     GROUP BY e.eid, e.name, e.department, e.years_of_experience
     HAVING COUNT(c.certification_name) = {len(req.certifications)}

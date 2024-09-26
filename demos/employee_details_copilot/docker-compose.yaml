@@ -42,17 +42,6 @@ services:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./bolt_config.yaml:/root/bolt_config.yaml
 
-  api_server:
-    build:
-      context: api_server
-      dockerfile: Dockerfile
-    ports:
-      - "18083:80"
-    healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
-        interval: 5s
-        retries: 20
-
   function_resolver:
     build:
       context: ../../function_resolver
@@ -70,7 +59,18 @@ services:
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
-      - OLLAMA_MODEL=Bolt-Function-Calling-1B:Q4_K_M
+      - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
+
+  api_server:
+    build:
+      context: api_server
+      dockerfile: Dockerfile
+    ports:
+      - "18083:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
 
   ollama:
     image: ollama/ollama
@@ -109,6 +109,7 @@ services:
       - "18080:8080"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      # - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
       - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1
 
   prometheus:
