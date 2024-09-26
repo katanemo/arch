@@ -54,8 +54,9 @@ async def chat_completion(req: ChatMessage, res: Response):
                 "arguments": tool_args
               }
           })
-    resp.choices[0].message.tool_calls = tool_calls
-    resp.choices[0].message.content = None
+    if tools:
+      resp.choices[0].message.tool_calls = tool_calls
+      resp.choices[0].message.content = None
     logger.info(f"response (tools): {json.dumps(tools)}")
     logger.info(f"response: {json.dumps(resp.to_dict())}")
     return resp

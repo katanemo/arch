@@ -463,11 +463,10 @@ impl StreamContext {
 
             //TODO: add resolver name to the response so the client can send the response back to the correct resolver
 
-            let message_content = model_resp.message.content.as_ref().unwrap();
             return self.send_http_response(
                 StatusCode::OK.as_u16().into(),
                 vec![("Powered-By", "Katanemo")],
-                Some(message_content.as_bytes()),
+                Some(body_str.as_bytes()),
             );
         }
 
