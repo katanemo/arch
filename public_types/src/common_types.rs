@@ -55,16 +55,16 @@ pub mod open_ai {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum ToolType {
         #[serde(rename = "function")]
-        Function
+        Function,
     }
-      #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionTool {
         #[serde(rename = "type")]
         pub tool_type: ToolType,
         pub function: FunctionDefinition,
     }
 
-      #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct FunctionDefinition {
         pub name: String,
         pub description: String,
