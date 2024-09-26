@@ -1,10 +1,12 @@
+.. _arch_rag_guide:
+
 Retrieval-Augmented (RAG)
-====================================
+=========================
 
 The following section describes how Arch can help you build faster, smarter and more accurate 
 Retrieval-Augmented Generation (RAG) applications.
 
-Intent-drift detection
+Intent-drift Detection
 ----------------------
 
 Developers struggle to handle `follow-up <https://www.reddit.com/r/ChatGPTPromptGenius/comments/17dzmpy/how_to_use_rag_with_conversation_history_for/?>`_ 
@@ -65,8 +67,8 @@ You can used the last set of messages that match to an intent to prompt an LLM, 
 improved retrieval, etc. With Arch and a few lines of code, you can improve the retrieval accuracy, lower overall 
 token cost and dramatically improve the speed of their responses back to users.
 
-Smarter retrival with parameter extraction
-------------------------------------------
+Parameter Extraction for RAG 
+----------------------------
 
 To build RAG (Retrieval-Augmented Generation) applications, you can configure prompt targets with parameters, 
 enabling Arch to retrieve critical information in a structured way for processing. This approach improves the 

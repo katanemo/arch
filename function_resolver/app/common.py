@@ -1,9 +1,5 @@
+from typing import Any, Dict, List
 from pydantic import BaseModel
-
-class Tool(BaseModel):
-    name: str
-    description: str
-    parameters: dict
 
 class Message(BaseModel):
     role: str
@@ -11,4 +7,4 @@ class Message(BaseModel):
 
 class ChatMessage(BaseModel):
     messages: list[Message]
-    tools: list[Tool]
+    tools: List[Dict[str, Any]]

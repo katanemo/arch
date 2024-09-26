@@ -25,7 +25,6 @@ pub struct StoreVectorEmbeddingsRequest {
     pub points: Vec<VectorPoint>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchPointResult {
     pub id: String,
@@ -34,58 +33,11 @@ pub struct SearchPointResult {
     pub payload: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolParameter {
-    #[serde(rename = "type")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_type: Option<String>,
-    pub description: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub required: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "enum")]
-    pub enum_values: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolParameters {
-    #[serde(rename = "type")]
-    pub parameters_type: String,
-    pub properties: HashMap<String, ToolParameter>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolsDefinition {
-    pub name: String,
-    pub description: String,
-    pub parameters: ToolParameters,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum IntOrString {
-    Integer(i32),
-    Text(String),
-    Float(f64),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolCallDetail {
-    pub name: String,
-    pub arguments: HashMap<String, IntOrString>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BoltFCToolsCall {
-    pub tool_calls: Vec<ToolCallDetail>,
-}
-
 pub mod open_ai {
-    use serde::{Deserialize, Serialize};
+    use std::collections::HashMap;
 
-    use super::ToolsDefinition;
+    use serde::{Deserialize, Serialize};
+    use serde_yaml::Value;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsRequest {
@@ -93,11 +45,50 @@ pub mod open_ai {
         pub model: String,
         pub messages: Vec<Message>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub tools: Option<Vec<ToolsDefinition>>,
+        pub tools: Option<Vec<ChatCompletionTool>>,
         #[serde(default)]
         pub stream: bool,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub stream_options: Option<StreamOptions>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub enum ToolType {
+        #[serde(rename = "function")]
+        Function,
+    }
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ChatCompletionTool {
+        #[serde(rename = "type")]
+        pub tool_type: ToolType,
+        pub function: FunctionDefinition,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct FunctionDefinition {
+        pub name: String,
+        pub description: String,
+        pub parameters: FunctionParameters,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct FunctionParameters {
+        pub properties: HashMap<String, FunctionParameter>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct FunctionParameter {
+        #[serde(rename = "type")]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub parameter_type: Option<String>,
+        pub description: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub required: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "enum")]
+        pub enum_values: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub default: Option<String>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -111,6 +102,7 @@ pub mod open_ai {
         pub content: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub model: Option<String>,
+        pub tool_calls: Option<Vec<ToolCall>>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -121,10 +113,24 @@ pub mod open_ai {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ToolCall {
+        pub id: String,
+        #[serde(rename = "type")]
+        pub tool_type: ToolType,
+        pub function: FunctionCallDetail,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct FunctionCallDetail {
+        pub name: String,
+        pub arguments: HashMap<String, Value>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsResponse {
         pub usage: Usage,
         pub choices: Vec<Choice>,
-        pub model: String
+        pub model: String,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -173,7 +179,7 @@ pub enum PromptGuardTask {
     #[serde(rename = "toxicity")]
     Toxicity,
     #[serde(rename = "both")]
-    Both
+    Both,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

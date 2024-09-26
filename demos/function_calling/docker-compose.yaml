@@ -59,6 +59,7 @@ services:
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
+      - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
 
   api_server:
     build:
@@ -108,6 +109,7 @@ services:
       - "18080:8080"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
       - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1
 
   prometheus:

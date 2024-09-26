@@ -11,14 +11,14 @@ This demo shows how you can use intelligent prompt gateway to do function callin
    ```sh
    docker compose up
    ```
-1. Download Bolt-FC model. This demo assumes we have downloaded [Bolt-Function-Calling-1B:Q4_K_M](https://huggingface.co/katanemolabs/Bolt-Function-Calling-1B.gguf/blob/main/Bolt-Function-Calling-1B-Q4_K_M.gguf) to local folder.
+1. Download Bolt-FC model. This demo assumes we have downloaded [Arch-Function-Calling-1.5B:Q4_K_M](https://huggingface.co/katanemolabs/Arch-Function-Calling-1.5B.gguf/blob/main/Arch-Function-Calling-1.5B-Q4_K_M.gguf) to local folder.
 1. If running ollama natively run
    ```sh
    ollama serve
    ```
 2. Create model file in ollama repository
    ```sh
-   ollama create Bolt-Function-Calling-1B:Q4_K_M -f Bolt-FC-1B-Q4_K_M.model_file
+   ollama create Arch-Function-Calling-1.5B:Q4_K_M -f Arch-Function-Calling-1.5B-Q4_K_M.model_file
    ```
 3. Navigate to http://localhost:18080/
 4. You can type in queries like "how is the weather in Seattle"

@@ -3,15 +3,14 @@ use proxy_wasm_test_framework::tester::{self, Tester};
 use proxy_wasm_test_framework::types::{
     Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
 };
-use public_types::common_types::{
-    open_ai::{ChatCompletionsResponse, Choice, Message, Usage},
-    BoltFCToolsCall, IntOrString, ToolCallDetail,
-};
+use public_types::common_types::open_ai::{ChatCompletionsResponse, Choice, Message, Usage};
+use public_types::common_types::open_ai::{FunctionCallDetail, ToolCall, ToolType};
 use public_types::embeddings::embedding::Object;
 use public_types::embeddings::{
     create_embedding_response, CreateEmbeddingResponse, CreateEmbeddingResponseUsage, Embedding,
 };
 use public_types::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
+use serde_yaml::Value;
 use serial_test::serial;
 use std::collections::HashMap;
 use std::path::Path;
@@ -25,6 +24,52 @@ fn wasm_module() -> String {
     wasm_file.to_str().unwrap().to_string()
 }
 
+fn request_headers_expectations(module: &mut Tester, http_context: i32) {
+    module
+        .call_proxy_on_request_headers(http_context, 0, false)
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-deterministic-provider"),
+        )
+        .returning(Some("true"))
+        .expect_add_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-llm-provider"),
+            Some("openai"),
+        )
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-openai-api-key"),
+        )
+        .returning(Some("api-key"))
+        .expect_replace_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("Authorization"),
+            Some("Bearer api-key"),
+        )
+        .expect_remove_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-openai-api-key"),
+        )
+        .expect_remove_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-mistral-api-key"),
+        )
+        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-ratelimit-selector"),
+        )
+        .returning(Some("selector-key"))
+        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
+        .returning(Some("selector-value"))
+        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
+        .returning(None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .execute_and_expect(ReturnType::Action(Action::Continue))
+        .unwrap();
+}
+
 fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
     module
         .call_proxy_on_context_create(http_context, filter_context)
@@ -32,28 +77,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(Some("selector-key"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
-        .returning(Some("selector-value"))
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(module, http_context);
 
     // Request Body
     let chat_completions_request_body = "\
@@ -82,8 +106,8 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(1))
-        .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Info), None)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
@@ -115,6 +139,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(2))
         .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -235,26 +260,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(&mut module, http_context);
 
     // Request Body
     let chat_completions_request_body = "\
@@ -323,26 +329,7 @@ fn bad_request_to_open_ai_chat_completions() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(&mut module, http_context);
 
     // Request Body
     let incomplete_chat_completions_request_body = "\
@@ -415,18 +402,6 @@ fn request_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let tool_call_detail = vec![ToolCallDetail {
-        name: String::from("weather_forecast"),
-        arguments: HashMap::from([(
-            String::from("city"),
-            IntOrString::Text(String::from("seattle")),
-        )]),
-    }];
-
-    let boltfc_tools_call = BoltFCToolsCall {
-        tool_calls: tool_call_detail,
-    };
-
     let bolt_fc_resp = ChatCompletionsResponse {
         usage: Usage {
             completion_tokens: 0,
@@ -436,7 +411,18 @@ fn request_ratelimited() {
             index: 0,
             message: Message {
                 role: "system".to_string(),
-                content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
+                content: None,
+                tool_calls: Some(vec![ToolCall {
+                    id: String::from("test"),
+                    tool_type: ToolType::Function,
+                    function: FunctionCallDetail {
+                        name: String::from("weather_forecast"),
+                        arguments: HashMap::from([(
+                            String::from("city"),
+                            Value::String(String::from("seattle")),
+                        )]),
+                    },
+                }]),
                 model: None,
             },
         }],
@@ -531,18 +517,6 @@ fn request_not_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let tool_call_detail = vec![ToolCallDetail {
-        name: String::from("weather_forecast"),
-        arguments: HashMap::from([(
-            String::from("city"),
-            IntOrString::Text(String::from("seattle")),
-        )]),
-    }];
-
-    let boltfc_tools_call = BoltFCToolsCall {
-        tool_calls: tool_call_detail,
-    };
-
     let bolt_fc_resp = ChatCompletionsResponse {
         usage: Usage {
             completion_tokens: 0,
@@ -552,7 +526,18 @@ fn request_not_ratelimited() {
             index: 0,
             message: Message {
                 role: "system".to_string(),
-                content: Some(serde_json::to_string(&boltfc_tools_call).unwrap()),
+                content: None,
+                tool_calls: Some(vec![ToolCall {
+                    id: String::from("test"),
+                    tool_type: ToolType::Function,
+                    function: FunctionCallDetail {
+                        name: String::from("weather_forecast"),
+                        arguments: HashMap::from([(
+                            String::from("city"),
+                            Value::String(String::from("seattle")),
+                        )]),
+                    },
+                }]),
                 model: None,
             },
         }],
