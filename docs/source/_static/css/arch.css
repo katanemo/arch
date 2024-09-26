@@ -1,4 +1,5 @@
-.bd-article {
-    padding-left: 3rem;
-    padding-right: 3rem;
+@import url("theme.css");
+
+body {
+  font-size: 1em;
 }

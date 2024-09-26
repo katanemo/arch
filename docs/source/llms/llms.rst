@@ -1,7 +1,7 @@
 .. _llms_in_arch:
 
-LLMs and ML Models
-==================
+LLMs
+====
 
 Arch utilizes purpose-built, industry leading, LLMs to handle the crufty and undifferentiated work around 
 accepting, handling and processing prompts. The following sections talk about some of the core models that
@@ -137,5 +137,27 @@ Below is our test results of the strength of our model as compared to Prompt-Gua
 
 
 
-Arch-Agent
-----------
+Arch-FC
+-------
+Arch-FC is a lean, powerful and cost-effective agentic model designed for function calling scenarios.
+You can run Arch-FC locally, or use the cloud-hosted version for as little as $0.05/M token (100x cheaper 
+than GPT-4o), with a p50 latency of 200ms (5x faster than GPT-4o), while meeting frontier model performance.
+
+.. Note::
+  Function calling helps you personalize the GenAI experience by calling application-specific operations via 
+  prompts. This involves any predefined functions or APIs you want to expose to perform tasks, gather 
+  information, or manipulate data - via prompts. 
+
+  You can get started with function calling simply by configuring a prompt target with a name, description 
+  and set of parameters needed by a specific backend function or a hosted API. The name, and description helps
+  Arch-FC match a user prompt to a function or API that can process it.
+
+By using Arch-FC, Arch enables you to easily build agentic workflows tailored to domain-specific use cases - 
+from updating insurance claims to creating ad campaigns. Arch-FC analyzes prompts, extracts critical information 
+from prompts, engages in lightweight conversations with the user to gather any missing parameters need before
+handling control back to Arch to make the API call to your hosted backend. Arch-FC handles the muck of information
+extraction so that you can focus on the business logic of your application.
+
+
+
+

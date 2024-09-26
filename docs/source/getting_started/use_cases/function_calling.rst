@@ -1,16 +1,24 @@
+.. _arch_function_calling_agentic_guide:
+
 Agentic (Text-to-Action) Apps
 ==============================
 
-Arch helps you easily personalize your applications by enabling calls to application-specific (API) operations 
+Arch helps you easily personalize your applications by calling application-specific (API) functions 
 via user prompts. This involves any predefined functions or APIs you want to expose to users to perform tasks, 
-gather information, or manipulate data. With function calling, you have flexibility to support “agentic” apps 
-tailored to specific use cases - from updating insurance claims to creating ad campaigns - via prompts. 
+gather information, or manipulate data. This capability is generally referred to as **function calling**, where 
+you have the flexibility to support “agentic” apps tailored to specific use cases - from updating insurance 
+claims to creating ad campaigns - via prompts. 
 
 Arch analyzes prompts, extracts critical information from prompts, engages in lightweight conversation with 
 the user to gather any missing parameters and makes API calls so that you can focus on writing business logic.
-Arch does this via its purpose-built Arch-FC1B LLM - the fastest (200ms p90 - 10x faser than GPT-4o) and cheapest 
-(100x than GPT-40) function-calling LLM that matches performance with frontier models. 
+Arch does this via its purpose-built :ref:`Arch-FC LLM <llms_in_arch>` - the fastest (200ms p90 - 10x faser than GPT-4o) 
+and cheapest (100x than GPT-40) function-calling LLM that matches performance with frontier models. 
 ______________________________________________________________________________________________
+
+.. image:: /_static/img/function-calling-network-flow.jpg
+   :width: 100%
+   :align: center
+
 
 Single Function Call
 --------------------
@@ -55,3 +63,9 @@ API calls based on the user's prompt. These targets can be triggered in parallel
 the user's intent.
 
 Example of Multiple Prompt Targets in YAML:
+
+.. literalinclude:: /_config/function-calling-network-agent.yml
+    :language: yaml
+    :linenos:
+    :emphasize-lines: 16-37
+    :caption: Define prompt targets that can enable users to engage with API and backened functions of an app
