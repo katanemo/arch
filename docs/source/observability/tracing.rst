@@ -175,33 +175,33 @@ specialized services and external systems.
 Trace Breakdown:
 ****************
 
-- **Customer Interaction**:
+- Customer Interaction:
     - Span 1: Customer initiates a request via the AI-powered chatbot for billing support (e.g., asking for payment details).
 
-- **AI Agent 1 (Main - Arch)**:
+- AI Agent 1 (Main - Arch):
     - Span 2: AI Agent 1 (Main) processes the request and identifies it as related to billing, forwarding the request 
       to an external payment service.
     - Span 3: AI Agent 1 determines that additional technical support is needed for processing and forwards the request 
       to AI Agent 2.
 
-- **External Payment Service**:
+- External Payment Service:
     - Span 4: The external payment service processes the payment-related request (e.g., verifying payment status) and sends 
       the response back to AI Agent 1.
 
-- **AI Agent 2 (Tech - Arch)**:
+- AI Agent 2 (Tech - Arch):
     - Span 5: AI Agent 2, responsible for technical queries, processes a request forwarded from AI Agent 1 (e.g., checking for 
       any account issues).
     - Span 6: AI Agent 2 forwards the query to Internal Tech Support for further investigation.
 
-- **Internal Tech Support**:
+- Internal Tech Support:
     - Span 7: Internal Tech Support processes the request (e.g., resolving account access issues) and responds to AI Agent 2.
 
-- **AI Agent 3 (Orders - Arch)**:
+- AI Agent 3 (Orders - Arch):
     - Span 8: AI Agent 3 handles order-related queries. AI Agent 1 forwards the request to AI Agent 3 after payment verification 
       is completed.
     - Span 9: AI Agent 3 forwards a request to the Inventory Management system to confirm product availability for a pending order.
 
-- **Inventory Management**:
+- Inventory Management:
     - Span 10: The Inventory Management system checks stock and availability and returns the information to AI Agent 3.
 
 Integrating with Tracing Tools

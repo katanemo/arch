@@ -3,7 +3,7 @@ What is Arch
 
 Arch is an intelligent `(Layer 7) <https://www.cloudflare.com/learning/ddos/what-is-layer-7/>`_ gateway
 designed for generative AI apps, AI agents, and Co-pilots that work with prompts. Engineered with purpose-built
-:ref:`LLMs <llms_in_arch>`, Arch handles the critical but undifferentiated tasks related to the handling and
+:ref:`LLMs <llms_in_arch>`, Arch handles all the critical but undifferentiated tasks related to the handling and
 processing of prompts, including detecting and rejecting `jailbreak <https://github.com/verazuo/jailbreak_llms>`_
 attempts, intelligently calling “backend” APIs to fulfill the user's request represented in a prompt, routing to
 and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions
@@ -34,11 +34,11 @@ functionality exclusively for prompts and LLMs. This gives Arch several advantag
 * Arch works with any application language. A single Arch deployment can act as gateway for AI applications
   written in Python, Java, C++, Go, Php, etc.
 
-* Arch can be deployed and upgraded quickly across your infrastructure transparently without horrid pain of 
-  deploying library upgrades in your applications.
+* Arch can be deployed and upgraded quickly across your infrastructure transparently without the horrid pain 
+  of deploying library upgrades in your applications.
 
-**Engineered with Fast LLMs:** Arch is engineered with specialized (sub-billion) LLMs that are desgined for fast,
-cost-effective and acurrate handling of prompts. These :ref:`LLMs <llms_in_arch>` are designed to be
+**Engineered with Fast LLMs:** Arch is engineered with specialized (sub-billion) LLMs that are desgined for 
+fast, cost-effective and acurrate handling of prompts. These :ref:`LLMs <llms_in_arch>` are designed to be
 best-in-class for critcal prompt-related tasks like:
 
 * **Function/API Calling:** Arch helps you easily personalize your applications by enabling calls to
@@ -46,8 +46,8 @@ best-in-class for critcal prompt-related tasks like:
   you want to expose to users to perform tasks, gather information, or manipulate data. With function calling,
   you have flexibility to support "agentic" experiences tailored to specific use cases - from updating insurance
   claims to creating ad campaigns - via prompts. Arch analyzes prompts, extracts critical information from
-  prompts, engages in lightweight conversation with the user to gather any missing parameters and makes API
-  calls so that you can focus on writing business logic. For more details, read :ref:`prompt processing <arch_overview_prompt_handling>`.
+  prompts, engages in lightweight conversation to gather any missing parameters and makes API calls so that you can 
+  focus on writing business logic. For more details, read :ref:`prompt processing <arch_overview_prompt_handling>`.
 
 * **Prompt Guardrails:** Arch helps you improve the safety of your application by applying prompt guardrails in
   a centralized way for better governance hygiene. With prompt guardrails you can prevent `jailbreak <https://github.com/verazuo/jailbreak_llms>`_
