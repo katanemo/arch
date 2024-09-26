@@ -36,7 +36,7 @@ pub struct SearchPointResult {
 pub mod open_ai {
     use std::collections::HashMap;
 
-    use serde::{Deserialize, Serialize};
+    use serde::{ser::SerializeMap, Deserialize, Serialize};
     use serde_yaml::Value;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,12 +72,33 @@ pub mod open_ai {
         pub parameters: FunctionParameters,
     }
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Deserialize)]
     pub struct FunctionParameters {
         pub properties: HashMap<String, FunctionParameter>,
     }
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    impl Serialize for FunctionParameters {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            // select all requried parameters
+            let required: Vec<&String> = self
+                .properties
+                .iter()
+                .filter(|(_, v)| v.required.unwrap_or(false))
+                .map(|(k, _)| k)
+                .collect();
+            let mut map = serializer.serialize_map(Some(2))?;
+            map.serialize_entry("properties", &self.properties)?;
+            if !required.is_empty() {
+                map.serialize_entry("required", &required)?;
+            }
+            map.end()
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
     pub struct FunctionParameter {
         #[serde(rename = "type")]
         #[serde(default = "ParameterType::string")]
@@ -90,6 +111,24 @@ pub mod open_ai {
         pub enum_values: Option<Vec<String>>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub default: Option<String>,
+    }
+
+    impl Serialize for FunctionParameter {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            let mut map = serializer.serialize_map(Some(5))?;
+            map.serialize_entry("type", &self.parameter_type)?;
+            map.serialize_entry("description", &self.description)?;
+            if let Some(enum_values) = &self.enum_values {
+                map.serialize_entry("enum", enum_values)?;
+            }
+            if let Some(default) = &self.default {
+                map.serialize_entry("default", default)?;
+            }
+            map.end()
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -259,10 +298,12 @@ mod test {
             "city": {
               "type": "string",
               "description": "city for weather forecast",
-              "required": true,
               "default": "test"
             }
-          }
+          },
+          "required": [
+            "city"
+          ]
         }
       }
     }
@@ -330,7 +371,6 @@ mod test {
   "city": {
     "type": "string",
     "description": "city for weather forecast",
-    "required": true,
     "default": "test"
   }
 }"#;
@@ -351,12 +391,11 @@ mod test {
 
         // ensure that if type is missing it is set to string
         const PARAMETER_SERIALZIED_MISSING_TYPE: &str = r#"
-{
-  "city": {
-    "description": "city for weather forecast",
-    "required": true
-  }
-}"#;
+        {
+          "city": {
+            "description": "city for weather forecast"
+          }
+        }"#;
 
         let missing_type_deserialized: HashMap<String, FunctionParameter> =
             serde_json::from_str(PARAMETER_SERIALZIED_MISSING_TYPE).unwrap();
