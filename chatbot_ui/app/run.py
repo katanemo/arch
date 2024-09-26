@@ -30,7 +30,7 @@ def predict(message, history):
       response = client.chat.completions.create(model=MODEL_NAME,
         messages= history,
         temperature=1.0,
-        headers=custom_headers
+        extra_headers=custom_headers
       )
     except Exception as e:
       log.info(e)
