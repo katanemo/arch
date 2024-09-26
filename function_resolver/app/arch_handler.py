@@ -33,7 +33,7 @@ class ArchHandler:
 
     def _format_system(self, tools: List[Dict[str, Any]]):
         def convert_tools(tools):
-            return "\n".join([json.dumps(tool) for tool in tools])
+            return "\n".join([json.dumps(tool["function"]) for tool in tools])
 
         tool_text = convert_tools(tools)
 
