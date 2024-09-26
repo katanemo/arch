@@ -24,6 +24,52 @@ fn wasm_module() -> String {
     wasm_file.to_str().unwrap().to_string()
 }
 
+fn request_headers_expectations(module: &mut Tester, http_context: i32) {
+    module
+        .call_proxy_on_request_headers(http_context, 0, false)
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-deterministic-provider"),
+        )
+        .returning(Some("true"))
+        .expect_add_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-llm-provider"),
+            Some("openai"),
+        )
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-openai-api-key"),
+        )
+        .returning(Some("api-key"))
+        .expect_replace_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("Authorization"),
+            Some("Bearer api-key"),
+        )
+        .expect_remove_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-openai-api-key"),
+        )
+        .expect_remove_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-mistral-api-key"),
+        )
+        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
+        .expect_get_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-bolt-ratelimit-selector"),
+        )
+        .returning(Some("selector-key"))
+        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
+        .returning(Some("selector-value"))
+        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
+        .returning(None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .execute_and_expect(ReturnType::Action(Action::Continue))
+        .unwrap();
+}
+
 fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
     module
         .call_proxy_on_context_create(http_context, filter_context)
@@ -31,28 +77,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(Some("selector-key"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
-        .returning(Some("selector-value"))
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(module, http_context);
 
     // Request Body
     let chat_completions_request_body = "\
@@ -81,8 +106,8 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(1))
-        .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Info), None)
         .execute_and_expect(ReturnType::Action(Action::Pause))
         .unwrap();
@@ -114,6 +139,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(2))
         .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -234,26 +260,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(&mut module, http_context);
 
     // Request Body
     let chat_completions_request_body = "\
@@ -322,26 +329,7 @@ fn bad_request_to_open_ai_chat_completions() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    // Request Headers
-    module
-        .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":host"))
-        .returning(Some("api.openai.com"))
-        .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
-        .returning(Some("/llmrouting"))
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some(":path"),
-            Some("/v1/chat/completions"),
-        )
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-katanemo-ratelimit-selector"),
-        )
-        .returning(None)
-        .execute_and_expect(ReturnType::Action(Action::Continue))
-        .unwrap();
+    request_headers_expectations(&mut module, http_context);
 
     // Request Body
     let incomplete_chat_completions_request_body = "\
