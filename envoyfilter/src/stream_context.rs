@@ -17,7 +17,7 @@ use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
     ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
     ChatCompletionsResponse, FunctionDefinition, FunctionParameter, FunctionParameters, Message,
-    StreamOptions, ToolType,
+    ParameterType, StreamOptions, ToolType,
 };
 use public_types::common_types::{
     EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
@@ -369,7 +369,9 @@ impl StreamContext {
                             let mut properties: HashMap<String, FunctionParameter> = HashMap::new();
                             for entity in entities.iter() {
                                 let param = FunctionParameter {
-                                    parameter_type: entity.parameter_type.clone(),
+                                    parameter_type: ParameterType::from(
+                                        entity.parameter_type.clone().unwrap_or("str".to_string()),
+                                    ),
                                     description: entity.description.clone(),
                                     required: entity.required,
                                     enum_values: entity.enum_values.clone(),
