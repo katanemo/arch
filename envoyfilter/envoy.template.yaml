@@ -87,6 +87,7 @@ static_resources:
     # External LLM Providers
     - name: openai
       connect_timeout: 5s
+      dns_lookup_family: V4_ONLY
       type: LOGICAL_DNS
       lb_policy: ROUND_ROBIN
       typed_extension_protocol_options:
