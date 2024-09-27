@@ -244,7 +244,7 @@ impl StreamContext {
             }
         };
         debug!(
-            "dispatched HTTP call to embedding server for zero-shot-intent-detection token_id={}",
+            "dispatched call to model_server/zeroshot token_id={}",
             token_id
         );
 
@@ -462,7 +462,18 @@ impl StreamContext {
         let body_str = String::from_utf8(body).unwrap();
         debug!("function_resolver response str: {}", body_str);
 
-        let boltfc_response: ChatCompletionsResponse = serde_json::from_str(&body_str).unwrap();
+        let boltfc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
+            Ok(boltfc_response) => boltfc_response,
+            Err(e) => {
+                return self.send_server_error(
+                    format!(
+                        "Error deserializing function resolver response into ChatCompletion: {:?}",
+                        e
+                    ),
+                    None,
+                );
+            }
+        };
 
         let model_resp = &boltfc_response.choices[0];
 
@@ -738,15 +749,12 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                let error_msg = format!(
-                    "Error dispatching embedding server HTTP call for get-embeddings: {:?}",
-                    e
-                );
+                let error_msg = format!("dispatched call to model_server/embeddings: {:?}", e);
                 return self.send_server_error(error_msg, None);
             }
         };
         debug!(
-            "dispatched HTTP call to embedding server token_id={}",
+            "dispatched call to model_server/embeddings token_id={}",
             token_id
         );
 
