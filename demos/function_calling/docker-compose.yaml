@@ -13,7 +13,6 @@ services:
     build:
       context: ../../
       dockerfile: arch/Dockerfile
-    hostname: arch
     ports:
       - "10000:10000"
       - "19901:9901"
@@ -36,7 +35,7 @@ services:
     ports:
       - "18081:80"
     healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        test: ["CMD", "curl" ,"http://localhost/healthz"]
         interval: 5s
         retries: 20
     volumes:
@@ -84,7 +83,7 @@ services:
     profiles:
       - manual
 
-  open-webui:
+  open_webui:
     image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
     container_name: open-webui
     volumes:
