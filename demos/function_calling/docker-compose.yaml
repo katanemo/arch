@@ -20,6 +20,7 @@ services:
     volumes:
       - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+      - ./arch_log:/var/log/
     depends_on:
       config_generator:
         condition: service_completed_successfully
@@ -60,6 +61,7 @@ services:
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
       - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
+      # - OLLAMA_MODEL=Bolt-Function-Calling-1B:Q4_K_M
 
   api_server:
     build:

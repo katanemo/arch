@@ -16,6 +16,11 @@ static_resources:
               codec_type: AUTO
               scheme_header_transformation:
                 scheme_to_overwrite: https
+              access_log:
+              - name: envoy.access_loggers.file
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+                  path: "/var/log/arch_access.log"
               route_config:
                 name: local_routes
                 virtual_hosts:
@@ -82,6 +87,7 @@ static_resources:
     # External LLM Providers
     - name: openai
       connect_timeout: 5s
+      dns_lookup_family: V4_ONLY
       type: LOGICAL_DNS
       lb_policy: ROUND_ROBIN
       typed_extension_protocol_options:

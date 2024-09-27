@@ -2,6 +2,7 @@ import json
 import random
 from fastapi import FastAPI, Response
 from arch_handler import ArchHandler
+from bolt_handler import BoltHandler
 from common import ChatMessage
 import logging
 from openai import OpenAI
@@ -11,12 +12,16 @@ ollama_endpoint = os.getenv("OLLAMA_ENDPOINT", "localhost")
 ollama_model = os.getenv("OLLAMA_MODEL", "Arch-Function-Calling-1.5B-Q4_K_M")
 logger = logging.getLogger('uvicorn.error')
 
+handler = None
+if ollama_model.startswith("Arch"):
+   handler = ArchHandler()
+else:
+    handler = BoltHandler()
+
 logger.info(f"using model: {ollama_model}")
 logger.info(f"using ollama endpoint: {ollama_endpoint}")
 
 app = FastAPI()
-
-handler = ArchHandler()
 
 client = OpenAI(
     base_url='http://{}:11434/v1/'.format(ollama_endpoint),
