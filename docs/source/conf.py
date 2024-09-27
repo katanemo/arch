@@ -38,7 +38,7 @@ html_favicon = '_static/favicon.ico'
 html_theme = 'sphinx_book_theme'  # You can change the theme to 'sphinx_rtd_theme' or another of your choice.
 
 # Specify the path to the logo image file (make sure the logo is in the _static directory)
-html_logo = '_static/img/arch-logo.png'
+html_logo = '_static/img/arch-nav-logo.png'
 
 html_theme_options = {
     'navigation_depth': 4,

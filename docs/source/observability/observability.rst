@@ -8,3 +8,4 @@ Observability
 
   tracing
   stats
+  access_logs
