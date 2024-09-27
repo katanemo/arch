@@ -195,7 +195,10 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        debug!("on_http_call_response called with token_id: {:?}", token_id);
+        debug!(
+            "filter_context: on_http_call_response called with token_id: {:?}",
+            token_id
+        );
         let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
 
         self.metrics
