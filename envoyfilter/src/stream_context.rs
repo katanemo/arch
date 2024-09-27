@@ -244,7 +244,7 @@ impl StreamContext {
             }
         };
         debug!(
-            "dispatched HTTP call to embedding server for zero-shot-intent-detection token_id={}",
+            "dispatched call to model_server/zeroshot token_id={}",
             token_id
         );
 
@@ -738,15 +738,12 @@ impl StreamContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                let error_msg = format!(
-                    "Error dispatching embedding server HTTP call for get-embeddings: {:?}",
-                    e
-                );
+                let error_msg = format!("dispatched call to model_server/embeddings: {:?}", e);
                 return self.send_server_error(error_msg, None);
             }
         };
         debug!(
-            "dispatched HTTP call to embedding server token_id={}",
+            "dispatched call to model_server/embeddings token_id={}",
             token_id
         );
 
@@ -1059,6 +1056,10 @@ impl Context for StreamContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
+        debug!(
+            "S[{}] on_http_call_response token_id={} body_size={}",
+            self.context_id, token_id, body_size
+        );
         let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
         self.metrics.active_http_calls.increment(-1);
 
