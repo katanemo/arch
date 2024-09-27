@@ -1,5 +1,5 @@
 use crate::consts::{
-    BOLT_FC_CLUSTER, BOLT_FC_REQUEST_TIMEOUT_MS, BOLT_ROUTING_HEADER, DEFAULT_EMBEDDING_MODEL,
+    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_ROUTING_HEADER, ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL,
     DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
@@ -93,7 +93,7 @@ impl StreamContext {
     }
 
     fn add_routing_header(&mut self) {
-        self.add_http_request_header(BOLT_ROUTING_HEADER, self.llm_provider().as_ref());
+        self.add_http_request_header(ARCH_ROUTING_HEADER, self.llm_provider().as_ref());
     }
 
     fn modify_auth_headers(&mut self) -> Result<(), String> {
@@ -419,16 +419,16 @@ impl StreamContext {
                 };
 
                 let token_id = match self.dispatch_http_call(
-                    BOLT_FC_CLUSTER,
+                    ARC_FC_CLUSTER,
                     vec![
                         (":method", "POST"),
                         (":path", "/v1/chat/completions"),
-                        (":authority", BOLT_FC_CLUSTER),
+                        (":authority", ARC_FC_CLUSTER),
                         ("content-type", "application/json"),
                         ("x-envoy-max-retries", "3"),
                         (
                             "x-envoy-upstream-rq-timeout-ms",
-                            BOLT_FC_REQUEST_TIMEOUT_MS.to_string().as_str(),
+                            ARCH_FC_REQUEST_TIMEOUT_MS.to_string().as_str(),
                         ),
                     ],
                     Some(msg_body.as_bytes()),
@@ -445,7 +445,7 @@ impl StreamContext {
 
                 debug!(
                     "dispatched call to function {} token_id={}",
-                    BOLT_FC_CLUSTER, token_id
+                    ARC_FC_CLUSTER, token_id
                 );
 
                 self.metrics.active_http_calls.increment(1);

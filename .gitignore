@@ -1,5 +1,5 @@
-envoyfilter/target
-envoyfilter/qdrant_data/
+arch/target
+arch/qdrant_data/
 public_types/target
 /venv/
 __pycache__

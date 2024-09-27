@@ -35,16 +35,9 @@ static_resources:
                           cluster: mistral_7b_instruct
                           timeout: 60s
                       - match:
-                          prefix: "/bolt_fc_1b/v1/chat/completions"
-                        route:
-                          prefix_rewrite: /v1/chat/completions
-                          auto_host_rewrite: true
-                          cluster: bolt_fc_1b
-                          timeout: 120s
-                      - match:
                           prefix: "/v1/chat/completions"
                           headers:
-                            - name: "x-bolt-llm-provider"
+                            - name: "x-arch-llm-provider"
                               string_match:
                                 exact: openai
                         route:
@@ -54,7 +47,7 @@ static_resources:
                       - match:
                           prefix: "/v1/chat/completions"
                           headers:
-                            - name: "x-bolt-llm-provider"
+                            - name: "x-arch-llm-provider"
                               string_match:
                                 exact: mistral
                         route:
@@ -167,12 +160,12 @@ static_resources:
                       address: mistral_7b_instruct
                       port_value: 10001
                   hostname: "mistral_7b_instruct"
-    - name: bolt_fc_1b
+    - name: arch_fc
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: bolt_fc_1b
+        cluster_name: arch_fc
         endpoints:
           - lb_endpoints:
               - endpoint:
@@ -180,7 +173,7 @@ static_resources:
                     socket_address:
                       address: function_resolver
                       port_value: 80
-                  hostname: "bolt_fc_1b"
+                  hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}
       connect_timeout: 5s

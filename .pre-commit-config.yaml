@@ -3,7 +3,7 @@ repos:
     rev: v4.6.0
     hooks:
       - id: check-yaml
-        exclude: envoyfilter/envoy.template.yaml
+        exclude: arch/envoy.template.yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: local
@@ -12,16 +12,16 @@ repos:
         name: cargo-fmt
         language: system
         types: [file, rust]
-        entry: bash -c "cd envoyfilter && cargo fmt -p intelligent-prompt-gateway -- --check"
+        entry: bash -c "cd arch && cargo fmt -p intelligent-prompt-gateway -- --check"
       - id: cargo-clippy
         name: cargo-clippy
         language: system
         types: [file, rust]
-        entry: bash -c "cd envoyfilter && cargo clippy -p intelligent-prompt-gateway --all"
+        entry: bash -c "cd arch && cargo clippy -p intelligent-prompt-gateway --all"
       - id: cargo-test
         name: cargo-test
         language: system
         types: [file, rust]
         # --lib is to only test the library, since when integration tests are made,
         # they will be in a seperate tests directory
-        entry: bash -c "cd envoyfilter && cargo test -p intelligent-prompt-gateway --lib"
+        entry: bash -c "cd arch && cargo test -p intelligent-prompt-gateway --lib"
