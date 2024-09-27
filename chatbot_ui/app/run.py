@@ -22,9 +22,9 @@ def predict(message, history):
 
     # Custom headers
     custom_headers = {
-        'x-bolt-openai-api-key': f"{OPENAI_API_KEY}",
-        'x-bolt-mistral-api-key': f"{MISTRAL_API_KEY}",
-        'x-bolt-deterministic-provider': 'openai',
+        'x-arch-openai-api-key': f"{OPENAI_API_KEY}",
+        'x-arch-mistral-api-key': f"{MISTRAL_API_KEY}",
+        'x-arch-deterministic-provider': 'openai',
     }
 
     try:
@@ -53,7 +53,7 @@ def predict(message, history):
 
 with gr.Blocks(fill_height=True, css="footer {visibility: hidden}") as demo:
     print("Starting Demo...")
-    chatbot = gr.Chatbot(label="Bolt Chatbot", scale=1)
+    chatbot = gr.Chatbot(label="Arch Chatbot", scale=1)
     state = gr.State([])
     with gr.Row():
         txt = gr.Textbox(show_label=False, placeholder="Enter text and press enter", scale=1, autofocus=True)

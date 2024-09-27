@@ -4,12 +4,12 @@ pub struct LlmProviders;
 impl LlmProviders {
     pub const OPENAI_PROVIDER: LlmProvider<'static> = LlmProvider {
         name: "openai",
-        api_key_header: "x-bolt-openai-api-key",
+        api_key_header: "x-arch-openai-api-key",
         model: "gpt-3.5-turbo",
     };
     pub const MISTRAL_PROVIDER: LlmProvider<'static> = LlmProvider {
         name: "mistral",
-        api_key_header: "x-bolt-mistral-api-key",
+        api_key_header: "x-arch-mistral-api-key",
         model: "mistral-large-latest",
     };
 
