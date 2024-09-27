@@ -43,7 +43,6 @@ class ArchHandler:
             + ARCH_FUNCTION_CALLING_TOOL_PROMPT.format(tool_text=tool_text)
             + "\n\n"
             + ARCH_FUNCTION_CALLING_FORMAT_PROMPT
-            + "\n"
         )
 
         return system_prompt

@@ -42,9 +42,9 @@ prompt_targets:
         description: The policy number for which the insurance claim details are requested.
         type: string
       - name: include_expired
-        description: Include expired insurance claims in the response.
-        type: string
-        default: "false"
+        description: whether to include expired insurance claims in the response.
+        type: bool
+        required: true
     endpoint:
       cluster: api_server
       path: /insurance_claim_details
