@@ -21,7 +21,7 @@ def promotions_increases(year: int, min_salary_increase_percentage: float = None
     pass
 
 # Function for avg_project_performance
-def avg_project_performance(min_project_count: int, min_performance_score: float, department: str = None):
+def project_performance(min_project_count: int, min_performance_score: float, department: str = None):
     pass
 
 # Function for certifications_experience

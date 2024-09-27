@@ -24,17 +24,17 @@ prompt_targets:
         description: |
           Select how you'd like to group the employees. For example, you can group them by department, location, or their position. The tool will provide the top-ranked employees within each group you choose.
         required: true
-        type: string
+        type: str
         enum: [department, location, position]
       - name: ranking_criteria
         required: true
-        type: string
+        type: str
         description: |
           Choose how you'd like to rank the employees. You can rank them by their salary, their years of experience, or their rating. The tool will sort the employees based on this ranking and return the best ones from each group.
         enum: [salary, years_of_experience, performance_score]
       - name: top_n
         required: true
-        type: integer
+        type: int
         description: |
           Enter how many of the top employees you want to see in each group. For example, if you enter 3, the tool will show you the top 3 employees for each group you selected.
     endpoint:
@@ -52,16 +52,19 @@ prompt_targets:
         description: |
           Choose how you'd like to organize the employees. For example, you can group them by department, location, or position. The tool will calculate the summary statistics for each group.
         required: true
+        type: str
         enum: [department, location, position]
       - name: aggregate_criteria
         description: |
           Select the specific attribute you'd like to analyze. This could be something like salary, years of experience, or rating. The tool will calculate the statistic you request for this attribute.
         required: true
+        type: str
         enum: [salary, years_of_experience, performance_score]
       - name: aggregate_type
         description: |
           Choose the type of statistic you'd like to calculate for the selected attribute. For example, you can calculate the sum, average, minimum, or maximum value for each group.
         required: true
+        type: str
         enum: [SUM, AVG, MIN, MAX]
     endpoint:
       cluster: api_server
@@ -83,20 +86,20 @@ prompt_targets:
       - name: min_years_experience
         description: Minimum years of experience to filter employees.
         required: true
-        type: integer
+        type: int
       - name: department
         description: Department to filter employees by.
         required: true
-        type: string
+        type: str
       - name: min_project_count
         description: Minimum number of projects employees participated in (optional).
         required: false
-        type: integer
+        type: int
         default: 3
       - name: months_range
         description: Timeframe (in months) for filtering recent projects (optional).
         required: false
-        type: integer
+        type: int
     endpoint:
       cluster: api_server
       path: /employees_projects
@@ -117,7 +120,7 @@ prompt_targets:
       - name: department
         description: Department to filter employees by (optional).
         required: false
-        type: string
+        type: str
     endpoint:
       cluster: api_server
       path: /salary_growth
@@ -133,7 +136,7 @@ prompt_targets:
       - name: year
         description: The year in which the promotion and salary increase occurred.
         required: true
-        type: integer
+        type: int
       - name: min_salary_increase_percentage
         description: Minimum percentage salary increase to filter employees.
         required: false
@@ -141,7 +144,7 @@ prompt_targets:
       - name: department
         description: Department to filter by (optional).
         required: false
-        type: string
+        type: str
     endpoint:
       cluster: api_server
       path: /promotions_increases
@@ -158,7 +161,7 @@ prompt_targets:
       - name: min_project_count
         description: Minimum number of projects an employee must have participated in.
         required: true
-        type: integer
+        type: int
       - name: min_performance_score
         description: Minimum performance score to filter employees.
         required: true
@@ -167,7 +170,7 @@ prompt_targets:
       - name: department
         description: Department to filter by (optional).
         required: false
-        type: string
+        type: str
     endpoint:
       cluster: api_server
       path: /project_performance
@@ -188,11 +191,11 @@ prompt_targets:
       - name: min_years_experience
         description: Minimum years of experience.
         required: true
-        type: integer
+        type: int
       - name: department
         description: Department to filter employees by (optional).
         required: false
-        type: string
+        type: str
         default: "Engineering"
     endpoint:
       cluster: api_server
