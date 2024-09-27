@@ -1,5 +1,5 @@
 version: "0.1-beta"
-listen:
+listener:
   address: 127.0.0.1 | 0.0.0.0
   port_value: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
 

@@ -15,31 +15,20 @@ dispatch upstream and the response path.
 Terminology
 -----------
 
-Arch uses the following terms through its' codebase and documentation:
-
-* *Listeners*: The Arch primitive responsible for binding to an IP/port, accepting new HTTP connections and orchestrating
-  the downstream facing aspects of prompt processing. Arch relies almostly exclusively on `Envoy's Listener subsystem <arch_overview_listeners>`_.
-* *Downstream*: an entity connecting to Arch. This may be another AI agent (side car or networked) or a remote client.
-* *LLM Providers*: a set of upstream LLMs (API-based or network nodes) that Arch routes/forwards user and application-specific prompts to.
-  Arch offers a simply abstract to call different LLMs via model-id, add LLM specific retry, failover and routing capabilities.
-  Arch build's on top of Envoy's `Cluster substem <https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/cluster_manager#arch-overview-cluster-manager>`
-* *Upstream*: A set of hosts that can recieve traffic from an instance of the Arch gateway.
-* *Prompt Targets*: A core primitive offered in Arch. Prompt targets are endpoints that receive prompts that are processed by Arch.
-  For example, Arch enriches incoming prompts with metadata like knowing when a request is a follow-up or clarifying prompt so that you can
-  build faster, more accurate RAG apps. To support agentic apps, like scheduling travel plans or sharing comments on a document - via prompts,
+We recommend that you get familiar with some of the :ref:`terminology <arch_terminology>` used in Arch 
+before reading this section. 
 
 Network topology
 ----------------
 
 How a request flows through the components in a network (including Arch) depends on the network’s topology.
 Arch can be used in a wide variety of networking topologies. We focus on the inner operation of Arch below,
-but briefly we address how Arch relates to the rest of the network in
-this section.
+but briefly we address how Arch relates to the rest of the network in this section.
 
-* Ingress listeners take requests from upstream clients like a web UI or clients that forward prompts to you local application
-  Responses from the local application flow back through Arch to the downstream.
+- **Downstream(Ingress)** listeners take requests from upstream clients like a web UI or clients that forward 
+  prompts to you local application responses from the local application flow back through Arch to the downstream.
 
-* Egress listeners take requests from the local application and forward them to LLMs. These receiving nodes
+- **Upstream(Egress)** listeners take requests from the local application and forward them to LLMs. These receiving nodes
   will also be typically running Arch and accepting the request via their ingress listeners.
 
 .. image:: /_static/img/network-topology-ingress-egress.jpg
@@ -53,19 +42,11 @@ traverse multiple Arch gateways:
    :width: 100%
    :align: center
 
-Configuration
--------------
-
-Today, only support a static bootstrap configuration file for simplicity today:
-
-.. literalinclude:: /_config/getting-started.yml
-    :language: yaml
-
 
 High level architecture
 -----------------------
 
-The request processing path in Arch has two main parts:
+The request processing path in Arch has three main parts:
 
 * :ref:`Listener subsystem <arch_overview_listeners>` which handles **downstream** request
   processing. It is also responsible for managing the downstream request lifecycle and for the
@@ -87,6 +68,15 @@ endpoints. Today, Arch implemenents its core functionality around prompt handlin
 
 Worker threads rarely share state and operate in a trivially parallel fashion. This threading model
 enables scaling to very high core count CPUs.
+
+Configuration
+-------------
+
+Today, only support a static bootstrap configuration file for simplicity today:
+
+.. literalinclude:: /_config/getting-started.yml
+    :language: yaml
+
 
 Request Flow
 ------------

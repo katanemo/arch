@@ -1,3 +1,5 @@
+.. _getting_started:
+
 Getting Started
 ================
 
@@ -18,3 +20,10 @@ This section gets you started with a very simple configuration and provides some
 The fastest way to get started using Arch is installing `pre-built binaries <https://hub.docker.com/r/katanemo/arch>`_.
 You can also build it from source.
 
+Configuration
+-------------
+
+Today, only support a static bootstrap configuration file for simplicity today:
+
+.. literalinclude:: /_config/getting-started.yml
+    :language: yaml

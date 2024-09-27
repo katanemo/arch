@@ -1,27 +1,41 @@
 .. _arch_overview_listeners:
 
 Listener
-========
-Arch leverages Envoy’s Listener subsystem to streamline connection management for developers. 
-By building on Envoy’s robust architecture, Arch simplifies the configuration required to bind incoming 
-connections from downstream clients and efficiently manages internal listeners for outgoing connections 
-to LLM hosts and APIs.
+---------
+Listener is a top-level primitive in Arch - which simplifies the configuration required to bind incoming 
+connections from downstream clients, and for egress connections to LLMs (hosted or API)
 
-**Listener Subsystem Overview**
+Arch builds on Envoy's Listener subsystem to streamline connection managemet for developers. Arch minimizes 
+the complexity of Envoy's listener setup by using best-practices and exposing only essential settings, 
+making it easier for developers to bind connections without deep knowledge of Envoy’s configuration model. This 
+simplification ensures that connections are secure, reliable, and optimized for performance.
 
-- **Downstream Connections**: Arch uses Envoy's Listener subsystem to accept connections from downstream clients. 
-  A listener acts as the primary entry point for incoming traffic, handling initial connection setup, including network 
-  filtering and security checks, such as SNI and TLS termination. For more details on the listener subsystem, refer to the 
-  `Envoy Listener Configuration <https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/listeners>`_.
+Downstream (Ingress)
+^^^^^^^^^^^^^^^^^^^^^^
+Developers can define Arch Listeners to accept connections from downstream clients. 
+A listener acts as the primary entry point for incoming traffic, handling initial connection setup, including network 
+filtering, gurdrails, and additional network security checks. For more details on prompt security and safety, 
+see :ref:`here <arch_overview_prompt_handling>`
 
-- **Internal Listeners for Outgoing Connections**: Arch automatically configures internal listeners to route requests 
-  from prompts origination from your application services to appropriate upstream targets, including LLM hosts and backend APIs. 
-  This configuration abstracts away complex networking setups, allowing developers to focus on business logic rather than the 
-  intricacies of connection management and multiple SDKs to work with different LLM providers.
+Upstream (Egress)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Arch automatically configures a listener to route requests for prompts originating from your application to 
+upstream LLM API providers (or hosts). When you start Arch, it creates a listener for egress traffic based on 
+the presence of the ``llm_providers`` configuration section in the ``prompt_config.yml`` file. Arch binds itself 
+to a local address such as ``127.0.0.1:9000/v1`` or a DNS-based address like ``arch.local:9000/v1`` for outgoing 
+traffic. For more details on LLM providers, read :ref:`here <llm_providers>`
+   
+Configure Listener
+^^^^^^^^^^^^^^^^^^
 
-- **Simplified Configuration**: Arch minimizes the complexity of traditional Envoy setups by pre-defining essential 
-  listener settings, making it easier for developers to bind connections without deep knowledge of Envoy’s configuration model. 
-  This simplification ensures that connections are secure, reliable, and optimized for performance.
+To configure a Listner, simply add the ``listener`` directive to your ``prompt_config.yml`` file:
+
+.. literalinclude:: /_config/getting-started.yml
+    :language: yaml
+    :linenos: 
+    :lines: 1-18
+    :emphasize-lines: 2-5
+    :caption: :download:`arch-getting-started.yml </_config/getting-started.yml>`
 
 Arch’s dependency on Envoy’s Listener subsystem provides a powerful, developer-friendly interface for managing connections, 
 enhancing the overall efficiency of handling prompts and routing them to the correct endpoints within a generative AI application.

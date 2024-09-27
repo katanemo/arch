@@ -1,12 +1,23 @@
 .. _arch_overview_prompt_handling:
 
 Prompts
-=======
+-------
 
 Arch's primary design point is to securely accept, process and handle prompts. To do that effectively, 
 Arch relies on Envoy's HTTP `connection management <https://www.envoyproxy.io/docs/envoy/v1.31.2/intro/arch_overview/http/http_connection_management>`_, 
-subsystem and its prompt-handler subsystem engineered with purpose-built :ref:`LLMs <llms_in_arch>` to implement 
-critical functionality on behalf of developers so that you can stay focused on business logic.
+subsystem and its prompt-handler subsystem engineered with purpose-built :ref:`LLMs <llms_in_arch>` to 
+implement critical functionality on behalf of developers so that you can stay focused on business logic.
+
+Messages
+--------
+
+Arch accepts messages directly from the body of the HTTP request in a format that follows the `Hugging Face Messages API <https://huggingface.co/docs/text-generation-inference/en/messages_api>`_. 
+This design allows developers to pass a list of messages, where each message is represented as a dictionary 
+containing two key-value pairs:
+
+    - **Role**: Defines the role of the message sender, such as "user" or "assistant".
+    - **Content**: Contains the actual text of the message.
+
 
 Prompt Guardrails
 -----------------
@@ -131,7 +142,6 @@ Example: Using OpenAI Client with Arch as an Egress Gateway
    )
 
    print("OpenAI Response:", response.choices[0].text.strip())
-
 
 In these examples:
 
