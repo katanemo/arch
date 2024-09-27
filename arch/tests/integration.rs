@@ -29,17 +29,17 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .call_proxy_on_request_headers(http_context, 0, false)
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-bolt-deterministic-provider"),
+            Some("x-arch-deterministic-provider"),
         )
         .returning(Some("true"))
         .expect_add_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-bolt-llm-provider"),
+            Some("x-arch-llm-provider"),
             Some("openai"),
         )
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-bolt-openai-api-key"),
+            Some("x-arch-openai-api-key"),
         )
         .returning(Some("api-key"))
         .expect_replace_header_map_value(
@@ -49,16 +49,16 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         )
         .expect_remove_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-bolt-openai-api-key"),
+            Some("x-arch-openai-api-key"),
         )
         .expect_remove_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-bolt-mistral-api-key"),
+            Some("x-arch-mistral-api-key"),
         )
         .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-bolt-ratelimit-selector"),
+            Some("x-arch-ratelimit-selector"),
         )
         .returning(Some("selector-key"))
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
@@ -164,7 +164,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Info), None)
-        .expect_http_call(Some("bolt_fc_1b"), None, None, None, None)
+        .expect_http_call(Some("arch_fc"), None, None, None, None)
         .returning(Some(3))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -402,7 +402,7 @@ fn request_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let bolt_fc_resp = ChatCompletionsResponse {
+    let arch_fc_resp = ChatCompletionsResponse {
         usage: Usage {
             completion_tokens: 0,
         },
@@ -429,12 +429,12 @@ fn request_ratelimited() {
         model: String::from("test"),
     };
 
-    let bolt_fc_resp_str = serde_json::to_string(&bolt_fc_resp).unwrap();
+    let arch_fc_resp_str = serde_json::to_string(&arch_fc_resp).unwrap();
     module
-        .call_proxy_on_http_call_response(http_context, 3, 0, bolt_fc_resp_str.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 3, 0, arch_fc_resp_str.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(&bolt_fc_resp_str))
+        .returning(Some(&arch_fc_resp_str))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -517,7 +517,7 @@ fn request_not_ratelimited() {
 
     normal_flow(&mut module, filter_context, http_context);
 
-    let bolt_fc_resp = ChatCompletionsResponse {
+    let arch_fc_resp = ChatCompletionsResponse {
         usage: Usage {
             completion_tokens: 0,
         },
@@ -544,12 +544,12 @@ fn request_not_ratelimited() {
         model: String::from("test"),
     };
 
-    let bolt_fc_resp_str = serde_json::to_string(&bolt_fc_resp).unwrap();
+    let arch_fc_resp_str = serde_json::to_string(&arch_fc_resp).unwrap();
     module
-        .call_proxy_on_http_call_response(http_context, 3, 0, bolt_fc_resp_str.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 3, 0, arch_fc_resp_str.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(&bolt_fc_resp_str))
+        .returning(Some(&arch_fc_resp_str))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)

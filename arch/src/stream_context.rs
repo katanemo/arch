@@ -305,15 +305,15 @@ impl StreamContext {
 
         let prompt_target_name = zeroshot_intent_response.predicted_class.clone();
 
-        // Check to see who responded to user message. This will help us identify if control should be passed to Bolt FC or not.
-        // If the last message was from Bolt FC, then Bolt FC is handling the conversation (possibly for parameter collection).
-        let mut bolt_assistant = false;
+        // Check to see who responded to user message. This will help us identify if control should be passed to Arch FC or not.
+        // If the last message was from Arch FC, then Arch FC is handling the conversation (possibly for parameter collection).
+        let mut arch_assistant = false;
         let messages = &callout_context.request_body.messages;
         if messages.len() >= 2 {
             let latest_assistant_message = &messages[messages.len() - 2];
             if let Some(model) = latest_assistant_message.model.as_ref() {
-                if model.starts_with("Bolt") {
-                    bolt_assistant = true;
+                if model.starts_with("Arch") {
+                    arch_assistant = true;
                 }
             }
         } else {
@@ -331,12 +331,12 @@ impl StreamContext {
 
         // check to ensure that the prompt target similarity score is above the threshold
         if prompt_target_similarity_score < prompt_target_intent_matching_threshold
-            && !bolt_assistant
+            && !arch_assistant
         {
-            // if bolt fc responded to the user message, then we don't need to check the similarity score
-            // it may be that bolt fc is handling the conversation for parameter collection
-            if bolt_assistant {
-                info!("bolt assistant is handling the conversation");
+            // if arch fc responded to the user message, then we don't need to check the similarity score
+            // it may be that arch fc is handling the conversation for parameter collection
+            if arch_assistant {
+                info!("arch assistant is handling the conversation");
             } else {
                 info!(
                     "prompt target below limit: {:.3}, threshold: {:.3}, continue conversation with user",
@@ -407,7 +407,7 @@ impl StreamContext {
 
                 let msg_body = match serde_json::to_string(&chat_completions) {
                     Ok(msg_body) => {
-                        debug!("bolt-fc request body content: {}", msg_body);
+                        debug!("arch_fc request body content: {}", msg_body);
                         msg_body
                     }
                     Err(e) => {
@@ -464,8 +464,8 @@ impl StreamContext {
         let body_str = String::from_utf8(body).unwrap();
         debug!("function_resolver response str: {}", body_str);
 
-        let boltfc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
-            Ok(boltfc_response) => boltfc_response,
+        let arch_fc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
+            Ok(arch_fc_response) => arch_fc_response,
             Err(e) => {
                 return self.send_server_error(
                     format!(
@@ -477,11 +477,11 @@ impl StreamContext {
             }
         };
 
-        let model_resp = &boltfc_response.choices[0];
+        let model_resp = &arch_fc_response.choices[0];
 
         if model_resp.message.tool_calls.is_none() {
-            // This means that Bolt FC did not have enough information to resolve the function call
-            // Bolt FC probably responded with a message asking for more information.
+            // This means that Arch FC did not have enough information to resolve the function call
+            // Arch FC probably responded with a message asking for more information.
             // Let's send the response back to the user to initalize lightweight dialog for parameter collection
 
             //TODO: add resolver name to the response so the client can send the response back to the correct resolver
@@ -784,7 +784,7 @@ impl HttpContext for StreamContext {
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
         let provider_hint = self
-            .get_http_request_header("x-bolt-deterministic-provider")
+            .get_http_request_header("x-arch-deterministic-provider")
             .is_some();
         self.llm_provider = Some(routing::get_llm_provider(provider_hint));
 
@@ -945,7 +945,7 @@ impl HttpContext for StreamContext {
             }
         };
 
-        debug!("dispatched HTTP call to bolt_guard token_id={}", token_id);
+        debug!("dispatched HTTP call to arch_guard token_id={}", token_id);
 
         let call_context = CallContext {
             response_handler_type: ResponseHandlerType::ArchGuard,

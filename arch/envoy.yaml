@@ -17,13 +17,13 @@ static_resources:
               scheme_header_transformation:
                 scheme_to_overwrite: https
               route_config:
-                  - name: bolt
+                  - name: arch
                     domains:
                       - "*"
                     routes:
                       - match:
                           headers:
-                            - name: "x-bolt-llm-provider"
+                            - name: "x-arch-llm-provider"
                               string_match:
                                 exact: openai
                         route:
@@ -32,7 +32,7 @@ static_resources:
                           timeout: 60s
                       - match:
                           headers:
-                            - name: "x-bolt-llm-provider"
+                            - name: "x-arch-llm-provider"
                               string_match:
                                 exact: mistral
                         route:
