@@ -2,7 +2,7 @@
 
 Listener
 ---------
-Listener is a top-level primitive in Arch - which simplifies the configuration required to bind incoming 
+Listener is a top level primitive in Arch, which simplifies the configuration required to bind incoming 
 connections from downstream clients, and for egress connections to LLMs (hosted or API)
 
 Arch builds on Envoy's Listener subsystem to streamline connection managemet for developers. Arch minimizes 
@@ -12,23 +12,22 @@ simplification ensures that connections are secure, reliable, and optimized for 
 
 Downstream (Ingress)
 ^^^^^^^^^^^^^^^^^^^^^^
-Developers can define Arch Listeners to accept connections from downstream clients. 
-A listener acts as the primary entry point for incoming traffic, handling initial connection setup, including network 
-filtering, gurdrails, and additional network security checks. For more details on prompt security and safety, 
+Developers can configure Arch to accept connections from downstream clients. A downstream listener acts as the 
+primary entry point for incoming traffic, handling initial connection setup, including network filtering, gurdrails, 
+and additional network security checks. For more details on prompt security and safety, 
 see :ref:`here <arch_overview_prompt_handling>`
 
 Upstream (Egress)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Arch automatically configures a listener to route requests for prompts originating from your application to 
-upstream LLM API providers (or hosts). When you start Arch, it creates a listener for egress traffic based on 
-the presence of the ``llm_providers`` configuration section in the ``prompt_config.yml`` file. Arch binds itself 
-to a local address such as ``127.0.0.1:9000/v1`` or a DNS-based address like ``arch.local:9000/v1`` for outgoing 
-traffic. For more details on LLM providers, read :ref:`here <llm_providers>`
+Arch automatically configures a listener to route requests from your application to upstream LLM API providers (or hosts). 
+When you start Arch, it creates a listener for egress traffic based on the presence of the ``llm_providers`` configuration 
+section in the ``prompt_config.yml`` file. Arch binds itself to a local address such as ``127.0.0.1:9000/v1`` or a DNS-based 
+address like ``arch.local:9000/v1`` for outgoing traffic. For more details on LLM providers, read :ref:`here <llm_providers>`
    
 Configure Listener
 ^^^^^^^^^^^^^^^^^^
 
-To configure a Listner, simply add the ``listener`` directive to your ``prompt_config.yml`` file:
+To configure a Downstream (Ingress) Listner, simply add the ``listener`` directive to your ``prompt_config.yml`` file:
 
 .. literalinclude:: /_config/getting-started.yml
     :language: yaml
@@ -36,6 +35,3 @@ To configure a Listner, simply add the ``listener`` directive to your ``prompt_c
     :lines: 1-18
     :emphasize-lines: 2-5
     :caption: :download:`arch-getting-started.yml </_config/getting-started.yml>`
-
-Arch’s dependency on Envoy’s Listener subsystem provides a powerful, developer-friendly interface for managing connections, 
-enhancing the overall efficiency of handling prompts and routing them to the correct endpoints within a generative AI application.
