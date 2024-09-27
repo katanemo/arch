@@ -50,17 +50,19 @@ class BoltHandler:
         TOOL_DESC = "> Tool Name: {name}\nTool Description: {desc}\nTool Args:\n{args}"
 
         tool_text = []
-        for tool in tools:
-            param_text = self.get_param_text(tool.parameters)
+        for fn in tools:
+            tool = fn["function"]
+            param_text = self.get_param_text(tool["parameters"])
             tool_text.append(
                 TOOL_DESC.format(
-                    name=tool.name, desc=tool.description, args=param_text
+                    name=tool["name"], desc=tool["description"], args=param_text
                 )
             )
 
         return "\n".join(tool_text)
 
     def extract_tools(self, content, executable=False):
+        extracted_tools = []
         # retrieve `tool_calls` from model responses
         try:
             content_json = json.loads(content)
@@ -69,7 +71,7 @@ class BoltHandler:
             try:
                 content_json = json.loads(fixed_content)
             except json.JSONDecodeError:
-                return content
+                return extracted_tools
 
         if isinstance(content_json, list):
             tool_calls = content_json
@@ -79,16 +81,15 @@ class BoltHandler:
             tool_calls = []
 
         if not isinstance(tool_calls, list):
-            return content
+            return extracted_tools
 
         # process and extract tools from `tool_calls`
-        extracted = []
 
         for tool_call in tool_calls:
             if isinstance(tool_call, dict):
                 try:
                     if not executable:
-                        extracted.append({tool_call["name"]: tool_call["arguments"]})
+                        extracted_tools.append({tool_call["name"]: tool_call["arguments"]})
                     else:
                         name, arguments = (
                             tool_call.get("name", ""),
@@ -105,12 +106,12 @@ class BoltHandler:
                             [f"{key}={repr(value)}" for key, value in arguments.items()]
                         )
 
-                        extracted.append(f"{name}({args_str})")
+                        extracted_tools.append(f"{name}({args_str})")
 
                 except Exception:
                     continue
 
-        return extracted
+        return extracted_tools
 
     def get_param_text(self, parameter_dict, prefix=""):
         param_text = ""

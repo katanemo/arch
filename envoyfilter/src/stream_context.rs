@@ -462,7 +462,18 @@ impl StreamContext {
         let body_str = String::from_utf8(body).unwrap();
         debug!("function_resolver response str: {}", body_str);
 
-        let boltfc_response: ChatCompletionsResponse = serde_json::from_str(&body_str).unwrap();
+        let boltfc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
+            Ok(boltfc_response) => boltfc_response,
+            Err(e) => {
+                return self.send_server_error(
+                    format!(
+                        "Error deserializing function resolver response into ChatCompletion: {:?}",
+                        e
+                    ),
+                    None,
+                );
+            }
+        };
 
         let model_resp = &boltfc_response.choices[0];
 
