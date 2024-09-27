@@ -139,7 +139,7 @@ pub mod open_ai {
         Float,
         #[serde(rename = "bool")]
         Bool,
-        #[serde(rename = "string")]
+        #[serde(rename = "str")]
         String,
         #[serde(rename = "list")]
         List,

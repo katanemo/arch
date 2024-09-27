@@ -4,7 +4,7 @@ timeout_ms: 5000
 
 overrides:
   # confidence threshold for prompt target intent matching
-  prompt_target_intent_matching_threshold: 0.6
+  prompt_target_intent_matching_threshold: 0.0
 
 llm_providers:
 
