@@ -17,7 +17,7 @@ prompt_targets:
 
   - type: function_resolver
     name: weather_forecast
-    description: This function resolver provides weather forecast information for a given city.
+    description: This function provides realtime weather forecast information for a given city.
     parameters:
       - name: city
         required: true
