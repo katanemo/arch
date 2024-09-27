@@ -285,8 +285,7 @@ mod test {
   "messages": [
     {
       "role": "user",
-      "content": "What city do you want to know the weather for?",
-      "tool_calls": null
+      "content": "What city do you want to know the weather for?"
     }
   ],
   "tools": [
@@ -298,7 +297,7 @@ mod test {
         "parameters": {
           "properties": {
             "city": {
-              "type": "string",
+              "type": "str",
               "description": "city for weather forecast",
               "default": "test"
             }
@@ -371,7 +370,7 @@ mod test {
 
         const PARAMETER_SERIALZIED: &str = r#"{
   "city": {
-    "type": "string",
+    "type": "str",
     "description": "city for weather forecast",
     "default": "test"
   }
