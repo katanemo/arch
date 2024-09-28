@@ -6,6 +6,7 @@ from load_models import (
     load_guard_model,
     load_zero_shot_models,
 )
+import os
 from utils import GuardHandler, split_text_into_chunks
 import torch
 import yaml
@@ -26,33 +27,22 @@ with open("/root/arch_config.yaml", "r") as file:
     config = yaml.safe_load(file)
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
+mode = os.getenv("MODE", "cloud")
+if mode not in ['cloud', 'local-gpu', 'local-cpu']:
+    raise ValueError(f"Invalid mode: {mode}")
+if mode == 'local-cpu':
+    hardware = 'cpu'
+else:
+    hardware = "gpu" if torch.cuda.is_available() else "cpu"
 
 if "prompt_guards" in config.keys():
-    if len(config["prompt_guards"]["input_guards"]) == 2:
-        task = "both"
-        jailbreak_hardware = "gpu" if torch.cuda.is_available() else "cpu"
-        toxic_hardware = "gpu" if torch.cuda.is_available() else "cpu"
-        toxic_model = load_guard_model(
-            guard_model_config["toxic"][jailbreak_hardware], toxic_hardware
-        )
-        jailbreak_model = load_guard_model(
-            guard_model_config["jailbreak"][toxic_hardware], jailbreak_hardware
-        )
+    task = list(config["prompt_guards"]["input_guards"].keys())[0]
 
-    else:
-        task = list(config["prompt_guards"]["input_guards"].keys())[0]
-
-        hardware = "gpu" if torch.cuda.is_available() else "cpu"
-        if task == "toxic":
-            toxic_model = load_guard_model(
-                guard_model_config["toxic"][hardware], hardware
-            )
-            jailbreak_model = None
-        elif task == "jailbreak":
-            jailbreak_model = load_guard_model(
-                guard_model_config["jailbreak"][hardware], hardware
-            )
-            toxic_model = None
+    hardware = "gpu" if torch.cuda.is_available() else "cpu"
+    jailbreak_model = load_guard_model(
+        guard_model_config["jailbreak"][hardware], hardware
+    )
+    toxic_model = None
 
 
     guard_handler = GuardHandler(toxic_model, jailbreak_model)

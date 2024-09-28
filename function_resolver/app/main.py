@@ -10,25 +10,42 @@ import os
 
 ollama_endpoint = os.getenv("OLLAMA_ENDPOINT", "localhost")
 ollama_model = os.getenv("OLLAMA_MODEL", "Arch-Function-Calling-1.5B-Q4_K_M")
+fc_url = os.getenv("FC_URL", ollama_endpoint)
+mode = os.getenv("MODE", "cloud")
+if mode not in ['cloud', 'local-gpu', 'local-cpu']:
+    raise ValueError(f"Invalid mode: {mode}")
+arch_api_key = os.getenv("ARCH_API_KEY", "EMPTY")
 logger = logging.getLogger('uvicorn.error')
 
 handler = None
 if ollama_model.startswith("Arch"):
-   handler = ArchHandler()
+    handler = ArchHandler()
 else:
     handler = BoltHandler()
 
-logger.info(f"using model: {ollama_model}")
-logger.info(f"using ollama endpoint: {ollama_endpoint}")
+
 
 app = FastAPI()
 
-client = OpenAI(
-    base_url='http://{}:11434/v1/'.format(ollama_endpoint),
+if mode == 'cloud':
+    client = OpenAI(
+        base_url=fc_url,
+        api_key=arch_api_key,
+    )
+    models = client.models.list()
+    model = models.data[0].id
+    chosen_model = model
+    endpoint = fc_url
+else:
+    client = OpenAI(
+        base_url='http://{}:11434/v1/'.format(ollama_endpoint),
+        api_key='ollama',
+    )
+    chosen_model = ollama_model
+    endpoint = ollama_endpoint
 
-    # required but ignored
-    api_key='ollama',
-)
+logger.info(f"using model: {chosen_model}")
+logger.info(f"using ollama endpoint: {endpoint}")
 
 @app.get("/healthz")
 async def healthz():
@@ -45,8 +62,8 @@ async def chat_completion(req: ChatMessage, res: Response):
     messages = [{"role": "system", "content": tools_encoded}]
     for message in req.messages:
         messages.append({"role": message.role, "content": message.content})
-    logger.info(f"request model: {ollama_model}, messages: {json.dumps(messages)}")
-    resp = client.chat.completions.create(messages=messages, model=ollama_model, stream=False)
+    logger.info(f"request model: {chosen_model}, messages: {json.dumps(messages)}")
+    resp = client.chat.completions.create(messages=messages, model=chosen_model, stream=False)
     tools = handler.extract_tools(resp.choices[0].message.content)
     tool_calls = []
     for tool in tools:
