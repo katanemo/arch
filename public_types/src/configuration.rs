@@ -82,9 +82,10 @@ pub struct EmbeddingProviver {
 //TODO: use enum for model, but if there is a new model, we need to update the code
 pub struct LlmProvider {
     pub name: String,
-    pub api_key: Option<String>,
+    pub access_key: Option<String>,
     pub model: String,
     pub default: Option<bool>,
+    pub stream: Option<bool>,
     pub endpoint: Option<EnpointType>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,6 +129,7 @@ pub struct PromptTarget {
     pub parameters: Option<Vec<Parameter>>,
     pub endpoint: Option<Endpoint>,
     pub system_prompt: Option<String>,
+    pub auto_llm_dispatch_on_response: Option<bool>,
 }
 
 #[cfg(test)]

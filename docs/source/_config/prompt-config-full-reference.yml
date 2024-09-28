@@ -11,12 +11,13 @@ listener:
         private_key:
           filename: "/etc/arch/certs/key.pem"
 
-system_prompts:
-  - name: "network_assistant"
+# default system prompt used by all prompt targets
+system_prompt:
     content: |
       You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
-llm_providers: #Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
+# Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
+llm_providers:
   - name: "OpenAI"
     access_key: $OPENAI_API_KEY
     model: gpt-4o
@@ -30,19 +31,41 @@ llm_providers: #Centralized way to manage LLMs, manage keys, retry logic, failov
       limit:
         tokens: 100000  # Tokens per unit
         unit: "minute"
+
   - name: "Mistral"
     access_key: $MISTRAL_API_KEY
     model: "mistral-7B"
 
-prompt_endpoints: #Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
-  - "http://127.0.0.2" #assumes port 8000, unless port is specified with :5000
-  - "http://127.0.0.1:5000"
+  - name: "ArchFC"
+    model: "arch-fc-1.5b"
+    endpoint:
+      cluster: arch_fc
+      path: /v1/chat/completions
+
+# provides a way to override default settings for the arch system
+overrides:
+  # By default Arch uses an NLI + embedding approach to match an incomming prompt to a prompt target.
+  # The intent matching threshold is kept at 0.80, you can overide this behavior if you would like
+  prompt_target_intent_matching_threshold: 0.60
+
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+prompt_endpoints:
+  app_server:
+    endpoint:
+      cluster: app_server
+      port: 80
+      connect_timeout_ms: 500
+      request_timeout_ms: 10000
+
+  # - "http://127.0.0.2" #assumes port 8000, unless port is specified with :5000
+  # - "http://127.0.0.1:5000"
 
 prompt_guards:
   input_guard:
     - name: "jailbreak"
       on_exception:
         forward_to_error_target: true
+        error_handler: error_handler
     - name: "toxicity"
       on_exception:
         message: "Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
@@ -52,27 +75,31 @@ prompt_targets:
     type: "default"
     description: "This prompt handles all scenarios that are question and answer in nature. Like summarization, information extraction, etc."
     path: "/agent/summary"
-    auto-llm-dispatch-on-response: true #Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM
+    # Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM
+    # default: true
+    auto_llm_dispatch_on_response: true
+    # override system prompt for this prompt target
+    system_prompt: |
+      You are a helpful information extraction assistant. Use the information that is provided to you.
 
   - name: "reboot_network_device"
     path: "/agent/action"
     description: "Helps network operators perform device operations like rebooting a device."
     parameters:
       - name: "device_id"
-        type: "string" # additional type options include: integer | float | list | dictionary | set
+        # additional type options include: int | float | bool | string | list | dict
+        type: "string"
         description: "Identifier of the network device to reboot."
-        default_value: ""
         required: true
       - name: "confirmation"
-        type: "integer" # additional type options include: integer | float | list | dictionary | set
+        # additional type options include: int | float | bool | string | list | dict
+        type: "string"
         description: "Confirmation flag to proceed with reboot."
-        required: true
+        default: "no"
+        enum: [yes, no]
 
 error_target:
   name: "error_handler"
-  path: "/errors"
+  path: "/error_handler"
 
-tracing: 100 #sampling rate. Note by default Arch works on OpenTelemetry compatible tracing. 
-
-intent-detection-threshold-override: 0.60 # By default Arch uses an NLI + embedding approach to match an incomming prompt to a prompt target.
-                                          # The intent matching threshold is kept at 0.80, you can overide this behavior if you would like
+tracing: 100 #sampling rate. Note by default Arch works on OpenTelemetry compatible tracing.
