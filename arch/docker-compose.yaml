@@ -10,8 +10,6 @@ services:
       - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
     depends_on:
-      qdrant:
-        condition: service_started
       embeddingserver:
         condition: service_healthy
 
@@ -25,13 +23,6 @@ services:
         test: ["CMD", "curl" ,"http://localhost:80/healthz"]
         interval: 5s
         retries: 20
-
-  qdrant:
-    image: qdrant/qdrant
-    hostname: vector-db
-    ports:
-      - 16333:6333
-      - 16334:6334
 
   chatbot-ui:
     build:

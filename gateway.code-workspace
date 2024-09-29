@@ -21,10 +21,6 @@
       "path": "chatbot_ui"
     },
     {
-      "name": "open-message-format",
-      "path": "open-message-format"
-    },
-    {
       "name": "config_generator",
       "path": "config_generator"
     },
@@ -35,6 +31,10 @@
     {
       "name": "demos/function_calling/api_server",
       "path": "./demos/function_calling/api_server",
+    },
+    {
+      "name": "docs",
+      "path": "docs",
     },
   ],
   "settings": {}

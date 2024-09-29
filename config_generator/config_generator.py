@@ -10,9 +10,9 @@ env = Environment(loader=FileSystemLoader('./'))
 template = env.get_template('envoy.template.yaml')
 
 with open(ARCH_CONFIG_FILE, 'r') as file:
-    katanemo_config = file.read()
+    arch_config = file.read()
 
-config_yaml = yaml.safe_load(katanemo_config)
+config_yaml = yaml.safe_load(arch_config)
 
 inferred_clusters = {}
 
@@ -40,7 +40,7 @@ for name, cluster in clusters.items():
 print("updated clusters", inferred_clusters)
 
 data = {
-    'katanemo_config': katanemo_config,
+    'arch_config': arch_config,
     'arch_clusters': inferred_clusters
 }
 

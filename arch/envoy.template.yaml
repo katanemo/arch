@@ -1,6 +1,11 @@
+node:
+  id: arch-1
+  cluster: arch-gateway
+
 admin:
   address:
     socket_address: { address: 0.0.0.0, port_value: 9901 }
+
 static_resources:
   listeners:
     address:
@@ -65,7 +70,7 @@ static_resources:
                         configuration:
                           "@type": "type.googleapis.com/google.protobuf.StringValue"
                           value: |
-                              {{ katanemo_config | indent(30) }}
+                              {{ arch_config | indent(30) }}
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           code:
@@ -74,6 +79,20 @@ static_resources:
                 - name: envoy.filters.http.router
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+              tracing:
+                  provider:
+                    name: envoy.tracers.opentelemetry
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.config.trace.v3.OpenTelemetryConfig
+                      grpc_service:
+                        envoy_grpc:
+                          cluster_name: otel_collector
+                      service_name: arch
+              request_id_extension:
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.request_id.uuid.v3.UuidRequestIdConfig
+                    pack_trace_reason: false
+              generate_request_id: true
   clusters:
     # LLM Host
     # Embedding Providers
@@ -174,6 +193,20 @@ static_resources:
                       address: function_resolver
                       port_value: 80
                   hostname: "arch_fc"
+    - name: otel-collector
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options: {}  # gRPC requires HTTP/2
+      load_assignment:
+        cluster_name: otel-collector
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: otel-collector
+                      port_value: 4317  # Standard gRPC port for OpenTelemetry
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}
       connect_timeout: 5s

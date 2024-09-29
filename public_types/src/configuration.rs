@@ -151,8 +151,6 @@ prompt_guards:
   input_guards:
     jailbreak:
       on_exception_message: Looks like you are curious about my abilities…
-    toxicity:
-      on_exception_message: Looks like you are curious about my abilities…
 
 prompt_targets:
 
