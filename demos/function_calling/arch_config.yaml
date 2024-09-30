@@ -4,12 +4,12 @@ listener:
   address: 0.0.0.0
   port: 10000
   message_format: huggingface
-  connect_timeout: 500ms
+  connect_timeout: 0.005s
 
 endpoints:
   api_server:
     endpoint: api_server:80
-    connect_timeout: 500ms
+    connect_timeout: 0.005s
 
 llm_providers:
   - name: open-ai-gpt-4

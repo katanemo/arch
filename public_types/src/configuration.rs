@@ -33,7 +33,7 @@ pub struct Listener {
     pub address: String,
     pub port: u16,
     pub message_format: MessageFormat,
-    pub connect_timeout: Option<DurationString>,
+    // pub connect_timeout: Option<DurationString>,
 }
 
 impl Default for Listener {
@@ -42,21 +42,16 @@ impl Default for Listener {
             address: "".to_string(),
             port: 0,
             message_format: MessageFormat::default(),
-            connect_timeout: None,
+            // connect_timeout: None,
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum MessageFormat {
     #[serde(rename = "huggingface")]
+    #[default]
     Huggingface,
-}
-
-impl Default for MessageFormat {
-    fn default() -> Self {
-        MessageFormat::Huggingface
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -150,8 +145,8 @@ pub struct LlmProvider {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Endpoint {
     pub endpoint: Option<String>,
-    pub connect_timeout: Option<DurationString>,
-    pub timeout: Option<DurationString>,
+    // pub connect_timeout: Option<DurationString>,
+    // pub timeout: Option<DurationString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
