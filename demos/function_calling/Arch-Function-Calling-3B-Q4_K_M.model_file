@@ -1,4 +1,4 @@
-FROM Arch-Function-Calling-1.5B-Q4_K_M.gguf
+FROM Arch-Function-Calling-3B-Q4_K_M.gguf
 
 # Set parameters for response generation
 PARAMETER num_ctx 4096
