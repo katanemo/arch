@@ -5,15 +5,14 @@ services:
       context: ../../
       dockerfile: config_generator/Dockerfile
     volumes:
-      - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./bolt_config.yaml:/usr/src/app/bolt_config.yaml
+      - ../../arch/envoy.template.yaml:/usr/src/app/envoy.template.yaml
+      - ./arch_config.yaml:/usr/src/app/arch_config.yaml
       - ./generated:/usr/src/app/out
 
-  bolt:
+  arch:
     build:
       context: ../../
-      dockerfile: envoyfilter/Dockerfile
-    hostname: bolt
+      dockerfile: arch/Dockerfile
     ports:
       - "10000:10000"
       - "19901:9901"
@@ -36,12 +35,12 @@ services:
     ports:
       - "18081:80"
     healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        test: ["CMD", "curl" ,"http://localhost/healthz"]
         interval: 5s
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
-      - ./bolt_config.yaml:/root/bolt_config.yaml
+      - ./arch_config.yaml:/root/arch_config.yaml
 
   function_resolver:
     build:
@@ -58,10 +57,10 @@ services:
     environment:
       # use ollama endpoint that is hosted by host machine (no virtualization)
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
+      - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
-      - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
-      # - OLLAMA_MODEL=Bolt-Function-Calling-1B:Q4_K_M
+      # - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
 
   api_server:
     build:
@@ -85,7 +84,7 @@ services:
     profiles:
       - manual
 
-  open-webui:
+  open_webui:
     image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
     container_name: open-webui
     volumes:
@@ -112,7 +111,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
-      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1
+      - CHAT_COMPLETION_ENDPOINT=http://arch:10000/v1
 
   prometheus:
     image: prom/prometheus

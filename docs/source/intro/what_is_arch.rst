@@ -9,11 +9,16 @@ attempts, intelligently calling “backend” APIs to fulfill the user's request
 and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions
 in a centralized way.
 
+.. image:: /_static/img/arch-logo.png
+   :width: 100%
+   :align: center
+
 **The project was born out of the belief that:**
 
   *Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests 
   including secure handling, intelligent routing, robust observability, and integration with backend (API)
   systems for personalization - all outside business logic.*
+
 
 In practice, achieving the above goal is incredibly difficult. Arch attempts to do so by providing the
 following high level features:

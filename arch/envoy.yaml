@@ -16,35 +16,14 @@ static_resources:
               codec_type: AUTO
               scheme_header_transformation:
                 scheme_to_overwrite: https
-              access_log:
-              - name: envoy.access_loggers.file
-                typed_config:
-                  "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
-                  path: "/var/log/arch_access.log"
               route_config:
-                name: local_routes
-                virtual_hosts:
-                  - name: local_service
+                  - name: arch
                     domains:
                       - "*"
                     routes:
                       - match:
-                          prefix: "/mistral/v1/chat/completions"
-                        route:
-                          auto_host_rewrite: true
-                          cluster: mistral_7b_instruct
-                          timeout: 60s
-                      - match:
-                          prefix: "/bolt_fc_1b/v1/chat/completions"
-                        route:
-                          prefix_rewrite: /v1/chat/completions
-                          auto_host_rewrite: true
-                          cluster: bolt_fc_1b
-                          timeout: 120s
-                      - match:
-                          prefix: "/v1/chat/completions"
                           headers:
-                            - name: "x-bolt-llm-provider"
+                            - name: "x-arch-llm-provider"
                               string_match:
                                 exact: openai
                         route:
@@ -52,15 +31,18 @@ static_resources:
                           cluster: openai
                           timeout: 60s
                       - match:
-                          prefix: "/v1/chat/completions"
                           headers:
-                            - name: "x-bolt-llm-provider"
+                            - name: "x-arch-llm-provider"
                               string_match:
                                 exact: mistral
                         route:
                           auto_host_rewrite: true
                           cluster: mistral
                           timeout: 60s
+                      - match:
+                          prefix: "/embeddings"
+                        route:
+                          cluster: embeddingserver
               http_filters:
                 - name: envoy.filters.http.wasm
                   typed_config:
@@ -72,7 +54,45 @@ static_resources:
                         configuration:
                           "@type": "type.googleapis.com/google.protobuf.StringValue"
                           value: |
-                              {{ katanemo_config | indent(30) }}
+                              default_prompt_endpoint: "127.0.0.1"
+                              load_balancing: "round_robin"
+                              timeout_ms: 5000
+
+                              embedding_provider:
+                                name: "SentenceTransformer"
+                                model: "all-MiniLM-L6-v2"
+
+                              llm_providers:
+
+                                - name: open-ai-gpt-4
+                                  api_key: "$OPEN_AI_API_KEY"
+                                  model: gpt-4
+
+                                - name: mistral_7b_instruct
+                                  model: mistral-7b-instruct
+                                  endpoint: http://mistral_7b_instruct:10001/v1/chat/completions
+                                  default: true
+
+
+                              prompt_targets:
+
+                                - type: context_resolver
+                                  name: weather_forecast
+                                  few_shot_examples:
+                                    - what is the weather in New York?
+                                    - how is the weather in San Francisco?
+                                    - what is the forecast in Seattle?
+                                  entities:
+                                    - name: city
+                                      required: true
+                                    - name: days
+                                  endpoint:
+                                    cluster: weatherhost
+                                    path: /weather
+                                  system_prompt: |
+                                    You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
+                                    - Use farenheight for temperature
+                                    - Use miles per hour for wind speed
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           code:
@@ -87,7 +107,6 @@ static_resources:
     # External LLM Providers
     - name: openai
       connect_timeout: 5s
-      dns_lookup_family: V4_ONLY
       type: LOGICAL_DNS
       lb_policy: ROUND_ROBIN
       typed_extension_protocol_options:
@@ -116,7 +135,6 @@ static_resources:
               tls_maximum_protocol_version: TLSv1_3
     - name: mistral
       connect_timeout: 5s
-      dns_lookup_family: V4_ONLY
       type: LOGICAL_DNS
       lb_policy: ROUND_ROBIN
       typed_extension_protocol_options:
@@ -139,26 +157,72 @@ static_resources:
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
           sni: api.mistral.ai
-    - name: model_server
+          common_tls_context:
+            tls_params:
+              tls_minimum_protocol_version: TLSv1_2
+              tls_maximum_protocol_version: TLSv1_3
+    - name: embeddingserver
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: model_server
+        cluster_name: embeddingserver
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
-                      port_value: 80
-                  hostname: "model_server"
+                      address: host.docker.internal
+                      port_value: 8000
+                  hostname: "embeddingserver"
+    - name: weatherhost
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: weatherhost
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: host.docker.internal
+                      port_value: 8000
+                  hostname: "embeddingserver"
+    - name: nerhost
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: nerhost
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: host.docker.internal
+                      port_value: 8000
+                  hostname: "embeddingserver"
+    - name: qdrant
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: qdrant
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: qdrant
+                      port_value: 6333
+                  hostname: "qdrant"
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: mistral_7b_instruct
+        cluster_name: qdrant
         endpoints:
           - lb_endpoints:
               - endpoint:
@@ -167,33 +231,3 @@ static_resources:
                       address: mistral_7b_instruct
                       port_value: 10001
                   hostname: "mistral_7b_instruct"
-    - name: bolt_fc_1b
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: bolt_fc_1b
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: function_resolver
-                      port_value: 80
-                  hostname: "bolt_fc_1b"
-{% for _, cluster in arch_clusters.items() %}
-    - name: {{ cluster.name }}
-      connect_timeout: 5s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: {{ cluster.name }}
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: {{ cluster.address }}
-                      port_value: {{ cluster.port }}
-                  hostname: {{ cluster.address }}
-{% endfor %}

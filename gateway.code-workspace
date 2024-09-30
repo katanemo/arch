@@ -5,8 +5,8 @@
 			"path": "."
 		},
     {
-      "name": "envoyfilter",
-      "path": "envoyfilter"
+      "name": "arch",
+      "path": "arch"
     },
     {
       "name": "model_server",
