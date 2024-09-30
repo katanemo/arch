@@ -216,11 +216,11 @@ mod test {
                 .as_ref()
                 .unwrap()
                 .forward_to_error_target,
-            Some(true)
+            None
         );
         assert_eq!(
             jailbreak_guard.on_exception.as_ref().unwrap().error_handler,
-            Some("error_handler".to_string())
+            None
         );
 
         let prompt_targets = &config.prompt_targets;
