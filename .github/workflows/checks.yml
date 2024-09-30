@@ -1,0 +1,48 @@
+name: Checks
+
+on: pull_request
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+      - name: Setup | Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Run Clippy on arch
+        run: cd arch && cargo clippy --all-targets --all-features -- -Dwarnings
+      - name: Run Clippy on public_types
+        run: cd public_types && cargo clippy --all-targets --all-features -- -Dwarnings
+
+  format:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+      - name: Setup | Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Run Rustfmt on arch
+        run: cd arch && cargo fmt -p intelligent-prompt-gateway -- --check
+      - name: Run Rustfmt on public_types
+        run: cd public_types && cargo fmt -p public_types -- --check
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout
+        uses: actions/checkout@v4
+      - name: Setup | Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Setup | Install wasm toolchain
+        run: rustup target add wasm32-wasi
+      - name: Build wasm module
+        run: cd arch && cargo build --release --target=wasm32-wasi
+      - name: Run Tests on arch
+        run: cd arch && cargo test
+      - name: Run Tests on public_types
+        run: cd public_types && cargo test
