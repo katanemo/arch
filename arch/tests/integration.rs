@@ -175,27 +175,36 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
 
 fn default_config() -> Configuration {
     let config: &str = r#"
-default_prompt_endpoint: "127.0.0.1"
-load_balancing: "round_robin"
-timeout_ms: 5000
+version: "0.1-beta"
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
+endpoints:
+  api_server:
+    endpoint: api_server:80
+    connect_timeout: 0.005s
 
 llm_providers:
-  - name: "open-ai-gpt-4"
-    api_key: "$OPEN_AI_API_KEY"
+  - name: open-ai-gpt-4
+    access_key: $OPEN_AI_API_KEY
     model: gpt-4
+    default: true
+
+overrides:
+  # confidence threshold for prompt target intent matching
+  prompt_target_intent_matching_threshold: 0.6
 
 system_prompt: |
-  You are a helpful weather forecaster. Please following following guidelines when responding to user queries:
-  - Use farenheight for temperature
-  - Use miles per hour for wind speed
+  You are a helpful assistant.
 
 prompt_targets:
-  - type: function_resolver
-    name: weather_forecast
-    description: This resolver provides weather forecast information.
-    endpoint:
-      cluster: weatherhost
-      path: /weather
+
+  - name: weather_forecast
+    description: This function provides realtime weather forecast information for a given city.
     parameters:
       - name: city
         required: true
@@ -204,16 +213,32 @@ prompt_targets:
         description: The number of days for which the weather forecast is requested.
       - name: units
         description: The units in which the weather forecast is requested.
-
-  - type: function_resolver
-    name: weather_forecast_2
-    description: This resolver provides weather forecast information.
     endpoint:
-      cluster: weatherhost
+      name: api_server
       path: /weather
-    entities:
-      - name: city
+    system_prompt: |
+      You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
+      - Use farenheight for temperature
+      - Use miles per hour for wind speed
 
+  - name: insurance_claim_details
+    type: function_resolver
+    description: This function resolver provides insurance claim details for a given policy number.
+    parameters:
+      - name: policy_number
+        required: true
+        description: The policy number for which the insurance claim details are requested.
+        type: string
+      - name: include_expired
+        description: whether to include expired insurance claims in the response.
+        type: bool
+        required: true
+    endpoint:
+      name: api_server
+      path: /insurance_claim_details
+    system_prompt: |
+      You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
+      - Use policy number to retrieve insurance claim details
 ratelimits:
   - provider: gpt-3.5-turbo
     selector:
@@ -222,7 +247,7 @@ ratelimits:
     limit:
       tokens: 1
       unit: minute
-  "#;
+"#;
     serde_yaml::from_str(config).unwrap()
 }
 
@@ -442,7 +467,7 @@ fn request_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(Some("weatherhost"), None, None, None, None)
+        .expect_http_call(Some("api_server"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
@@ -495,7 +520,7 @@ fn request_not_ratelimited() {
     let filter_context = 1;
 
     let mut config = default_config();
-    config.rate_limits.as_mut().unwrap()[0].limit.tokens += 1000;
+    config.ratelimits.as_mut().unwrap()[0].limit.tokens += 1000;
     let config_str = serde_json::to_string(&config).unwrap();
 
     module
@@ -557,7 +582,7 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(Some("weatherhost"), None, None, None, None)
+        .expect_http_call(Some("api_server"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)

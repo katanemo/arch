@@ -62,3 +62,11 @@ prompt_targets:
     system_prompt: |
       You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
       - Use policy number to retrieve insurance claim details
+ratelimits:
+  - provider: gpt-3.5-turbo
+    selector:
+      key: selector-key
+      value: selector-value
+    limit:
+      tokens: 1
+      unit: minute

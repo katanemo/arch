@@ -20,7 +20,7 @@ pub struct Configuration {
     pub prompt_targets: Vec<PromptTarget>,
     pub error_target: Option<ErrorTargetDetail>,
     pub tracing: Option<i16>,
-    pub rate_limits: Option<Vec<Ratelimit>>,
+    pub ratelimits: Option<Vec<Ratelimit>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
