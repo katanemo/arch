@@ -1,0 +1,24 @@
+FROM Arch-Function-Calling-3B-Q4_K_M.gguf
+
+# Set parameters for response generation
+PARAMETER num_ctx 4096
+PARAMETER num_predict 1024
+PARAMETER temperature 0.001
+PARAMETER top_p 1.0
+PARAMETER top_k 50
+PARAMETER repeat_penalty 1.0
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+
+# Set the random number seed to use for generation
+PARAMETER seed 42
+
+# Set the prompt template to be passed into the model
+TEMPLATE """
+{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}
+<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+{{ .Response }}<|im_end|>"""
