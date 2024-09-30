@@ -225,41 +225,6 @@ async def promotions_increases(req: PromotionsIncreasesRequest, res: Response):
     return result_df.to_dict(orient='records')
 
 
-# 5. Employees with Highest Average Project Performance
-class AvgProjPerformanceRequest(BaseModel):
-    min_project_count: int
-    min_performance_score: float
-    department: str = None  # Optional
-
-
-@app.post("/project_performance")
-async def project_performance(req: AvgProjPerformanceRequest, res: Response):
-    params, filters = {}, []
-
-    if req.department:
-        filters.append("e.department = :department")
-        params['department'] = req.department
-
-    filters.append("p.performance_score >= :min_performance_score")
-    params['min_performance_score'] = req.min_performance_score
-
-    where_clause = " AND ".join(filters)
-
-    query = f"""
-    SELECT e.name, e.department, AVG(p.performance_score) as avg_performance_score, COUNT(p.project_name) as project_count
-    FROM employees e
-    JOIN projects p ON e.eid = p.eid
-    WHERE {where_clause}
-    GROUP BY e.eid, e.name, e.department
-    HAVING COUNT(p.project_name) >= :min_project_count
-    ORDER BY avg_performance_score DESC;
-    """
-
-    params['min_project_count'] = req.min_project_count
-    result_df = pd.read_sql_query(query, conn, params=params)
-    return result_df.to_dict(orient='records')
-
-
 # 6. Employees by Certification and Years of Experience
 class CertificationsExperienceRequest(BaseModel):
     certifications: List[str]

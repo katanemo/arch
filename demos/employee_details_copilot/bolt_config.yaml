@@ -33,8 +33,9 @@ prompt_targets:
           Choose how you'd like to rank the employees. You can rank them by their salary, their years of experience, or their rating. The tool will sort the employees based on this ranking and return the best ones from each group.
         enum: [salary, years_of_experience, performance_score]
       - name: top_n
-        required: true
+        required: false
         type: int
+        default: 3
         description: |
           Enter how many of the top employees you want to see in each group. For example, if you enter 3, the tool will show you the top 3 employees for each group you selected.
     endpoint:
@@ -72,17 +73,12 @@ prompt_targets:
     system_prompt: |
       You help calculate summary statistics for groups of employees. First, organize the employees by the specified grouping (e.g., department, location, or position). Then, compute the requested statistic (e.g., total, average, minimum, or maximum) for a specific attribute like salary, experience, or rating.
 
-  # 1. Top Employees by Performance, Projects, and Timeframe
+  # Top Employees by Performance, Projects, and Timeframe
   - type: function_resolver
     name: employees_projects
     description: |
       Fetch employees with the highest performance scores, considering their project participation and years of experience. You can filter by minimum performance score, years of experience, and department. Optionally, you can also filter by recent project participation within the last Y months.
     parameters:
-      - name: min_performance_score
-        description: Minimum performance score to filter employees.
-        required: true
-        type: float
-        default: 4.0
       - name: min_years_experience
         description: Minimum years of experience to filter employees.
         required: true
@@ -91,6 +87,11 @@ prompt_targets:
         description: Department to filter employees by.
         required: true
         type: str
+      - name: min_performance_score
+        description: Minimum performance score to filter employees.
+        required: false
+        type: float
+        default: 4.0
       - name: min_project_count
         description: Minimum number of projects employees participated in (optional).
         required: false
@@ -106,8 +107,7 @@ prompt_targets:
     system_prompt: |
       You are responsible for retrieving the top N employees ranked by performance and project participation. Use filters for experience and optional project criteria.
 
-
-  # 2. Employees with Salary Growth Since Last Promotion
+  # Employees with Salary Growth Since Last Promotion
   - type: function_resolver
     name: salary_growth
     description: |
@@ -121,13 +121,14 @@ prompt_targets:
         description: Department to filter employees by (optional).
         required: false
         type: str
+        default: "Sales"
     endpoint:
       cluster: api_server
       path: /salary_growth
     system_prompt: |
       You are responsible for retrieving employees with the highest salary growth since their last promotion. Filter by minimum salary increase percentage and department.
 
-  # 4. Employees with Promotions and Salary Increases by Year
+  # Employees with Promotions and Salary Increases by Year
   - type: function_resolver
     name: promotions_increases
     description: |
@@ -141,44 +142,19 @@ prompt_targets:
         description: Minimum percentage salary increase to filter employees.
         required: false
         type: float
+        default: 10.0
       - name: department
         description: Department to filter by (optional).
         required: false
         type: str
+        default: "Engineering"
     endpoint:
       cluster: api_server
       path: /promotions_increases
     system_prompt: |
       You are responsible for fetching employees who were promoted and received a salary increase in a specific year. Apply filters for salary increase percentage and department.
 
-
-  # 5. Employees with Highest Average Project Performance
-  - type: function_resolver
-    name: project_performance
-    description: |
-      Fetch employees with the highest average performance across all projects they have worked on over time. You can filter by minimum project count, department, and minimum performance score.
-    parameters:
-      - name: min_project_count
-        description: Minimum number of projects an employee must have participated in.
-        required: true
-        type: int
-      - name: min_performance_score
-        description: Minimum performance score to filter employees.
-        required: true
-        type: float
-        default: 4.0
-      - name: department
-        description: Department to filter by (optional).
-        required: false
-        type: str
-    endpoint:
-      cluster: api_server
-      path: /project_performance
-    system_prompt: |
-      You are responsible for fetching employees with the highest average performance across all projects they’ve worked on. Apply filters for minimum project count, performance score, and department.
-
-
-  # 6. Employees by Certification and Years of Experience
+  # Employees by Certification and Years of Experience
   - type: function_resolver
     name: certifications_experience
     description: |
@@ -196,7 +172,6 @@ prompt_targets:
         description: Department to filter employees by (optional).
         required: false
         type: str
-        default: "Engineering"
     endpoint:
       cluster: api_server
       path: /certifications_experience
