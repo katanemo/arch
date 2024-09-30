@@ -1,6 +1,22 @@
-default_prompt_endpoint: "127.0.0.1"
-load_balancing: "round_robin"
-timeout_ms: 5000
+version: "0.1-beta"
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 500ms
+
+endpoints:
+  api_server:
+    endpoint: api_server
+    connect_timeout: 500ms
+    timeout: 10000ms
+
+llm_providers:
+  - name: open-ai-gpt-4
+    access_key: $OPEN_AI_API_KEY
+    model: gpt-4
+    default: true
 
 overrides:
   # confidence threshold for prompt target intent matching
@@ -9,17 +25,10 @@ overrides:
 system_prompt: |
   You are a helpful assistant.
 
-llm_providers:
-
-  - name: open-ai-gpt-4
-    api_key: $OPEN_AI_API_KEY
-    model: gpt-4
-    default: true
-
 prompt_targets:
 
-  - type: function_resolver
-    name: weather_forecast
+  - name: weather_forecast
+    type: function_resolver
     description: This function provides realtime weather forecast information for a given city.
     parameters:
       - name: city
@@ -30,15 +39,15 @@ prompt_targets:
       - name: units
         description: The units in which the weather forecast is requested.
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /weather
     system_prompt: |
       You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
       - Use farenheight for temperature
       - Use miles per hour for wind speed
 
-  - type: function_resolver
-    name: insurance_claim_details
+  - name: insurance_claim_details
+    type: function_resolver
     description: This function resolver provides insurance claim details for a given policy number.
     parameters:
       - name: policy_number
@@ -50,7 +59,7 @@ prompt_targets:
         type: bool
         required: true
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /insurance_claim_details
     system_prompt: |
       You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:

@@ -1,3 +1,6 @@
+use std::{collections::HashMap, time::Duration};
+
+use duration_string::DurationString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -7,37 +10,89 @@ pub struct Overrides {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Configuration {
-    pub default_prompt_endpoint: String,
-    pub load_balancing: LoadBalancing,
-    pub timeout_ms: u64,
-    pub overrides: Option<Overrides>,
+    pub version: String,
+    pub listener: Listener,
+    pub endpoints: HashMap<String, Endpoint>,
     pub llm_providers: Vec<LlmProvider>,
-    pub prompt_guards: Option<PromptGuards>,
+    pub overrides: Option<Overrides>,
     pub system_prompt: Option<String>,
+    pub prompt_guards: Option<PromptGuards>,
     pub prompt_targets: Vec<PromptTarget>,
-    pub ratelimits: Option<Vec<Ratelimit>>,
+    pub error_target: Option<EndpointDetails>,
+    pub rate_limits: Option<Vec<Ratelimit>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Listener {
+    pub address: String,
+    pub port: u16,
+    pub message_format: MessageFormat,
+    pub connect_timeout: Option<DurationString>,
+}
+
+impl Default for Listener {
+    fn default() -> Self {
+        Listener {
+            address: "".to_string(),
+            port: 0,
+            message_format: MessageFormat::default(),
+            connect_timeout: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MessageFormat {
+    #[serde(rename = "huggingface")]
+    Huggingface,
+}
+
+impl Default for MessageFormat {
+    fn default() -> Self {
+        MessageFormat::Huggingface
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PromptGuards {
-    pub input_guards: InputGuards,
+    pub input_guards: Vec<PromptGuard>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct InputGuards {
-    pub jailbreak: Option<GuardOptions>,
-    pub toxicity: Option<GuardOptions>,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GuardType {
+    #[serde(rename = "jailbreak")]
+    Jailbreak,
+    #[serde(rename = "toxicity")]
+    Toxicity,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PromptGuard {
+    pub name: GuardType,
+    pub on_exception: GuardOptions,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuardOptions {
-    pub on_exception_message: Option<String>,
+    pub forward_to_error_target: Option<bool>,
+    pub error_handler: Option<String>,
+    pub on_exception: Option<OnExceptionDetails>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OnExceptionDetails {
+    pub forward_to_error_target: Option<bool>,
+    pub error_handler: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RatelimitSelectorType {
+    #[serde(rename = "http_header")]
+    Header(Header),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ratelimit {
-    pub provider: String,
-    pub selector: Header,
+    pub selector: RatelimitSelectorType,
     pub limit: Limit,
 }
 
@@ -59,16 +114,8 @@ pub enum TimeUnit {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Header {
-    pub key: String,
+    pub name: String,
     pub value: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum LoadBalancing {
-    #[serde(rename = "round_robin")]
-    RoundRobin,
-    #[serde(rename = "random")]
-    Random,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,20 +133,13 @@ pub struct LlmProvider {
     pub model: String,
     pub default: Option<bool>,
     pub stream: Option<bool>,
-    pub endpoint: Option<EnpointType>,
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum EnpointType {
-    String(String),
-    Struct(Endpoint),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Endpoint {
-    pub cluster: String,
-    pub path: Option<String>,
-    pub method: Option<String>,
+    pub endpoint: Option<String>,
+    pub connect_timeout: Option<DurationString>,
+    pub timeout: Option<DurationString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -118,80 +158,40 @@ pub struct Parameter {
 pub enum PromptType {
     #[serde(rename = "function_resolver")]
     FunctionResolver,
+    #[serde(rename = "default")]
+    Default,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EndpointDetails {
+  pub name: String,
+  pub path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PromptTarget {
+    pub name: String,
     #[serde(rename = "type")]
     pub prompt_type: PromptType,
-    pub name: String,
     pub description: String,
+    pub endpoint: Option<EndpointDetails>,
     pub parameters: Option<Vec<Parameter>>,
-    pub endpoint: Option<Endpoint>,
     pub system_prompt: Option<String>,
     pub auto_llm_dispatch_on_response: Option<bool>,
 }
 
 #[cfg(test)]
 mod test {
-    pub const CONFIGURATION: &str = r#"
-default_prompt_endpoint: "127.0.0.1"
-load_balancing: "round_robin"
-timeout_ms: 5000
-
-llm_providers:
-  - name: "open-ai-gpt-4"
-    api_key: "$OPEN_AI_API_KEY"
-    model: gpt-4
-
-system_prompt: |
-  You are a helpful weather forecaster. Please following following guidelines when responding to user queries:
-  - Use farenheight for temperature
-  - Use miles per hour for wind speed
-
-prompt_guards:
-  input_guards:
-    jailbreak:
-      on_exception_message: Looks like you are curious about my abilities…
-    toxicity:
-      on_exception_message: Looks like you are curious about my abilities…
-
-prompt_targets:
-
-  - type: function_resolver
-    name: weather_forecast
-    description: Get the weather forecast for a location
-    endpoint:
-      cluster: weatherhost
-      path: /weather
-    parameters:
-      - name: location
-        required: true
-        description: "The location for which the weather is requested"
-
-  - type: function_resolver
-    name: weather_forecast_2
-    description: Get the weather forecast for a location
-    few_shot_examples:
-      - what is the weather in New York?
-    endpoint:
-      cluster: weatherhost
-      path: /weather
-    parameters:
-      - name: city
-        description: "The location for which the weather is requested"
-
-ratelimits:
-  - provider: open-ai-gpt-4
-    selector:
-      key: x-katanemo-openai-limit-id
-    limit:
-      tokens: 100
-      unit: minute
-  "#;
+    use std::fs;
 
     #[test]
     fn test_deserialize_configuration() {
-        let _: super::Configuration = serde_yaml::from_str(CONFIGURATION).unwrap();
+        let ref_config =
+            fs::read_to_string("../docs/source/_config/prompt-config-full-reference.yml")
+                .expect("reference config file not found");
+        let config: super::Configuration = serde_yaml::from_str(&ref_config).unwrap();
+        assert_eq!(config.version, "0.1-beta");
+        let open_ai_provider = config.llm_providers.iter().find(|p| p.name == "openai").unwrap();
+        assert_eq!(open_ai_provider, "0.1-beta");
     }
 }
