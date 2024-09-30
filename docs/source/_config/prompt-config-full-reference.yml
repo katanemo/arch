@@ -27,6 +27,9 @@ endpoints:
   mistral_local:
     endpoint: "127.0.0.1:8001"
 
+  error_target:
+    endpoint: "error_target_1"
+
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
 llm_providers:
   - name: "OpenAI"
@@ -63,18 +66,12 @@ system_prompt: |
 
 prompt_guards:
   input_guards:
-    - name: "jailbreak"
-      on_exception:
-        forward_to_error_target: true
-        error_handler: error_handler
-    - name: "toxicity"
+    jailbreak:
       on_exception:
         message: "Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
 
 prompt_targets:
-
   - name: "reboot_network_device"
-    type: "function_resolver"
     description: "Helps network operators perform device operations like rebooting a device."
     endpoint:
       name: app_server
@@ -92,7 +89,7 @@ prompt_targets:
         enum: [yes, no]
 
   - name: "information_extraction"
-    type: "default"
+    default: true
     description: "This prompt handles all scenarios that are question and answer in nature. Like summarization, information extraction, etc."
     endpoint:
       name: app_server
@@ -104,7 +101,8 @@ prompt_targets:
       You are a helpful information extraction assistant. Use the information that is provided to you.
 
 error_target:
-  name: error_handler
-  path: /error_handler
+  endpoint:
+    name: error_target_1
+    path: /error
 
 tracing: 100 #sampling rate. Note by default Arch works on OpenTelemetry compatible tracing.

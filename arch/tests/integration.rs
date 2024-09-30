@@ -495,7 +495,7 @@ fn request_not_ratelimited() {
     let filter_context = 1;
 
     let mut config = default_config();
-    config.ratelimits.as_mut().unwrap()[0].limit.tokens += 1000;
+    config.rate_limits.as_mut().unwrap()[0].limit.tokens += 1000;
     let config_str = serde_json::to_string(&config).unwrap();
 
     module

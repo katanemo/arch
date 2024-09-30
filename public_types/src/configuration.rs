@@ -18,8 +18,14 @@ pub struct Configuration {
     pub system_prompt: Option<String>,
     pub prompt_guards: Option<PromptGuards>,
     pub prompt_targets: Vec<PromptTarget>,
-    pub error_target: Option<EndpointDetails>,
+    pub error_target: Option<ErrorTargetDetail>,
+    pub tracing: Option<i16>,
     pub rate_limits: Option<Vec<Ratelimit>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ErrorTargetDetail {
+    pub endpoint: Option<EndpointDetails>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,26 +61,17 @@ impl Default for MessageFormat {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PromptGuards {
-    pub input_guards: Vec<PromptGuard>,
+    pub input_guards: HashMap<GuardType, GuardOptions>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum GuardType {
     #[serde(rename = "jailbreak")]
     Jailbreak,
-    #[serde(rename = "toxicity")]
-    Toxicity,
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PromptGuard {
-    pub name: GuardType,
-    pub on_exception: GuardOptions,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuardOptions {
-    pub forward_to_error_target: Option<bool>,
-    pub error_handler: Option<String>,
     pub on_exception: Option<OnExceptionDetails>,
 }
 
@@ -82,17 +79,30 @@ pub struct GuardOptions {
 pub struct OnExceptionDetails {
     pub forward_to_error_target: Option<bool>,
     pub error_handler: Option<String>,
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RatelimitSelectorType {
-    #[serde(rename = "http_header")]
-    Header(Header),
+pub struct LlmRatelimit {
+    pub selector: LlmRatelimitSelector,
+    pub limit: Limit,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmRatelimitSelector {
+    pub http_header: Option<RatelimitHeader>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Header {
+    pub key: String,
+    pub value: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ratelimit {
-    pub selector: RatelimitSelectorType,
+    pub provider: String,
+    pub selector: Header,
     pub limit: Limit,
 }
 
@@ -113,7 +123,7 @@ pub enum TimeUnit {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct Header {
+pub struct RatelimitHeader {
     pub name: String,
     pub value: Option<String>,
 }
@@ -134,7 +144,7 @@ pub struct LlmProvider {
     pub model: String,
     pub default: Option<bool>,
     pub stream: Option<bool>,
-    pub rate_limits: Option<Ratelimit>,
+    pub rate_limits: Option<LlmRatelimit>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -157,24 +167,15 @@ pub struct Parameter {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum PromptType {
-    #[serde(rename = "function_resolver")]
-    FunctionResolver,
-    #[serde(rename = "default")]
-    Default,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EndpointDetails {
-  pub name: String,
-  pub path: Option<String>,
+    pub name: String,
+    pub path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PromptTarget {
     pub name: String,
-    #[serde(rename = "type")]
-    pub prompt_type: PromptType,
+    pub default: Option<bool>,
     pub description: String,
     pub endpoint: Option<EndpointDetails>,
     pub parameters: Option<Vec<Parameter>>,
@@ -186,18 +187,82 @@ pub struct PromptTarget {
 mod test {
     use std::fs;
 
+    use crate::configuration::GuardType;
+
     #[test]
     fn test_deserialize_configuration() {
         let ref_config =
             fs::read_to_string("../docs/source/_config/prompt-config-full-reference.yml")
                 .expect("reference config file not found");
+
         let config: super::Configuration = serde_yaml::from_str(&ref_config).unwrap();
         assert_eq!(config.version, "0.1-beta");
-        let open_ai_provider = config.llm_providers.iter().find(|p| p.name.to_lowercase() == "openai").unwrap();
+
+        let open_ai_provider = config
+            .llm_providers
+            .iter()
+            .find(|p| p.name.to_lowercase() == "openai")
+            .unwrap();
         assert_eq!(open_ai_provider.name.to_lowercase(), "openai");
-        assert_eq!(open_ai_provider.access_key, Some("$OPENAI_API_KEY".to_string()));
+        assert_eq!(
+            open_ai_provider.access_key,
+            Some("$OPENAI_API_KEY".to_string())
+        );
         assert_eq!(open_ai_provider.model, "gpt-4o");
         assert_eq!(open_ai_provider.default, Some(true));
         assert_eq!(open_ai_provider.stream, Some(true));
+
+        let prompt_guards = config.prompt_guards.as_ref().unwrap();
+        let input_guards = &prompt_guards.input_guards;
+        let jailbreak_guard = input_guards.get(&GuardType::Jailbreak).unwrap();
+        assert_eq!(
+            jailbreak_guard
+                .on_exception
+                .as_ref()
+                .unwrap()
+                .forward_to_error_target,
+            Some(true)
+        );
+        assert_eq!(
+            jailbreak_guard.on_exception.as_ref().unwrap().error_handler,
+            Some("error_handler".to_string())
+        );
+
+        let prompt_targets = &config.prompt_targets;
+        assert_eq!(prompt_targets.len(), 2);
+        let prompt_target = prompt_targets
+            .iter()
+            .find(|p| p.name == "reboot_network_device")
+            .unwrap();
+        assert_eq!(prompt_target.name, "reboot_network_device");
+        assert_eq!(prompt_target.default, None);
+
+        let prompt_target = prompt_targets
+            .iter()
+            .find(|p| p.name == "information_extraction")
+            .unwrap();
+        assert_eq!(prompt_target.name, "information_extraction");
+        assert_eq!(prompt_target.default, Some(true));
+        assert_eq!(
+            prompt_target.endpoint.as_ref().unwrap().name,
+            "app_server".to_string()
+        );
+        assert_eq!(
+            prompt_target.endpoint.as_ref().unwrap().path,
+            Some("/agent/summary".to_string())
+        );
+
+        let error_target = config.error_target.as_ref().unwrap();
+        assert_eq!(
+            error_target.endpoint.as_ref().unwrap().name,
+            "error_target_1".to_string()
+        );
+        assert_eq!(
+            error_target.endpoint.as_ref().unwrap().path,
+            Some("/error".to_string())
+        );
+
+        let tracing = config.tracing.as_ref().unwrap();
+        assert_eq!(*tracing, 100);
     }
 }

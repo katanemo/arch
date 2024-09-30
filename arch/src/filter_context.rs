@@ -239,7 +239,7 @@ impl RootContext for FilterContext {
             if let Some(ratelimits_config) = self
                 .config
                 .as_mut()
-                .and_then(|config| config.ratelimits.as_mut())
+                .and_then(|config| config.rate_limits.as_mut())
             {
                 ratelimit::ratelimits(Some(std::mem::take(ratelimits_config)));
             }

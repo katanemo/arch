@@ -176,7 +176,11 @@ static_resources:
                   hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}
+      {% if cluster.connect_timeout -%}
+      connect_timeout: {{ cluster.connect_timeout }}
+      {% else -%}
       connect_timeout: 5s
+      {% endif -%}
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -186,7 +190,7 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: {{ cluster.address }}
+                      address: {{ cluster.endpoint }}
                       port_value: {{ cluster.port }}
-                  hostname: {{ cluster.address }}
+                  hostname: {{ cluster.name }}
 {% endfor %}

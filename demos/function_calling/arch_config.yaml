@@ -8,9 +8,8 @@ listener:
 
 endpoints:
   api_server:
-    endpoint: api_server
+    endpoint: api_server:80
     connect_timeout: 500ms
-    timeout: 10000ms
 
 llm_providers:
   - name: open-ai-gpt-4
@@ -28,7 +27,6 @@ system_prompt: |
 prompt_targets:
 
   - name: weather_forecast
-    type: function_resolver
     description: This function provides realtime weather forecast information for a given city.
     parameters:
       - name: city
