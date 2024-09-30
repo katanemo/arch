@@ -129,10 +129,12 @@ pub struct EmbeddingProviver {
 //TODO: use enum for model, but if there is a new model, we need to update the code
 pub struct LlmProvider {
     pub name: String,
+    //TODO: handle env var replacement
     pub access_key: Option<String>,
     pub model: String,
     pub default: Option<bool>,
     pub stream: Option<bool>,
+    pub rate_limits: Option<Ratelimit>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -191,7 +193,11 @@ mod test {
                 .expect("reference config file not found");
         let config: super::Configuration = serde_yaml::from_str(&ref_config).unwrap();
         assert_eq!(config.version, "0.1-beta");
-        let open_ai_provider = config.llm_providers.iter().find(|p| p.name == "openai").unwrap();
-        assert_eq!(open_ai_provider, "0.1-beta");
+        let open_ai_provider = config.llm_providers.iter().find(|p| p.name.to_lowercase() == "openai").unwrap();
+        assert_eq!(open_ai_provider.name.to_lowercase(), "openai");
+        assert_eq!(open_ai_provider.access_key, Some("$OPENAI_API_KEY".to_string()));
+        assert_eq!(open_ai_provider.model, "gpt-4o");
+        assert_eq!(open_ai_provider.default, Some(true));
+        assert_eq!(open_ai_provider.stream, Some(true));
     }
 }
