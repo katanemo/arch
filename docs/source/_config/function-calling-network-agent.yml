@@ -6,8 +6,8 @@ listen:
 system_prompts:
   - name: network_assistant
     content: You are a network assistant that just offers facts about the operational health of the network
-    
-llm_providers: 
+
+llm_providers:
     - name: "OpenAI"
       access_key: $OPEN_AI_KEY
       model: gpt-4o
@@ -16,13 +16,13 @@ llm_providers:
 prompt_targets:
   - name: reboot_devices
     description: >
-      This prompt target handles user requests to reboot devices. 
+      This prompt target handles user requests to reboot devices.
       It ensures that when users request to reboot specific devices or device groups, the system processes the reboot commands accurately.
 
       **Examples of user prompts:**
 
       - "Please reboot device 12345."
-      - "Restart all devices in tenant group tenant-XYZ 
+      - "Restart all devices in tenant group tenant-XYZ
       - "I need to reboot devices A, B, and C."
 
     path: /agent/device_reboot
