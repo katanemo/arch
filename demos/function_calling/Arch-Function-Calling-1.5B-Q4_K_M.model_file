@@ -1,6 +1,7 @@
 FROM Arch-Function-Calling-1.5B-Q4_K_M.gguf
 
 # Set parameters for response generation
+PARAMETER num_ctx 4096
 PARAMETER num_predict 1024
 PARAMETER temperature 0.001
 PARAMETER top_p 1.0
