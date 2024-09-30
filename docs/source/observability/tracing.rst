@@ -1,35 +1,35 @@
 .. _arch_overview_tracing:
 
-Tracing 
+Tracing
 =======
 
 Overview
 --------
 
-`OpenTelemetry <https://opentelemetry.io/>`_ is an open-source observability framework providing APIs 
-and instrumentation for generating, collecting, processing, and exporting telemetry data, such as traces, 
-metrics, and logs. Its flexible design supports a wide range of backends and seamlessly integrates with 
-modern application tools. A key feature of OpenTelemetry is its commitment to standards like the 
+`OpenTelemetry <https://opentelemetry.io/>`_ is an open-source observability framework providing APIs
+and instrumentation for generating, collecting, processing, and exporting telemetry data, such as traces,
+metrics, and logs. Its flexible design supports a wide range of backends and seamlessly integrates with
+modern application tools. A key feature of OpenTelemetry is its commitment to standards like the
 `W3C Trace Context <https://www.w3.org/TR/trace-context/>`_
 
-**Tracing** is a critical tool that allows developers to visualize and understand the flow of 
-requests in an AI application. With tracing, you can capture a detailed view of how requests propagate 
-through various services and components, which is crucial for **debugging**, **performance optimization**, 
+**Tracing** is a critical tool that allows developers to visualize and understand the flow of
+requests in an AI application. With tracing, you can capture a detailed view of how requests propagate
+through various services and components, which is crucial for **debugging**, **performance optimization**,
 and understanding complex AI agent architectures like Co-pilots.
 
-**Arch** propagates trace context using the W3C Trace Context standard, specifically through the 
-``traceparent`` header. This allows each component in the system to record its part of the request 
-flow, enabling **end-to-end tracing** across the entire application. By using OpenTelemetry, Arch ensures 
-that developers can capture this trace data consistently and in a format compatible with various observability 
+**Arch** propagates trace context using the W3C Trace Context standard, specifically through the
+``traceparent`` header. This allows each component in the system to record its part of the request
+flow, enabling **end-to-end tracing** across the entire application. By using OpenTelemetry, Arch ensures
+that developers can capture this trace data consistently and in a format compatible with various observability
 tools.
 ______________________________________________________________________________________________
 
-Benefits of using ``traceparent`` headers 
+Benefits of using ``traceparent`` headers
 -----------------------------------------
 
-- **Standardization**: The W3C Trace Context standard ensures compatibility across ecosystem tools, allowing 
+- **Standardization**: The W3C Trace Context standard ensures compatibility across ecosystem tools, allowing
   traces to be propagated uniformly through different layers of the system.
-- **Ease of Integration**: OpenTelemetry's design allows developers to easily integrate tracing with minimal 
+- **Ease of Integration**: OpenTelemetry's design allows developers to easily integrate tracing with minimal
   changes to their codebase, enabling quick adoption of end-to-end observability.
 - **Interoperability**: Works seamlessly with popular tracing tools like AWS X-Ray, Datadog, Jaeger, and many others,
   making it easy to visualize traces in the tools you're already usi
@@ -46,15 +46,15 @@ How to initiate a trace
    - Start a new span representing its processing of the request.
    - Forward the ``traceparent`` header to downstream services.
 
-3. **Sampling Policy**: The 100 in ``tracing: 100`` means that all the requests as sampled for tracing. 
+3. **Sampling Policy**: The 100 in ``tracing: 100`` means that all the requests as sampled for tracing.
    You can adjust this value from 0-100.
 
 
 Trace Propagation
 -----------------
 
-Arch uses the W3C Trace Context standard for trace propagation, which relies on the ``traceparent`` header. 
-This header carries tracing information in a standardized format, enabling interoperability between different 
+Arch uses the W3C Trace Context standard for trace propagation, which relies on the ``traceparent`` header.
+This header carries tracing information in a standardized format, enabling interoperability between different
 tracing systems.
 
 Header Format
@@ -73,7 +73,7 @@ Instrumentation
 ~~~~~~~~~~~~~~~
 
 To integrate AI tracing, your application needs to follow a few simple steps. The steps
-below are very common practice, and not unique to Arch, when you reading tracing headers and export 
+below are very common practice, and not unique to Arch, when you reading tracing headers and export
 `spans <https://docs.lightstep.com/docs/understand-distributed-tracing>`_ for distributed tracing.
 
 - Read the ``traceparent`` header from incoming requests.
@@ -147,14 +147,14 @@ Handle incoming requests:
 AI Agent Tracing Visualization Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following is an example of tracing for an AI-powered customer support system. 
-A customer interacts with AI agents, which forward their requests through different 
+The following is an example of tracing for an AI-powered customer support system.
+A customer interacts with AI agents, which forward their requests through different
 specialized services and external systems.
 
 ::
 
     +--------------------------+
-    |   Customer Interaction   |  
+    |   Customer Interaction   |
     +--------------------------+
                |
                v
@@ -179,17 +179,17 @@ Trace Breakdown:
     - Span 1: Customer initiates a request via the AI-powered chatbot for billing support (e.g., asking for payment details).
 
 - AI Agent 1 (Main - Arch):
-    - Span 2: AI Agent 1 (Main) processes the request and identifies it as related to billing, forwarding the request 
+    - Span 2: AI Agent 1 (Main) processes the request and identifies it as related to billing, forwarding the request
       to an external payment service.
-    - Span 3: AI Agent 1 determines that additional technical support is needed for processing and forwards the request 
+    - Span 3: AI Agent 1 determines that additional technical support is needed for processing and forwards the request
       to AI Agent 2.
 
 - External Payment Service:
-    - Span 4: The external payment service processes the payment-related request (e.g., verifying payment status) and sends 
+    - Span 4: The external payment service processes the payment-related request (e.g., verifying payment status) and sends
       the response back to AI Agent 1.
 
 - AI Agent 2 (Tech - Arch):
-    - Span 5: AI Agent 2, responsible for technical queries, processes a request forwarded from AI Agent 1 (e.g., checking for 
+    - Span 5: AI Agent 2, responsible for technical queries, processes a request forwarded from AI Agent 1 (e.g., checking for
       any account issues).
     - Span 6: AI Agent 2 forwards the query to Internal Tech Support for further investigation.
 
@@ -197,7 +197,7 @@ Trace Breakdown:
     - Span 7: Internal Tech Support processes the request (e.g., resolving account access issues) and responds to AI Agent 2.
 
 - AI Agent 3 (Orders - Arch):
-    - Span 8: AI Agent 3 handles order-related queries. AI Agent 1 forwards the request to AI Agent 3 after payment verification 
+    - Span 8: AI Agent 3 handles order-related queries. AI Agent 1 forwards the request to AI Agent 3 after payment verification
       is completed.
     - Span 9: AI Agent 3 forwards a request to the Inventory Management system to confirm product availability for a pending order.
 
@@ -297,8 +297,8 @@ Best Practices
 Conclusion
 ----------
 
-By leveraging the ``traceparent`` header for trace context propagation, Arch enables developers to implement 
-tracing efficiently. This approach simplifies the process of collecting and analyzing tracing data in common 
+By leveraging the ``traceparent`` header for trace context propagation, Arch enables developers to implement
+tracing efficiently. This approach simplifies the process of collecting and analyzing tracing data in common
 tools like AWS X-Ray and Datadog, enhancing observability and facilitating faster debugging and optimization.
 
 Additional Resources
@@ -311,5 +311,3 @@ Additional Resources
 
 .. Note::
    Replace placeholders like ``your-aws-region``, and ``DD_API_KEY`` with your actual configurations.
-
-  
