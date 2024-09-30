@@ -524,11 +524,24 @@ impl StreamContext {
         debug!("tool_params: {}", tool_params_json_str);
 
         let endpoint = prompt_target.endpoint.unwrap();
-        let path = endpoint.path.unwrap_or(String::from("/"));
+        let mut path = endpoint.path.unwrap_or(String::from("/"));
+        let method = endpoint
+            .method
+            .unwrap_or(public_types::configuration::Method::Post)
+            .to_string();
+        if method == "GET" {
+            let mut query_params = vec![];
+            for (key, value) in tool_params {
+                query_params.push(format!("{}={}", key, format!("{:?}", value)));
+            }
+            let path_args = &query_params.join("&");
+            path.push_str("?");
+            path.push_str(path_args);
+        }
         let token_id = match self.dispatch_http_call(
             &endpoint.name,
             vec![
-                (":method", "POST"),
+                (":method", method.as_str()),
                 (":path", path.as_ref()),
                 (":authority", endpoint.name.as_str()),
                 ("content-type", "application/json"),

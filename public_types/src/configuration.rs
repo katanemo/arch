@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use duration_string::DurationString;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
@@ -165,6 +165,44 @@ pub struct Parameter {
 pub struct EndpointDetails {
     pub name: String,
     pub path: Option<String>,
+    pub method: Option<Method>,
+}
+
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Method {
+    Get,
+    Post,
+    Put,
+    Delete,
+}
+
+impl ToString for Method {
+    fn to_string(&self) -> String {
+        match self {
+            Method::Get => "GET".to_string(),
+            Method::Post => "POST".to_string(),
+            Method::Put => "PUT".to_string(),
+            Method::Delete => "DELETE".to_string(),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Method {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+      D: Deserializer<'de>,
+  {
+      let s = String::deserialize(deserializer)?;
+      match s.to_uppercase().as_str() {
+          "GET" => Ok(Method::Get),
+          "POST" => Ok(Method::Post),
+          "PUT" => Ok(Method::Put),
+          "DELETE" => Ok(Method::Delete),
+          _ => Err(serde::de::Error::custom(format!("Invalid enum variant: {}", s))),
+      }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -245,6 +283,10 @@ mod test {
         assert_eq!(
             prompt_target.endpoint.as_ref().unwrap().path,
             Some("/agent/summary".to_string())
+        );
+        assert_eq!(
+            prompt_target.endpoint.as_ref().unwrap().method.as_ref().unwrap().to_string(),
+            "POST".to_string()
         );
 
         let error_target = config.error_target.as_ref().unwrap();
