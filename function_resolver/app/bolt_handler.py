@@ -89,7 +89,9 @@ class BoltHandler:
             if isinstance(tool_call, dict):
                 try:
                     if not executable:
-                        extracted_tools.append({tool_call["name"]: tool_call["arguments"]})
+                        extracted_tools.append(
+                            {tool_call["name"]: tool_call["arguments"]}
+                        )
                     else:
                         name, arguments = (
                             tool_call.get("name", ""),

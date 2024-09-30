@@ -28,6 +28,7 @@ with open("/root/arch_config.yaml", "r") as file:
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
 mode = os.getenv("MODE", "cloud")
+logger.info(f"Serving model mode: {mode}")
 if mode not in ['cloud', 'local-gpu', 'local-cpu']:
     raise ValueError(f"Invalid mode: {mode}")
 if mode == 'local-cpu':
