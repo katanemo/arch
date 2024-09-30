@@ -6,7 +6,7 @@ services:
       dockerfile: config_generator/Dockerfile
     volumes:
       - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./bolt_config.yaml:/usr/src/app/bolt_config.yaml
+      - ./arch_config.yaml:/usr/src/app/arch_config.yaml
       - ./generated:/usr/src/app/out
 
   bolt:
@@ -40,7 +40,7 @@ services:
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
-      - ./bolt_config.yaml:/root/bolt_config.yaml
+      - ./arch_config.yaml:/root/arch_config.yaml
 
   api_server:
     build:
