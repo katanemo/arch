@@ -1,7 +1,7 @@
 import yaml
 import json
 import os
-from function_resolver.app.arch_handler import ArchHandler
+from model_server.app.arch_fc.arch_handler import ArchHandler
 
 def convert_yaml_to_tools_dict(yaml_file_path):
     with open(yaml_file_path, 'r') as file:
@@ -61,7 +61,7 @@ def convert_yaml_to_tools_dict(yaml_file_path):
 
 
 if __name__ == '__main__':
-    yaml_file_path = os.path.abspath('demos/employee_details_copilot/bolt_config.yaml')
+    yaml_file_path = os.path.abspath('demos/function_calling/arch_config.yaml')
     tools_dict = convert_yaml_to_tools_dict(yaml_file_path)
 
     print(json.dumps(tools_dict, indent=2), "\n\n\n")
