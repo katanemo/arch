@@ -1,4 +1,3 @@
-import random
 from typing import List
 from fastapi import FastAPI, HTTPException, Response
 import logging
