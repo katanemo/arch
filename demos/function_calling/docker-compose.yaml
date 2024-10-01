@@ -1,3 +1,9 @@
+
+x-variables: &common-vars
+  environment:
+    - MODE=${MODE:-cloud}  # Set the default mode to 'cloud', others values are local-gpu, local-cpu
+
+
 services:
 
   arch:
@@ -13,6 +19,8 @@ services:
       - ./arch_log:/var/log/
       - ./arch_config.yaml:/config/arch_config.yaml
     depends_on:
+      # config_generator:
+      #   condition: service_completed_successfully
       model_server:
         condition: service_healthy
     environment:
@@ -31,14 +39,15 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./arch_config.yaml:/root/arch_config.yaml
+    << : *common-vars
     environment:
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
+      - FC_URL=${FC_URL:-empty}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
-      # use ollama endpoint that is hosted by host machine (no virtualization)
+      - MODE=${MODE:-cloud}
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
       # - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
-
   api_server:
     build:
       context: api_server
