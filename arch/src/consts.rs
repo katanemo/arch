@@ -7,6 +7,6 @@ pub const USER_ROLE: &str = "user";
 pub const GPT_35_TURBO: &str = "gpt-3.5-turbo";
 pub const ARC_FC_CLUSTER: &str = "arch_fc";
 pub const ARCH_FC_REQUEST_TIMEOUT_MS: u64 = 120000; // 2 minutes
-pub const MODEL_SERVER_NAME: &str = "model_server";
+pub const MODEL_SERVER_NAME: &str = "archgw_model_server";
 pub const ARCH_ROUTING_HEADER: &str = "x-arch-llm-provider";
 pub const ARCH_MESSAGES_KEY: &str = "arch_messages";

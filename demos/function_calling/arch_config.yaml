@@ -32,10 +32,13 @@ prompt_targets:
       - name: city
         required: true
         description: The city for which the weather forecast is requested.
+        type: string
       - name: days
         description: The number of days for which the weather forecast is requested.
+        type: integer
       - name: units
         description: The units in which the weather forecast is requested.
+        type: string
     endpoint:
       name: api_server
       path: /weather
@@ -50,17 +53,16 @@ prompt_targets:
       - name: timezone
         description: The city for which the weather forecast is requested.
         default: US/Pacific
+        type: string
     endpoint:
       name: api_server
       path: /current_time
-      method: Get
     system_prompt: |
       You are a helpful system time provider. Use system time data that is provided to you. Please following following guidelines when responding to user queries:
       - Use 12 hour time format
       - Use AM/PM for time
 
   - name: insurance_claim_details
-    type: function_resolver
     description: This function resolver provides insurance claim details for a given policy number.
     parameters:
       - name: policy_number
