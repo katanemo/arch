@@ -3,6 +3,7 @@ from fastapi import FastAPI, Response
 from datetime import datetime, date, timedelta, timezone
 import logging
 from pydantic import BaseModel
+import pytz
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -56,3 +57,19 @@ async def insurance_claim_details(req: InsuranceClaimDetailsRequest, res: Respon
     }
 
     return claim_details
+
+@app.get("/current_time")
+async def current_time(timezone: str):
+    tz = None
+    try:
+      timezone.strip('"')
+      tz = pytz.timezone(timezone)
+    except pytz.exceptions.UnknownTimeZoneError:
+        return {
+            "error": "Invalid timezone: {}".format(timezone)
+        }
+    current_time = datetime.now(tz)
+    return {
+        "timezone": timezone,
+        "current_time": current_time.strftime("%Y-%m-%d %H:%M:%S %Z")
+    }

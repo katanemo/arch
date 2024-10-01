@@ -13,3 +13,6 @@ openvino
 psutil
 pandas
 dateparser
+openai
+pandas
+tf-keras

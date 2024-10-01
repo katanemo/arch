@@ -151,11 +151,16 @@ pub mod open_ai {
         fn from(s: String) -> Self {
             match s.as_str() {
                 "int" => ParameterType::Int,
+                "integer" => ParameterType::Int,
                 "float" => ParameterType::Float,
                 "bool" => ParameterType::Bool,
+                "boolean" => ParameterType::Bool,
+                "str" => ParameterType::String,
                 "string" => ParameterType::String,
                 "list" => ParameterType::List,
+                "array" => ParameterType::List,
                 "dict" => ParameterType::Dict,
+                "dictionary" => ParameterType::Dict,
                 _ => ParameterType::String,
             }
         }

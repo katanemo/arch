@@ -1,43 +1,28 @@
 services:
-  envoy:
-    image: envoyproxy/envoy:v1.30-latest
-    hostname: envoy
+  archgw:
+    build:
+      context: ../
+      dockerfile: arch/Dockerfile
     ports:
       - "10000:10000"
-      - "19901:9901"
+      - "18080:9901"
     volumes:
-      - ./envoy.yaml:/etc/envoy/envoy.yaml
-      - ./target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins
+      - ${ARCH_CONFIG_FILE}:/config/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+      - ./arch_log:/var/log/
     depends_on:
-      qdrant:
-        condition: service_started
-      embeddingserver:
+      model_server:
         condition: service_healthy
 
-  embeddingserver:
+  model_server:
     build:
-      context: ../embedding-server
+      context: ../model_server
       dockerfile: Dockerfile
     ports:
-      - "18080:80"
+      - "18081:80"
     healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        test: ["CMD", "curl" ,"http://localhost/healthz"]
         interval: 5s
         retries: 20
-
-  qdrant:
-    image: qdrant/qdrant
-    hostname: vector-db
-    ports:
-      - 16333:6333
-      - 16334:6334
-
-  chatbot-ui:
-    build:
-      context: ../chatbot-ui
-      dockerfile: Dockerfile
-    ports:
-      - "18080:8080"
-    environment:
-      - CHAT_COMPLETION_ENDPOINT=http://envoy:10000/v1
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface

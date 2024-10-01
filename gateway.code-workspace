@@ -13,20 +13,8 @@
       "path": "model_server"
     },
     {
-      "name": "function_resolver",
-      "path": "function_resolver"
-    },
-    {
       "name": "chatbot_ui",
       "path": "chatbot_ui"
-    },
-    {
-      "name": "open-message-format",
-      "path": "open-message-format"
-    },
-    {
-      "name": "config_generator",
-      "path": "config_generator"
     },
     {
       "name": "demos/function_calling",
