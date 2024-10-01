@@ -1,6 +1,8 @@
+
 x-variables: &common-vars
   environment:
     - MODE=${MODE:-cloud}  # Set the default mode to 'cloud', others values are local-gpu, local-cpu
+
 
 services:
 
@@ -24,6 +26,7 @@ services:
       - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
+      - ./arch_config.yaml:/root/arch_config.yaml
     depends_on:
       # config_generator:
       #   condition: service_completed_successfully
@@ -45,8 +48,8 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./arch_config.yaml:/root/arch_config.yaml
+    << : *common-vars
     environment:
-      - <<: *common-vars
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       - FC_URL=${FC_URL:-empty}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
