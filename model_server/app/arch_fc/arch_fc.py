@@ -1,9 +1,9 @@
 import json
 import random
 from fastapi import FastAPI, Response
-from arch_handler import ArchHandler
-from bolt_handler import BoltHandler
-from common import ChatMessage
+from app.arch_fc.arch_handler import ArchHandler
+from app.arch_fc.bolt_handler import BoltHandler
+from app.arch_fc.common import ChatMessage
 import logging
 import yaml
 from openai import OpenAI
@@ -29,7 +29,7 @@ else:
     handler = BoltHandler()
 
 
-app = FastAPI()
+# app = FastAPI()
 
 if mode == "cloud":
     client = OpenAI(
@@ -52,12 +52,7 @@ logger.info(f"using model: {chosen_model}")
 logger.info(f"using endpoint: {endpoint}")
 
 
-@app.get("/healthz")
-async def healthz():
-    return {"status": "ok"}
 
-
-@app.post("/v1/chat/completions")
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
     tools_encoded = handler._format_system(req.tools)

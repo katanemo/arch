@@ -5,15 +5,15 @@ services:
       context: ../../
       dockerfile: config_generator/Dockerfile
     volumes:
-      - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./bolt_config.yaml:/usr/src/app/bolt_config.yaml
+      - ../../arch/envoy.template.yaml:/usr/src/app/envoy.template.yaml
+      - ./arch_config.yaml:/usr/src/app/arch_config.yaml
       - ./generated:/usr/src/app/out
 
-  bolt:
+  arch:
     build:
       context: ../../
-      dockerfile: envoyfilter/Dockerfile
-    hostname: bolt
+      dockerfile: arch/Dockerfile
+    hostname: arch
     ports:
       - "10000:10000"
       - "19901:9901"
@@ -28,7 +28,7 @@ services:
     environment:
       - LOG_LEVEL=debug
 
-  model_server:
+  archgw_model_server:
     build:
       context: ../../model_server
       dockerfile: Dockerfile
@@ -40,7 +40,7 @@ services:
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
-      - ./bolt_config.yaml:/root/bolt_config.yaml
+      - ./arch_config.yaml:/root/arch_config.yaml
 
   api_server:
     build:
@@ -108,7 +108,7 @@ services:
       - "18080:8080"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
-      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1
+      - CHAT_COMPLETION_ENDPOINT=http://arch:10000/v1
 
   prometheus:
     image: prom/prometheus

@@ -32,13 +32,12 @@ services:
     environment:
       - LOG_LEVEL=debug
 
-  model_server:
+  archgw_model_server:
     build:
       context: ../../model_server
       dockerfile: Dockerfile
     ports:
       - "18081:80"
-    <<: *common-vars
     healthcheck:
         test: ["CMD", "curl" ,"http://localhost/healthz"]
         interval: 5s
@@ -46,22 +45,8 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./arch_config.yaml:/root/arch_config.yaml
-
-  function_resolver:
-    build:
-      context: ../../function_resolver
-      dockerfile: Dockerfile
-    ports:
-      - "18082:80"
     <<: *common-vars
-    healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
-        interval: 5s
-        retries: 20
-    volumes:
-      - ~/.cache/huggingface:/root/.cache/huggingface
     environment:
-      # use ollama endpoint that is hosted by host machine (no virtualization)
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       - FC_URL=${FC_URL:}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
