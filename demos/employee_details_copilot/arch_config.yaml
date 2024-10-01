@@ -1,17 +1,28 @@
-default_prompt_endpoint: "127.0.0.1"
-load_balancing: "round_robin"
-timeout_ms: 5000
+version: "0.1-beta"
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
+endpoints:
+  api_server:
+    endpoint: api_server:80
+    connect_timeout: 0.005s
+
+llm_providers:
+  - name: open-ai-gpt-4
+    access_key: $OPEN_AI_API_KEY
+    model: gpt-4
+    default: true
 
 overrides:
   # confidence threshold for prompt target intent matching
   prompt_target_intent_matching_threshold: 0.7
 
-llm_providers:
-
-  - name: open-ai-gpt-4
-    api_key: $OPEN_AI_API_KEY
-    model: gpt-4
-    default: true
+system_prompt: |
+  You are a helpful assistant.
 
 prompt_targets:
 
@@ -177,3 +188,11 @@ prompt_targets:
       path: /certifications_experience
     system_prompt: |
       You are responsible for fetching employees who have the required certifications and meet the minimum years of experience. Optionally, filter by department.
+ratelimits:
+  - provider: gpt-3.5-turbo
+    selector:
+      key: selector-key
+      value: selector-value
+    limit:
+      tokens: 1
+      unit: minute
