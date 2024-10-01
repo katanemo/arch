@@ -51,7 +51,7 @@ def generate_full_config(module):
 
 
 def replace_prompt_targets_in_config(file_path, new_prompt_targets):
-    # Load the existing bolt_config.yaml
+    # Load the existing arch_config.yaml
     with open(file_path, 'r') as file:
         config_data = yaml.safe_load(file)
 
@@ -59,20 +59,20 @@ def replace_prompt_targets_in_config(file_path, new_prompt_targets):
     config_data['prompt_targets'] = new_prompt_targets
 
     # Write the updated config back to the YAML file
-    with open("bolt_config.yaml", 'w+') as file:
+    with open("arch_config.yaml", 'w+') as file:
         yaml.dump(config_data, file, sort_keys=False)
 
-    print(f"Updated prompt_targets in bolt_config.yaml")
+    print(f"Updated prompt_targets in arch_config.yaml")
 
 
 # Main execution
 if __name__ == "__main__":
-    # Path to the existing bolt_config.yaml two directories up
-    bolt_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../bolt_config.yaml'))
+    # Path to the existing arch_config.yaml two directories up
+    arch_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../arch_config.yaml'))
 
     # Generate new prompt_targets from the functions module
     new_config = generate_full_config(functions)
     new_prompt_targets = new_config['prompt_targets']
 
-    # Replace the prompt_targets in the existing bolt_config.yaml
-    replace_prompt_targets_in_config(bolt_config_path, new_prompt_targets)
+    # Replace the prompt_targets in the existing arch_config.yaml
+    replace_prompt_targets_in_config(arch_config_path, new_prompt_targets)

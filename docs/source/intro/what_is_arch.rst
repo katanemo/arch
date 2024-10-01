@@ -15,7 +15,7 @@ in a centralized way.
 
 **The project was born out of the belief that:**
 
-  *Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests 
+  *Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests
   including secure handling, intelligent routing, robust observability, and integration with backend (API)
   systems for personalization - all outside business logic.*
 
@@ -39,10 +39,10 @@ functionality exclusively for prompts and LLMs. This gives Arch several advantag
 * Arch works with any application language. A single Arch deployment can act as gateway for AI applications
   written in Python, Java, C++, Go, Php, etc.
 
-* Arch can be deployed and upgraded quickly across your infrastructure transparently without the horrid pain 
+* Arch can be deployed and upgraded quickly across your infrastructure transparently without the horrid pain
   of deploying library upgrades in your applications.
 
-**Engineered with Fast LLMs:** Arch is engineered with specialized (sub-billion) LLMs that are desgined for 
+**Engineered with Fast LLMs:** Arch is engineered with specialized (sub-billion) LLMs that are desgined for
 fast, cost-effective and acurrate handling of prompts. These :ref:`LLMs <llms_in_arch>` are designed to be
 best-in-class for critcal prompt-related tasks like:
 
@@ -51,7 +51,7 @@ best-in-class for critcal prompt-related tasks like:
   you want to expose to users to perform tasks, gather information, or manipulate data. With function calling,
   you have flexibility to support "agentic" experiences tailored to specific use cases - from updating insurance
   claims to creating ad campaigns - via prompts. Arch analyzes prompts, extracts critical information from
-  prompts, engages in lightweight conversation to gather any missing parameters and makes API calls so that you can 
+  prompts, engages in lightweight conversation to gather any missing parameters and makes API calls so that you can
   focus on writing business logic. For more details, read :ref:`prompt processing <arch_overview_prompt_handling>`.
 
 * **Prompt Guardrails:** Arch helps you improve the safety of your application by applying prompt guardrails in
@@ -83,8 +83,8 @@ critical aspects of your application: latency, token usage, and error rates by a
 measures the speed at which your application is responding to users, which includes metrics like time to first
 token (TFT), time per output token (TOT) metrics, and the total latency as perceived by users.
 
-**End-to-End Tracing:** Arch propagates trace context using the W3C Trace Context standard, specifically through 
-the ``traceparent`` header. This allows each component in the system to record its part of the request flow, 
+**End-to-End Tracing:** Arch propagates trace context using the W3C Trace Context standard, specifically through
+the ``traceparent`` header. This allows each component in the system to record its part of the request flow,
 enabling **end-to-end tracing** across the entire application. By using OpenTelemetry, Arch ensures that
 developers can capture this trace data consistently and in a format compatible with various observability tools.
 For more details, read :ref:`tracing <arch_overview_tracing>`.

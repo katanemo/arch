@@ -6,8 +6,8 @@ listener:
 system_prompts:
   - name: network_assistant
     content: You are a network assistant that just offers facts about the operational health of the network
-    
-llm_providers: 
+
+llm_providers:
     - name: "OpenAI"
       access_key: $OPEN_AI_KEY
       model: gpt-4o
@@ -15,8 +15,8 @@ llm_providers:
 
 prompt_targets:
   - name: get_device_statistics
-    description: > 
-      This prompt target ensures that when users request device-related statistics, the system accurately retrieves and presents the relevant data 
+    description: >
+      This prompt target ensures that when users request device-related statistics, the system accurately retrieves and presents the relevant data
       based on the specified devices and time range. Examples of user prompts, include:
 
       - "Show me the performance stats for device 12345 over the past week."
