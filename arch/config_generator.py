@@ -3,8 +3,8 @@ from jinja2 import Environment, FileSystemLoader
 import yaml
 
 ENVOY_CONFIG_TEMPLATE_FILE = os.getenv('ENVOY_CONFIG_TEMPLATE_FILE', 'envoy.template.yaml')
-ARCH_CONFIG_FILE = os.getenv('ARCH_CONFIG_FILE', 'arch_config.yaml')
-ENVOY_CONFIG_FILE_RENDERED = os.getenv('ENVOY_CONFIG_FILE_RENDERED', '/usr/src/app/out/envoy.yaml')
+ARCH_CONFIG_FILE = os.getenv('ARCH_CONFIG_FILE', '/config/arch_config.yaml')
+ENVOY_CONFIG_FILE_RENDERED = os.getenv('ENVOY_CONFIG_FILE_RENDERED', '/etc/envoy/envoy.yaml')
 
 env = Environment(loader=FileSystemLoader('./'))
 template = env.get_template('envoy.template.yaml')

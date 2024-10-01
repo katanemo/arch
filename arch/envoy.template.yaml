@@ -132,20 +132,20 @@ static_resources:
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
           sni: api.mistral.ai
-    - name: model_server
+    - name: archgw_model_server
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: model_server
+        cluster_name: archgw_model_server
         endpoints:
           - lb_endpoints:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
+                      address: archgw_model_server
                       port_value: 80
-                  hostname: "model_server"
+                  hostname: "archgw_model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS

@@ -141,7 +141,7 @@ impl FilterContext {
         ) {
             Ok(token_id) => token_id,
             Err(e) => {
-                panic!("Error dispatching HTTP call: {:?}", e);
+                panic!("Error dispatching HTTP call: {}, error: {:?}", MODEL_SERVER_NAME, e);
             }
         };
         token_id
