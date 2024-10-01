@@ -26,8 +26,8 @@ system_prompt: |
 
 prompt_targets:
 
-  - type: function_resolver
-    name: top_employees
+  - name: top_employees
+    type: function_resolver
     description: |
       Allows you to find the top employees in different groups, such as departments, locations, or position. You can rank the employees by different criteria, like salary, yoe, or rating. Returns the best-ranked employees for each group, helping you identify top n in the list.
     parameters:
@@ -55,8 +55,8 @@ prompt_targets:
     system_prompt: |
       You are responsible for retrieving the top N employees per group ranked by a constraint.
 
-  - type: function_resolver
-    name: aggregate_stats
+  - name: aggregate_stats
+    type: function_resolver
     description: |
        Calculate summary statistics for groups of employees. You can group employees by categories like department or location and then compute totals, averages, or other statistics for specific attributes such as salary or years of experience.
     parameters:
@@ -85,8 +85,8 @@ prompt_targets:
       You help calculate summary statistics for groups of employees. First, organize the employees by the specified grouping (e.g., department, location, or position). Then, compute the requested statistic (e.g., total, average, minimum, or maximum) for a specific attribute like salary, experience, or rating.
 
   # Top Employees by Performance, Projects, and Timeframe
-  - type: function_resolver
-    name: employees_projects
+  - name: employees_projects
+    type: function_resolver
     description: |
       Fetch employees with the highest performance scores, considering their project participation and years of experience. You can filter by minimum performance score, years of experience, and department. Optionally, you can also filter by recent project participation within the last Y months.
     parameters:
@@ -119,8 +119,8 @@ prompt_targets:
       You are responsible for retrieving the top N employees ranked by performance and project participation. Use filters for experience and optional project criteria.
 
   # Employees with Salary Growth Since Last Promotion
-  - type: function_resolver
-    name: salary_growth
+  - name: salary_growth
+    type: function_resolver
     description: |
       Fetch employees with the highest salary growth since their last promotion, grouped by department. You can filter by a minimum salary increase percentage and department.
     parameters:
@@ -140,8 +140,8 @@ prompt_targets:
       You are responsible for retrieving employees with the highest salary growth since their last promotion. Filter by minimum salary increase percentage and department.
 
   # Employees with Promotions and Salary Increases by Year
-  - type: function_resolver
-    name: promotions_increases
+  - name: promotions_increases
+    type: function_resolver
     description: |
       Fetch employees who were promoted and received a salary increase in a specific year, grouped by department. You can optionally filter by minimum percentage salary increase and department.
     parameters:
@@ -166,8 +166,8 @@ prompt_targets:
       You are responsible for fetching employees who were promoted and received a salary increase in a specific year. Apply filters for salary increase percentage and department.
 
   # Employees by Certification and Years of Experience
-  - type: function_resolver
-    name: certifications_experience
+  - name: certifications_experience
+    type: function_resolver
     description: |
       Fetch employees who have all the required certifications and meet the minimum years of experience. You can filter by department and provide a list of certifications to match.
     parameters:
