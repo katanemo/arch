@@ -34,7 +34,7 @@ else:
 if mode == "cloud":
     client = OpenAI(
         base_url=fc_url,
-        api_key=arch_api_key,
+        api_key="EMPTY",
     )
     models = client.models.list()
     model = models.data[0].id

@@ -4,14 +4,14 @@ x-variables: &common-vars
 
 services:
 
-  config_generator:
-    build:
-      context: ../../
-      dockerfile: config_generator/Dockerfile
-    volumes:
-      - ../../arch/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./arch_config.yaml:/usr/src/app/arch_config.yaml
-      - ./generated:/usr/src/app/out
+  # config_generator:
+  #   build:
+  #     context: ../../
+  #     dockerfile: config_generator/Dockerfile
+  #   volumes:
+  #     - ../../arch/envoy.template.yaml:/usr/src/app/envoy.template.yaml
+  #     - ./arch_config.yaml:/usr/src/app/arch_config.yaml
+  #     - ./generated:/usr/src/app/out
 
   arch:
     build:
@@ -25,9 +25,9 @@ services:
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
     depends_on:
-      config_generator:
-        condition: service_completed_successfully
-      model_server:
+      # config_generator:
+      #   condition: service_completed_successfully
+      archgw_model_server:
         condition: service_healthy
     environment:
       - LOG_LEVEL=debug
@@ -48,7 +48,7 @@ services:
     <<: *common-vars
     environment:
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
-      - FC_URL=${FC_URL:}
+      - FC_URL=${FC_URL:-empty}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
       - MODE=${MODE:-cloud}
       # uncomment following line to use ollama endpoint that is hosted by docker

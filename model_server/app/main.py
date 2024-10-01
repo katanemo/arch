@@ -26,6 +26,8 @@ zero_shot_models = load_zero_shot_models()
 
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
+with open('/root/arch_config.yaml') as f:
+    config = yaml.safe_load(f)
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")
 if mode not in ['cloud', 'local-gpu', 'local-cpu']:
@@ -44,7 +46,7 @@ if "prompt_guards" in config.keys():
     )
     toxic_model = None
 
-guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
+    guard_handler = GuardHandler(toxic_model=toxic_model, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
 
