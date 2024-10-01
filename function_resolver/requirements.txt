@@ -1,4 +1,0 @@
-fastapi
-uvicorn
-PyYAML
-openai
