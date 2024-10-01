@@ -18,7 +18,7 @@ services:
       context: ../../
       dockerfile: arch/Dockerfile
     ports:
-      - "10001:10000"
+      - "10000:10000"
       - "19901:9901"
     volumes:
       - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
