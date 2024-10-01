@@ -1,9 +1,9 @@
 import json
 import random
 from fastapi import FastAPI, Response
-from arch_handler import ArchHandler
-from bolt_handler import BoltHandler
-from common import ChatMessage
+from app.arch_fc.arch_handler import ArchHandler
+from app.arch_fc.bolt_handler import BoltHandler
+from app.arch_fc.common import ChatMessage
 import logging
 from openai import OpenAI
 import os
@@ -21,7 +21,7 @@ else:
 logger.info(f"using model: {ollama_model}")
 logger.info(f"using ollama endpoint: {ollama_endpoint}")
 
-app = FastAPI()
+# app = FastAPI()
 
 client = OpenAI(
     base_url='http://{}:11434/v1/'.format(ollama_endpoint),
@@ -30,14 +30,7 @@ client = OpenAI(
     api_key='ollama',
 )
 
-@app.get("/healthz")
-async def healthz():
-    return {
-        "status": "ok"
-    }
 
-
-@app.post("/v1/chat/completions")
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
     tools_encoded = handler._format_system(req.tools)

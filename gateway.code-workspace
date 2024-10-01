@@ -13,10 +13,6 @@
       "path": "model_server"
     },
     {
-      "name": "function_resolver",
-      "path": "function_resolver"
-    },
-    {
       "name": "chatbot_ui",
       "path": "chatbot_ui"
     },

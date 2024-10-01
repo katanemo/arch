@@ -171,7 +171,7 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: function_resolver
+                      address: model_server
                       port_value: 80
                   hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}

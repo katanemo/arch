@@ -3,8 +3,8 @@ import sentence_transformers
 from gliner import GLiNER
 from transformers import AutoTokenizer, pipeline
 import sqlite3
-from employee_data_generator import generate_employee_data
-from network_data_generator import (
+from app.employee_data_generator import generate_employee_data
+from app.network_data_generator import (
     generate_device_data,
     generate_interface_stats_data,
     generate_flow_data,
