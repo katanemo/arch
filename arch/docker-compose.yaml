@@ -11,10 +11,10 @@ services:
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
     depends_on:
-      archgw_model_server:
+      model_server:
         condition: service_healthy
 
-  archgw_model_server:
+  model_server:
     build:
       context: ../model_server
       dockerfile: Dockerfile

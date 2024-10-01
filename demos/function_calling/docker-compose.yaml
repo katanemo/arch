@@ -1,14 +1,5 @@
 services:
 
-  config_generator:
-    build:
-      context: ../../
-      dockerfile: config_generator/Dockerfile
-    volumes:
-      - ../../arch/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./arch_config.yaml:/usr/src/app/arch_config.yaml
-      - ./generated:/usr/src/app/out
-
   arch:
     build:
       context: ../../
@@ -21,14 +12,12 @@ services:
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
     depends_on:
-      config_generator:
-        condition: service_completed_successfully
       model_server:
         condition: service_healthy
     environment:
       - LOG_LEVEL=debug
 
-  archgw_model_server:
+  model_server:
     build:
       context: ../../model_server
       dockerfile: Dockerfile
