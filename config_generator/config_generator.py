@@ -60,7 +60,7 @@ data = {
 }
 
 rendered = template.render(data)
-# print(rendered)
-# print(ENVOY_CONFIG_FILE_RENDERED)
-# with open(ENVOY_CONFIG_FILE_RENDERED, 'w') as file:
-#     file.write(rendered)
+print(rendered)
+print(ENVOY_CONFIG_FILE_RENDERED)
+with open(ENVOY_CONFIG_FILE_RENDERED, 'w') as file:
+    file.write(rendered)

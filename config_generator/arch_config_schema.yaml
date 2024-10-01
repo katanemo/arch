@@ -14,6 +14,7 @@ properties:
         type: string
       connect_timeout:
         type: string
+    additionalProperties: false
     required:
       - address
       - port
@@ -27,6 +28,7 @@ properties:
             type: string
           connect_timeout:
             type: string
+        additionalProperties: false
         required:
           - endpoint
   llm_providers:
@@ -42,6 +44,7 @@ properties:
           type: string
         default:
           type: boolean
+      additionalProperties: false
       required:
         - name
         - access_key
@@ -71,6 +74,7 @@ properties:
             properties:
               name:
                 type: string
+              additionalProperties: false
               required:
                 type: boolean
               default:
@@ -79,6 +83,7 @@ properties:
                 type: string
               type:
                 type: string
+            additionalProperties: false
             required:
               - name
               - description
@@ -90,11 +95,13 @@ properties:
               type: string
             path:
               type: string
+          additionalProperties: false
           required:
             - name
             - path
         system_prompt:
           type: string
+      additionalProperties: false
       required:
         - name
         - description
@@ -112,6 +119,7 @@ properties:
               type: string
             value:
               type: string
+          additionalProperties: false
           required:
             - key
             - value
@@ -122,13 +130,16 @@ properties:
               type: integer
             unit:
               type: string
+          additionalProperties: false
           required:
             - tokens
             - unit
+      additionalProperties: false
       required:
         - provider
         - selector
         - limit
+additionalProperties: false
 required:
   - version
   - listener
