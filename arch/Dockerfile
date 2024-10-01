@@ -21,5 +21,6 @@ COPY arch/requirements.txt .
 RUN pip install -r requirements.txt
 COPY arch/config_generator.py .
 COPY arch/envoy.template.yaml .
+COPY arch/arch_config_schema.yaml .
 
 CMD ["sh", "-c", "python config_generator.py && envoy -c /etc/envoy/envoy.yaml --component-log-level wasm:debug"]

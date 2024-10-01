@@ -30,7 +30,7 @@ ENV MODELS="BAAI/bge-large-en-v1.5"
 
 COPY --from=builder /runtime /usr/local
 
-COPY /app /app
+COPY ./ /app
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
@@ -44,4 +44,4 @@ RUN apt-get update && apt-get install -y \
 # RUN python install.py && \
 #   find /root/.cache/torch/sentence_transformers/ -name onnx -exec rm -rf {} +
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]

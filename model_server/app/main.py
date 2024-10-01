@@ -1,16 +1,19 @@
+import os
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
-from load_models import (
+from app.load_models import (
     load_transformers,
     load_guard_model,
     load_zero_shot_models,
 )
-from utils import GuardHandler, split_text_into_chunks
+from app.utils import GuardHandler, split_text_into_chunks
 import torch
 import yaml
 import string
 import time
 import logging
+from app.arch_fc.arch_fc import chat_completion as arch_fc_chat_completion, ChatMessage
+import os.path
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

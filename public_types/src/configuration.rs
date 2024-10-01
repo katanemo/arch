@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use duration_string::DurationString;
-use serde::{Deserialize, Serialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
