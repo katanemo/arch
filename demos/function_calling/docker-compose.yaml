@@ -1,6 +1,6 @@
 x-variables: &common-vars
   environment:
-    - MODE=${MODE:-cloud}  # Set the default mode to 'cloud'
+    - MODE=${MODE:-cloud}  # Set the default mode to 'cloud', others values are local-gpu, local-cpu
 
 services:
 
@@ -63,8 +63,7 @@ services:
     environment:
       # use ollama endpoint that is hosted by host machine (no virtualization)
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
-      - ARCH_API_KEY=${ARCH_API_KEY:?error}
-      - FC_URL=${FC_URL:?error}
+      - FC_URL=${FC_URL:}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
       - MODE=${MODE:-cloud}
       # uncomment following line to use ollama endpoint that is hosted by docker
