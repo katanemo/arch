@@ -28,7 +28,7 @@ services:
     environment:
       - LOG_LEVEL=debug
 
-  archgw_model_server:
+  model_server:
     build:
       context: ../../model_server
       dockerfile: Dockerfile
