@@ -41,23 +41,10 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./arch_config.yaml:/root/arch_config.yaml
-
-  function_resolver:
-    build:
-      context: ../../function_resolver
-      dockerfile: Dockerfile
-    ports:
-      - "18082:80"
-    healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
-        interval: 5s
-        retries: 20
-    volumes:
-      - ~/.cache/huggingface:/root/.cache/huggingface
     environment:
-      # use ollama endpoint that is hosted by host machine (no virtualization)
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
+      # use ollama endpoint that is hosted by host machine (no virtualization)
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
       # - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
