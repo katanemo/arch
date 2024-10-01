@@ -524,32 +524,17 @@ impl StreamContext {
         debug!("tool_params: {}", tool_params_json_str);
 
         let endpoint = prompt_target.endpoint.unwrap();
-        let mut path = endpoint.path.unwrap_or(String::from("/"));
-        let method = endpoint
-            .method
-            .unwrap_or(public_types::configuration::Method::Post);
-        let mut body = Some(tool_params_json_str.as_bytes());
-        if method == public_types::configuration::Method::Post {
-            let mut query_params = vec![];
-            for (key, value) in tool_params {
-                query_params.push(format!("{}={}", key, format!("{:?}", value)));
-            }
-            let path_args = &query_params.join("&");
-            path.push_str("?");
-            path.push_str(path_args);
-        } else {
-            body = None;
-        }
+        let path: String = endpoint.path.unwrap_or(String::from("/"));
         let token_id = match self.dispatch_http_call(
             &endpoint.name,
             vec![
-                (":method", method.to_string().as_str()),
+                (":method", "POST"),
                 (":path", path.as_ref()),
                 (":authority", endpoint.name.as_str()),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
             ],
-            body,
+            Some(tool_params_json_str.as_bytes()),
             vec![],
             Duration::from_secs(5),
         ) {
