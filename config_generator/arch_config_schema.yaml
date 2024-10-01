@@ -1,0 +1,136 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+type: object
+properties:
+  version:
+    type: string
+  listener:
+    type: object
+    properties:
+      address:
+        type: string
+      port:
+        type: integer
+      message_format:
+        type: string
+      connect_timeout:
+        type: string
+    required:
+      - address
+      - port
+  endpoints:
+    type: object
+    patternProperties:
+      "^.*$":
+        type: object
+        properties:
+          endpoint:
+            type: string
+          connect_timeout:
+            type: string
+        required:
+          - endpoint
+  llm_providers:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        access_key:
+          type: string
+        model:
+          type: string
+        default:
+          type: boolean
+      required:
+        - name
+        - access_key
+        - model
+  overrides:
+    type: object
+    properties:
+      prompt_target_intent_matching_threshold:
+        type: number
+  system_prompt:
+    type: string
+  prompt_targets:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        default:
+          type: boolean
+        description:
+          type: string
+        parameters:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              required:
+                type: boolean
+              default:
+                type: string
+              description:
+                type: string
+              type:
+                type: string
+            required:
+              - name
+              - description
+              - type
+        endpoint:
+          type: object
+          properties:
+            name:
+              type: string
+            path:
+              type: string
+          required:
+            - name
+            - path
+        system_prompt:
+          type: string
+      required:
+        - name
+        - description
+  ratelimits:
+    type: array
+    items:
+      type: object
+      properties:
+        provider:
+          type: string
+        selector:
+          type: object
+          properties:
+            key:
+              type: string
+            value:
+              type: string
+          required:
+            - key
+            - value
+        limit:
+          type: object
+          properties:
+            tokens:
+              type: integer
+            unit:
+              type: string
+          required:
+            - tokens
+            - unit
+      required:
+        - provider
+        - selector
+        - limit
+required:
+  - version
+  - listener
+  - llm_providers
+  - prompt_targets
