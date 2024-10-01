@@ -7,14 +7,17 @@ overrides:
   prompt_target_intent_matching_threshold: 0.6
 
 llm_providers:
-
   - name: open-ai-gpt-4
     api_key: $OPEN_AI_API_KEY
+    provider: openai
     model: gpt-4
     default: true
+  - name: mistral-large-latest
+    api_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: large-latest
 
 prompt_targets:
-
   - type: function_resolver
     name: weather_forecast
     description: This function provides realtime weather forecast information for a given city.

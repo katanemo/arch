@@ -83,6 +83,7 @@ pub struct EmbeddingProviver {
 pub struct LlmProvider {
     pub name: String,
     pub api_key: Option<String>,
+    pub provider: String,
     pub model: String,
     pub default: Option<bool>,
     pub endpoint: Option<EnpointType>,
