@@ -1,0 +1,8 @@
+params:
+  temperature: 0.0001
+  top_p : 0.5
+  repetition_penalty: 1.0
+  top_k: 50
+  max_tokens: 128
+  stop: ["<|im_start|>", "<|im_end|>"]
+  stop_token_ids: [151645, 151643]
