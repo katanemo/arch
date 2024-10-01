@@ -1,14 +1,5 @@
 services:
 
-  config_generator:
-    build:
-      context: ../../
-      dockerfile: config_generator/Dockerfile
-    volumes:
-      - ../../arch/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./arch_config.yaml:/usr/src/app/arch_config.yaml
-      - ./generated:/usr/src/app/out
-
   arch:
     build:
       context: ../../
@@ -21,8 +12,6 @@ services:
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
     depends_on:
-      config_generator:
-        condition: service_completed_successfully
       model_server:
         condition: service_healthy
     environment:
@@ -41,23 +30,10 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./arch_config.yaml:/root/arch_config.yaml
-
-  function_resolver:
-    build:
-      context: ../../function_resolver
-      dockerfile: Dockerfile
-    ports:
-      - "18082:80"
-    healthcheck:
-        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
-        interval: 5s
-        retries: 20
-    volumes:
-      - ~/.cache/huggingface:/root/.cache/huggingface
     environment:
-      # use ollama endpoint that is hosted by host machine (no virtualization)
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
+      # use ollama endpoint that is hosted by host machine (no virtualization)
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
       # - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M

@@ -5,12 +5,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "embedding server",
-      "cwd": "${workspaceFolder}/app",
+      "name": "model server",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["main:app","--reload", "--port", "8000"],
+      "args": ["app.main:app","--reload", "--port", "8000"],
     }
   ]
 }

@@ -6,15 +6,15 @@ services:
       context: ../../
       dockerfile: config_generator/Dockerfile
     volumes:
-      - ../../envoyfilter/envoy.template.yaml:/usr/src/app/envoy.template.yaml
-      - ./bolt_config.yaml:/usr/src/app/bolt_config.yaml
+      - ../../arch/envoy.template.yaml:/usr/src/app/envoy.template.yaml
+      - ./arch_config.yaml:/usr/src/app/arch_config.yaml
       - ./generated:/usr/src/app/out
 
-  bolt:
+  arch:
     build:
       context: ../../
-      dockerfile: envoyfilter/Dockerfile
-    hostname: bolt
+      dockerfile: arch/Dockerfile
+    hostname: arch
     ports:
       - "10000:10000"
       - "19901:9901"
@@ -41,7 +41,7 @@ services:
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
-      - ./bolt_config.yaml:/root/bolt_config.yaml
+      - ./arch_config.yaml:/root/arch_config.yaml
     # Uncomment following lines to enable GPU support
     # deploy:
     #   resources:
@@ -90,4 +90,4 @@ services:
       - "18080:8080"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CHAT_COMPLETION_ENDPOINT=http://bolt:10000/v1
+      - CHAT_COMPLETION_ENDPOINT=http://arch:10000/v1

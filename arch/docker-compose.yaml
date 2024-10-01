@@ -1,1 +1,28 @@
 services:
+  archgw:
+    build:
+      context: ../
+      dockerfile: arch/Dockerfile
+    ports:
+      - "10000:10000"
+      - "18080:9901"
+    volumes:
+      - ${ARCH_CONFIG_FILE}:/config/arch_config.yaml
+      - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+      - ./arch_log:/var/log/
+    depends_on:
+      model_server:
+        condition: service_healthy
+
+  model_server:
+    build:
+      context: ../model_server
+      dockerfile: Dockerfile
+    ports:
+      - "18081:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost/healthz"]
+        interval: 5s
+        retries: 20
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
