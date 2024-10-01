@@ -185,3 +185,8 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
         "scores": final_scores,
         "model": req.model,
     }
+
+@app.post("/v1/chat/completions")
+async def chat_completion(req: ChatMessage, res: Response):
+    result = await arch_fc_chat_completion(req, res)
+    return result
