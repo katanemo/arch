@@ -17,25 +17,28 @@ config_yaml = yaml.safe_load(katanemo_config)
 inferred_clusters = {}
 
 for prompt_target in config_yaml["prompt_targets"]:
-    cluster = prompt_target.get("endpoint", {}).get("cluster", "")
-    if cluster not in inferred_clusters:
-      inferred_clusters[cluster] = {
-          "name": cluster,
-          "address": cluster,
+    name = prompt_target.get("endpoint", {}).get("name", "")
+    if name not in inferred_clusters:
+      inferred_clusters[name] = {
+          "name": name,
           "port": 80, # default port
       }
 
 print(inferred_clusters)
 
-clusters = config_yaml.get("clusters", {})
+endpoints = config_yaml.get("endpoints", {})
 
 # override the inferred clusters with the ones defined in the config
-for name, cluster in clusters.items():
+for name, endpoint_details in endpoints.items():
     if name in inferred_clusters:
-        print("updating cluster", cluster)
-        inferred_clusters[name].update(cluster)
+        print("updating cluster", endpoint_details)
+        inferred_clusters[name].update(endpoint_details)
+        endpoint = inferred_clusters[name]['endpoint']
+        if len(endpoint.split(':')) > 1:
+            inferred_clusters[name]['endpoint'] = endpoint.split(':')[0]
+            inferred_clusters[name]['port'] = int(endpoint.split(':')[1])
     else:
-        inferred_clusters[name] = cluster
+        inferred_clusters[name] = endpoint_details
 
 print("updated clusters", inferred_clusters)
 

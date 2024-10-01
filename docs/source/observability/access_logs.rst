@@ -3,16 +3,16 @@
 Access Logging
 ==============
 
-Access logging in Arch refers to the logging of detailed information about each request and response that flows through Arch. 
-It provides visibility into the traffic passing through Arch, which is crucial for monitoring, debugging, and analyzing the 
+Access logging in Arch refers to the logging of detailed information about each request and response that flows through Arch.
+It provides visibility into the traffic passing through Arch, which is crucial for monitoring, debugging, and analyzing the
 behavior of AI applications and their interactions.
 
 Key Features of Access Logging in Arch:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* **Per-Request Logging**: 
-  Each request that passes through Arch is logged. This includes important metadata such as HTTP method, 
-  path, response status code, request duration, upstream host, and more. 
-* **Integration with Monitoring Tools**: 
+* **Per-Request Logging**:
+  Each request that passes through Arch is logged. This includes important metadata such as HTTP method,
+  path, response status code, request duration, upstream host, and more.
+* **Integration with Monitoring Tools**:
   Access logs can be exported to centralized logging systems (e.g., ELK stack or Fluentd) or used to feed monitoring and alerting systems.
 * **Structured Logging**: where each request is logged as a object, making it easier to parse and analyze using tools like Elasticsearch and Kibana.
 
