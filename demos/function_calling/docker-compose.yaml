@@ -53,6 +53,7 @@ services:
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
       - FC_URL=${FC_URL:-empty}
       - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
+      - MODE=${MODE:-cloud}
       # uncomment following line to use ollama endpoint that is hosted by docker
       # - OLLAMA_ENDPOINT=ollama
       # - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
