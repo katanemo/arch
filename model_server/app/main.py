@@ -1,17 +1,20 @@
+import os
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
-from load_models import (
+from app.load_models import (
     load_ner_models,
     load_transformers,
     load_guard_model,
     load_zero_shot_models,
 )
-from utils import GuardHandler, split_text_into_chunks
+from app.utils import GuardHandler, split_text_into_chunks
 import torch
 import yaml
 import string
 import time
 import logging
+from app.arch_fc.arch_fc import chat_completion as arch_fc_chat_completion, ChatMessage
+import os.path
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -22,8 +25,11 @@ transformers = load_transformers()
 ner_models = load_ner_models()
 zero_shot_models = load_zero_shot_models()
 
-with open("/root/arch_config.yaml", "r") as file:
-    config = yaml.safe_load(file)
+config = {}
+
+if os.path.exists("/root/arch_config.yaml"):
+  with open("/root/arch_config.yaml", "r") as file:
+      config = yaml.safe_load(file)
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
 
@@ -229,6 +235,12 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
         "scores": final_scores,
         "model": req.model,
     }
+
+
+@app.post("/v1/chat/completions")
+async def chat_completion(req: ChatMessage, res: Response):
+    result = await arch_fc_chat_completion(req, res)
+    return result
 
 
 '''

@@ -4,6 +4,5 @@ COPY config_generator/requirements.txt .
 RUN pip install -r requirements.txt
 COPY config_generator/config_generator.py .
 COPY arch/envoy.template.yaml .
-COPY arch/katanemo-config.yaml .
 
 CMD ["python", "config_generator.py"]

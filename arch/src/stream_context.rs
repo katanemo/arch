@@ -1,7 +1,7 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_ROUTING_HEADER, ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
-    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_ROUTING_HEADER, ARC_FC_CLUSTER,
+    DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO,
+    MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
 use crate::llm_providers::{LlmProvider, LlmProviders};
@@ -507,7 +507,11 @@ impl StreamContext {
             callout_context.similarity_scores
         );
         //HACK: for now we only support one tool call, we will support multiple tool calls in the future
-        let tool_params = &tool_calls[0].function.arguments;
+        let mut tool_params = tool_calls[0].function.arguments.clone();
+        tool_params.insert(
+            String::from(ARCH_MESSAGES_KEY),
+            serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
+        );
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
