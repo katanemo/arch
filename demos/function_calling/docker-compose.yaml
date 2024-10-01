@@ -17,7 +17,7 @@ services:
       - ./generated/envoy.yaml:/etc/envoy/envoy.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
-      - ./arch_config.yaml:/root/arch_config.yaml
+      - ./arch_config.yaml:/config/arch_config.yaml
     depends_on:
       # config_generator:
       #   condition: service_completed_successfully
