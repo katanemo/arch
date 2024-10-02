@@ -2,11 +2,10 @@ version: "0.1-beta"
 listener:
   address: 127.0.0.1
   port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
-  messages: hugging-face
+  message_format: huggingface
 
-system_prompts:
-- name: insurance_agent
-  content: You are an insurance assistant that just offers guidance related to car, boat, rental and home insurnace only.
+system_prompt: |
+  You are an insurance assistant that just offers guidance related to car, boat, rental and home insurnace only.
 
 llm_providers:
   - name: "OpenAI"
@@ -14,27 +13,40 @@ llm_providers:
     model: gpt-4o
     default: true
 
-prompt_endpoints:
-  - "http://127.0.0.2:8000"
-  
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+endpoints:
+  app_server:
+    # value could be ip address or a hostname with port
+    # this could also be a list of endpoints for load balancing
+    # for example endpoint: [ ip1:port, ip2:port ]
+    endpoint: "127.0.0.1:80"
+    # max time to wait for a connection to be established
+    connect_timeout: 500ms
+
 prompt_targets:
   - name: policy_qa
-    path: /policy/qa
+    endpoint:
+      name: app_server
+      path: /policy/qa
     description: "This method handles Q/A related to general issues in insurance. It forwards the conversation to the OpenAI client via a local proxy and returns the response."
     default: true
 
   - name: get_policy_coverage
-    path: /policy/coverage
     description: Retrieve the coverage details for a given policy type (car, boat, house, motorcycle).
+    endpoint:
+      name: app_server
+      path: /policy/coverage
     parameters:
     - name: policy_type
       type: str
-      description: The 
-      default_value: 'car'
+      description: The
+      default: 'car'
       required: true
 
   - name: initiate_policy
-    path: /policy/initiate
+    endpoint:
+      name: app_server
+      path: /policy/initiate
     description: Initiate policy coverage for a car, boat, house, or motorcycle.
     parameters:
     - name: policy_type
@@ -47,7 +59,9 @@ prompt_targets:
       required: false
 
   - name: update_claim
-    path: /policy/claim
+    endpoint:
+      name: app_server
+      path: /policy/claim
     description: Update the status or details of a claim.
     parameters:
     - name: claim_id
@@ -60,7 +74,9 @@ prompt_targets:
       required: false
 
   - name: update_deductible
-    path: /policy/deductible
+    endpoint:
+      name: app_server
+      path: /policy/deductible
     description: Update the deductible amount for a specific policy.
     parameters:
     - name: policy_id
@@ -71,4 +87,3 @@ prompt_targets:
       type: float
       description: Field definition from Pydantic model. Requires fixes DeductibleUpdate
       required: false
-
