@@ -33,6 +33,7 @@ endpoints:
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
 llm_providers:
   - name: "OpenAI"
+    provider: "openai"
     access_key: $OPENAI_API_KEY
     model: gpt-4o
     default: true

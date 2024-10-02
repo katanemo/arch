@@ -11,24 +11,18 @@ endpoints:
     endpoint: api_server:80
     connect_timeout: 0.005s
 
-llm_providers:
-  - name: open-ai-gpt-4
-    access_key: $OPEN_AI_API_KEY
-    model: gpt-4
-    default: true
-
 overrides:
   # confidence threshold for prompt target intent matching
   prompt_target_intent_matching_threshold: 0.6
 
 llm_providers:
   - name: open-ai-gpt-4
-    api_key: $OPEN_AI_API_KEY
+    access_key: $OPEN_AI_API_KEY
     provider: openai
     model: gpt-4
     default: true
   - name: mistral-large-latest
-    api_key: $MISTRAL_API_KEY
+    access_key: $MISTRAL_API_KEY
     provider: mistral
     model: large-latest
 
