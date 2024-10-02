@@ -62,7 +62,7 @@ pub struct StreamContext {
     response_tokens: usize,
     chat_completions_request: bool,
     llm_provider: Option<&'static LlmProvider<'static>>,
-    prompt_guards: Rc<Option<PromptGuards>>,
+    prompt_guards: Rc<PromptGuards>,
 }
 
 impl StreamContext {
@@ -70,7 +70,7 @@ impl StreamContext {
         context_id: u32,
         metrics: Rc<WasmMetrics>,
         prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
-        prompt_guards: Rc<Option<PromptGuards>>,
+        prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
     ) -> Self {
         StreamContext {
@@ -678,16 +678,15 @@ impl StreamContext {
         {
             //TODO: handle other scenarios like forward to error target
             let default_err = "Jailbreak detected. Please refrain from discussing jailbreaking.";
-            let error_msg = match self.prompt_guards.as_ref() {
-                Some(prompt_guards) => match prompt_guards
-                    .input_guards
-                    .get(&public_types::configuration::GuardType::Jailbreak)
-                {
-                    Some(jailbreak) => match jailbreak.on_exception.as_ref() {
-                        Some(on_exception_details) => match on_exception_details.message.as_ref() {
-                            Some(error_msg) => error_msg,
-                            None => default_err,
-                        },
+            let error_msg = match self
+                .prompt_guards
+                .as_ref()
+                .input_guards
+                .get(&public_types::configuration::GuardType::Jailbreak)
+            {
+                Some(jailbreak) => match jailbreak.on_exception.as_ref() {
+                    Some(on_exception_details) => match on_exception_details.message.as_ref() {
+                        Some(error_msg) => error_msg,
                         None => default_err,
                     },
                     None => default_err,
@@ -848,27 +847,8 @@ impl HttpContext for StreamContext {
             }
         };
 
-        let prompt_guards = match self.prompt_guards.as_ref() {
-            Some(prompt_guards) => {
-                debug!("prompt guards: {:?}", prompt_guards);
-                prompt_guards
-            }
-            None => {
-                let callout_context = CallContext {
-                    response_handler_type: ResponseHandlerType::ArchGuard,
-                    user_message: Some(user_message),
-                    prompt_target_name: None,
-                    request_body: deserialized_body,
-                    similarity_scores: None,
-                    up_stream_cluster: None,
-                    up_stream_cluster_path: None,
-                };
-                self.get_embeddings(callout_context);
-                return Action::Pause;
-            }
-        };
-
-        let prompt_guard_jailbreak_task = prompt_guards
+        let prompt_guard_jailbreak_task = self
+            .prompt_guards
             .input_guards
             .contains_key(&public_types::configuration::GuardType::Jailbreak);
         if !prompt_guard_jailbreak_task {

@@ -47,7 +47,7 @@ pub struct FilterContext {
     config: Option<Configuration>,
     overrides: Rc<Option<Overrides>>,
     prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
-    prompt_guards: Rc<Option<PromptGuards>>,
+    prompt_guards: Rc<PromptGuards>,
 }
 
 pub fn embeddings_store() -> &'static RwLock<HashMap<String, EmbeddingTypeMap>> {
@@ -66,7 +66,7 @@ impl FilterContext {
             metrics: Rc::new(WasmMetrics::new()),
             prompt_targets: Rc::new(RwLock::new(HashMap::new())),
             overrides: Rc::new(None),
-            prompt_guards: Rc::new(Some(PromptGuards::default())),
+            prompt_guards: Rc::new(PromptGuards::default()),
         }
     }
 
@@ -252,7 +252,7 @@ impl RootContext for FilterContext {
                 .as_mut()
                 .and_then(|config| config.prompt_guards.as_mut())
             {
-                self.prompt_guards = Rc::new(Some(std::mem::take(prompt_guards)));
+                self.prompt_guards = Rc::new(std::mem::take(prompt_guards));
             }
         }
         true
