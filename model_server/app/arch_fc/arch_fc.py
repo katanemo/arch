@@ -19,7 +19,7 @@ fc_url = os.getenv("FC_URL", ollama_endpoint)
 mode = os.getenv("MODE", "cloud")
 if mode not in ["cloud", "local-gpu", "local-cpu"]:
     raise ValueError(f"Invalid mode: {mode}")
-arch_api_key = os.getenv("ARCH_API_KEY", "")
+arch_api_key = os.getenv("ARCH_API_KEY", "vllm")
 logger = logging.getLogger("uvicorn.error")
 
 handler = None
@@ -34,7 +34,7 @@ else:
 if mode == "cloud":
     client = OpenAI(
         base_url=fc_url,
-        api_key="EMPTY",
+        api_key="vllm",
     )
     models = client.models.list()
     model = models.data[0].id
