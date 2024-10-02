@@ -27,7 +27,6 @@ system_prompt: |
 prompt_targets:
 
   - name: top_employees
-    type: function_resolver
     description: |
       Allows you to find the top employees in different groups, such as departments, locations, or position. You can rank the employees by different criteria, like salary, yoe, or rating. Returns the best-ranked employees for each group, helping you identify top n in the list.
     parameters:
@@ -50,13 +49,12 @@ prompt_targets:
         description: |
           Enter how many of the top employees you want to see in each group. For example, if you enter 3, the tool will show you the top 3 employees for each group you selected.
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /top_employees
     system_prompt: |
       You are responsible for retrieving the top N employees per group ranked by a constraint.
 
   - name: aggregate_stats
-    type: function_resolver
     description: |
        Calculate summary statistics for groups of employees. You can group employees by categories like department or location and then compute totals, averages, or other statistics for specific attributes such as salary or years of experience.
     parameters:
@@ -79,14 +77,13 @@ prompt_targets:
         type: str
         enum: [SUM, AVG, MIN, MAX]
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /aggregate_stats
     system_prompt: |
       You help calculate summary statistics for groups of employees. First, organize the employees by the specified grouping (e.g., department, location, or position). Then, compute the requested statistic (e.g., total, average, minimum, or maximum) for a specific attribute like salary, experience, or rating.
 
   # Top Employees by Performance, Projects, and Timeframe
   - name: employees_projects
-    type: function_resolver
     description: |
       Fetch employees with the highest performance scores, considering their project participation and years of experience. You can filter by minimum performance score, years of experience, and department. Optionally, you can also filter by recent project participation within the last Y months.
     parameters:
@@ -113,14 +110,13 @@ prompt_targets:
         required: false
         type: int
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /employees_projects
     system_prompt: |
       You are responsible for retrieving the top N employees ranked by performance and project participation. Use filters for experience and optional project criteria.
 
   # Employees with Salary Growth Since Last Promotion
   - name: salary_growth
-    type: function_resolver
     description: |
       Fetch employees with the highest salary growth since their last promotion, grouped by department. You can filter by a minimum salary increase percentage and department.
     parameters:
@@ -134,14 +130,13 @@ prompt_targets:
         type: str
         default: "Sales"
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /salary_growth
     system_prompt: |
       You are responsible for retrieving employees with the highest salary growth since their last promotion. Filter by minimum salary increase percentage and department.
 
   # Employees with Promotions and Salary Increases by Year
   - name: promotions_increases
-    type: function_resolver
     description: |
       Fetch employees who were promoted and received a salary increase in a specific year, grouped by department. You can optionally filter by minimum percentage salary increase and department.
     parameters:
@@ -160,14 +155,13 @@ prompt_targets:
         type: str
         default: "Engineering"
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /promotions_increases
     system_prompt: |
       You are responsible for fetching employees who were promoted and received a salary increase in a specific year. Apply filters for salary increase percentage and department.
 
   # Employees by Certification and Years of Experience
   - name: certifications_experience
-    type: function_resolver
     description: |
       Fetch employees who have all the required certifications and meet the minimum years of experience. You can filter by department and provide a list of certifications to match.
     parameters:
@@ -184,10 +178,11 @@ prompt_targets:
         required: false
         type: str
     endpoint:
-      cluster: api_server
+      name: api_server
       path: /certifications_experience
     system_prompt: |
       You are responsible for fetching employees who have the required certifications and meet the minimum years of experience. Optionally, filter by department.
+
 ratelimits:
   - provider: gpt-3.5-turbo
     selector:
