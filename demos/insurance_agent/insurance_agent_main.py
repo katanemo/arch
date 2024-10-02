@@ -9,10 +9,10 @@ openai.api_base = "http://127.0.0.1:10000/v1"  # Local proxy
 # Data models
 
 class PolicyCoverageRequest(BaseModel):
-    policy_type: str
+    policy_type: str = Field(..., description="The type of a policy held by the customer For, e.g. car, boat, house, motorcycle)")
 
 class PolicyRequest(BaseModel):
-    policy_type: str  # car, boat, house, motorcycle
+    policy_type: str = Field(..., description="The type of a policy held by the customer For, e.g. car, boat, house, motorcycle)")
     details: str  # Additional details like model, year, etc.
 
 class ClaimUpdate(BaseModel):
@@ -41,13 +41,13 @@ async def get_policy_coverage(req: PolicyCoverageRequest):
         "house": {"coverage": "Full house coverage including fire, theft, flood", "premium": 1000.0},
         "motorcycle": {"coverage": "Full motorcycle coverage with liability", "premium": 400.0},
     }
-    
+
     if req.policy_type not in policy_coverage:
         raise HTTPException(status_code=404, detail="Policy type not found")
 
     return CoverageResponse(
-        policy_type=req.policy_type, 
-        coverage=policy_coverage[req.policy_type]["coverage"], 
+        policy_type=req.policy_type,
+        coverage=policy_coverage[req.policy_type]["coverage"],
         premium=policy_coverage[req.policy_type]["premium"]
     )
 
@@ -59,7 +59,7 @@ async def initiate_policy(policy_request: PolicyRequest):
     """
     if policy_request.policy_type not in ["car", "boat", "house", "motorcycle"]:
         raise HTTPException(status_code=400, detail="Invalid policy type")
-    
+
     return {"message": f"Policy initiated for {policy_request.policy_type}", "details": policy_request.details}
 
 # Update claim details
@@ -69,7 +69,7 @@ async def update_claim(req: ClaimUpdate):
     Update the status or details of a claim.
     """
     # For simplicity, this is a mock update response
-    return {"message": f"Claim {claim_update.claim_id} for policy {claim_update.policy_id} has been updated", 
+    return {"message": f"Claim {claim_update.claim_id} for policy {claim_update.policy_id} has been updated",
             "update": claim_update.update}
 
 # Update deductible amount
@@ -79,7 +79,7 @@ async def update_deductible(deductible_update: DeductibleUpdate):
     Update the deductible amount for a specific policy.
     """
     # For simplicity, this is a mock update response
-    return {"message": f"Deductible for policy {deductible_update.policy_id} has been updated", 
+    return {"message": f"Deductible for policy {deductible_update.policy_id} has been updated",
             "new_deductible": deductible_update.new_deductible}
 
 # Post method for policy Q/A

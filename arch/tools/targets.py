@@ -50,31 +50,42 @@ def is_pydantic_model(annotation: ast.expr, tree: ast.AST) -> bool:
 def get_pydantic_model_fields(model_name: str, tree: ast.AST) -> list:
     """Extract fields from a Pydantic model."""
     fields = []
-    
+
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef) and node.name == model_name:
             for stmt in node.body:
                 if isinstance(stmt, ast.AnnAssign):
                     # Initialize the default field description
                     description = "Field, description not present. Please fix."
-                    
-                    # Check if there is a default value and if it's a call to `Field`
+                    default_value = None
+                    required = True
+
+                    # Check if the value is a Field call and extract the description
                     if isinstance(stmt.value, ast.Call) and isinstance(stmt.value.func, ast.Name) and stmt.value.func.id == 'Field':
                         # Search for the description argument inside the Field call
                         for keyword in stmt.value.keywords:
                             if keyword.arg == 'description' and isinstance(keyword.value, ast.Str):
                                 description = keyword.value.s  # Extract the string value of the description
-                                
+                            if keyword.arg == 'default':
+                                default_value = keyword.value  # Handle default values
+
+                        # Check if the value is explicitly an ellipsis (Field(...))
+                        if stmt.value.args and isinstance(stmt.value.args[0], ast.Constant) and stmt.value.args[0].value is Ellipsis:
+                            required = True
+                        else:
+                            required = False  # If there is a default value, it's not required
+
                     field_info = {
                         "name": stmt.target.id,
                         "type": stmt.annotation.id if isinstance(stmt.annotation, ast.Name) else "Unknown: Please Fix This!",
                         "description": description,  # Use extracted description
-                        "default_value": getattr(stmt, 'value', None),  # Can be enhanced further
-                        "required": not hasattr(stmt, 'value')  # If it has a default value, it's optional
+                        "default_value": default_value,  # Can be enhanced further
+                        "required": required  # Field required if no default or '...'
                     }
                     fields.append(field_info)
-                    
+
     return fields
+
 
 def get_function_parameters(node: Any, tree: Any) -> list:
     """Extract the parameters and their types from the function definition."""
@@ -82,13 +93,13 @@ def get_function_parameters(node: Any, tree: Any) -> list:
     for arg in node.args.args:
         if arg.arg != "self":  # Skip 'self' or 'cls' in class methods
             param_info = {"name": arg.arg}
-            
+
             # Handle Pydantic model types
             if is_pydantic_model(arg.annotation, tree):
                 # Extract and flatten Pydantic model fields
                 pydantic_fields = get_pydantic_model_fields(arg.annotation.id, tree)
                 parameters.extend(pydantic_fields)  # Flatten the model fields into the parameters list
-            
+
             # Handle standard Python types
             elif isinstance(arg.annotation, ast.Name):
                 if arg.annotation.id in ['int', 'float', 'bool', 'str', 'list', 'tuple', 'set', 'dict']:
@@ -98,7 +109,7 @@ def get_function_parameters(node: Any, tree: Any) -> list:
                 param_info["description"] = f"[ADD DESCRIPTION FOR]{arg.arg}"
                 param_info["required"] = True
                 parameters.append(param_info)
-            
+
             # Handle generic subscript types (e.g., Optional, List[Type], etc.)
             elif isinstance(arg.annotation, ast.Subscript):
                 if isinstance(arg.annotation.value, ast.Name) and arg.annotation.value.id in ['list', 'tuple', 'set', 'dict']:
@@ -108,24 +119,31 @@ def get_function_parameters(node: Any, tree: Any) -> list:
                 param_info["description"] = f"[ADD DESCRIPTION FOR] {arg.arg}"
                 param_info["required"] = True
                 parameters.append(param_info)
-            
+
             # Default for unknown types
             else:
                 param_info["type"] = "[UNKNOWN - PLEASE FIX]"  # If unable to detect type
                 param_info["description"] = f"[ADD DESCRIPTION FOR] {arg.arg}"
                 param_info["required"] = True
                 parameters.append(param_info)
-    
+
     return parameters
 
 def get_function_docstring(node: Any) -> str:
-    """Extract the function's docstring if present."""
+    """Extract the function's docstring description if present."""
+    # Check if the first node is a docstring
     if isinstance(node.body[0], ast.Expr) and isinstance(node.body[0].value, ast.Str):
-        return node.body[0].value.s.strip()
+        # Get the entire docstring
+        full_docstring = node.body[0].value.s.strip()
+
+        # Split the docstring by double newlines (to separate description from fields like Args)
+        description = full_docstring.split("\n\n")[0].strip()
+
+        return description
+
     return "No description provided."
 
-
-def generate_prompt_targets(input_file_path: str, output_file_path: str) -> None:
+def generate_prompt_targets(input_file_path: str) -> None:
     """Introspect routes and generate YAML for either Flask or FastAPI."""
     with open(input_file_path, "r") as source:
         tree = ast.parse(source.read())
@@ -135,8 +153,6 @@ def generate_prompt_targets(input_file_path: str, output_file_path: str) -> None
     if framework == "unknown":
         print("Could not detect Flask or FastAPI in the file.")
         return
-
-    print(f"Detected framework: {framework}")
 
     # Extract routes
     routes = []
@@ -163,7 +179,12 @@ def generate_prompt_targets(input_file_path: str, output_file_path: str) -> None
     for route in routes:
         target = {
             "name": route['name'],
-            "path": route['path'],
+            "endpoint": [
+                {
+                    "name": "app_server",
+                    "path": route['path'],
+                }
+            ],
             "description": route['description'],  # Use extracted docstring
             "parameters": [
                 {
@@ -175,7 +196,7 @@ def generate_prompt_targets(input_file_path: str, output_file_path: str) -> None
                 } for param in route['parameters']
             ]
         }
-        
+
         if route['name'] == "default":
             # Special case for `information_extraction` based on your YAML format
             target["type"] = "default"
@@ -184,9 +205,7 @@ def generate_prompt_targets(input_file_path: str, output_file_path: str) -> None
         output_structure["prompt_targets"].append(target)
 
     # Output as YAML
-    print(yaml.dump(output_structure, sort_keys=False))
-    with open(output_file_path, 'w') as output_file:
-        yaml.dump(output_structure, output_file, sort_keys=False , default_flow_style=False, indent=2)
+    print(yaml.dump(output_structure, sort_keys=False,default_flow_style=False, indent=3))
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
@@ -207,4 +226,3 @@ if __name__ == '__main__':
 
 # Example usage:
 # python targets.py api.yaml
-

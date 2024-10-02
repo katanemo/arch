@@ -37,14 +37,11 @@ def generate_prompt_targets(file):
        Note: This works for simple data types like ['int', 'float', 'bool', 'str', 'list', 'tuple', 'set', 'dict']:
        If you have a complex pydantic data type, you will have to flatten those manually until we add support for it."""
 
-    if file.endswith(".py"):
-        output_file = file.replace(".py", "_prompt_targets.yml")
-    else:
+    if not file.endswith(".py"):
         print("Error: Input file must be a .py file")
         sys.exit(1)
 
-    targets.generate_prompt_targets(file, output_file)
-    print(f"Sucessfully generated targets file: {output_file}")
+    targets.generate_prompt_targets(file)
 
 main.add_command(up)
 main.add_command(down)
