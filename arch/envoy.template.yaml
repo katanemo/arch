@@ -12,7 +12,7 @@ static_resources:
           - name: envoy.filters.network.http_connection_manager
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-              stat_prefix: arch
+              stat_prefix: arch_ingress_http
               codec_type: AUTO
               scheme_header_transformation:
                 scheme_to_overwrite: https
