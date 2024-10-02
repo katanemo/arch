@@ -1,0 +1,7 @@
+params:
+  temperature: 0.01
+  top_p : 0.5
+  repetition_penalty: 1.0
+  top_k: 50
+  max_tokens: 512
+  stop_token_ids: [151645, 151643]

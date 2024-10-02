@@ -20,9 +20,7 @@ endpoints:
     # for example endpoint: [ ip1:port, ip2:port ]
     endpoint: "127.0.0.1:80"
     # max time to wait for a connection to be established
-    connect_timeout: 500ms
-    # max time to wait for a response
-    timeout: 10000ms
+    connect_timeout: 0.005s
 
   mistral_local:
     endpoint: "127.0.0.1:8001"
