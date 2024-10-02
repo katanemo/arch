@@ -1,7 +1,7 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_ROUTING_HEADER, ARC_FC_CLUSTER,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO,
-    MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
+    ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD,
+    GPT_35_TURBO, MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
 use crate::llm_providers::LlmProviders;
@@ -94,6 +94,17 @@ impl StreamContext {
         self.llm_provider
             .as_ref()
             .expect("the provider should be set when asked for it")
+    }
+
+    fn select_llm_provider(&mut self) {
+        let provider_hint = self
+            .get_http_request_header(ARCH_PROVIDER_HINT_HEADER)
+            .map(|provider_name| provider_name.into());
+
+        self.llm_provider = Some(routing::get_llm_provider(
+            &self.llm_providers,
+            provider_hint,
+        ));
     }
 
     fn add_routing_header(&mut self) {
@@ -756,15 +767,7 @@ impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        let provider_hint = self
-            .get_http_request_header("x-arch-llm-provider")
-            .map(|provider_name| provider_name.into());
-
-        self.llm_provider = Some(routing::get_llm_provider(
-            &self.llm_providers,
-            provider_hint,
-        ));
-
+        self.select_llm_provider();
         self.add_routing_header();
         if let Err(error) = self.modify_auth_headers() {
             self.send_server_error(error, Some(StatusCode::BAD_REQUEST));

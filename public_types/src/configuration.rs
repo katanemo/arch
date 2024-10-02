@@ -109,7 +109,7 @@ pub struct Header {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ratelimit {
-    pub provider: String,
+    pub model: String,
     pub selector: Header,
     pub limit: Limit,
 }

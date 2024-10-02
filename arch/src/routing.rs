@@ -24,6 +24,7 @@ pub fn get_llm_provider(
 ) -> Rc<LlmProvider> {
     let maybe_provider = provider_hint.and_then(|hint| match hint {
         ProviderHint::Default => llm_providers.default(),
+        // FIXME: should a non-existent name in the hint be more explicit? i.e, return a BAD_REQUEST?
         ProviderHint::Name(name) => llm_providers.get(&name),
     });
 
