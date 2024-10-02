@@ -17,12 +17,12 @@ overrides:
 
 llm_providers:
   - name: open-ai-gpt-4
-    access_key: $OPEN_AI_API_KEY
+    access_key: $OPENAI_ACCESS_KEY
     provider: openai
     model: gpt-4
     default: true
   - name: mistral-large-latest
-    access_key: $MISTRAL_API_KEY
+    access_key: $MISTRAL_ACCESS_KEY
     provider: mistral
     model: large-latest
 

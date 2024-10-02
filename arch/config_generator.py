@@ -13,13 +13,13 @@ MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY', False)
 def add_secret_key_to_llm_providers(config_yaml) :
     llm_providers = []
     for llm_provider in config_yaml.get("llm_providers", []):
-        if llm_provider['access_key'] == "mistral_access_key":
+        if llm_provider['access_key'] == "$MISTRAL_ACCESS_KEY":
             llm_provider['access_key'] = MISTRAL_API_KEY
-        elif llm_provider['access_key'] == "openai_access_key":
+        elif llm_provider['access_key'] == "$OPENAI_ACCESS_KEY":
             llm_provider['access_key'] = OPENAI_API_KEY
         else:
             llm_provider.pop('access_key')
-        llm_providers.push(llm_provider)
+        llm_providers.append(llm_provider)
     config_yaml["llm_providers"] = llm_providers
     return config_yaml
 
@@ -27,12 +27,12 @@ env = Environment(loader=FileSystemLoader('./'))
 template = env.get_template('envoy.template.yaml')
 
 with open(ARCH_CONFIG_FILE, 'r') as file:
-    katanemo_config = file.read()
+    arch_config_string = file.read()
 
 with open(ARCH_CONFIG_SCHEMA_FILE, 'r') as file:
     arch_config_schema = file.read()
 
-config_yaml = yaml.safe_load(katanemo_config)
+config_yaml = yaml.safe_load(arch_config_string)
 config_schema_yaml = yaml.safe_load(arch_config_schema)
 
 try:
@@ -71,12 +71,12 @@ print("updated clusters", inferred_clusters)
 
 config_yaml = add_secret_key_to_llm_providers(config_yaml)
 arch_llm_providers = config_yaml["llm_providers"]
-katanemo_config = config_yaml.dumps()
+arch_config_string = yaml.dump(config_yaml)
 
 print("llm_providers:", arch_llm_providers)
 
 data = {
-    'katanemo_config': katanemo_config,
+    'arch_config': arch_config_string,
     'arch_clusters': inferred_clusters,
     'arch_llm_providers': arch_llm_providers
 }
