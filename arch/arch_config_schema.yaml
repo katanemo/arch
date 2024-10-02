@@ -67,6 +67,8 @@ properties:
           type: boolean
         description:
           type: string
+        auto_llm_dispatch_on_response:
+          type: boolean
         parameters:
           type: array
           items:
