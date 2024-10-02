@@ -1,23 +1,69 @@
 use public_types::configuration::LlmProvider;
 use std::collections::HashMap;
+use std::rc::Rc;
 
-pub struct LlmProviders<'providers> {
-    providers: HashMap<String, LlmProvider>,
-    default: Option<&'providers LlmProvider>,
+#[derive(Debug)]
+pub struct LlmProviders {
+    providers: HashMap<String, Rc<LlmProvider>>,
+    default: Option<Rc<LlmProvider>>,
 }
 
-impl<'providers> From<&[LlmProvider]> for LlmProviders<'providers> {
-    fn from(llm_providers_config: &[LlmProvider]) -> Self {
-        let llm_providers: HashMap<String, LlmProvider> = llm_providers_config
-            .iter()
-            .map(|llm_provider| (llm_provider.name.clone(), llm_provider.clone()))
-            .collect();
+impl LlmProviders {
+    pub fn iter(&self) -> std::collections::hash_map::Iter<'_, String, Rc<LlmProvider>> {
+        self.providers.iter()
+    }
 
-        LlmProviders {
-            providers: llm_providers,
-            default: llm_providers
-                .values()
-                .find(|llm_provider| llm_provider.default.unwrap_or_default()),
+    pub fn default(&self) -> Option<Rc<LlmProvider>> {
+        self.default.as_ref().map(|rc| rc.clone())
+    }
+
+    pub fn get(&self, name: &str) -> Option<Rc<LlmProvider>> {
+        self.providers.get(name).map(|rc| rc.clone())
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum LlmProvidersNewError {
+    #[error("There must be at least one LLM Provider")]
+    EmptySource,
+    #[error("There must be at most one default LLM Provider")]
+    MoreThanOneDefault,
+    #[error("\'{0}\' is not a unique name")]
+    DuplicateName(String),
+}
+
+impl TryFrom<Vec<LlmProvider>> for LlmProviders {
+    type Error = LlmProvidersNewError;
+
+    fn try_from(llm_providers_config: Vec<LlmProvider>) -> Result<Self, Self::Error> {
+        if llm_providers_config.is_empty() {
+            return Err(LlmProvidersNewError::EmptySource);
         }
+
+        let mut llm_providers = LlmProviders {
+            providers: HashMap::new(),
+            default: None,
+        };
+
+        for llm_provider in llm_providers_config {
+            let llm_provider: Rc<LlmProvider> = Rc::new(llm_provider);
+            if llm_provider.default.unwrap_or_default() {
+                match llm_providers.default {
+                    Some(_) => return Err(LlmProvidersNewError::MoreThanOneDefault),
+                    None => llm_providers.default = Some(Rc::clone(&llm_provider)),
+                }
+            }
+
+            // Insert and check that there is no other provider with the same name.
+            let name = llm_provider.name.clone();
+            if llm_providers
+                .providers
+                .insert(name.clone(), llm_provider)
+                .is_some()
+            {
+                return Err(LlmProvidersNewError::DuplicateName(name));
+            }
+        }
+        Ok(llm_providers)
     }
 }

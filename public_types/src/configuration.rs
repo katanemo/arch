@@ -1,7 +1,7 @@
-use std::{collections::HashMap, time::Duration};
-
 use duration_string::DurationString;
 use serde::{Deserialize, Deserializer, Serialize};
+use std::fmt::Display;
+use std::{collections::HashMap, time::Duration};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
@@ -57,6 +57,19 @@ pub enum MessageFormat {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PromptGuards {
     pub input_guards: HashMap<GuardType, GuardOptions>,
+}
+
+impl PromptGuards {
+    pub fn jailbreak_on_exception_message(&self) -> Option<&str> {
+        self.input_guards
+            .get(&GuardType::Jailbreak)?
+            .on_exception
+            .as_ref()?
+            .message
+            .as_ref()?
+            .as_str()
+            .into()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -140,6 +153,12 @@ pub struct LlmProvider {
     pub default: Option<bool>,
     pub stream: Option<bool>,
     pub rate_limits: Option<LlmRatelimit>,
+}
+
+impl Display for LlmProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
