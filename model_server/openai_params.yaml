@@ -1,0 +1,6 @@
+params:
+  temperature: 0.2
+  top_p : 1.0
+  top_k: 50
+  max_tokens: 512
+  stop_token_ids: [151645, 151643]

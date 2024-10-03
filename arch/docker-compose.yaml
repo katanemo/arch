@@ -24,3 +24,6 @@ services:
       - ~/.cache/huggingface:/root/.cache/huggingface
     environment:
       - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
+      - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
+      - MODE=${MODE:-cloud}
+      - FC_URL=${FC_URL:-https://arch-fc-free-trial-4mzywewe.uc.gateway.dev/v1}

@@ -6,6 +6,7 @@ from app.load_models import (
     load_guard_model,
     load_zero_shot_models,
 )
+import os
 from app.utils import GuardHandler, split_text_into_chunks
 import torch
 import yaml
@@ -26,16 +27,19 @@ zero_shot_models = load_zero_shot_models()
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
 
-task = "both"
-hardware = "gpu" if torch.cuda.is_available() else "cpu"
-jailbreak_model = load_guard_model(
-    guard_model_config["jailbreak"][hardware], hardware
-)
+mode = os.getenv("MODE", "cloud")
+logger.info(f"Serving model mode: {mode}")
+if mode not in ['cloud', 'local-gpu', 'local-cpu']:
+    raise ValueError(f"Invalid mode: {mode}")
+if mode == 'local-cpu':
+    hardware = 'cpu'
+else:
+    hardware = "gpu" if torch.cuda.is_available() else "cpu"
 
+jailbreak_model = load_guard_model(guard_model_config["jailbreak"][hardware], hardware)
 guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
-
 
 class EmbeddingRequest(BaseModel):
     input: str
