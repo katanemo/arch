@@ -29,11 +29,10 @@ def predict(message, history):
     }
 
     updated_history = []
-    for h in history:
-        h_copy = h.copy()
-        updated_history.append(h_copy)
-        if 'tool_calls' in h_copy:
-            tool_calls = h_copy.pop('tool_calls')
+    for h in history.copy():
+        updated_history.append(h)
+        if 'tool_calls' in h:
+            tool_calls = h.pop('tool_calls')
             updated_history.append({"role": "assistant", "content": tool_calls})
     try:
       raw_response = client.chat.completions.with_raw_response.create(model=MODEL_NAME,
