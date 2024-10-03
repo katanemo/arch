@@ -48,7 +48,7 @@ def is_pydantic_model(annotation: ast.expr, tree: ast.AST) -> bool:
     return False
 
 def get_pydantic_model_fields(model_name: str, tree: ast.AST) -> list:
-    """Extract fields from a Pydantic model."""
+    """Extract fields from a Pydantic model, handling list, tuple, set, dict types, and direct default values."""
     fields = []
 
     for node in ast.walk(tree):
@@ -56,76 +56,111 @@ def get_pydantic_model_fields(model_name: str, tree: ast.AST) -> list:
             for stmt in node.body:
                 if isinstance(stmt, ast.AnnAssign):
                     # Initialize the default field description
+                    field_type = "Unknown: Please Fix This!"
                     description = "Field, description not present. Please fix."
                     default_value = None
-                    required = True
+                    required = True  # Assume the field is required initially
 
-                    # Check if the value is a Field call and extract the description
-                    if isinstance(stmt.value, ast.Call) and isinstance(stmt.value.func, ast.Name) and stmt.value.func.id == 'Field':
-                        # Search for the description argument inside the Field call
+                    # Check if the field uses Field() with required status and description
+                    if stmt.value and isinstance(stmt.value, ast.Call) and isinstance(stmt.value.func, ast.Name) and stmt.value.func.id == 'Field':
+                        # Extract the description argument inside the Field call
                         for keyword in stmt.value.keywords:
                             if keyword.arg == 'description' and isinstance(keyword.value, ast.Str):
-                                description = keyword.value.s  # Extract the string value of the description
+                                description = keyword.value.s
                             if keyword.arg == 'default':
-                                default_value = keyword.value  # Handle default values
-
-                        # Check if the value is explicitly an ellipsis (Field(...))
+                                default_value = keyword.value
+                        # If Ellipsis (...) is used, it means the field is required
                         if stmt.value.args and isinstance(stmt.value.args[0], ast.Constant) and stmt.value.args[0].value is Ellipsis:
                             required = True
                         else:
-                            required = False  # If there is a default value, it's not required
+                            required = False
+
+                    # Handle direct default values (e.g., name: str = "John Doe")
+                    elif stmt.value is not None:
+                        if isinstance(stmt.value, ast.Constant):
+                            # Set the default value from the assignment (e.g., name: str = "John Doe")
+                            default_value = stmt.value.value
+                            required = False  # Not required since it has a default value
+
+                    # Always extract the field type, even if there's a default value
+                    if isinstance(stmt.annotation, ast.Subscript):
+                        # Get the base type (list, tuple, set, dict)
+                        base_type = stmt.annotation.value.id if isinstance(stmt.annotation.value, ast.Name) else "Unknown"
+
+                        # Handle only list, tuple, set, dict and ignore the inner types
+                        if base_type.lower() in ['list', 'tuple', 'set', 'dict']:
+                            field_type = base_type.lower()
+
+                    # Handle the ellipsis '...' for required fields if no Field() call
+                    elif isinstance(stmt.value, ast.Constant) and stmt.value.value is Ellipsis:
+                        required = True
+
+                    # Handle simple types like str, int, etc.
+                    if isinstance(stmt.annotation, ast.Name):
+                        field_type = stmt.annotation.id
 
                     field_info = {
-                        "name": stmt.target.id,
-                        "type": stmt.annotation.id if isinstance(stmt.annotation, ast.Name) else "Unknown: Please Fix This!",
-                        "description": description,  # Use extracted description
-                        "default_value": default_value,  # Can be enhanced further
-                        "required": required  # Field required if no default or '...'
+                            "name": stmt.target.id,
+                            "type": field_type,  # Always set the field type
+                            "description": description,
+                            "default": default_value,  # Handle direct default values
+                            "required": required
                     }
                     fields.append(field_info)
 
     return fields
 
-
-def get_function_parameters(node: Any, tree: Any) -> list:
+def get_function_parameters(node: ast.FunctionDef, tree: ast.AST) -> list:
     """Extract the parameters and their types from the function definition."""
     parameters = []
-    for arg in node.args.args:
+
+    # Extract docstring to find descriptions
+    docstring = ast.get_docstring(node)
+    arg_descriptions = extract_arg_descriptions_from_docstring(docstring)
+
+    # Extract default values
+    defaults = [None] * (len(node.args.args) - len(node.args.defaults)) + node.args.defaults  # Align defaults with args
+    for arg, default in zip(node.args.args, defaults):
         if arg.arg != "self":  # Skip 'self' or 'cls' in class methods
-            param_info = {"name": arg.arg}
+            param_info = {"name": arg.arg, "description": arg_descriptions.get(arg.arg, "[ADD DESCRIPTION]")}
 
             # Handle Pydantic model types
-            if is_pydantic_model(arg.annotation, tree):
+            if hasattr(arg, 'annotation') and is_pydantic_model(arg.annotation, tree):
                 # Extract and flatten Pydantic model fields
                 pydantic_fields = get_pydantic_model_fields(arg.annotation.id, tree)
                 parameters.extend(pydantic_fields)  # Flatten the model fields into the parameters list
+                continue  # Skip adding the current param_info for the model since we expand the fields
 
-            # Handle standard Python types
-            elif isinstance(arg.annotation, ast.Name):
+            # Handle standard Python types (int, float, str, etc.)
+            elif hasattr(arg, 'annotation') and isinstance(arg.annotation, ast.Name):
                 if arg.annotation.id in ['int', 'float', 'bool', 'str', 'list', 'tuple', 'set', 'dict']:
-                    param_info["type"] = arg.annotation.id  # Use the type as a string
+                    param_info["type"] = arg.annotation.id
                 else:
                     param_info["type"] = "[UNKNOWN - PLEASE FIX]"
-                param_info["description"] = f"[ADD DESCRIPTION FOR]{arg.arg}"
-                param_info["required"] = True
-                parameters.append(param_info)
 
             # Handle generic subscript types (e.g., Optional, List[Type], etc.)
-            elif isinstance(arg.annotation, ast.Subscript):
+            elif hasattr(arg, 'annotation') and isinstance(arg.annotation, ast.Subscript):
                 if isinstance(arg.annotation.value, ast.Name) and arg.annotation.value.id in ['list', 'tuple', 'set', 'dict']:
                     param_info["type"] = f"{arg.annotation.value.id}"  # e.g., "List", "Tuple", etc.
                 else:
                     param_info["type"] = "[UNKNOWN - PLEASE FIX]"
-                param_info["description"] = f"[ADD DESCRIPTION FOR] {arg.arg}"
-                param_info["required"] = True
-                parameters.append(param_info)
 
             # Default for unknown types
             else:
                 param_info["type"] = "[UNKNOWN - PLEASE FIX]"  # If unable to detect type
-                param_info["description"] = f"[ADD DESCRIPTION FOR] {arg.arg}"
-                param_info["required"] = True
-                parameters.append(param_info)
+
+            # Handle default values
+            if default is not None:
+                if isinstance(default, ast.Constant) or isinstance(default, ast.NameConstant):
+                    param_info["default"] = default.value  # Use the default value directly
+                else:
+                    param_info["default"] = "[UNKNOWN DEFAULT]"  # Unknown default type
+                param_info["required"] = False  # Optional since it has a default value
+            else:
+                param_info["default"] = None
+                param_info["required"] = True  # Required if no default value
+
+            parameters.append(param_info)
 
     return parameters
 
@@ -142,6 +177,40 @@ def get_function_docstring(node: Any) -> str:
         return description
 
     return "No description provided."
+
+def extract_arg_descriptions_from_docstring(docstring: str) -> dict:
+    """Extract descriptions for function parameters from the 'Args' section of the docstring."""
+    descriptions = {}
+    if not docstring:
+        return descriptions
+
+    in_args_section = False
+    current_param = None
+    for line in docstring.splitlines():
+        line = line.strip()
+
+        # Detect the start of the 'Args' section
+        if line.startswith("Args:"):
+            in_args_section = True
+            continue  # Proceed to the next line after 'Args:'
+
+        # End of 'Args' section if no indentation and no colon
+        if in_args_section and not line.startswith(" ") and ':' not in line:
+            break  # Stop processing if we reach a new section
+
+        # Process lines in the 'Args' section
+        if in_args_section:
+            if ':' in line:
+                # Extract parameter name and description
+                param_name, description = line.split(':', 1)
+                descriptions[param_name.strip()] = description.strip()
+                current_param = param_name.strip()
+            elif current_param and line.startswith(" "):
+                # Handle multiline descriptions (indented lines)
+                descriptions[current_param] += f" {line.strip()}"
+
+    return descriptions
+
 
 def generate_prompt_targets(input_file_path: str) -> None:
     """Introspect routes and generate YAML for either Flask or FastAPI."""
@@ -190,8 +259,8 @@ def generate_prompt_targets(input_file_path: str) -> None:
                 {
                     "name": param['name'],
                     "type": param['type'],
-                    "description": param['description'],
-                    "default_value": param['default_value'],
+                    "description": f"{param['description']}",
+                     **({"default": param['default']} if "default" in param and param['default'] is not None else {}),  # Only add default if it's set
                     "required": param['required']
                 } for param in route['parameters']
             ]

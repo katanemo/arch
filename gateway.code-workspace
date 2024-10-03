@@ -17,13 +17,10 @@
       "path": "chatbot_ui"
     },
     {
-<<<<<<< HEAD
       "name": "config_generator",
       "path": "config_generator"
     },
     {
-=======
->>>>>>> main
       "name": "demos/function_calling",
       "path": "./demos/function_calling",
     },

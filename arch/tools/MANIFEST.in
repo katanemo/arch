@@ -1,1 +1,2 @@
-include docker-compose.yml
+include config/docker-compose.yaml
+include config/arch_config_schema.yaml

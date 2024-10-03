@@ -1,13 +1,11 @@
 services:
   archgw:
-    build:
-      context: ../
-      dockerfile: arch/Dockerfile
+    image: archgw:latest
     ports:
       - "10000:10000"
       - "18080:9901"
     volumes:
-      - ${ARCH_CONFIG_FILE}:/config/arch_config.yaml
+      - ${ARCH_CONFIG_FILE:-./arch_confg_schema.yaml}:/config/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
     depends_on:
@@ -15,9 +13,7 @@ services:
         condition: service_healthy
 
   model_server:
-    build:
-      context: ../model_server
-      dockerfile: Dockerfile
+    image: model_server:latest
     ports:
       - "18081:80"
     healthcheck:
@@ -26,3 +22,5 @@ services:
         retries: 20
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
+    environment:
+      - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}

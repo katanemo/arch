@@ -5,7 +5,7 @@ import pkg_resources
 import select
 from utils import run_docker_compose_ps, print_service_status, check_services_state
 
-def start_arch(path, log_timeout=120, check_interval=1):
+def start_arch(arch_config_file, log_timeout=120, check_interval=1):
     """
     Start Docker Compose in detached mode and stream logs until services are healthy.
 
@@ -15,12 +15,10 @@ def start_arch(path, log_timeout=120, check_interval=1):
         check_interval (int): Time in seconds between health status checks.
     """
     # Set the ARCH_CONFIG_FILE environment variable
-    arch_config_file = os.path.abspath(os.path.join(path, "prompt_config.yml"))
-    compose_file = pkg_resources.resource_filename(__name__, 'docker-compose.yml')
-
-    # Construct the environment variable and the Docker Compose command
     env = os.environ.copy()
     env['ARCH_CONFIG_FILE'] = arch_config_file
+
+    compose_file = pkg_resources.resource_filename(__name__, 'docker-compose.yaml')
 
     try:
         # Run the Docker Compose command in detached mode (-d)
@@ -81,21 +79,14 @@ def start_arch(path, log_timeout=120, check_interval=1):
         print(f"Failed to start Arch: {str(e)}")
 
 
-def stop_arch(path):
+def stop_arch():
     """
     Shutdown all Docker Compose services by running `docker-compose down`.
 
     Args:
         path (str): The path where the docker-compose.yml file is located.
-        env (object): the environment object to send to docker-compose
     """
-    # Set the ARCH_CONFIG_FILE environment variable
-    arch_config_file = os.path.abspath(os.path.join(path, "prompt_config.yml"))
-    compose_file = pkg_resources.resource_filename(__name__, 'docker-compose.yml')
-
-    # Construct the environment variable and the Docker Compose command
-    env = os.environ.copy()
-    env['ARCH_CONFIG_FILE'] = arch_config_file
+    compose_file = pkg_resources.resource_filename(__name__, 'docker-compose.yaml')
 
     try:
         # Run `docker-compose down` to shut down all services
@@ -103,7 +94,6 @@ def stop_arch(path):
             ["docker-compose", "down"],
             cwd=os.path.dirname(compose_file),
             check=True,
-            env=env
         )
         print("Successfully shut down all services.")
 
