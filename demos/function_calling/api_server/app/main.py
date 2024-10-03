@@ -19,6 +19,7 @@ async def healthz():
 
 class WeatherRequest(BaseModel):
   city: str
+  days: int = 7
 
 
 @app.post("/weather")
@@ -29,7 +30,7 @@ async def weather(req: WeatherRequest, res: Response):
         "temperature": [],
         "unit": "F",
     }
-    for i in range(7):
+    for i in range(req.days):
        min_temp = random.randrange(50,90)
        max_temp = random.randrange(min_temp+5, min_temp+20)
        weather_forecast["temperature"].append({
@@ -37,7 +38,8 @@ async def weather(req: WeatherRequest, res: Response):
            "temperature": {
               "min": min_temp,
               "max": max_temp
-           }
+           },
+           "query_time": str(datetime.now(timezone.utc))
        })
 
     return weather_forecast

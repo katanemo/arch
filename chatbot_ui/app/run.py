@@ -1,3 +1,4 @@
+import json
 import os
 from openai import OpenAI
 import gradio as gr
@@ -27,9 +28,16 @@ def predict(message, history):
         'x-arch-deterministic-provider': 'openai',
     }
 
+    updated_history = []
+    for h in history:
+        h_copy = h.copy()
+        updated_history.append(h_copy)
+        if 'tool_calls' in h_copy:
+            tool_calls = h_copy.pop('tool_calls')
+            updated_history.append({"role": "assistant", "content": tool_calls})
     try:
-      response = client.chat.completions.create(model=MODEL_NAME,
-        messages= history,
+      raw_response = client.chat.completions.with_raw_response.create(model=MODEL_NAME,
+        messages = updated_history,
         temperature=1.0,
         extra_headers=custom_headers
       )
@@ -41,15 +49,22 @@ def predict(message, history):
       log.info("Error calling gateway API: {}".format(e.message))
       raise gr.Error("Error calling gateway API: {}".format(e.message))
 
+    response = raw_response.parse()
+    headers = raw_response.headers
+
     choices = response.choices
     message = choices[0].message
     content = message.content
+
     history.append({"role": "assistant", "content": content})
     history[-1]["model"] = response.model
+    if 'x-arch-tool-calls' in headers:
+        tool_calls_str = headers['x-arch-tool-calls']
+        tool_calls = json.loads(tool_calls_str)
+        history[-1]['tool_calls'] = f"<tool_call>\n{json.dumps(tool_calls[0]['function'])}\n</tool_call>"
 
     messages = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
     return messages, history
-
 
 with gr.Blocks(fill_height=True, css="footer {visibility: hidden}") as demo:
     print("Starting Demo...")

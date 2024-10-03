@@ -17,7 +17,7 @@ use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
     ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
     ChatCompletionsResponse, FunctionDefinition, FunctionParameter, FunctionParameters, Message,
-    ParameterType, StreamOptions, ToolType,
+    ParameterType, StreamOptions, ToolCall, ToolType,
 };
 use public_types::common_types::{
     EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
@@ -58,6 +58,7 @@ pub struct StreamContext {
     pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
     pub overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
+    tool_calls: Option<Vec<ToolCall>>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
@@ -79,6 +80,7 @@ impl StreamContext {
             metrics,
             prompt_targets,
             callouts: HashMap::new(),
+            tool_calls: None,
             ratelimit_selector: None,
             streaming_response: false,
             response_tokens: 0,
@@ -604,6 +606,7 @@ impl StreamContext {
             }
         };
 
+        self.tool_calls = Some(tool_calls.clone());
         callout_context.up_stream_cluster = Some(endpoint.name);
         callout_context.up_stream_cluster_path = Some(path);
         callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
@@ -1078,6 +1081,18 @@ impl HttpContext for StreamContext {
         self.metrics.active_http_calls.increment(1);
 
         Action::Pause
+    }
+
+    fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
+        if let Some(tool_calls) = self.tool_calls.as_ref() {
+            if tool_calls.len() > 0 {
+                let tool_calls_str = serde_json::to_string(&tool_calls).unwrap();
+                self.add_http_response_header("X-ARCH-TOOL-CALLS", tool_calls_str.as_str());
+            } else {
+                self.add_http_response_header("X-ARCH-TOOL-CALLS", "[]");
+            }
+        }
+        Action::Continue
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
