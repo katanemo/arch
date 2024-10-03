@@ -1,4 +1,4 @@
-## Setup Instructions
+## Setup Instructions: archgw CLI
 
 This guide will walk you through the steps to set up the archgw cli on your local machine
 
@@ -22,7 +22,7 @@ source venv/bin/activate
 sh build-cli.sh
 ```
 
-## Uninstall archgw cli
+## Uninstall Instructions: archgw CLI
 ```bash
 pip uninstall archgw
 ```
