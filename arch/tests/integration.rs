@@ -5,6 +5,7 @@ use proxy_wasm_test_framework::types::{
 };
 use public_types::common_types::open_ai::{ChatCompletionsResponse, Choice, Message, Usage};
 use public_types::common_types::open_ai::{FunctionCallDetail, ToolCall, ToolType};
+use public_types::common_types::PromptGuardResponse;
 use public_types::embeddings::embedding::Object;
 use public_types::embeddings::{
     create_embedding_response, CreateEmbeddingResponse, CreateEmbeddingResponseUsage, Embedding,
@@ -91,12 +92,64 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         // The actual call is not important in this test, we just need to grab the token_id
-        .expect_http_call(Some("model_server"), None, None, None, None)
+        .expect_http_call(
+            Some("model_server"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/guard"),
+                (":authority", "model_server"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ]),
+            None,
+            None,
+            None,
+        )
         .returning(Some(1))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_metric_increment("active_http_calls", 1)
-        .expect_log(Some(LogLevel::Info), None)
         .execute_and_expect(ReturnType::Action(Action::Pause))
+        .unwrap();
+
+    let prompt_guard_response = PromptGuardResponse {
+        toxic_prob: None,
+        toxic_verdict: None,
+        jailbreak_prob: None,
+        jailbreak_verdict: None,
+    };
+    let prompt_guard_response_buffer = serde_json::to_string(&prompt_guard_response).unwrap();
+    module
+        .call_proxy_on_http_call_response(
+            http_context,
+            1,
+            0,
+            prompt_guard_response_buffer.len() as i32,
+            0,
+        )
+        .expect_metric_increment("active_http_calls", -1)
+        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
+        .returning(Some(&prompt_guard_response_buffer))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_http_call(
+            Some("model_server"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/embeddings"),
+                (":authority", "model_server"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ]),
+            None,
+            None,
+            None,
+        )
+        .returning(Some(2))
+        .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
+        .execute_and_expect(ReturnType::None)
         .unwrap();
 
     let embedding_response = CreateEmbeddingResponse {
@@ -113,7 +166,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
     module
         .call_proxy_on_http_call_response(
             http_context,
-            1,
+            2,
             0,
             embeddings_response_buffer.len() as i32,
             0,
@@ -123,8 +176,21 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .returning(Some(&embeddings_response_buffer))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(Some("model_server"), None, None, None, None)
-        .returning(Some(2))
+        .expect_http_call(
+            Some("model_server"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/zeroshot"),
+                (":authority", "model_server"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ]),
+            None,
+            None,
+            None,
+        )
+        .returning(Some(3))
         .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
@@ -140,7 +206,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
     module
         .call_proxy_on_http_call_response(
             http_context,
-            2,
+            3,
             0,
             zeroshot_intent_detection_buffer.len() as i32,
             0,
@@ -151,8 +217,21 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Info), None)
-        .expect_http_call(Some("arch_fc"), None, None, None, None)
-        .returning(Some(3))
+        .expect_http_call(
+            Some("arch_fc"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/v1/chat/completions"),
+                (":authority", "arch_fc"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "120000"),
+            ]),
+            None,
+            None,
+            None,
+        )
+        .returning(Some(4))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_metric_increment("active_http_calls", 1)
@@ -189,8 +268,13 @@ overrides:
 system_prompt: |
   You are a helpful assistant.
 
-prompt_targets:
+prompt_guards:
+  input_guards:
+    jailbreak:
+      on_exception:
+        message: "Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
 
+prompt_targets:
   - name: weather_forecast
     description: This function provides realtime weather forecast information for a given city.
     parameters:
@@ -308,7 +392,6 @@ fn successful_request_to_open_ai_chat_completions() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Info), None)
         .expect_http_call(Some("model_server"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
@@ -459,7 +542,7 @@ fn request_ratelimited() {
 
     let arch_fc_resp_str = serde_json::to_string(&arch_fc_resp).unwrap();
     module
-        .call_proxy_on_http_call_response(http_context, 3, 0, arch_fc_resp_str.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 4, 0, arch_fc_resp_str.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&arch_fc_resp_str))
@@ -470,15 +553,27 @@ fn request_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(Some("api_server"), None, None, None, None)
-        .returning(Some(4))
+        .expect_http_call(
+            Some("api_server"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/weather"),
+                (":authority", "api_server"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+            ]),
+            None,
+            None,
+            None,
+        )
+        .returning(Some(5))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
     let body_text = String::from("test body");
     module
-        .call_proxy_on_http_call_response(http_context, 4, 0, body_text.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 5, 0, body_text.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
@@ -573,7 +668,7 @@ fn request_not_ratelimited() {
 
     let arch_fc_resp_str = serde_json::to_string(&arch_fc_resp).unwrap();
     module
-        .call_proxy_on_http_call_response(http_context, 3, 0, arch_fc_resp_str.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 4, 0, arch_fc_resp_str.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&arch_fc_resp_str))
@@ -584,15 +679,27 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(Some("api_server"), None, None, None, None)
-        .returning(Some(4))
+        .expect_http_call(
+            Some("api_server"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/weather"),
+                (":authority", "api_server"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+            ]),
+            None,
+            None,
+            None,
+        )
+        .returning(Some(5))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
     let body_text = String::from("test body");
     module
-        .call_proxy_on_http_call_response(http_context, 4, 0, body_text.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 5, 0, body_text.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
