@@ -1,0 +1,101 @@
+eid,name,position,salary,department,location,hire_date,performance_score,years_of_experience
+1,Hank,Salesperson,64052.03,HR,San Francisco,2013-06-02,1.56,8
+2,Alice,Marketing Analyst,82088.86,Marketing,Austin,2015-01-22,2.09,21
+3,David,Marketing Analyst,67635.21,HR,New York,2001-05-23,1.71,13
+4,Jack,Engineer,64867.42,Engineering,San Francisco,2023-09-28,3.06,2
+5,Bob,Manager,141368.98,Finance,New York,2017-04-05,1.29,20
+6,Alice,Marketing Analyst,65348.65,Engineering,New York,2021-08-17,1.57,19
+7,Charlie,Manager,120560.23,HR,San Francisco,2021-11-18,1.53,18
+8,Jack,Manager,94176.17,Sales,Chicago,2001-12-21,4.99,2
+9,Alice,HR Specialist,120401.96,HR,Chicago,2015-10-11,3.36,27
+10,Frank,Manager,64150.92,Sales,New York,2005-06-07,1.92,12
+11,David,Marketing Analyst,120728.56,Sales,Austin,2011-05-31,2.26,21
+12,Alice,Marketing Analyst,78660.45,HR,Chicago,2012-02-10,1.09,22
+13,David,Manager,99070.03,Marketing,Chicago,2020-07-31,4.94,1
+14,Hank,Salesperson,101285.05,Marketing,Chicago,2017-10-08,2.95,26
+15,Grace,Manager,125832.26,Marketing,New York,2001-09-21,3.57,20
+16,Alice,Manager,102226.25,Finance,Chicago,2005-06-28,2.75,30
+17,Ivy,Salesperson,126642.31,Marketing,Chicago,2011-08-29,3.21,4
+18,Charlie,Manager,126836.84,Finance,San Francisco,2021-11-16,3.84,1
+19,Ivy,Manager,65596.87,Sales,San Francisco,2008-11-21,3.01,15
+20,Charlie,Salesperson,138679.97,Marketing,New York,2012-04-06,2.8,6
+21,Bob,Marketing Analyst,93007.62,Sales,San Francisco,2019-10-16,1.32,5
+22,Charlie,Manager,127736.93,HR,Austin,2004-08-06,4.23,17
+23,Ivy,Salesperson,137483.74,Sales,Chicago,2001-06-26,2.38,28
+24,Bob,Marketing Analyst,65488.71,Engineering,New York,2009-07-20,3.3,21
+25,Hank,Marketing Analyst,79070.97,Marketing,San Francisco,2018-02-02,4.88,28
+26,Alice,Salesperson,64993.62,HR,New York,2009-11-28,2.67,15
+27,Ivy,Salesperson,95406.75,Sales,Chicago,2017-05-09,4.8,20
+28,Hank,Manager,118489.52,Sales,San Francisco,2016-07-07,3.1,6
+29,Eve,Salesperson,117166.96,Engineering,Boston,2009-12-11,4.88,18
+30,Bob,HR Specialist,88415.94,Finance,Chicago,2011-02-27,2.51,12
+31,Jack,Marketing Analyst,84008.93,HR,Chicago,2013-09-14,4.1,9
+32,Bob,Marketing Analyst,88437.02,Finance,New York,2005-09-06,3.01,14
+33,Hank,HR Specialist,109713.15,HR,New York,2001-09-13,3.26,25
+34,Grace,Salesperson,100413.24,Marketing,Austin,2018-08-24,4.87,19
+35,Grace,Marketing Analyst,54239.41,Engineering,Boston,2022-03-12,4.16,10
+36,Jack,Manager,71637.81,Sales,Boston,2004-02-29,3.65,4
+37,Ivy,Engineer,146525.41,Finance,San Francisco,2017-07-03,1.84,24
+38,Frank,HR Specialist,123109.58,Engineering,Chicago,2005-07-20,1.73,12
+39,Frank,Engineer,90722.88,Marketing,Austin,2011-09-08,1.24,1
+40,Hank,Marketing Analyst,50443.99,HR,Austin,2019-10-02,4.96,19
+41,Charlie,Marketing Analyst,103862.64,Finance,San Francisco,2008-01-22,2.1,1
+42,Hank,Salesperson,73540.39,Engineering,San Francisco,2009-01-04,3.71,2
+43,Bob,Marketing Analyst,59666.79,Engineering,New York,2014-08-31,2.88,5
+44,Ivy,Marketing Analyst,138648.85,HR,Boston,2006-12-15,3.62,24
+45,Grace,Marketing Analyst,136576.54,Engineering,Boston,2009-01-12,3.7,8
+46,Eve,HR Specialist,148818.31,Marketing,New York,2015-05-13,4.77,27
+47,Bob,HR Specialist,132543.62,Finance,Boston,2019-11-05,3.18,15
+48,Hank,Marketing Analyst,57931.79,HR,Chicago,2015-10-23,3.86,7
+49,Hank,Manager,118935.49,HR,Chicago,2011-04-18,2.41,18
+50,Alice,Marketing Analyst,118433.13,Marketing,San Francisco,2009-11-21,1.49,24
+51,Grace,Engineer,83608.33,Engineering,Austin,2019-03-06,4.32,4
+52,Ivy,Marketing Analyst,139839.85,Finance,Chicago,2023-10-29,2.25,8
+53,Frank,Salesperson,102878.49,Finance,Boston,2017-07-08,1.61,4
+54,Charlie,Salesperson,144965.47,Sales,San Francisco,2019-04-08,4.29,8
+55,Jack,Marketing Analyst,122369.27,Marketing,San Francisco,2023-01-10,3.16,11
+56,Ivy,Marketing Analyst,88850.29,Marketing,San Francisco,2012-12-20,4.09,28
+57,Grace,HR Specialist,83473.55,Marketing,Boston,2017-03-29,3.5,30
+58,Frank,Manager,59600.12,Sales,Boston,2021-07-23,4.04,8
+59,Alice,Manager,67593.82,Sales,Boston,2001-12-18,1.96,3
+60,Ivy,Engineer,74468.59,Sales,Chicago,2019-05-24,4.8,6
+61,Eve,HR Specialist,116034.61,Marketing,Boston,2016-06-28,4.7,12
+62,Frank,Marketing Analyst,135693.42,Engineering,Austin,2022-08-04,3.71,22
+63,Frank,Engineer,50935.06,Engineering,Austin,2012-05-08,1.72,28
+64,Frank,Engineer,143102.6,HR,Boston,2020-05-07,4.38,1
+65,Frank,Salesperson,119143.36,Marketing,Austin,2020-09-16,3.1,20
+66,Jack,Salesperson,138214.83,Sales,Chicago,2003-01-03,4.93,6
+67,Charlie,HR Specialist,142568.71,Engineering,Chicago,2016-04-13,4.07,8
+68,Grace,Manager,61711.44,Engineering,San Francisco,2006-10-08,4.48,24
+69,Ivy,Salesperson,91310.2,Marketing,Boston,2006-07-14,3.92,19
+70,Grace,Engineer,96005.17,Engineering,Chicago,2008-06-03,4.93,14
+71,Bob,HR Specialist,123847.92,Sales,New York,2008-08-18,3.28,26
+72,Grace,Marketing Analyst,147597.74,Sales,New York,2020-11-19,1.98,6
+73,Jack,Salesperson,97285.98,Sales,Chicago,2003-09-30,1.95,1
+74,Eve,Marketing Analyst,91986.96,Finance,Austin,2013-04-09,2.36,8
+75,Alice,Manager,142112.69,HR,Boston,2012-12-06,1.87,24
+76,Frank,Marketing Analyst,120178.72,Finance,San Francisco,2021-06-21,2.9,27
+77,David,Manager,88229.83,Marketing,Chicago,2003-04-24,4.54,10
+78,David,Salesperson,78636.42,Engineering,Boston,2003-05-20,4.89,9
+79,Bob,Manager,88968.07,Sales,Austin,2008-05-10,4.85,14
+80,Frank,Salesperson,94338.48,Finance,Austin,2004-03-16,2.97,24
+81,Jack,Salesperson,86682.32,Engineering,Chicago,2017-09-01,4.27,9
+82,Frank,Manager,114708.73,Marketing,Chicago,2022-12-24,1.66,26
+83,Eve,HR Specialist,81408.98,HR,Boston,2021-07-11,3.4,16
+84,Frank,HR Specialist,139633.56,Sales,New York,2013-11-25,2.25,13
+85,Hank,Marketing Analyst,90244.85,Marketing,San Francisco,2009-12-29,4.88,4
+86,Jack,Manager,111366.99,Marketing,Austin,2003-10-15,3.49,13
+87,Eve,Engineer,117690.84,Marketing,New York,2014-08-20,1.68,30
+88,David,Marketing Analyst,63797.15,Marketing,New York,2005-08-28,2.19,23
+89,Hank,HR Specialist,112060.86,Engineering,San Francisco,2007-10-21,2.01,21
+90,Hank,Engineer,120871.54,Finance,San Francisco,2006-11-02,2.12,4
+91,Eve,Manager,116419.43,Sales,Boston,2015-02-05,4.53,24
+92,Charlie,Engineer,60953.86,Marketing,Austin,2016-06-07,4.08,20
+93,Grace,Manager,95933.35,Finance,New York,2004-06-25,4.98,29
+94,Charlie,Marketing Analyst,64941.23,Engineering,Austin,2009-10-13,1.74,17
+95,Frank,Salesperson,143918.3,Engineering,San Francisco,2017-06-27,2.23,26
+96,David,Marketing Analyst,122780.92,Engineering,Chicago,2003-08-29,1.25,16
+97,Bob,Marketing Analyst,91910.4,Engineering,Chicago,2015-08-30,1.58,21
+98,Bob,Engineer,109941.49,Sales,Austin,2006-05-29,2.14,29
+99,Charlie,Marketing Analyst,149503.97,Sales,Austin,2007-08-01,2.42,14
+100,Eve,Salesperson,56229.29,Marketing,Boston,2014-07-17,2.53,17

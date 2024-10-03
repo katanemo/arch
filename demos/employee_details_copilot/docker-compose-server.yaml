@@ -1,0 +1,129 @@
+
+x-variables: &common-vars
+  environment:
+    - MODE=${MODE:-cloud}  # Set the default mode to 'cloud', others values are local-gpu, local-cpu
+
+
+services:
+
+  arch:
+    build:
+      context: ../../
+      dockerfile: arch/Dockerfile
+    ports:
+      - "10010:10000"
+      - "19911:9901"
+    volumes:
+      - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+      - ./arch_log:/var/log/
+      - ./arch_config.yaml:/config/arch_config.yaml
+    depends_on:
+      # config_generator:
+      #   condition: service_completed_successfully
+      model_server:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=debug
+
+  model_server:
+    build:
+      context: ../../model_server
+      dockerfile: Dockerfile
+    ports:
+      - "18091:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost/healthz"]
+        interval: 5s
+        retries: 20
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ./arch_config.yaml:/root/arch_config.yaml
+    << : *common-vars
+    environment:
+      - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
+      - FC_URL=${FC_URL:-https://arch-fc-free-trial-4mzywewe.uc.gateway.dev/v1}
+      - OLLAMA_MODEL=Arch-Function-Calling-1.5B-Q4_K_M:latest
+      - MODE=${MODE:-cloud}
+      # uncomment following line to use ollama endpoint that is hosted by docker
+      # - OLLAMA_ENDPOINT=ollama
+      # - OLLAMA_MODEL=Arch-Function-Calling-1.5B:Q4_K_M
+  api_server:
+    build:
+      context: api_server
+      dockerfile: Dockerfile
+    ports:
+      - "18093:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    volumes:
+      - ./ollama:/root/.ollama
+    restart: unless-stopped
+    ports:
+      - '11444:11434'
+    profiles:
+      - manual
+
+  open_webui:
+    image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
+    container_name: open-webui
+    volumes:
+      - ./open-webui:/app/backend/data
+    # depends_on:
+      # - ollama
+    ports:
+      - 18100:8080
+    environment:
+      - OLLAMA_BASE_URL=http://${OLLAMA_ENDPOINT:-host.docker.internal}:11434
+      - WEBUI_AUTH=false
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  chatbot_ui:
+    build:
+      context: ../../chatbot_ui
+      dockerfile: Dockerfile
+    ports:
+      - "18090:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
+      - CHAT_COMPLETION_ENDPOINT=http://arch:10000/v1
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+    ports:
+      - 9100:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - ./prom_data:/prometheus
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3010:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    profiles:
+      - monitoring

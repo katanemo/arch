@@ -74,20 +74,14 @@ properties:
             properties:
               name:
                 type: string
-              additionalProperties: false
               required:
                 type: boolean
-              default:
-                type: string
               description:
                 type: string
-              type:
-                type: string
-            additionalProperties: false
+            additionalProperties: true
             required:
               - name
               - description
-              - type
         endpoint:
           type: object
           properties:

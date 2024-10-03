@@ -32,7 +32,7 @@ prompt_targets:
     parameters:
       - name: grouping
         description: |
-          Select how you'd like to group the employees. For example, you can group them by department, location, or their position. The tool will provide the top-ranked employees within each group you choose.
+          Select how you'd like to group the employees. For example, you can group them by department, location, or their position. The function will provide the top-ranked employees within each group you choose.
         required: true
         type: str
         enum: [department, location, position]
@@ -40,14 +40,14 @@ prompt_targets:
         required: true
         type: str
         description: |
-          Choose how you'd like to rank the employees. You can rank them by their salary, their years of experience, or their rating. The tool will sort the employees based on this ranking and return the best ones from each group.
+          Choose how you'd like to rank the employees. You can rank them by their salary, their years of experience, or their rating. The function will sort the employees based on this ranking and return the best ones from each group.
         enum: [salary, years_of_experience, performance_score]
       - name: top_n
         required: false
         type: int
         default: 3
         description: |
-          Enter how many of the top employees you want to see in each group. For example, if you enter 3, the tool will show you the top 3 employees for each group you selected.
+          Enter how many of the top employees you want to see in each group. For example, if you enter 3, the function will show you the top 3 employees for each group you selected.
     endpoint:
       name: api_server
       path: /top_employees
@@ -60,13 +60,13 @@ prompt_targets:
     parameters:
       - name: grouping
         description: |
-          Choose how you'd like to organize the employees. For example, you can group them by department, location, or position. The tool will calculate the summary statistics for each group.
+          Choose how you'd like to organize the employees. For example, you can group them by department, location, or position. The function will calculate the summary statistics for each group.
         required: true
         type: str
         enum: [department, location, position]
       - name: aggregate_criteria
         description: |
-          Select the specific attribute you'd like to analyze. This could be something like salary, years of experience, or rating. The tool will calculate the statistic you request for this attribute.
+          Select the specific attribute you'd like to analyze. This could be something like salary, years of experience, or rating. The function will calculate the statistic you request for this attribute.
         required: true
         type: str
         enum: [salary, years_of_experience, performance_score]
