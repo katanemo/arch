@@ -24,3 +24,8 @@ demos/network_copilot/ollama/models/
 demos/employee_details_copilot/Gradio.pdf
 arch_log/
 envoyfilter/target/
+demos/employee_agent/arch_log
+demos/employee_agent/generated
+demos/employee_agent/open-webui
+demos/network_agent/generated
+demos/network_agent/open-webui
