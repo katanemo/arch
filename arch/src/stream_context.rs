@@ -1,7 +1,8 @@
 use crate::consts::{
     ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
-    ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD,
-    GPT_35_TURBO, MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
 use crate::llm_providers::LlmProviders;
@@ -904,6 +905,10 @@ impl HttpContext for StreamContext {
         }
         self.delete_content_length_header();
         self.save_ratelimit_header();
+
+        if self.get_http_response_header(":path").unwrap_or_default() == CHAT_COMPLETIONS_PATH {
+            self.chat_completions_request = true;
+        }
 
         debug!(
             "S[{}] req_headers={:?}",
