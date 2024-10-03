@@ -54,10 +54,7 @@ impl RatelimitMap {
         for ratelimit_config in ratelimits_config {
             let limit = DefaultKeyedRateLimiter::keyed(get_quota(ratelimit_config.limit));
 
-            match new_ratelimit_map
-                .datastore
-                .get_mut(&ratelimit_config.provider)
-            {
+            match new_ratelimit_map.datastore.get_mut(&ratelimit_config.model) {
                 Some(limits) => match limits.get_mut(&ratelimit_config.selector) {
                     Some(_) => {
                         panic!("repeated selector. Selectors per provider must be unique")
@@ -72,7 +69,7 @@ impl RatelimitMap {
                     let new_hash_map = HashMap::from([(ratelimit_config.selector, limit)]);
                     new_ratelimit_map
                         .datastore
-                        .insert(ratelimit_config.provider, new_hash_map);
+                        .insert(ratelimit_config.model, new_hash_map);
                 }
             }
         }
@@ -142,7 +139,7 @@ fn get_quota(limit: Limit) -> Quota {
 #[test]
 fn non_existent_provider_is_ok() {
     let ratelimits_config = vec![Ratelimit {
-        provider: String::from("provider"),
+        model: String::from("provider"),
         selector: configuration::Header {
             key: String::from("only-key"),
             value: None,
@@ -170,7 +167,7 @@ fn non_existent_provider_is_ok() {
 #[test]
 fn non_existent_key_is_ok() {
     let ratelimits_config = vec![Ratelimit {
-        provider: String::from("provider"),
+        model: String::from("provider"),
         selector: configuration::Header {
             key: String::from("only-key"),
             value: None,
@@ -198,7 +195,7 @@ fn non_existent_key_is_ok() {
 #[test]
 fn specific_limit_does_not_catch_non_specific_value() {
     let ratelimits_config = vec![Ratelimit {
-        provider: String::from("provider"),
+        model: String::from("provider"),
         selector: configuration::Header {
             key: String::from("key"),
             value: Some(String::from("value")),
@@ -226,7 +223,7 @@ fn specific_limit_does_not_catch_non_specific_value() {
 #[test]
 fn specific_limit_is_hit() {
     let ratelimits_config = vec![Ratelimit {
-        provider: String::from("provider"),
+        model: String::from("provider"),
         selector: configuration::Header {
             key: String::from("key"),
             value: Some(String::from("value")),
@@ -254,7 +251,7 @@ fn specific_limit_is_hit() {
 #[test]
 fn non_specific_key_has_different_limits_for_different_values() {
     let ratelimits_config = vec![Ratelimit {
-        provider: String::from("provider"),
+        model: String::from("provider"),
         selector: configuration::Header {
             key: String::from("only-key"),
             value: None,
@@ -308,7 +305,7 @@ fn non_specific_key_has_different_limits_for_different_values() {
 fn different_provider_can_have_different_limits_with_the_same_keys() {
     let ratelimits_config = vec![
         Ratelimit {
-            provider: String::from("first_provider"),
+            model: String::from("first_provider"),
             selector: configuration::Header {
                 key: String::from("key"),
                 value: Some(String::from("value")),
@@ -319,7 +316,7 @@ fn different_provider_can_have_different_limits_with_the_same_keys() {
             },
         },
         Ratelimit {
-            provider: String::from("second_provider"),
+            model: String::from("second_provider"),
             selector: configuration::Header {
                 key: String::from("key"),
                 value: Some(String::from("value")),
@@ -391,7 +388,7 @@ mod test {
     #[test]
     fn different_threads_have_same_ratelimit_data_structure() {
         let ratelimits_config = Some(vec![Ratelimit {
-            provider: String::from("provider"),
+            model: String::from("provider"),
             selector: configuration::Header {
                 key: String::from("key"),
                 value: Some(String::from("value")),

@@ -11,21 +11,24 @@ endpoints:
     endpoint: api_server:80
     connect_timeout: 0.005s
 
-llm_providers:
-  - name: open-ai-gpt-4
-    access_key: $OPEN_AI_API_KEY
-    model: gpt-4
-    default: true
-
 overrides:
   # confidence threshold for prompt target intent matching
   prompt_target_intent_matching_threshold: 0.6
 
-system_prompt: |
-  You are a helpful assistant.
+llm_providers:
+  - name: open-ai-gpt-4
+    access_key: $OPENAI_ACCESS_KEY
+    provider: openai
+    model: gpt-4
+    default: true
+  - name: mistral-large-latest
+    access_key: $MISTRAL_ACCESS_KEY
+    provider: mistral
+    model: large-latest
+
+system_prompt: You are a helpful assistant.
 
 prompt_targets:
-
   - name: weather_forecast
     description: This function provides realtime weather forecast information for a given city.
     parameters:
@@ -47,21 +50,6 @@ prompt_targets:
       - Use farenheight for temperature
       - Use miles per hour for wind speed
 
-  - name: system_time
-    description: This function provides the current system time.
-    parameters:
-      - name: timezone
-        description: The city for which the weather forecast is requested.
-        default: US/Pacific
-        type: string
-    endpoint:
-      name: api_server
-      path: /current_time
-    system_prompt: |
-      You are a helpful system time provider. Use system time data that is provided to you. Please following following guidelines when responding to user queries:
-      - Use 12 hour time format
-      - Use AM/PM for time
-
   - name: insurance_claim_details
     description: This function resolver provides insurance claim details for a given policy number.
     parameters:
@@ -80,8 +68,20 @@ prompt_targets:
       You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
       - Use policy number to retrieve insurance claim details
 
+  - name: default_target
+    default: true
+    description: This is the default target for all unmatched prompts.
+    endpoint:
+      name: api_server
+      path: /default_target
+    system_prompt: |
+      You are a helpful assistant. Use the information that is provided to you.
+    # if it is set to false arch will send response that it received from this prompt target to the user
+    # if true arch will forward the response to the default LLM
+    auto_llm_dispatch_on_response: true
+
 ratelimits:
-  - provider: gpt-3.5-turbo
+  - model: gpt-4
     selector:
       key: selector-key
       value: selector-value

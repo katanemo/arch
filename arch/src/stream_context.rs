@@ -1,14 +1,13 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_ROUTING_HEADER, ARC_FC_CLUSTER,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO,
-    MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
+    ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD,
+    GPT_35_TURBO, MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
-use crate::llm_providers::{LlmProvider, LlmProviders};
+use crate::llm_providers::LlmProviders;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
-use crate::tokenizer;
-use crate::{ratelimit, routing};
+use crate::{ratelimit, routing, tokenizer};
 use acap::cos;
 use http::StatusCode;
 use log::{debug, info, warn};
@@ -23,6 +22,7 @@ use public_types::common_types::{
     EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
     ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
+use public_types::configuration::LlmProvider;
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -39,6 +39,7 @@ enum ResponseHandlerType {
     FunctionCall,
     ZeroShotIntent,
     ArchGuard,
+    DefaultTarget,
 }
 
 pub struct CallContext {
@@ -52,17 +53,18 @@ pub struct CallContext {
 }
 
 pub struct StreamContext {
-    pub context_id: u32,
-    pub metrics: Rc<WasmMetrics>,
-    pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
-    pub overrides: Rc<Option<Overrides>>,
+    context_id: u32,
+    metrics: Rc<WasmMetrics>,
+    prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
     chat_completions_request: bool,
-    llm_provider: Option<&'static LlmProvider<'static>>,
     prompt_guards: Rc<PromptGuards>,
+    llm_providers: Rc<LlmProviders>,
+    llm_provider: Option<Rc<LlmProvider>>,
 }
 
 impl StreamContext {
@@ -72,6 +74,7 @@ impl StreamContext {
         prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
+        llm_providers: Rc<LlmProviders>,
     ) -> Self {
         StreamContext {
             context_id,
@@ -82,6 +85,7 @@ impl StreamContext {
             streaming_response: false,
             response_tokens: 0,
             chat_completions_request: false,
+            llm_providers,
             llm_provider: None,
             prompt_guards,
             overrides,
@@ -89,26 +93,34 @@ impl StreamContext {
     }
     fn llm_provider(&self) -> &LlmProvider {
         self.llm_provider
+            .as_ref()
             .expect("the provider should be set when asked for it")
     }
 
+    fn select_llm_provider(&mut self) {
+        let provider_hint = self
+            .get_http_request_header(ARCH_PROVIDER_HINT_HEADER)
+            .map(|provider_name| provider_name.into());
+
+        self.llm_provider = Some(routing::get_llm_provider(
+            &self.llm_providers,
+            provider_hint,
+        ));
+    }
+
     fn add_routing_header(&mut self) {
-        self.add_http_request_header(ARCH_ROUTING_HEADER, self.llm_provider().as_ref());
+        self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
     }
 
     fn modify_auth_headers(&mut self) -> Result<(), String> {
-        let llm_provider_api_key_value = self
-            .get_http_request_header(self.llm_provider().api_key_header())
-            .ok_or(format!("missing {} api key", self.llm_provider()))?;
+        let llm_provider_api_key_value = self.llm_provider().access_key.as_ref().ok_or(format!(
+            "No access key configured for selected LLM Provider \"{}\"",
+            self.llm_provider()
+        ))?;
 
         let authorization_header_value = format!("Bearer {}", llm_provider_api_key_value);
 
         self.set_http_request_header("Authorization", Some(&authorization_header_value));
-
-        // sanitize passed in api keys
-        for provider in LlmProviders::VARIANTS.iter() {
-            self.set_http_request_header(provider.api_key_header(), None);
-        }
 
         Ok(())
     }
@@ -179,12 +191,16 @@ impl StreamContext {
 
         let prompt_target_names = prompt_targets
             .iter()
+            // exclude default target
+            .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(name, _)| name.clone())
             .collect();
 
         let similarity_scores: Vec<(String, f64)> = prompt_targets
             .iter()
-            .map(|(prompt_name, _prompt_target)| {
+            // exclude default prompt target
+            .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
+            .map(|(prompt_name, _)| {
                 let default_embeddings = HashMap::new();
                 let pte = prompt_target_embeddings
                     .get(prompt_name)
@@ -331,34 +347,84 @@ impl StreamContext {
 
         // check to ensure that the prompt target similarity score is above the threshold
         if prompt_target_similarity_score < prompt_target_intent_matching_threshold
-            && !arch_assistant
+            || arch_assistant
         {
+            debug!("intent score is low or arch assistant is handling the conversation");
             // if arch fc responded to the user message, then we don't need to check the similarity score
             // it may be that arch fc is handling the conversation for parameter collection
             if arch_assistant {
                 info!("arch assistant is handling the conversation");
             } else {
-                info!(
-                    "prompt target below limit: {:.3}, threshold: {:.3}, continue conversation with user",
-                    prompt_target_similarity_score,
-                    prompt_target_intent_matching_threshold
-                );
+                debug!("checking for default prompt target");
+                if let Some(default_prompt_target) = self
+                    .prompt_targets
+                    .read()
+                    .unwrap()
+                    .values()
+                    .find(|pt| pt.default.unwrap_or(false))
+                {
+                    debug!("default prompt target found");
+                    let endpoint = default_prompt_target.endpoint.clone().unwrap();
+                    let upstream_path: String = endpoint.path.unwrap_or(String::from("/"));
+
+                    let upstream_endpoint = endpoint.name;
+                    let mut params = HashMap::new();
+                    params.insert(
+                        ARCH_MESSAGES_KEY.to_string(),
+                        callout_context.request_body.messages.clone(),
+                    );
+                    let arch_messages_json = serde_json::to_string(&params).unwrap();
+                    debug!("no prompt target found with similarity score above threshold, using default prompt target");
+                    let token_id = match self.dispatch_http_call(
+                        &upstream_endpoint,
+                        vec![
+                            (":method", "POST"),
+                            (":path", &upstream_path),
+                            (":authority", &upstream_endpoint),
+                            ("content-type", "application/json"),
+                            ("x-envoy-max-retries", "3"),
+                            (
+                                "x-envoy-upstream-rq-timeout-ms",
+                                ARCH_FC_REQUEST_TIMEOUT_MS.to_string().as_str(),
+                            ),
+                        ],
+                        Some(arch_messages_json.as_bytes()),
+                        vec![],
+                        Duration::from_secs(5),
+                    ) {
+                        Ok(token_id) => token_id,
+                        Err(e) => {
+                            let error_msg =
+                                format!("Error dispatching HTTP call for default-target: {:?}", e);
+                            return self
+                                .send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
+                        }
+                    };
+
+                    self.metrics.active_http_calls.increment(1);
+                    callout_context.response_handler_type = ResponseHandlerType::DefaultTarget;
+                    callout_context.prompt_target_name = Some(default_prompt_target.name.clone());
+                    if self.callouts.insert(token_id, callout_context).is_some() {
+                        panic!("duplicate token_id")
+                    }
+                    return;
+                }
                 self.resume_http_request();
                 return;
             }
         }
 
-        let prompt_target = self
-            .prompt_targets
-            .read()
-            .unwrap()
-            .get(&prompt_target_name)
-            .unwrap()
-            .clone();
+        let prompt_target = match self.prompt_targets.read().unwrap().get(&prompt_target_name) {
+            Some(prompt_target) => prompt_target.clone(),
+            None => {
+                return self.send_server_error(
+                    format!("Prompt target not found: {}", prompt_target_name),
+                    None,
+                );
+            }
+        };
 
         info!("prompt_target name: {:?}", prompt_target_name);
-
-        //TODO: handle default function resolver type
         let mut chat_completion_tools: Vec<ChatCompletionTool> = Vec::new();
         for pt in self.prompt_targets.read().unwrap().values() {
             // only extract entity names
@@ -673,28 +739,13 @@ impl StreamContext {
         let prompt_guard_resp: PromptGuardResponse = serde_json::from_slice(&body).unwrap();
         debug!("prompt_guard_resp: {:?}", prompt_guard_resp);
 
-        if prompt_guard_resp.jailbreak_verdict.is_some()
-            && prompt_guard_resp.jailbreak_verdict.unwrap()
-        {
+        if prompt_guard_resp.jailbreak_verdict.unwrap_or_default() {
             //TODO: handle other scenarios like forward to error target
-            let default_err = "Jailbreak detected. Please refrain from discussing jailbreaking.";
-            let error_msg = match self
+            let msg = self
                 .prompt_guards
-                .as_ref()
-                .input_guards
-                .get(&public_types::configuration::GuardType::Jailbreak)
-            {
-                Some(jailbreak) => match jailbreak.on_exception.as_ref() {
-                    Some(on_exception_details) => match on_exception_details.message.as_ref() {
-                        Some(error_msg) => error_msg,
-                        None => default_err,
-                    },
-                    None => default_err,
-                },
-                None => default_err,
-            };
-
-            return self.send_server_error(error_msg.to_string(), Some(StatusCode::BAD_REQUEST));
+                .jailbreak_on_exception_message()
+                .unwrap_or("Jailbreak detected. Please refrain from discussing jailbreaking.");
+            return self.send_server_error(msg.to_string(), Some(StatusCode::BAD_REQUEST));
         }
 
         self.get_embeddings(callout_context);
@@ -760,6 +811,83 @@ impl StreamContext {
             )
         }
     }
+
+    fn default_target_handler(&self, body: Vec<u8>, callout_context: CallContext) {
+        let prompt_target = self
+            .prompt_targets
+            .read()
+            .unwrap()
+            .get(callout_context.prompt_target_name.as_ref().unwrap())
+            .unwrap()
+            .clone();
+        debug!(
+            "response received for default target: {}",
+            prompt_target.name
+        );
+        // check if the default target should be dispatched to the LLM provider
+        if !prompt_target.auto_llm_dispatch_on_response.unwrap_or(false) {
+            let default_target_response_str = String::from_utf8(body).unwrap();
+            debug!(
+                "sending response back to developer: {}",
+                default_target_response_str
+            );
+            self.send_http_response(
+                StatusCode::OK.as_u16().into(),
+                vec![("Powered-By", "Katanemo")],
+                Some(default_target_response_str.as_bytes()),
+            );
+            // self.resume_http_request();
+            return;
+        }
+        debug!("default_target: sending api response to default llm");
+        let chat_completions_resp: ChatCompletionsResponse = match serde_json::from_slice(&body) {
+            Ok(chat_completions_resp) => chat_completions_resp,
+            Err(e) => {
+                return self.send_server_error(
+                    format!("Error deserializing default target response: {:?}", e),
+                    None,
+                );
+            }
+        };
+        let api_resp = chat_completions_resp.choices[0]
+            .message
+            .content
+            .as_ref()
+            .unwrap();
+        let mut messages = callout_context.request_body.messages;
+
+        // add system prompt
+        match prompt_target.system_prompt.as_ref() {
+            None => {}
+            Some(system_prompt) => {
+                let system_prompt_message = Message {
+                    role: SYSTEM_ROLE.to_string(),
+                    content: Some(system_prompt.clone()),
+                    model: None,
+                    tool_calls: None,
+                };
+                messages.push(system_prompt_message);
+            }
+        }
+
+        messages.push(Message {
+            role: USER_ROLE.to_string(),
+            content: Some(api_resp.clone()),
+            model: None,
+            tool_calls: None,
+        });
+        let chat_completion_request = ChatCompletionsRequest {
+            model: GPT_35_TURBO.to_string(),
+            messages,
+            tools: None,
+            stream: callout_context.request_body.stream,
+            stream_options: callout_context.request_body.stream_options,
+        };
+        let json_resp = serde_json::to_string(&chat_completion_request).unwrap();
+        debug!("sending response back to default llm: {}", json_resp);
+        self.set_http_request_body(0, json_resp.len(), json_resp.as_bytes());
+        self.resume_http_request();
+    }
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
@@ -767,11 +895,7 @@ impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        let provider_hint = self
-            .get_http_request_header("x-arch-deterministic-provider")
-            .is_some();
-        self.llm_provider = Some(routing::get_llm_provider(provider_hint));
-
+        self.select_llm_provider();
         self.add_routing_header();
         if let Err(error) = self.modify_auth_headers() {
             self.send_server_error(error, Some(StatusCode::BAD_REQUEST));
@@ -826,7 +950,7 @@ impl HttpContext for StreamContext {
             };
 
         // Set the model based on the chosen LLM Provider
-        deserialized_body.model = String::from(self.llm_provider().choose_model());
+        deserialized_body.model = String::from(&self.llm_provider().model);
 
         self.streaming_response = deserialized_body.stream;
         if deserialized_body.stream && deserialized_body.stream_options.is_none() {
@@ -1047,6 +1171,9 @@ impl Context for StreamContext {
                     self.function_call_response_handler(body, callout_context)
                 }
                 ResponseHandlerType::ArchGuard => self.arch_guard_handler(body, callout_context),
+                ResponseHandlerType::DefaultTarget => {
+                    self.default_target_handler(body, callout_context)
+                }
             }
         } else {
             self.send_server_error(
