@@ -1087,9 +1087,7 @@ impl HttpContext for StreamContext {
         if let Some(tool_calls) = self.tool_calls.as_ref() {
             if tool_calls.len() > 0 {
                 let tool_calls_str = serde_json::to_string(&tool_calls).unwrap();
-                self.add_http_response_header("X-ARCH-TOOL-CALLS", tool_calls_str.as_str());
-            } else {
-                self.add_http_response_header("X-ARCH-TOOL-CALLS", "[]");
+                self.add_http_response_header("x-arch-tool-calls", tool_calls_str.as_str());
             }
         }
         Action::Continue
