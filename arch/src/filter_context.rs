@@ -47,8 +47,7 @@ pub struct FilterContext {
     callouts: HashMap<u32, CallContext>,
     overrides: Rc<Option<Overrides>>,
     prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
-    // This should be Option<Rc<PromptGuards>>, because StreamContext::new() should get an Rc<PromptGuards> not Option<Rc<PromptGuards>>.
-    prompt_guards: Rc<Option<PromptGuards>>,
+    prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
 }
 
@@ -67,7 +66,7 @@ impl FilterContext {
             metrics: Rc::new(WasmMetrics::new()),
             prompt_targets: Rc::new(RwLock::new(HashMap::new())),
             overrides: Rc::new(None),
-            prompt_guards: Rc::new(Some(PromptGuards::default())),
+            prompt_guards: Rc::new(PromptGuards::default()),
             llm_providers: None,
         }
     }
@@ -242,7 +241,7 @@ impl RootContext for FilterContext {
         ratelimit::ratelimits(config.ratelimits);
 
         if let Some(prompt_guards) = config.prompt_guards {
-            self.prompt_guards = Rc::new(Some(prompt_guards))
+            self.prompt_guards = Rc::new(prompt_guards)
         }
 
         match config.llm_providers.try_into() {
