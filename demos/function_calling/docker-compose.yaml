@@ -24,6 +24,8 @@ services:
         condition: service_healthy
     environment:
       - LOG_LEVEL=debug
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
 
   model_server:
     build:

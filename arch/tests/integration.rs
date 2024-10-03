@@ -29,31 +29,18 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .call_proxy_on_request_headers(http_context, 0, false)
         .expect_get_header_map_value(
             Some(MapType::HttpRequestHeaders),
-            Some("x-arch-deterministic-provider"),
+            Some("x-arch-llm-provider-hint"),
         )
-        .returning(Some("true"))
+        .returning(Some("default"))
         .expect_add_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some("x-arch-llm-provider"),
-            Some("openai"),
+            Some("open-ai-gpt-4"),
         )
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-arch-openai-api-key"),
-        )
-        .returning(Some("api-key"))
         .expect_replace_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some("Authorization"),
-            Some("Bearer api-key"),
-        )
-        .expect_remove_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-arch-openai-api-key"),
-        )
-        .expect_remove_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-arch-mistral-api-key"),
+            Some("Bearer secret_key"),
         )
         .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
         .expect_get_header_map_value(
@@ -190,7 +177,8 @@ endpoints:
 
 llm_providers:
   - name: open-ai-gpt-4
-    access_key: $OPEN_AI_API_KEY
+    provider: openai
+    access_key: secret_key
     model: gpt-4
     default: true
 
@@ -240,7 +228,7 @@ prompt_targets:
       You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
       - Use policy number to retrieve insurance claim details
 ratelimits:
-  - provider: gpt-3.5-turbo
+  - model: gpt-4
     selector:
       key: selector-key
       value: selector-value
@@ -267,20 +255,28 @@ fn successful_request_to_open_ai_chat_completions() {
         .unwrap();
 
     // Setup Filter
-    let root_context = 1;
+    let filter_context = 1;
+    let config = serde_json::to_string(&default_config()).unwrap();
 
     module
-        .call_proxy_on_context_create(root_context, 0)
+        .call_proxy_on_context_create(filter_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
         .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    module
+        .call_proxy_on_configure(filter_context, config.len() as i32)
+        .expect_get_buffer_bytes(Some(BufferType::PluginConfiguration))
+        .returning(Some(&config))
+        .execute_and_expect(ReturnType::Bool(true))
         .unwrap();
 
     // Setup HTTP Stream
     let http_context = 2;
 
     module
-        .call_proxy_on_context_create(http_context, root_context)
+        .call_proxy_on_context_create(http_context, filter_context)
         .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
@@ -336,20 +332,28 @@ fn bad_request_to_open_ai_chat_completions() {
         .unwrap();
 
     // Setup Filter
-    let root_context = 1;
+    let filter_context = 1;
+    let config = serde_json::to_string(&default_config()).unwrap();
 
     module
-        .call_proxy_on_context_create(root_context, 0)
+        .call_proxy_on_context_create(filter_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
         .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    module
+        .call_proxy_on_configure(filter_context, config.len() as i32)
+        .expect_get_buffer_bytes(Some(BufferType::PluginConfiguration))
+        .returning(Some(&config))
+        .execute_and_expect(ReturnType::Bool(true))
         .unwrap();
 
     // Setup HTTP Stream
     let http_context = 2;
 
     module
-        .call_proxy_on_context_create(http_context, root_context)
+        .call_proxy_on_context_create(http_context, filter_context)
         .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
@@ -416,7 +420,6 @@ fn request_ratelimited() {
         .unwrap();
     module
         .call_proxy_on_configure(filter_context, config.len() as i32)
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_get_buffer_bytes(Some(BufferType::PluginConfiguration))
         .returning(Some(&config))
         .execute_and_expect(ReturnType::Bool(true))
@@ -531,7 +534,6 @@ fn request_not_ratelimited() {
         .unwrap();
     module
         .call_proxy_on_configure(filter_context, config_str.len() as i32)
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_get_buffer_bytes(Some(BufferType::PluginConfiguration))
         .returning(Some(&config_str))
         .execute_and_expect(ReturnType::Bool(true))

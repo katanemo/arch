@@ -11,21 +11,24 @@ endpoints:
     endpoint: api_server:80
     connect_timeout: 0.005s
 
-llm_providers:
-  - name: open-ai-gpt-4
-    access_key: $OPEN_AI_API_KEY
-    model: gpt-4
-    default: true
-
 overrides:
   # confidence threshold for prompt target intent matching
   prompt_target_intent_matching_threshold: 0.6
 
-system_prompt: |
-  You are a helpful assistant.
+llm_providers:
+  - name: open-ai-gpt-4
+    access_key: $OPENAI_ACCESS_KEY
+    provider: openai
+    model: gpt-4
+    default: true
+  - name: mistral-large-latest
+    access_key: $MISTRAL_ACCESS_KEY
+    provider: mistral
+    model: large-latest
+
+system_prompt: You are a helpful assistant.
 
 prompt_targets:
-
   - name: weather_forecast
     description: This function provides realtime weather forecast information for a given city.
     parameters:
@@ -78,7 +81,7 @@ prompt_targets:
     auto_llm_dispatch_on_response: true
 
 ratelimits:
-  - provider: gpt-3.5-turbo
+  - model: gpt-4
     selector:
       key: selector-key
       value: selector-value
