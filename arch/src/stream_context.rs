@@ -203,18 +203,15 @@ impl StreamContext {
             .map(|(name, _)| name.clone())
             .collect();
 
-        debug!("after embeddings_store read: 2.");
-
         let similarity_scores: Vec<(String, f64)> = prompt_targets
             .iter()
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
-                debug!("after embeddings_store read: 2.1.");
                 let pte = match prompt_target_embeddings.get(prompt_name) {
                     Some(embeddings) => embeddings,
                     None => {
-                        debug!(
+                        warn!(
                             "embeddings not found for prompt target name: {}",
                             prompt_name
                         );
@@ -222,26 +219,21 @@ impl StreamContext {
                     }
                 };
 
-                debug!("after embeddings_store read: 2.2.");
                 let description_embeddings = match pte.get(&EmbeddingType::Description) {
                     Some(embeddings) => embeddings,
                     None => {
-                        debug!(
+                        warn!(
                             "description embeddings not found for prompt target name: {}",
                             prompt_name
                         );
                         return (prompt_name.clone(), 0.0);
                     }
                 };
-                debug!("after embeddings_store read: 2.3.");
                 let similarity_score_description =
                     cos::cosine_similarity(&prompt_embeddings_vector, &description_embeddings);
-                debug!("after embeddings_store read: 2.4.");
                 (prompt_name.clone(), similarity_score_description)
             })
             .collect();
-
-        debug!("after embeddings_store read: 3.");
 
         debug!(
             "similarity scores based on description embeddings match: {:?}",
