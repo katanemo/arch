@@ -13,9 +13,9 @@ use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
 use std::cell::RefCell;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::{OnceLock, RwLock};
 use std::time::Duration;
 
 #[derive(Copy, Clone, Debug)]
@@ -38,7 +38,7 @@ pub type EmbeddingsStore = HashMap<String, EmbeddingTypeMap>;
 
 #[derive(Debug)]
 pub struct FilterCallContext {
-    pub prompt_target: String,
+    pub prompt_target_name: String,
     pub embedding_type: EmbeddingType,
 }
 
@@ -51,22 +51,8 @@ pub struct FilterContext {
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
-    temp_embeddings_store: Option<EmbeddingsStore>,
-}
-
-pub fn filters_initialization_in_progress(filter_context: &FilterContext) -> &'static RwLock<bool> {
-    static IN_PROGRESS: OnceLock<RwLock<bool>> = OnceLock::new();
-    IN_PROGRESS.get_or_init(|| {
-        filter_context.process_prompt_targets();
-        RwLock::new(true)
-    })
-}
-
-pub fn embeddings_store(store: Option<EmbeddingsStore>) -> &'static EmbeddingsStore {
-    static EMBEDDINGS_STORE: OnceLock<EmbeddingsStore> = OnceLock::new();
-    EMBEDDINGS_STORE.get_or_init(|| {
-        store.expect("This value should only be initialized with a present Embeddings Store value")
-    })
+    embeddings_store: Option<Rc<EmbeddingsStore>>,
+    temp_embeddings_store: EmbeddingsStore,
 }
 
 impl FilterContext {
@@ -78,23 +64,33 @@ impl FilterContext {
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
             llm_providers: None,
-            temp_embeddings_store: None,
+            embeddings_store: None,
+            temp_embeddings_store: HashMap::new(),
         }
-    }
-
-    fn prompt_targets(&self) -> Rc<HashMap<String, PromptTarget>> {
-        Rc::clone(&self.prompt_targets)
     }
 
     fn process_prompt_targets(&self) {
-        for values in self.prompt_targets().iter() {
+        for values in self.prompt_targets.iter() {
             let prompt_target = values.1;
-            self.schedule_embeddings_call(&prompt_target.name, EmbeddingType::Name);
-            self.schedule_embeddings_call(&prompt_target.description, EmbeddingType::Description);
+            self.schedule_embeddings_call(
+                &prompt_target.name,
+                &prompt_target.name,
+                EmbeddingType::Name,
+            );
+            self.schedule_embeddings_call(
+                &prompt_target.name,
+                &prompt_target.description,
+                EmbeddingType::Description,
+            );
         }
     }
 
-    fn schedule_embeddings_call(&self, input: &str, embedding_type: EmbeddingType) {
+    fn schedule_embeddings_call(
+        &self,
+        prompt_target_name: &str,
+        input: &str,
+        embedding_type: EmbeddingType,
+    ) {
         let embeddings_input = CreateEmbeddingRequest {
             input: Box::new(CreateEmbeddingRequestInput::String(String::from(input))),
             model: String::from(DEFAULT_EMBEDDING_MODEL),
@@ -119,7 +115,7 @@ impl FilterContext {
         );
 
         let call_context = crate::filter_context::FilterCallContext {
-            prompt_target: String::from(input),
+            prompt_target_name: String::from(prompt_target_name),
             embedding_type,
         };
 
@@ -132,12 +128,13 @@ impl FilterContext {
         embedding_type: EmbeddingType,
         prompt_target_name: String,
     ) {
-        if self.temp_embeddings_store.is_none() {
-            self.temp_embeddings_store = Some(HashMap::new())
-        }
-
-        let prompt_targets = self.prompt_targets();
-        let prompt_target = prompt_targets.get(&prompt_target_name).unwrap();
+        let prompt_target = self.prompt_targets.get(&prompt_target_name).expect(
+            format!(
+                "Received embeddings response for unknown prompt target name={}",
+                prompt_target_name
+            )
+            .as_str(),
+        );
 
         let body = self
             .get_http_call_response_body(0, body_size)
@@ -163,17 +160,29 @@ impl FilterContext {
                     embedding_type
                 );
 
-            self.temp_embeddings_store.as_mut().unwrap().insert(
-                prompt_target.name.clone(),
-                HashMap::from([(embedding_type, embeddings)]),
-            );
-        }
+            let entry = self.temp_embeddings_store.entry(prompt_target_name);
+            match entry {
+                Entry::Occupied(_) => {
+                    entry.and_modify(|e| {
+                        if e.contains_key(&embedding_type) {
+                            panic!(
+                                "Duplicate {:?} for prompt target with name=\"{}\"",
+                                &embedding_type, prompt_target.name
+                            )
+                        } else {
+                            e.insert(embedding_type, embeddings);
+                        }
+                    });
+                }
+                Entry::Vacant(_) => {
+                    entry.or_insert(HashMap::from([(embedding_type, embeddings)]));
+                }
+            }
 
-        if self.callouts.borrow().is_empty() {
-            let mut filters_initialization_in_progress =
-                filters_initialization_in_progress(self).write().unwrap();
-            *filters_initialization_in_progress = true;
-            embeddings_store(self.temp_embeddings_store.take());
+            if self.prompt_targets.len() == self.temp_embeddings_store.len() {
+                self.embeddings_store =
+                    Some(Rc::new(std::mem::take(&mut self.temp_embeddings_store)))
+            }
         }
     }
 }
@@ -213,7 +222,7 @@ impl Context for FilterContext {
         self.embedding_response_handler(
             body_size,
             callout_data.embedding_type,
-            callout_data.prompt_target,
+            callout_data.prompt_target_name,
         )
     }
 }
@@ -237,6 +246,7 @@ impl RootContext for FilterContext {
             prompt_targets.insert(pt.name.clone(), pt.clone());
         }
         self.prompt_targets = Rc::new(prompt_targets);
+        debug!("Setting prompt target config value");
 
         ratelimit::ratelimits(config.ratelimits);
 
@@ -258,13 +268,9 @@ impl RootContext for FilterContext {
             context_id
         );
 
-        {
-            let filters_initialization_in_progress =
-                filters_initialization_in_progress(&self).read().unwrap();
-            if *filters_initialization_in_progress {
-                // The filter has not initialized, cannot create streams.
-                return None;
-            }
+        // No StreamContext can be created until the Embedding Store is fully initialized.
+        if self.embeddings_store.is_none() {
+            return None;
         }
 
         Some(Box::new(StreamContext::new(
@@ -278,7 +284,12 @@ impl RootContext for FilterContext {
                     .as_ref()
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
-            embeddings_store(None),
+            Rc::clone(
+                &self
+                    .embeddings_store
+                    .as_ref()
+                    .expect("Embeddings Store must exist when StreamContext is being constructed"),
+            ),
         )))
     }
 

@@ -55,7 +55,7 @@ pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
-    embeddings_store: &'static EmbeddingsStore,
+    embeddings_store: Rc<EmbeddingsStore>,
     overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     ratelimit_selector: Option<Header>,
@@ -75,7 +75,7 @@ impl StreamContext {
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
-        embeddings_store: &'static EmbeddingsStore,
+        embeddings_store: Rc<EmbeddingsStore>,
     ) -> Self {
         StreamContext {
             context_id,
