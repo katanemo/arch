@@ -124,6 +124,7 @@ static_resources:
     - name: model_server
       connect_timeout: 5s
       type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: model_server
@@ -132,8 +133,8 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
-                      port_value: 80
+                      address: host.docker.internal
+                      port_value: 51000
                   hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
@@ -152,6 +153,7 @@ static_resources:
     - name: arch_fc
       connect_timeout: 5s
       type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: arch_fc
@@ -160,8 +162,8 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
-                      port_value: 80
+                      address: host.docker.internal
+                      port_value: 51000
                   hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}

@@ -43,19 +43,6 @@ def build():
         click.echo("Error: Dockerfile not found in /arch")
         sys.exit(1)
 
-    # Check if /model_server/Dockerfile exists
-    if os.path.exists(MODEL_SERVER_DOCKERFILE):
-        click.echo("Building model_server image...")
-        try:
-            subprocess.run(["docker", "build", "-f", MODEL_SERVER_DOCKERFILE, "-t", "model_server:latest", "./model_server"], check=True)
-            click.echo("model_server image built successfully.")
-        except subprocess.CalledProcessError as e:
-            click.echo(f"Error building model_server image: {e}")
-            sys.exit(1)
-    else:
-        click.echo("Error: Dockerfile not found in /model_server")
-        sys.exit(1)
-
     click.echo("All images built successfully.")
 
 @click.command()
