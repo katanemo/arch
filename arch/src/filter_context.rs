@@ -128,13 +128,15 @@ impl FilterContext {
         embedding_type: EmbeddingType,
         prompt_target_name: String,
     ) {
-        let prompt_target = self.prompt_targets.get(&prompt_target_name).expect(
-            format!(
-                "Received embeddings response for unknown prompt target name={}",
-                prompt_target_name
-            )
-            .as_str(),
-        );
+        let prompt_target = self
+            .prompt_targets
+            .get(&prompt_target_name)
+            .unwrap_or_else(|| {
+                panic!(
+                    "Received embeddings response for unknown prompt target name={}",
+                    prompt_target_name
+                )
+            });
 
         let body = self
             .get_http_call_response_body(0, body_size)
@@ -153,7 +155,7 @@ impl FilterContext {
                 };
 
             let embeddings = embedding_response.data.remove(0).embedding;
-            log::info!(
+            debug!(
                     "Adding embeddings for prompt target name: {:?}, description: {:?}, embedding type: {:?}",
                     prompt_target.name,
                     prompt_target.description,
@@ -164,13 +166,13 @@ impl FilterContext {
             match entry {
                 Entry::Occupied(_) => {
                     entry.and_modify(|e| {
-                        if e.contains_key(&embedding_type) {
+                        if let Entry::Vacant(e) = e.entry(embedding_type) {
+                            e.insert(embeddings);
+                        } else {
                             panic!(
                                 "Duplicate {:?} for prompt target with name=\"{}\"",
                                 &embedding_type, prompt_target.name
                             )
-                        } else {
-                            e.insert(embedding_type, embeddings);
                         }
                     });
                 }
@@ -246,7 +248,6 @@ impl RootContext for FilterContext {
             prompt_targets.insert(pt.name.clone(), pt.clone());
         }
         self.prompt_targets = Rc::new(prompt_targets);
-        debug!("Setting prompt target config value");
 
         ratelimit::ratelimits(config.ratelimits);
 
@@ -269,9 +270,7 @@ impl RootContext for FilterContext {
         );
 
         // No StreamContext can be created until the Embedding Store is fully initialized.
-        if self.embeddings_store.is_none() {
-            return None;
-        }
+        self.embeddings_store.as_ref()?;
 
         Some(Box::new(StreamContext::new(
             context_id,
@@ -285,8 +284,7 @@ impl RootContext for FilterContext {
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
             Rc::clone(
-                &self
-                    .embeddings_store
+                self.embeddings_store
                     .as_ref()
                     .expect("Embeddings Store must exist when StreamContext is being constructed"),
             ),

@@ -1,6 +1,7 @@
 use crate::stats::{Gauge, IncrementingMetric};
+use log::debug;
 use proxy_wasm::traits::Context;
-use std::{cell::RefCell, collections::HashMap, time::Duration};
+use std::{cell::RefCell, collections::HashMap, fmt::Debug, time::Duration};
 
 #[derive(Debug)]
 pub struct CallArgs<'a> {
@@ -30,9 +31,13 @@ impl<'a> CallArgs<'a> {
 }
 
 pub trait Client: Context {
-    type CallContext;
+    type CallContext: Debug;
 
     fn http_call(&self, call_args: CallArgs, call_context: Self::CallContext) {
+        debug!(
+            "dispatching http call with args={:?} context={:?}",
+            call_args, call_context
+        );
         let id = self
             .dispatch_http_call(
                 call_args.upstream,
@@ -54,7 +59,7 @@ pub trait Client: Context {
 
     fn add_call_context(&self, id: u32, call_context: Self::CallContext) {
         let callouts = self.callouts();
-        if let Some(_) = callouts.borrow_mut().insert(id, call_context) {
+        if callouts.borrow_mut().insert(id, call_context).is_some() {
             panic!("Duplicate http call with id={}", id);
         }
         self.active_http_calls().increment(1);
