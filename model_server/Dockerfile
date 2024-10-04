@@ -18,8 +18,8 @@ WORKDIR /src
 ENV MODELS="BAAI/bge-large-en-v1.5"
 
 COPY ./app ./app
-COPY ./guard_model_config.yaml .
-COPY ./openai_params.yaml .
+COPY ./app/guard_model_config.yaml .
+COPY ./app/openai_params.yaml .
 
 # comment it out for now as we don't want to download the model every time we build the image
 # we will mount host cache to docker image to avoid downloading the model every time
