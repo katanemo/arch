@@ -8,18 +8,13 @@ ARCH_CONFIG_FILE = os.getenv('ARCH_CONFIG_FILE', '/config/arch_config.yaml')
 ENVOY_CONFIG_FILE_RENDERED = os.getenv('ENVOY_CONFIG_FILE_RENDERED', '/etc/envoy/envoy.yaml')
 ARCH_CONFIG_SCHEMA_FILE = os.getenv('ARCH_CONFIG_SCHEMA_FILE', 'arch_config_schema.yaml')
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', False)
-MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY', False)
-
 def add_secret_key_to_llm_providers(config_yaml) :
     llm_providers = []
     for llm_provider in config_yaml.get("llm_providers", []):
-        if llm_provider['access_key'] == "$MISTRAL_API_KEY":
-            llm_provider['access_key'] = MISTRAL_API_KEY
-        elif llm_provider['access_key'] == "$OPENAI_API_KEY":
-            llm_provider['access_key'] = OPENAI_API_KEY
-        else:
-            llm_provider.pop('access_key')
+        access_key_env_var = llm_provider.get('access_key', False)
+        access_key_value = os.getenv(access_key_env_var, False)
+        if access_key_env_var and access_key_value:
+            llm_provider['access_key'] = access_key_value
         llm_providers.append(llm_provider)
     config_yaml["llm_providers"] = llm_providers
     return config_yaml
