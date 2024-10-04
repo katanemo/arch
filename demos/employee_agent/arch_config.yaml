@@ -183,6 +183,104 @@ prompt_targets:
     system_prompt: |
       You are responsible for fetching employees who have the required certifications and meet the minimum years of experience. Optionally, filter by department.
 
+  #### Employee Mentorship Impact Analysis**
+  - name: mentorship_impact
+    description: |
+      Calculates the effectiveness of mentors based on mentee performance improvement and project participation. Uses a tuple to pass a range for performance improvement and a list for departments. A dictionary maps productivity metrics to weights (e.g., {'tasks_completed': 0.5, 'meeting_attendance': 0.2, 'peer_feedback': 0.3}).
+    parameters:
+      - name: mentor_id
+        description: Mentor's employee ID.
+        required: true
+        type: int
+      - name: performance_range
+        description: Tuple of min and max performance improvement percentages (e.g., (5, 20)).
+        required: true
+        type: Tuple[int, int]
+      - name: departments
+        description: List of departments to filter.
+        required: false
+        type: list
+      - name: min_projects
+        description: Minimum number of projects the mentee should have participated in.
+        required: false
+        type: integer
+        default: 2
+      - name: productivity_metrics
+        description: Dictionary mapping productivity metrics to weights(e.g., tasks completed,  meeting attendance, peer feedback).
+        required: true
+        type: dict
+    endpoint:
+      name: api_server
+      path: /mentorship_impact
+    system_prompt: |
+      Calculate mentorship impact based on performance improvement, department filtering, and project participation. Include weighted productivity metrics in the analysis.
+
+  #### Employee Project Success Predictors**
+  - name: project_success_predictors
+    description: |
+      Predicts the likelihood of success for an employee's project based on project characteristics like scope, timeline, and resources allocated. Uses past project performance as an optional filter.
+    parameters:
+      - name: project_name
+        description: Name of the project.
+        required: true
+        type: string
+      - name: scope
+        description: The scope of the project (e.g., "large", "medium", "small").
+        required: true
+        type: string
+        enum: ["small", "medium", "large"]
+      - name: timeline
+        description: Number of days allocated for the project.
+        required: true
+        type: integer
+      - name: resources_allocated
+        description: The resources (e.g., budget or headcount) allocated for the project.
+        required: true
+        type: float
+      - name: past_performance
+        description: Employee's past project success rate (0 to 1).
+        required: false
+        type: float
+        default: 0.75
+      - name: productivity_metrics
+        description: Dictionary mapping productivity metrics to weights (leadership, communication, problem solving).
+        required: true
+        type: dict
+    endpoint:
+      name: api_server
+      path: /project_success_predictors
+    system_prompt: |
+      Predict the likelihood of success for an employee's project based on its scope, timeline, resources, and weighted productivity metrics.
+
+  #### Remote Work Efficiency Tracker**
+  - name: remote_work_efficiency
+    description: |
+      Tracks the efficiency of employees working remotely, with a focus on project deadlines met and hours worked. Accepts a list of departments to compare remote efficiency across departments.
+    parameters:
+      - name: departments
+        description: List of departments to include in the efficiency tracking.
+        required: true
+        type: list
+      - name: track_hours
+        description: Whether to track the hours worked by employees as part of the efficiency metric.
+        required: false
+        type: boolean
+        default: true
+      - name: min_projects_completed
+        description: Minimum number of projects completed during the remote work period.
+        required: false
+        type: integer
+        default: 3
+      - name: productivity_metrics
+        description: Dictionary mapping metrics to weights (tasks completed, meeting attendence, peer feedback).
+        required: true
+        type: dict
+    endpoint:
+      name: api_server
+      path: /remote_work_efficiency
+    system_prompt: |
+      Track the remote work efficiency of employees across departments, considering project deadlines, hours worked, and project completion. Include weighted productivity metrics.
+
 ratelimits:
   - provider: gpt-3.5-turbo
     selector:

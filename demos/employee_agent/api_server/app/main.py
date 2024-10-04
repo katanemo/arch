@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Dict
 from fastapi import FastAPI, HTTPException, Response
 import logging
 from pydantic import BaseModel
@@ -127,9 +127,9 @@ async def employees_projects(req: TopEmployeesProjects, res: Response):
 
     # Prepare the base query
     query = f"""
-    SELECT e.name, e.department, e.years_of_experience, e.performance_score, COUNT(p.project_name) as project_count
+    SELECT e.name, e.department, e.years_of_experience, e.performance_score, COUNT(pp.project_name) as project_count
     FROM employees e
-    LEFT JOIN projects p ON e.eid = p.eid
+    LEFT JOIN project_performance pp ON e.eid = pp.eid
     WHERE e.performance_score >= {req.min_performance_score}
       AND e.years_of_experience >= {req.min_years_experience}
       AND e.department = '{req.department}'
@@ -139,7 +139,7 @@ async def employees_projects(req: TopEmployeesProjects, res: Response):
     # Add HAVING clause for project count, if provided
     having_clause = ""
     if req.min_project_count:
-        having_clause = f"HAVING COUNT(p.project_name) >= {req.min_project_count}"
+        having_clause = f"HAVING COUNT(pp.project_name) >= {req.min_project_count}"
 
     # Add ORDER BY clause
     order_by_clause = "ORDER BY e.performance_score DESC"
@@ -261,3 +261,149 @@ async def certifications_experience(req: CertificationsExperienceRequest, res: R
 
     result_df = pd.read_sql_query(query, conn, params=params)
     return result_df.to_dict(orient='records')
+
+class MentorshipImpactRequest(BaseModel):
+    mentor_id: int
+    performance_range: Tuple[int, int]
+    departments: List[str]
+    min_projects: int = 2
+    productivity_metrics: Dict[str, float]
+
+@app.post("/mentorship_impact")
+async def mentorship_impact(req: MentorshipImpactRequest, res: Response):
+    try:
+        logger.info(f"{'=' * 50}\n\n Request: {req.dict()} \n\n{'=' * 50}")
+        filters = [f"m.mentor_id = {req.mentor_id}"]
+        # Unpack performance range
+        if len(req.performance_range) == 1:
+            performance_min = req.performance_range[0]
+            filters.append(f"mp.mentee_performance_improvement > {performance_min}")
+        elif len(req.performance_range) == 2:
+            performance_min, performance_max = req.performance_range
+            filters.append(f"mp.mentee_performance_improvement BETWEEN {performance_min} AND {performance_max}")
+
+        departments_filter = None
+        if req.departments:
+            departments_filter = "', '".join(req.departments) if req.departments else None
+
+        default_weights = {
+            'tasks_completed': 0.5,
+            'meeting_attendance': 0.2,
+            'peer_feedback': 0.3
+        }
+        combined_weights = {**default_weights, **req.productivity_metrics}
+        # Dynamically calculate the weighted productivity score
+        weighted_score_expr = " + ".join([f"{weight} * p.{metric}" for metric, weight in combined_weights.items()])
+
+        if departments_filter:
+            filters.append(f"e.department IN ('{departments_filter}')")
+        filters.append(f"mp.projects_participated >= {req.min_projects}")
+        where_clause = " AND ".join(filters)
+
+        query = f"""
+        SELECT m.mentor_id, mp.mentee_id, e.name  as mentee_name, e.department as mentee_dept, mp.mentee_performance_improvement, mp.projects_participated,
+            ({weighted_score_expr}) as productivity_score
+        FROM employees e
+        JOIN mentorship m ON e.eid = m.mentee_id
+        JOIN mentee_performance mp ON mp.mentee_id = m.mentee_id
+        JOIN productivity p ON p.eid = mp.mentee_id
+        WHERE {where_clause}
+        ORDER BY productivity_score DESC;
+        """
+        logger.info(f"{'*' * 50}\n\n Query: {query} \n\n{'*' * 50}")
+
+        result_df = pd.read_sql_query(query, conn)
+        return (result_df.to_dict(orient='records') if not result_df.empty else {"result": "No results found for the combination of inputs. Try another combination."})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e) + " Something wrong in the function implementation.")
+
+class ProjectSuccessPredictorsRequest(BaseModel):
+    project_name: str
+    scope: str  # Options: "small", "medium", "large"
+    timeline: int
+    resources_allocated: float
+    past_performance: float = 0.75
+    productivity_metrics: Dict[str, float]
+    # = {'leadership': 0.4, 'communication': 0.3, 'problem_solving': 0.3}
+
+@app.post("/project_success_predictors")
+async def project_success_predictors(req: ProjectSuccessPredictorsRequest, res: Response):
+    try:
+        logger.info(f"{'*' * 50}\n\n Request: {req.dict()} \n\n{'*' * 50}")
+        default_weights = {
+            'leadership': 0.4,
+            'communication': 0.3,
+            'problem_solving': 0.3
+        }
+
+        # Merge user-provided metrics with default ones, preferring user input
+        combined_weights = {**default_weights, **req.productivity_metrics}
+
+        # Dynamically calculate the weighted productivity score
+        weighted_score_expr = " + ".join([f"{weight} * pd.{metric}" for metric, weight in combined_weights.items()])
+
+        # Calculate success likelihood based on project characteristics and employee performance
+        query = f"""
+        SELECT pr.project_name, pr.scope, pr.timeline, pr.resources_allocated, pp.success_rate,
+            ({weighted_score_expr}) as productivity_score,
+            (pp.success_rate * {req.past_performance} * ({weighted_score_expr}) * 1000 / pr.resources_allocated) as success_likelihood
+        FROM projects pr
+        JOIN project_performance pp ON pp.project_name = pr.project_name
+        JOIN productivity pd ON pd.eid = pp.eid
+        WHERE pr.project_name = '{req.project_name}' AND pr.scope = '{req.scope}' AND pr.timeline <= {req.timeline}
+        ORDER BY success_likelihood DESC LIMIT 10;
+        """
+
+        logger.info(f"{'*' * 50}\n\n Query: {query} \n\n{'*' * 50}")
+
+        result_df = pd.read_sql_query(query, conn)
+
+        logger.info(f"{'=' * 50}\n\n Result: {result_df.to_dict(orient='records')} \n\n{'=' * 50}")
+        return result_df.to_dict(orient='records') if not result_df.empty else {"result": "No results found for the combination of inputs. Try another combination."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e) + " Something wrong in the function implementation.")
+
+class RemoteWorkEfficiencyRequest(BaseModel):
+    departments: List[str]
+    track_hours: bool = True
+    min_projects_completed: int = 3
+    productivity_metrics: Dict[str, float]
+
+@app.post("/remote_work_efficiency")
+async def remote_work_efficiency(req: RemoteWorkEfficiencyRequest, res: Response):
+    try:
+        default_weights = {
+            'tasks_completed': 0.5,
+            'meeting_attendance': 0.2,
+            'peer_feedback': 0.3
+        }
+        combined_weights = {**default_weights, **req.productivity_metrics}
+        # Dynamically calculate the weighted productivity score
+        weighted_score_expr = " + ".join([f"{weight} * p.{metric}" for metric, weight in combined_weights.items()])
+
+        # Build filters for departments and project completion
+        departments_filter = "', '".join(req.departments)
+        filters = [f"e.department IN ('{departments_filter}')"]
+        filters.append(f"rw.projects_completed >= {req.min_projects_completed}")
+
+        # Optionally track hours worked
+        if req.track_hours:
+            filters.append("rw.hours_worked IS NOT NULL")
+
+        where_clause = " AND ".join(filters)
+
+        query = f"""
+        SELECT e.name, e.department, rw.hours_worked, rw.projects_completed,
+            ({weighted_score_expr}) as productivity_score,
+            (rw.projects_completed * ({weighted_score_expr})) as efficiency_score
+        FROM employees e
+        JOIN remote_work rw ON e.eid = rw.eid
+        JOIN productivity p ON p.eid = rw.eid
+        WHERE {where_clause}
+        ORDER BY efficiency_score DESC;
+        """
+
+        result_df = pd.read_sql_query(query, conn)
+        return result_df.to_dict(orient='records') if not result_df.empty else {"result": "No results found for the combination of inputs. Try another combination."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e) + " Something wrong in the function implementation.")

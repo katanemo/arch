@@ -28,6 +28,20 @@ def project_performance(min_project_count: int, min_performance_score: float, de
 def certifications_experience(certifications: list, min_years_experience: int, department: str = None):
     pass
 
+@app.post("/mentorship_impact")
+async def mentorship_impact(mentor_id: str, performance_range: tuple, productivity_metrics: dict, departments: list = ["Engineering", "Marketing"], min_projects: int = 2):
+    pass
+
+@app.post("/project_success_predictors")
+async def project_success_predictors(project_name: str, scope: str, timeline: int, resources_allocated: float, productivity_metrics: dict, past_performance: float = 0.75):
+    pass
+
+@app.post("/remote_work_efficiency")
+async def remote_work_efficiency(departments: list, productivity_metrics: dict, track_hours: bool = True, min_projects_completed: int = 3):
+    pass
+
+
+
 
 class EmployeeAnalysis:
     """

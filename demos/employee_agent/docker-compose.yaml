@@ -51,6 +51,8 @@ services:
     build:
       context: api_server
       dockerfile: Dockerfile
+    volumes:
+      - ./api_server/app/data:/app/data
     ports:
       - "18083:80"
     healthcheck:
