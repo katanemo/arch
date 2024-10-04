@@ -219,7 +219,6 @@ async def hallucination(req: HallucinationRequest, res: Response):
 
     return {
         "params_scores": result_params,
-        "raw_result": result,
         "model": req.model,
     }
 

@@ -19,8 +19,9 @@ use public_types::common_types::open_ai::{
     ParameterType, StreamOptions, ToolType,
 };
 use public_types::common_types::{
-    EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
-    ZeroShotClassificationRequest, ZeroShotClassificationResponse,
+    EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
+    PromptGuardRequest, PromptGuardResponse, PromptGuardTask, ZeroShotClassificationRequest,
+    ZeroShotClassificationResponse,
 };
 use public_types::configuration::LlmProvider;
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
@@ -38,6 +39,7 @@ enum ResponseHandlerType {
     FunctionResolver,
     FunctionCall,
     ZeroShotIntent,
+    HallucinationDetect,
     ArchGuard,
     DefaultTarget,
 }
@@ -273,6 +275,42 @@ impl StreamContext {
                 token_id
             )
         }
+    }
+
+    // compute the hallucination score, print handler
+    // resume the flow
+    // pr for zershot vs hallucination
+    fn hallucination_classification_resp_handler(
+        &mut self,
+        body: Vec<u8>,
+        mut callout_context: CallContext,
+    ) {
+        let hallucination_response: HallucinationClassificationResponse =
+            match serde_json::from_slice(&body) {
+                Ok(hallucination_response) => hallucination_response,
+                Err(e) => {
+                    self.send_server_error(
+                        format!(
+                            "Error deserializing hallucination detection response: {:?}",
+                            e
+                        ),
+                        None,
+                    );
+                    return;
+                }
+            };
+        let params_scores_str = hallucination_response
+            .params_scores
+            .iter()
+            .map(|(key, value)| format!("{}: {:.3}", key, value))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        info!(
+            "hallucination score: {}, prompt: {}",
+            params_scores_str,
+            callout_context.user_message.as_ref().unwrap()
+        );
     }
 
     fn zero_shot_intent_detection_resp_handler(
@@ -557,6 +595,9 @@ impl StreamContext {
 
         let tool_calls = model_resp.message.tool_calls.as_ref().unwrap();
 
+        // TODO CO:  pass nli check
+        // If hallucination, pass chat template to check parameters
+
         debug!("tool_call_details: {:?}", tool_calls);
         // extract all tool names
         let tool_names: Vec<String> = tool_calls
@@ -591,6 +632,7 @@ impl StreamContext {
 
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
+        // dispatch call to the tool
         let token_id = match self.dispatch_http_call(
             &endpoint.name,
             vec![
@@ -1165,6 +1207,9 @@ impl Context for StreamContext {
                 }
                 ResponseHandlerType::ZeroShotIntent => {
                     self.zero_shot_intent_detection_resp_handler(body, callout_context)
+                }
+                ResponseHandlerType::HallucinationDetect => {
+                    self.hallucination_classification_resp_handler(body, callout_context)
                 }
                 ResponseHandlerType::FunctionResolver => {
                     self.function_resolver_handler(body, callout_context)

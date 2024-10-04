@@ -256,6 +256,19 @@ pub struct ZeroShotClassificationResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HallucinationClassificationRequest {
+    pub prompt: String,
+    pub parameters: HashMap<String, String>,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HallucinationClassificationResponse {
+    pub params_scores: HashMap<String, f64>,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PromptGuardTask {
     #[serde(rename = "jailbreak")]
     Jailbreak,
