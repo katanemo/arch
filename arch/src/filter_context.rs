@@ -1,8 +1,8 @@
 use crate::consts::{DEFAULT_EMBEDDING_MODEL, MODEL_SERVER_NAME};
-use crate::http::{CallArgs, CallContext, Client};
+use crate::http::{CallArgs, Client};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit;
-use crate::stats::{Counter, Gauge, RecordingMetric};
+use crate::stats::{Counter, Gauge, IncrementingMetric};
 use crate::stream_context::StreamContext;
 use log::debug;
 use proxy_wasm::traits::*;
@@ -12,6 +12,7 @@ use public_types::configuration::{Configuration, Overrides, PromptGuards, Prompt
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{OnceLock, RwLock};
@@ -32,6 +33,9 @@ impl WasmMetrics {
     }
 }
 
+pub type EmbeddingTypeMap = HashMap<EmbeddingType, Vec<f64>>;
+pub type EmbeddingsStore = HashMap<String, EmbeddingTypeMap>;
+
 #[derive(Debug)]
 pub struct FilterCallContext {
     pub prompt_target: String,
@@ -42,37 +46,147 @@ pub struct FilterCallContext {
 pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
-    callouts: HashMap<u32, FilterCallContext>,
+    callouts: RefCell<HashMap<u32, FilterCallContext>>,
     overrides: Rc<Option<Overrides>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
+    temp_embeddings_store: Option<EmbeddingsStore>,
+}
+
+pub fn filters_initialization_in_progress(filter_context: &FilterContext) -> &'static RwLock<bool> {
+    static IN_PROGRESS: OnceLock<RwLock<bool>> = OnceLock::new();
+    IN_PROGRESS.get_or_init(|| {
+        filter_context.process_prompt_targets();
+        RwLock::new(true)
+    })
+}
+
+pub fn embeddings_store(store: Option<EmbeddingsStore>) -> &'static EmbeddingsStore {
+    static EMBEDDINGS_STORE: OnceLock<EmbeddingsStore> = OnceLock::new();
+    EMBEDDINGS_STORE.get_or_init(|| {
+        store.expect("This value should only be initialized with a present Embeddings Store value")
+    })
 }
 
 impl FilterContext {
     pub fn new() -> FilterContext {
         FilterContext {
-            callouts: HashMap::new(),
+            callouts: RefCell::new(HashMap::new()),
             metrics: Rc::new(WasmMetrics::new()),
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
             llm_providers: None,
+            temp_embeddings_store: None,
         }
     }
 
-    pub fn prompt_targets(&self) -> Rc<HashMap<String, PromptTarget>> {
+    fn prompt_targets(&self) -> Rc<HashMap<String, PromptTarget>> {
         Rc::clone(&self.prompt_targets)
+    }
+
+    fn process_prompt_targets(&self) {
+        for values in self.prompt_targets().iter() {
+            let prompt_target = values.1;
+            self.schedule_embeddings_call(&prompt_target.name, EmbeddingType::Name);
+            self.schedule_embeddings_call(&prompt_target.description, EmbeddingType::Description);
+        }
+    }
+
+    fn schedule_embeddings_call(&self, input: &str, embedding_type: EmbeddingType) {
+        let embeddings_input = CreateEmbeddingRequest {
+            input: Box::new(CreateEmbeddingRequestInput::String(String::from(input))),
+            model: String::from(DEFAULT_EMBEDDING_MODEL),
+            encoding_format: None,
+            dimensions: None,
+            user: None,
+        };
+        let json_data = serde_json::to_string(&embeddings_input).unwrap();
+
+        let call_args = CallArgs::new(
+            MODEL_SERVER_NAME,
+            vec![
+                (":method", "POST"),
+                (":path", "/embeddings"),
+                (":authority", MODEL_SERVER_NAME),
+                ("content-type", "application/json"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ],
+            Some(json_data.as_bytes()),
+            vec![],
+            Duration::from_secs(60),
+        );
+
+        let call_context = crate::filter_context::FilterCallContext {
+            prompt_target: String::from(input),
+            embedding_type,
+        };
+
+        self.http_call(call_args, call_context);
+    }
+
+    fn embedding_response_handler(
+        &mut self,
+        body_size: usize,
+        embedding_type: EmbeddingType,
+        prompt_target_name: String,
+    ) {
+        if self.temp_embeddings_store.is_none() {
+            self.temp_embeddings_store = Some(HashMap::new())
+        }
+
+        let prompt_targets = self.prompt_targets();
+        let prompt_target = prompt_targets.get(&prompt_target_name).unwrap();
+
+        let body = self
+            .get_http_call_response_body(0, body_size)
+            .expect("No body in response");
+        if !body.is_empty() {
+            let mut embedding_response: CreateEmbeddingResponse =
+                match serde_json::from_slice(&body) {
+                    Ok(response) => response,
+                    Err(e) => {
+                        panic!(
+                            "Error deserializing embedding response. body: {:?}: {:?}",
+                            String::from_utf8(body).unwrap(),
+                            e
+                        );
+                    }
+                };
+
+            let embeddings = embedding_response.data.remove(0).embedding;
+            log::info!(
+                    "Adding embeddings for prompt target name: {:?}, description: {:?}, embedding type: {:?}",
+                    prompt_target.name,
+                    prompt_target.description,
+                    embedding_type
+                );
+
+            self.temp_embeddings_store.as_mut().unwrap().insert(
+                prompt_target.name.clone(),
+                HashMap::from([(embedding_type, embeddings)]),
+            );
+        }
+
+        if self.callouts.borrow().is_empty() {
+            let mut filters_initialization_in_progress =
+                filters_initialization_in_progress(self).write().unwrap();
+            *filters_initialization_in_progress = true;
+            embeddings_store(self.temp_embeddings_store.take());
+        }
     }
 }
 
 impl Client for FilterContext {
     type CallContext = FilterCallContext;
 
-    fn add_call_context(&mut self, id: u32, call_context: Self::CallContext) {
-        if let Some(_) = self.callouts.insert(id, call_context) {
-            panic!("Duplicate http call with id={}", id);
-        }
+    fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {
+        &self.callouts
+    }
+
+    fn active_http_calls(&self) -> &Gauge {
+        &self.metrics.active_http_calls
     }
 }
 
@@ -88,11 +202,13 @@ impl Context for FilterContext {
             "filter_context: on_http_call_response called with token_id: {:?}",
             token_id
         );
-        let callout_data = self.callouts.remove(&token_id).expect("invalid token_id");
+        let callout_data = self
+            .callouts
+            .borrow_mut()
+            .remove(&token_id)
+            .expect("invalid token_id");
 
-        self.metrics
-            .active_http_calls
-            .record(self.callouts.len().try_into().unwrap());
+        self.metrics.active_http_calls.increment(-1);
 
         self.embedding_response_handler(
             body_size,
@@ -141,6 +257,16 @@ impl RootContext for FilterContext {
             "||| create_http_context called with context_id: {:?} |||",
             context_id
         );
+
+        {
+            let filters_initialization_in_progress =
+                filters_initialization_in_progress(&self).read().unwrap();
+            if *filters_initialization_in_progress {
+                // The filter has not initialized, cannot create streams.
+                return None;
+            }
+        }
+
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
@@ -152,6 +278,7 @@ impl RootContext for FilterContext {
                     .as_ref()
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
+            embeddings_store(None),
         )))
     }
 

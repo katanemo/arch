@@ -3,7 +3,7 @@ use crate::consts::{
     ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD,
     GPT_35_TURBO, MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
-use crate::filter_context::{embeddings_store, WasmMetrics};
+use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
@@ -30,7 +30,6 @@ use public_types::embeddings::{
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
-use std::sync::RwLock;
 use std::time::Duration;
 
 enum ResponseHandlerType {
@@ -56,6 +55,7 @@ pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
+    embeddings_store: &'static EmbeddingsStore,
     overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     ratelimit_selector: Option<Header>,
@@ -75,11 +75,13 @@ impl StreamContext {
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
+        embeddings_store: &'static EmbeddingsStore,
     ) -> Self {
         StreamContext {
             context_id,
             metrics,
             prompt_targets,
+            embeddings_store,
             callouts: HashMap::new(),
             ratelimit_selector: None,
             streaming_response: false,
@@ -173,14 +175,6 @@ impl StreamContext {
             embeddings_vector.len()
         );
 
-        let prompt_target_embeddings = match embeddings_store().read() {
-            Ok(embeddings) => embeddings,
-            Err(e) => {
-                return self
-                    .send_server_error(format!("Error reading embeddings store: {:?}", e), None);
-            }
-        };
-
         let prompt_target_names = self
             .prompt_targets
             .iter()
@@ -196,7 +190,8 @@ impl StreamContext {
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
                 let default_embeddings = HashMap::new();
-                let pte = prompt_target_embeddings
+                let pte = self
+                    .embeddings_store
                     .get(prompt_name)
                     .unwrap_or(&default_embeddings);
                 let description_embeddings = pte.get(&EmbeddingType::Description);
