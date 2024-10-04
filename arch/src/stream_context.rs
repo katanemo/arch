@@ -615,62 +615,68 @@ impl StreamContext {
             String::from(ARCH_MESSAGES_KEY),
             serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
         );
+
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
-        use serde_json::Value;
-        let v: Value = serde_json::from_str(&tool_params_json_str).unwrap();
 
-        let tool_params_dict: HashMap<String, String> = v
-            .as_object()
-            .unwrap()
-            .iter()
-            .map(|(key, value)| (key.clone(), value.as_str().unwrap().to_string()))
-            .collect();
+        if model_resp.message.tool_calls.is_some()
+            && !model_resp.message.tool_calls.as_ref().unwrap().is_empty()
+        {
+            use serde_json::Value;
+            let v: Value = serde_json::from_str(&tool_params_json_str).unwrap();
+            let tool_params_dict: HashMap<String, String> = v
+                .as_object()
+                .unwrap()
+                .iter()
+                .map(|(key, value)| (key.clone(), value.as_str().unwrap().to_string()))
+                .collect();
 
-        let hallucination_classification_request = HallucinationClassificationRequest {
-            prompt: callout_context.user_message.as_ref().unwrap().clone(),
-            model: String::from(DEFAULT_INTENT_MODEL),
-            parameters: tool_params_dict,
-        };
+            let hallucination_classification_request = HallucinationClassificationRequest {
+                prompt: callout_context.user_message.as_ref().unwrap().clone(),
+                model: String::from(DEFAULT_INTENT_MODEL),
+                parameters: tool_params_dict,
+            };
 
-        let json_data: String = match serde_json::to_string(&hallucination_classification_request) {
-            Ok(json_data) => json_data,
-            Err(error) => {
-                let error = format!("Error serializing hallucination request: {}", error);
-                return self.send_server_error(error, None);
-            }
-        };
+            let json_data: String =
+                match serde_json::to_string(&hallucination_classification_request) {
+                    Ok(json_data) => json_data,
+                    Err(error) => {
+                        let error = format!("Error serializing hallucination request: {}", error);
+                        return self.send_server_error(error, None);
+                    }
+                };
 
-        let token_id = match self.dispatch_http_call(
-            MODEL_SERVER_NAME,
-            vec![
-                (":method", "POST"),
-                (":path", "/hallucination"),
-                (":authority", MODEL_SERVER_NAME),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-                ("x-envoy-upstream-rq-timeout-ms", "60000"),
-            ],
-            Some(json_data.as_bytes()),
-            vec![],
-            Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                let error_msg = format!(
-                    "Error dispatching embedding server HTTP call for zero-shot-intent-detection: {:?}",
-                    e
-                );
-                return self.send_server_error(error_msg, None);
-            }
-        };
-        debug!(
-            "dispatched call to model_server/hallucination token_id={}",
-            token_id
-        );
+            let token_id = match self.dispatch_http_call(
+                MODEL_SERVER_NAME,
+                vec![
+                    (":method", "POST"),
+                    (":path", "/hallucination"),
+                    (":authority", MODEL_SERVER_NAME),
+                    ("content-type", "application/json"),
+                    ("x-envoy-max-retries", "3"),
+                    ("x-envoy-upstream-rq-timeout-ms", "60000"),
+                ],
+                Some(json_data.as_bytes()),
+                vec![],
+                Duration::from_secs(5),
+            ) {
+                Ok(token_id) => token_id,
+                Err(e) => {
+                    let error_msg = format!(
+                            "Error dispatching embedding server HTTP call for hallucination-detection: {:?}",
+                            e
+                        );
+                    return self.send_server_error(error_msg, None);
+                }
+            };
+            debug!(
+                "dispatched call to model_server/hallucination token_id={}",
+                token_id
+            );
 
-        self.metrics.active_http_calls.increment(1);
-        callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
+            self.metrics.active_http_calls.increment(1);
+            callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
+        }
 
         let prompt_target = self
             .prompt_targets
