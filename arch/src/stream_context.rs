@@ -1,14 +1,13 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_ROUTING_HEADER, ARC_FC_CLUSTER,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO,
-    MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
+    ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD,
+    GPT_35_TURBO, MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
-use crate::llm_providers::{LlmProvider, LlmProviders};
+use crate::llm_providers::LlmProviders;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
-use crate::tokenizer;
-use crate::{ratelimit, routing};
+use crate::{ratelimit, routing, tokenizer};
 use acap::cos;
 use http::StatusCode;
 use log::{debug, info, warn};
@@ -23,6 +22,7 @@ use public_types::common_types::{
     EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
     ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
+use public_types::configuration::LlmProvider;
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -48,22 +48,23 @@ pub struct CallContext {
     prompt_target_name: Option<String>,
     request_body: ChatCompletionsRequest,
     similarity_scores: Option<Vec<(String, f64)>>,
-    up_stream_cluster: Option<String>,
-    up_stream_cluster_path: Option<String>,
+    upstream_cluster: Option<String>,
+    upstream_cluster_path: Option<String>,
 }
 
 pub struct StreamContext {
-    pub context_id: u32,
-    pub metrics: Rc<WasmMetrics>,
-    pub prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
-    pub overrides: Rc<Option<Overrides>>,
+    context_id: u32,
+    metrics: Rc<WasmMetrics>,
+    prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
     chat_completions_request: bool,
-    llm_provider: Option<&'static LlmProvider<'static>>,
-    prompt_guards: Rc<Option<PromptGuards>>,
+    prompt_guards: Rc<PromptGuards>,
+    llm_providers: Rc<LlmProviders>,
+    llm_provider: Option<Rc<LlmProvider>>,
 }
 
 impl StreamContext {
@@ -71,8 +72,9 @@ impl StreamContext {
         context_id: u32,
         metrics: Rc<WasmMetrics>,
         prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
-        prompt_guards: Rc<Option<PromptGuards>>,
+        prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
+        llm_providers: Rc<LlmProviders>,
     ) -> Self {
         StreamContext {
             context_id,
@@ -83,6 +85,7 @@ impl StreamContext {
             streaming_response: false,
             response_tokens: 0,
             chat_completions_request: false,
+            llm_providers,
             llm_provider: None,
             prompt_guards,
             overrides,
@@ -90,26 +93,34 @@ impl StreamContext {
     }
     fn llm_provider(&self) -> &LlmProvider {
         self.llm_provider
+            .as_ref()
             .expect("the provider should be set when asked for it")
     }
 
+    fn select_llm_provider(&mut self) {
+        let provider_hint = self
+            .get_http_request_header(ARCH_PROVIDER_HINT_HEADER)
+            .map(|provider_name| provider_name.into());
+
+        self.llm_provider = Some(routing::get_llm_provider(
+            &self.llm_providers,
+            provider_hint,
+        ));
+    }
+
     fn add_routing_header(&mut self) {
-        self.add_http_request_header(ARCH_ROUTING_HEADER, self.llm_provider().as_ref());
+        self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
     }
 
     fn modify_auth_headers(&mut self) -> Result<(), String> {
-        let llm_provider_api_key_value = self
-            .get_http_request_header(self.llm_provider().api_key_header())
-            .ok_or(format!("missing {} api key", self.llm_provider()))?;
+        let llm_provider_api_key_value = self.llm_provider().access_key.as_ref().ok_or(format!(
+            "No access key configured for selected LLM Provider \"{}\"",
+            self.llm_provider()
+        ))?;
 
         let authorization_header_value = format!("Bearer {}", llm_provider_api_key_value);
 
         self.set_http_request_header("Authorization", Some(&authorization_header_value));
-
-        // sanitize passed in api keys
-        for provider in LlmProviders::VARIANTS.iter() {
-            self.set_http_request_header(provider.api_key_header(), None);
-        }
 
         Ok(())
     }
@@ -604,8 +615,8 @@ impl StreamContext {
             }
         };
 
-        callout_context.up_stream_cluster = Some(endpoint.name);
-        callout_context.up_stream_cluster_path = Some(path);
+        callout_context.upstream_cluster = Some(endpoint.name);
+        callout_context.upstream_cluster_path = Some(path);
         callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
@@ -619,8 +630,8 @@ impl StreamContext {
             if http_status.1 != StatusCode::OK.as_str() {
                 let error_msg = format!(
                     "Error in function call response: cluster: {}, path: {}, status code: {}",
-                    callout_context.up_stream_cluster.unwrap(),
-                    callout_context.up_stream_cluster_path.unwrap(),
+                    callout_context.upstream_cluster.unwrap(),
+                    callout_context.upstream_cluster_path.unwrap(),
                     http_status.1
                 );
                 return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
@@ -728,29 +739,13 @@ impl StreamContext {
         let prompt_guard_resp: PromptGuardResponse = serde_json::from_slice(&body).unwrap();
         debug!("prompt_guard_resp: {:?}", prompt_guard_resp);
 
-        if prompt_guard_resp.jailbreak_verdict.is_some()
-            && prompt_guard_resp.jailbreak_verdict.unwrap()
-        {
+        if prompt_guard_resp.jailbreak_verdict.unwrap_or_default() {
             //TODO: handle other scenarios like forward to error target
-            let default_err = "Jailbreak detected. Please refrain from discussing jailbreaking.";
-            let error_msg = match self.prompt_guards.as_ref() {
-                Some(prompt_guards) => match prompt_guards
-                    .input_guards
-                    .get(&public_types::configuration::GuardType::Jailbreak)
-                {
-                    Some(jailbreak) => match jailbreak.on_exception.as_ref() {
-                        Some(on_exception_details) => match on_exception_details.message.as_ref() {
-                            Some(error_msg) => error_msg,
-                            None => default_err,
-                        },
-                        None => default_err,
-                    },
-                    None => default_err,
-                },
-                None => default_err,
-            };
-
-            return self.send_server_error(error_msg.to_string(), Some(StatusCode::BAD_REQUEST));
+            let msg = self
+                .prompt_guards
+                .jailbreak_on_exception_message()
+                .unwrap_or("Jailbreak detected. Please refrain from discussing jailbreaking.");
+            return self.send_server_error(msg.to_string(), Some(StatusCode::BAD_REQUEST));
         }
 
         self.get_embeddings(callout_context);
@@ -806,8 +801,8 @@ impl StreamContext {
             prompt_target_name: None,
             request_body: callout_context.request_body,
             similarity_scores: None,
-            up_stream_cluster: None,
-            up_stream_cluster_path: None,
+            upstream_cluster: None,
+            upstream_cluster_path: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(
@@ -815,6 +810,8 @@ impl StreamContext {
                 token_id
             )
         }
+
+        self.metrics.active_http_calls.increment(1);
     }
 
     fn default_target_handler(&self, body: Vec<u8>, callout_context: CallContext) {
@@ -900,11 +897,7 @@ impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        let provider_hint = self
-            .get_http_request_header("x-arch-deterministic-provider")
-            .is_some();
-        self.llm_provider = Some(routing::get_llm_provider(provider_hint));
-
+        self.select_llm_provider();
         self.add_routing_header();
         if let Err(error) = self.modify_auth_headers() {
             self.send_server_error(error, Some(StatusCode::BAD_REQUEST));
@@ -959,7 +952,7 @@ impl HttpContext for StreamContext {
             };
 
         // Set the model based on the chosen LLM Provider
-        deserialized_body.model = String::from(self.llm_provider().choose_model());
+        deserialized_body.model = String::from(&self.llm_provider().model);
 
         self.streaming_response = deserialized_body.stream;
         if deserialized_body.stream && deserialized_body.stream_options.is_none() {
@@ -980,39 +973,20 @@ impl HttpContext for StreamContext {
             }
         };
 
-        let prompt_guards = match self.prompt_guards.as_ref() {
-            Some(prompt_guards) => {
-                debug!("prompt guards: {:?}", prompt_guards);
-                prompt_guards
-            }
-            None => {
-                let callout_context = CallContext {
-                    response_handler_type: ResponseHandlerType::ArchGuard,
-                    user_message: Some(user_message),
-                    prompt_target_name: None,
-                    request_body: deserialized_body,
-                    similarity_scores: None,
-                    up_stream_cluster: None,
-                    up_stream_cluster_path: None,
-                };
-                self.get_embeddings(callout_context);
-                return Action::Pause;
-            }
-        };
-
-        let prompt_guard_jailbreak_task = prompt_guards
+        let prompt_guard_jailbreak_task = self
+            .prompt_guards
             .input_guards
             .contains_key(&public_types::configuration::GuardType::Jailbreak);
         if !prompt_guard_jailbreak_task {
-            info!("Input guards set but no prompt guards were found");
+            debug!("Missing input guard. Making inline call to retrieve");
             let callout_context = CallContext {
                 response_handler_type: ResponseHandlerType::ArchGuard,
                 user_message: Some(user_message),
                 prompt_target_name: None,
                 request_body: deserialized_body,
                 similarity_scores: None,
-                up_stream_cluster: None,
-                up_stream_cluster_path: None,
+                upstream_cluster: None,
+                upstream_cluster_path: None,
             };
             self.get_embeddings(callout_context);
             return Action::Pause;
@@ -1065,8 +1039,8 @@ impl HttpContext for StreamContext {
             prompt_target_name: None,
             request_body: deserialized_body,
             similarity_scores: None,
-            up_stream_cluster: None,
-            up_stream_cluster_path: None,
+            upstream_cluster: None,
+            upstream_cluster_path: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(

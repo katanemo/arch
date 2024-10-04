@@ -8,6 +8,22 @@ ARCH_CONFIG_FILE = os.getenv('ARCH_CONFIG_FILE', '/config/arch_config.yaml')
 ENVOY_CONFIG_FILE_RENDERED = os.getenv('ENVOY_CONFIG_FILE_RENDERED', '/etc/envoy/envoy.yaml')
 ARCH_CONFIG_SCHEMA_FILE = os.getenv('ARCH_CONFIG_SCHEMA_FILE', 'arch_config_schema.yaml')
 
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', False)
+MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY', False)
+
+def add_secret_key_to_llm_providers(config_yaml) :
+    llm_providers = []
+    for llm_provider in config_yaml.get("llm_providers", []):
+        if llm_provider['access_key'] == "$MISTRAL_API_KEY":
+            llm_provider['access_key'] = MISTRAL_API_KEY
+        elif llm_provider['access_key'] == "$OPENAI_API_KEY":
+            llm_provider['access_key'] = OPENAI_API_KEY
+        else:
+            llm_provider.pop('access_key')
+        llm_providers.append(llm_provider)
+    config_yaml["llm_providers"] = llm_providers
+    return config_yaml
+
 def validate_and_render_schema():
     env = Environment(loader=FileSystemLoader('./'))
     template = env.get_template('envoy.template.yaml')
@@ -37,7 +53,6 @@ def validate_and_render_schema():
             }
 
     print(inferred_clusters)
-
     endpoints = config_yaml.get("endpoints", {})
 
     # override the inferred clusters with the ones defined in the config
@@ -52,11 +67,19 @@ def validate_and_render_schema():
         else:
             inferred_clusters[name] = endpoint_details
 
+
     print("updated clusters", inferred_clusters)
 
+    config_yaml = add_secret_key_to_llm_providers(config_yaml)
+    arch_llm_providers = config_yaml["llm_providers"]
+    arch_config_string = yaml.dump(config_yaml)
+
+    print("llm_providers:", arch_llm_providers)
+
     data = {
-        'arch_config': arch_config,
-        'arch_clusters': inferred_clusters
+        'arch_config': arch_config_string,
+        'arch_clusters': inferred_clusters,
+        'arch_llm_providers': arch_llm_providers
     }
 
     rendered = template.render(data)

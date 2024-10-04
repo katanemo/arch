@@ -5,7 +5,7 @@ services:
       - "10000:10000"
       - "18080:9901"
     volumes:
-      - ${ARCH_CONFIG_FILE:-./arch_confg_schema.yaml}:/config/arch_config.yaml
+      - ${ARCH_CONFIG_FILE:-./demos/function_calling/arch_confg.yaml}:/config/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
     depends_on:
