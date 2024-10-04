@@ -55,7 +55,7 @@ pub struct CallContext {
 pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
-    prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    prompt_targets: Rc<HashMap<String, PromptTarget>>,
     overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     ratelimit_selector: Option<Header>,
@@ -71,7 +71,7 @@ impl StreamContext {
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
-        prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+        prompt_targets: Rc<HashMap<String, PromptTarget>>,
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
@@ -181,22 +181,16 @@ impl StreamContext {
             }
         };
 
-        let prompt_targets = match self.prompt_targets.read() {
-            Ok(prompt_targets) => prompt_targets,
-            Err(e) => {
-                self.send_server_error(format!("Error reading prompt targets: {:?}", e), None);
-                return;
-            }
-        };
-
-        let prompt_target_names = prompt_targets
+        let prompt_target_names = self
+            .prompt_targets
             .iter()
             // exclude default target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(name, _)| name.clone())
             .collect();
 
-        let similarity_scores: Vec<(String, f64)> = prompt_targets
+        let similarity_scores: Vec<(String, f64)> = self
+            .prompt_targets
             .iter()
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
@@ -358,8 +352,6 @@ impl StreamContext {
                 debug!("checking for default prompt target");
                 if let Some(default_prompt_target) = self
                     .prompt_targets
-                    .read()
-                    .unwrap()
                     .values()
                     .find(|pt| pt.default.unwrap_or(false))
                 {
@@ -414,7 +406,7 @@ impl StreamContext {
             }
         }
 
-        let prompt_target = match self.prompt_targets.read().unwrap().get(&prompt_target_name) {
+        let prompt_target = match self.prompt_targets.get(&prompt_target_name) {
             Some(prompt_target) => prompt_target.clone(),
             None => {
                 return self.send_server_error(
@@ -426,7 +418,7 @@ impl StreamContext {
 
         info!("prompt_target name: {:?}", prompt_target_name);
         let mut chat_completion_tools: Vec<ChatCompletionTool> = Vec::new();
-        for pt in self.prompt_targets.read().unwrap().values() {
+        for pt in self.prompt_targets.values() {
             // only extract entity names
             let properties: HashMap<String, FunctionParameter> = match pt.parameters {
                 // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
@@ -577,13 +569,7 @@ impl StreamContext {
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
-        let prompt_target = self
-            .prompt_targets
-            .read()
-            .unwrap()
-            .get(&tools_call_name)
-            .unwrap()
-            .clone();
+        let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
 
         debug!("prompt_target_name: {}", prompt_target.name);
         debug!("tool_name(s): {:?}", tool_names);
@@ -645,8 +631,6 @@ impl StreamContext {
         let prompt_target_name = callout_context.prompt_target_name.unwrap();
         let prompt_target = self
             .prompt_targets
-            .read()
-            .unwrap()
             .get(&prompt_target_name)
             .unwrap()
             .clone();
@@ -817,8 +801,6 @@ impl StreamContext {
     fn default_target_handler(&self, body: Vec<u8>, callout_context: CallContext) {
         let prompt_target = self
             .prompt_targets
-            .read()
-            .unwrap()
             .get(callout_context.prompt_target_name.as_ref().unwrap())
             .unwrap()
             .clone();

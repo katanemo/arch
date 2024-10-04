@@ -1,4 +1,5 @@
 use crate::consts::{DEFAULT_EMBEDDING_MODEL, MODEL_SERVER_NAME};
+use crate::http::{CallArgs, CallContext, Client};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
@@ -11,7 +12,6 @@ use public_types::configuration::{Configuration, Overrides, PromptGuards, Prompt
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use serde_json::to_string;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{OnceLock, RwLock};
@@ -33,30 +33,20 @@ impl WasmMetrics {
 }
 
 #[derive(Debug)]
-struct CallContext {
-    prompt_target: String,
-    embedding_type: EmbeddingType,
+pub struct FilterCallContext {
+    pub prompt_target: String,
+    pub embedding_type: EmbeddingType,
 }
-
-pub type EmbeddingTypeMap = HashMap<EmbeddingType, Vec<f64>>;
 
 #[derive(Debug)]
 pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
-    callouts: HashMap<u32, CallContext>,
+    callouts: HashMap<u32, FilterCallContext>,
     overrides: Rc<Option<Overrides>>,
-    prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    prompt_targets: Rc<HashMap<String, PromptTarget>>,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
-}
-
-pub fn embeddings_store() -> &'static RwLock<HashMap<String, EmbeddingTypeMap>> {
-    static EMBEDDINGS: OnceLock<RwLock<HashMap<String, EmbeddingTypeMap>>> = OnceLock::new();
-    EMBEDDINGS.get_or_init(|| {
-        let embeddings: HashMap<String, EmbeddingTypeMap> = HashMap::new();
-        RwLock::new(embeddings)
-    })
 }
 
 impl FilterContext {
@@ -64,133 +54,28 @@ impl FilterContext {
         FilterContext {
             callouts: HashMap::new(),
             metrics: Rc::new(WasmMetrics::new()),
-            prompt_targets: Rc::new(RwLock::new(HashMap::new())),
+            prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
             llm_providers: None,
         }
     }
 
-    fn process_prompt_targets(&mut self) {
-        let prompt_targets = match self.prompt_targets.read() {
-            Ok(prompt_targets) => prompt_targets,
-            Err(e) => {
-                panic!("Error reading prompt targets: {:?}", e);
-            }
-        };
-        for values in prompt_targets.iter() {
-            let prompt_target = &values.1;
-
-            // schedule embeddings call for prompt target name
-            let token_id = self.schedule_embeddings_call(prompt_target.name.clone());
-            if self
-                .callouts
-                .insert(token_id, {
-                    CallContext {
-                        prompt_target: prompt_target.name.clone(),
-                        embedding_type: EmbeddingType::Name,
-                    }
-                })
-                .is_some()
-            {
-                panic!("duplicate token_id")
-            }
-
-            // schedule embeddings call for prompt target description
-            let token_id = self.schedule_embeddings_call(prompt_target.description.clone());
-            if self
-                .callouts
-                .insert(token_id, {
-                    CallContext {
-                        prompt_target: prompt_target.name.clone(),
-                        embedding_type: EmbeddingType::Description,
-                    }
-                })
-                .is_some()
-            {
-                panic!("duplicate token_id")
-            }
-
-            self.metrics
-                .active_http_calls
-                .record(self.callouts.len().try_into().unwrap());
-        }
+    pub fn prompt_targets(&self) -> Rc<HashMap<String, PromptTarget>> {
+        Rc::clone(&self.prompt_targets)
     }
+}
 
-    fn schedule_embeddings_call(&self, input: String) -> u32 {
-        let embeddings_input = CreateEmbeddingRequest {
-            input: Box::new(CreateEmbeddingRequestInput::String(input)),
-            model: String::from(DEFAULT_EMBEDDING_MODEL),
-            encoding_format: None,
-            dimensions: None,
-            user: None,
-        };
+impl Client for FilterContext {
+    type CallContext = FilterCallContext;
 
-        let json_data = to_string(&embeddings_input).unwrap();
-        let token_id = match self.dispatch_http_call(
-            MODEL_SERVER_NAME,
-            vec![
-                (":method", "POST"),
-                (":path", "/embeddings"),
-                (":authority", MODEL_SERVER_NAME),
-                ("content-type", "application/json"),
-                ("x-envoy-upstream-rq-timeout-ms", "60000"),
-            ],
-            Some(json_data.as_bytes()),
-            vec![],
-            Duration::from_secs(60),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                panic!(
-                    "Error dispatching HTTP call: {}, error: {:?}",
-                    MODEL_SERVER_NAME, e
-                );
-            }
-        };
-        token_id
-    }
-
-    fn embedding_response_handler(
-        &mut self,
-        body_size: usize,
-        embedding_type: EmbeddingType,
-        prompt_target_name: String,
-    ) {
-        let prompt_targets = self.prompt_targets.read().unwrap();
-        let prompt_target = prompt_targets.get(&prompt_target_name).unwrap();
-        if let Some(body) = self.get_http_call_response_body(0, body_size) {
-            if !body.is_empty() {
-                let mut embedding_response: CreateEmbeddingResponse =
-                    match serde_json::from_slice(&body) {
-                        Ok(response) => response,
-                        Err(e) => {
-                            panic!(
-                                "Error deserializing embedding response. body: {:?}: {:?}",
-                                String::from_utf8(body).unwrap(),
-                                e
-                            );
-                        }
-                    };
-
-                let embeddings = embedding_response.data.remove(0).embedding;
-                log::info!(
-                    "Adding embeddings for prompt target name: {:?}, description: {:?}, embedding type: {:?}",
-                    prompt_target.name,
-                    prompt_target.description,
-                    embedding_type
-                );
-
-                embeddings_store().write().unwrap().insert(
-                    prompt_target.name.clone(),
-                    HashMap::from([(embedding_type, embeddings)]),
-                );
-            }
-        } else {
-            panic!("No body in response");
+    fn add_call_context(&mut self, id: u32, call_context: Self::CallContext) {
+        if let Some(_) = self.callouts.insert(id, call_context) {
+            panic!("Duplicate http call with id={}", id);
         }
     }
 }
+
 impl Context for FilterContext {
     fn on_http_call_response(
         &mut self,
@@ -231,12 +116,11 @@ impl RootContext for FilterContext {
 
         self.overrides = Rc::new(config.overrides);
 
+        let mut prompt_targets = HashMap::new();
         for pt in config.prompt_targets {
-            self.prompt_targets
-                .write()
-                .unwrap()
-                .insert(pt.name.clone(), pt.clone());
+            prompt_targets.insert(pt.name.clone(), pt.clone());
         }
+        self.prompt_targets = Rc::new(prompt_targets);
 
         ratelimit::ratelimits(config.ratelimits);
 

@@ -3,7 +3,9 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
 mod consts;
+mod embeddings_store;
 mod filter_context;
+mod http;
 mod llm_providers;
 mod ratelimit;
 mod routing;
