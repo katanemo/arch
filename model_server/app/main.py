@@ -26,8 +26,7 @@ zero_shot_models = load_zero_shot_models()
 
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
-with open('/root/arch_config.yaml') as f:
-    config = yaml.safe_load(f)
+
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")
 if mode not in ['cloud', 'local-gpu', 'local-cpu']:
@@ -37,19 +36,10 @@ if mode == 'local-cpu':
 else:
     hardware = "gpu" if torch.cuda.is_available() else "cpu"
 
-if "prompt_guards" in config.keys():
-    task = list(config["prompt_guards"]["input_guards"].keys())[0]
-
-    hardware = "gpu" if torch.cuda.is_available() else "cpu"
-    jailbreak_model = load_guard_model(
-        guard_model_config["jailbreak"][hardware], hardware
-    )
-    toxic_model = None
-
-    guard_handler = GuardHandler(toxic_model=toxic_model, jailbreak_model=jailbreak_model)
+jailbreak_model = load_guard_model(guard_model_config["jailbreak"][hardware], hardware)
+guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
-
 
 class EmbeddingRequest(BaseModel):
     input: str

@@ -328,7 +328,7 @@ impl StreamContext {
         if messages.len() >= 2 {
             let latest_assistant_message = &messages[messages.len() - 2];
             if let Some(model) = latest_assistant_message.model.as_ref() {
-                if model.starts_with("Arch") {
+                if model.contains("Arch") {
                     arch_assistant = true;
                 }
             }

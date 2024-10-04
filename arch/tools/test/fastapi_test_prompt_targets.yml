@@ -1,0 +1,33 @@
+prompt_targets:
+- name: default
+  path: /agent/default
+  description: "This endpoint handles information extraction queries.\n    It can\
+    \ summarize, extract details, and perform various other information-related tasks."
+  parameters:
+  - name: query
+    type: str
+    description: Field from Pydantic model DefaultRequest
+    default_value: null
+    required: false
+  - name: count
+    type: int
+    description: Field from Pydantic model DefaultRequest
+    default_value: null
+    required: false
+  type: default
+  auto-llm-dispatch-on-response: true
+- name: reboot_network_device
+  path: /agent/action
+  description: "This endpoint reboots a network device based on the device ID.\n \
+    \   Confirmation is required to proceed with the reboot."
+  parameters:
+  - name: device_id
+    type: str
+    description: Description for device_id
+    default_value: ''
+    required: true
+  - name: confirmation
+    type: int
+    description: Description for confirmation
+    default_value: ''
+    required: true

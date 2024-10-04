@@ -21,6 +21,10 @@
       "path": "./demos/function_calling",
     },
     {
+      "name": "demos/insurance_agent",
+      "path": "./demos/insurance_agent",
+    },
+    {
       "name": "demos/function_calling/api_server",
       "path": "./demos/function_calling/api_server",
     },
