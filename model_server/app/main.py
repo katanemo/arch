@@ -26,8 +26,7 @@ zero_shot_models = load_zero_shot_models()
 
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
-with open('/root/arch_config.yaml') as f:
-    config = yaml.safe_load(f)
+
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")
 if mode not in ['cloud', 'local-gpu', 'local-cpu']:
@@ -37,19 +36,10 @@ if mode == 'local-cpu':
 else:
     hardware = "gpu" if torch.cuda.is_available() else "cpu"
 
-if "prompt_guards" in config.keys():
-    task = list(config["prompt_guards"]["input_guards"].keys())[0]
-
-    hardware = "gpu" if torch.cuda.is_available() else "cpu"
-    jailbreak_model = load_guard_model(
-        guard_model_config["jailbreak"][hardware], hardware
-    )
-    toxic_model = None
-
-    guard_handler = GuardHandler(toxic_model=toxic_model, jailbreak_model=jailbreak_model)
+jailbreak_model = load_guard_model(guard_model_config["jailbreak"][hardware], hardware)
+guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
-
 
 class EmbeddingRequest(BaseModel):
     input: str
@@ -199,6 +189,40 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
         "scores": final_scores,
         "model": req.model,
     }
+
+
+class HallucinationRequest(BaseModel):
+    prompt: str
+    parameters: dict
+    model: str
+
+
+@app.post("/hallucination")
+async def hallucination(req: HallucinationRequest, res: Response):
+    """
+        Hallucination API, take input as text and return the prediction of hallucination for each parameter
+        parameters: dictionary of parameters and values
+            example     {"name": "John", "age": "25"}
+        prompt: input prompt from the user
+    """
+    if req.model not in zero_shot_models:
+        raise HTTPException(status_code=400, detail="unknown model: " + req.model)
+
+    classifier = zero_shot_models[req.model]
+    candidate_labels = [f"{k} is {v}" for k, v in req.parameters.items()]
+    hypothesis_template = "{}"
+    result = classifier(
+        req.prompt, candidate_labels=candidate_labels, hypothesis_template=hypothesis_template, multi_label=True
+    )
+    result_score = result['scores']
+    result_params = {k[0]: s for k, s in zip(req.parameters.items(), result_score)}
+
+    return {
+        "params_scores": result_params,
+        "raw_result": result,
+        "model": req.model,
+    }
+
 
 @app.post("/v1/chat/completions")
 async def chat_completion(req: ChatMessage, res: Response):

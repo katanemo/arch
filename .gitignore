@@ -29,3 +29,5 @@ demos/employee_agent/generated
 demos/employee_agent/open-webui
 demos/network_agent/generated
 demos/network_agent/open-webui
+arch/tools/*.egg-info
+arch/tools/config

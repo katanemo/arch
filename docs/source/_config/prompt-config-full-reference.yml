@@ -31,6 +31,7 @@ endpoints:
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
 llm_providers:
   - name: "OpenAI"
+    provider: "openai"
     access_key: $OPENAI_API_KEY
     model: gpt-4o
     default: true
@@ -45,10 +46,12 @@ llm_providers:
         unit: "minute"
 
   - name: "Mistral8x7b"
+    provider: "mistral"
     access_key: $MISTRAL_API_KEY
     model: "mistral-8x7b"
 
   - name: "MistralLocal7b"
+    provider: "local"
     model: "mistral-7b-instruct"
     endpoint: "mistral_local"
 

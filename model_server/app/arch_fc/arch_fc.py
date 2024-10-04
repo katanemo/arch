@@ -9,6 +9,10 @@ import yaml
 from openai import OpenAI
 import os
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 with open("openai_params.yaml") as f:
     params = yaml.safe_load(f)
@@ -20,7 +24,6 @@ mode = os.getenv("MODE", "cloud")
 if mode not in ["cloud", "local-gpu", "local-cpu"]:
     raise ValueError(f"Invalid mode: {mode}")
 arch_api_key = os.getenv("ARCH_API_KEY", "vllm")
-logger = logging.getLogger("uvicorn.error")
 
 handler = None
 if ollama_model.startswith("Arch"):
@@ -28,17 +31,13 @@ if ollama_model.startswith("Arch"):
 else:
     handler = BoltHandler()
 
-
-# app = FastAPI()
-
 if mode == "cloud":
     client = OpenAI(
         base_url=fc_url,
         api_key="EMPTY",
     )
     models = client.models.list()
-    model = models.data[0].id
-    chosen_model = model
+    chosen_model = models.data[0].id
     endpoint = fc_url
 else:
     client = OpenAI(
@@ -47,11 +46,10 @@ else:
     )
     chosen_model = ollama_model
     endpoint = ollama_endpoint
+
 logger.info(f"serving mode: {mode}")
 logger.info(f"using model: {chosen_model}")
 logger.info(f"using endpoint: {endpoint}")
-
-
 
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")

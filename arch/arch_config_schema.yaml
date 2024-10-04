@@ -38,6 +38,8 @@ properties:
       properties:
         name:
           type: string
+        provider:
+          type: string
         access_key:
           type: string
         model:
@@ -47,6 +49,7 @@ properties:
       additionalProperties: false
       required:
         - name
+        - provider
         - access_key
         - model
   overrides:
@@ -67,6 +70,8 @@ properties:
           type: boolean
         description:
           type: string
+        auto_llm_dispatch_on_response:
+          type: boolean
         parameters:
           type: array
           items:
@@ -104,7 +109,7 @@ properties:
     items:
       type: object
       properties:
-        provider:
+        model:
           type: string
         selector:
           type: object
@@ -130,7 +135,7 @@ properties:
             - unit
       additionalProperties: false
       required:
-        - provider
+        - model
         - selector
         - limit
 additionalProperties: false

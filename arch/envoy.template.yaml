@@ -12,7 +12,7 @@ static_resources:
           - name: envoy.filters.network.http_connection_manager
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-              stat_prefix: ingress_http
+              stat_prefix: arch_ingress_http
               codec_type: AUTO
               scheme_header_transformation:
                 scheme_to_overwrite: https
@@ -34,26 +34,18 @@ static_resources:
                           auto_host_rewrite: true
                           cluster: mistral_7b_instruct
                           timeout: 60s
+                    {% for provider in arch_llm_providers %}
                       - match:
-                          prefix: "/v1/chat/completions"
+                          prefix: "/"
                           headers:
                             - name: "x-arch-llm-provider"
                               string_match:
-                                exact: openai
+                                exact: {{ provider.name }}
                         route:
                           auto_host_rewrite: true
-                          cluster: openai
+                          cluster: {{ provider.provider }}
                           timeout: 60s
-                      - match:
-                          prefix: "/v1/chat/completions"
-                          headers:
-                            - name: "x-arch-llm-provider"
-                              string_match:
-                                exact: mistral
-                        route:
-                          auto_host_rewrite: true
-                          cluster: mistral
-                          timeout: 60s
+                    {% endfor %}
               http_filters:
                 - name: envoy.filters.http.wasm
                   typed_config:
@@ -65,7 +57,7 @@ static_resources:
                         configuration:
                           "@type": "type.googleapis.com/google.protobuf.StringValue"
                           value: |
-                              {{ katanemo_config | indent(30) }}
+                              {{ arch_config | indent(30) }}
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           code:
@@ -75,9 +67,6 @@ static_resources:
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
   clusters:
-    # LLM Host
-    # Embedding Providers
-    # External LLM Providers
     - name: openai
       connect_timeout: 5s
       dns_lookup_family: V4_ONLY
@@ -181,7 +170,8 @@ static_resources:
       {% else -%}
       connect_timeout: 5s
       {% endif -%}
-      type: STRICT_DNS
+      type: LOGICAL_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: {{ cluster.name }}

@@ -1,12 +1,13 @@
+import json
 import random
 from fastapi import FastAPI, Response
 from datetime import datetime, date, timedelta, timezone
 import logging
 from pydantic import BaseModel
-import pytz
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger('uvicorn.error')
+logger.setLevel(logging.INFO)
 
 app = FastAPI()
 
@@ -58,18 +59,28 @@ async def insurance_claim_details(req: InsuranceClaimDetailsRequest, res: Respon
 
     return claim_details
 
-@app.get("/current_time")
-async def current_time(timezone: str):
-    tz = None
-    try:
-      timezone.strip('"')
-      tz = pytz.timezone(timezone)
-    except pytz.exceptions.UnknownTimeZoneError:
-        return {
-            "error": "Invalid timezone: {}".format(timezone)
-        }
-    current_time = datetime.now(tz)
-    return {
-        "timezone": timezone,
-        "current_time": current_time.strftime("%Y-%m-%d %H:%M:%S %Z")
-    }
+
+class DefaultTargetRequest(BaseModel):
+   arch_messages: list
+
+@app.post("/default_target")
+async def default_target(req: DefaultTargetRequest, res: Response):
+    logger.info(f"Received arch_messages: {req.arch_messages}")
+    resp = {
+            "choices": [
+              {
+                "message": {
+                  "role": "assistant",
+                  "content": "hello world from api server"
+                },
+                "finish_reason": "completed",
+                "index": 0
+              }
+            ],
+            "model": "api_server",
+            "usage": {
+              "completion_tokens": 0
+            }
+          }
+    logger.info(f"sending response: {json.dumps(resp)}")
+    return resp

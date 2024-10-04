@@ -1,4 +1,5 @@
 use crate::consts::{DEFAULT_EMBEDDING_MODEL, MODEL_SERVER_NAME};
+use crate::llm_providers::LlmProviders;
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, RecordingMetric};
 use crate::stream_context::StreamContext;
@@ -44,10 +45,10 @@ pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: HashMap<u32, CallContext>,
-    config: Option<Configuration>,
     overrides: Rc<Option<Overrides>>,
     prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
-    prompt_guards: Rc<Option<PromptGuards>>,
+    prompt_guards: Rc<PromptGuards>,
+    llm_providers: Option<Rc<LlmProviders>>,
 }
 
 pub fn embeddings_store() -> &'static RwLock<HashMap<String, EmbeddingTypeMap>> {
@@ -62,11 +63,11 @@ impl FilterContext {
     pub fn new() -> FilterContext {
         FilterContext {
             callouts: HashMap::new(),
-            config: None,
             metrics: Rc::new(WasmMetrics::new()),
             prompt_targets: Rc::new(RwLock::new(HashMap::new())),
             overrides: Rc::new(None),
-            prompt_guards: Rc::new(Some(PromptGuards::default())),
+            prompt_guards: Rc::new(PromptGuards::default()),
+            llm_providers: None,
         }
     }
 
@@ -219,42 +220,35 @@ impl Context for FilterContext {
 // RootContext allows the Rust code to reach into the Envoy Config
 impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
-        if let Some(config_bytes) = self.get_plugin_configuration() {
-            self.config = serde_yaml::from_slice(&config_bytes).unwrap();
+        let config_bytes = self
+            .get_plugin_configuration()
+            .expect("Arch config cannot be empty");
 
-            if let Some(overrides_config) = self
-                .config
-                .as_mut()
-                .and_then(|config| config.overrides.as_mut())
-            {
-                self.overrides = Rc::new(Some(std::mem::take(overrides_config)));
-            }
+        let config: Configuration = match serde_yaml::from_slice(&config_bytes) {
+            Ok(config) => config,
+            Err(err) => panic!("Invalid arch config \"{:?}\"", err),
+        };
 
-            for pt in self.config.clone().unwrap().prompt_targets {
-                self.prompt_targets
-                    .write()
-                    .unwrap()
-                    .insert(pt.name.clone(), pt.clone());
-            }
+        self.overrides = Rc::new(config.overrides);
 
-            debug!("set configuration object");
-
-            if let Some(ratelimits_config) = self
-                .config
-                .as_mut()
-                .and_then(|config| config.ratelimits.as_mut())
-            {
-                ratelimit::ratelimits(Some(std::mem::take(ratelimits_config)));
-            }
-
-            if let Some(prompt_guards) = self
-                .config
-                .as_mut()
-                .and_then(|config| config.prompt_guards.as_mut())
-            {
-                self.prompt_guards = Rc::new(Some(std::mem::take(prompt_guards)));
-            }
+        for pt in config.prompt_targets {
+            self.prompt_targets
+                .write()
+                .unwrap()
+                .insert(pt.name.clone(), pt.clone());
         }
+
+        ratelimit::ratelimits(config.ratelimits);
+
+        if let Some(prompt_guards) = config.prompt_guards {
+            self.prompt_guards = Rc::new(prompt_guards)
+        }
+
+        match config.llm_providers.try_into() {
+            Ok(llm_providers) => self.llm_providers = Some(Rc::new(llm_providers)),
+            Err(err) => panic!("{err}"),
+        }
+
         true
     }
 
@@ -269,6 +263,11 @@ impl RootContext for FilterContext {
             Rc::clone(&self.prompt_targets),
             Rc::clone(&self.prompt_guards),
             Rc::clone(&self.overrides),
+            Rc::clone(
+                self.llm_providers
+                    .as_ref()
+                    .expect("LLM Providers must exist when Streams are being created"),
+            ),
         )))
     }
 
