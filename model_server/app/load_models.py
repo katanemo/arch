@@ -2,7 +2,6 @@ import os
 import sentence_transformers
 from transformers import AutoTokenizer, pipeline
 import sqlite3
-from app.employee_data_generator import generate_employee_data
 from app.network_data_generator import (
     generate_device_data,
     generate_interface_stats_data,

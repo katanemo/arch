@@ -1,9 +1,10 @@
 import json
 import random
 from fastapi import FastAPI, Response
-from app.arch_fc.arch_handler import ArchHandler
-from app.arch_fc.bolt_handler import BoltHandler
-from app.arch_fc.common import ChatMessage
+from .arch_handler import ArchHandler
+from .bolt_handler import BoltHandler
+from .common import ChatMessage
+from app.utils import load_yaml_config
 import logging
 import yaml
 from openai import OpenAI
@@ -13,17 +14,14 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-with open("openai_params.yaml") as f:
-    params = yaml.safe_load(f)
-
+params = load_yaml_config("openai_params.yaml")
 ollama_endpoint = os.getenv("OLLAMA_ENDPOINT", "localhost")
 ollama_model = os.getenv("OLLAMA_MODEL", "Arch-Function-Calling-1.5B-Q4_K_M")
-fc_url = os.getenv("FC_URL", ollama_endpoint)
+fc_url = os.getenv("FC_URL", "https://arch-fc-free-trial-4mzywewe.uc.gateway.dev/v1")
+
 mode = os.getenv("MODE", "cloud")
 if mode not in ["cloud", "local-gpu", "local-cpu"]:
     raise ValueError(f"Invalid mode: {mode}")
-arch_api_key = os.getenv("ARCH_API_KEY", "vllm")
 
 handler = None
 if ollama_model.startswith("Arch"):

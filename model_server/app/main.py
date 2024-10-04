@@ -7,7 +7,7 @@ from app.load_models import (
     load_zero_shot_models,
 )
 import os
-from app.utils import GuardHandler, split_text_into_chunks
+from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config
 import torch
 import yaml
 import string
@@ -23,9 +23,7 @@ logger = logging.getLogger(__name__)
 
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
-
-with open("guard_model_config.yaml") as f:
-    guard_model_config = yaml.safe_load(f)
+guard_model_config = load_yaml_config("guard_model_config.yaml")
 
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")
@@ -48,11 +46,7 @@ class EmbeddingRequest(BaseModel):
 
 @app.get("/healthz")
 async def healthz():
-    import os
-
-    print(os.getcwd())
     return {"status": "ok"}
-
 
 @app.get("/models")
 async def models():
