@@ -33,9 +33,8 @@ def start_server():
         sys.exit(1)
 
     print(f"Starting Archgw Model Server")
-    process = subprocess.run(
+    process = subprocess.Popen(
         ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "51000"],
-        check=True                 # Raise an exception if the command fails
     )
 
     if wait_for_health_check("http://0.0.0.0:51000/healthz"):
@@ -44,6 +43,7 @@ def start_server():
             f.write(str(process.pid))
         print(f"ARCH GW Model Server started with PID {process.pid}")
     else:
+        #Add model_server boot-up logs
         print(f"ARCH GW Model Server - Didn't Sart In Time. Shutting Down")
         process.terminate()
 
