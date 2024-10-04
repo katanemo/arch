@@ -1,13 +1,14 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_ROUTING_HEADER, ARC_FC_CLUSTER,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO,
-    MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_ROUTING_HEADER, ARCH_STATE_HEADER,
+    ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD,
+    GPT_35_TURBO, MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{embeddings_store, WasmMetrics};
 use crate::llm_providers::{LlmProvider, LlmProviders};
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
+use crate::utils::{compress_to_gzip, decompress_gzip};
 use crate::{ratelimit, routing};
 use acap::cos;
 use http::StatusCode;
@@ -15,9 +16,9 @@ use log::{debug, info, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
-    ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
+    ArchState, ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
     ChatCompletionsResponse, FunctionDefinition, FunctionParameter, FunctionParameters, Message,
-    ParameterType, StreamOptions, ToolCall, ToolType,
+    ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
 };
 use public_types::common_types::{
     EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
@@ -27,6 +28,10 @@ use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
+
+use sha2::{Digest, Sha256};
+
+use serde_json::Value;
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
@@ -46,7 +51,6 @@ pub struct CallContext {
     response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
     prompt_target_name: Option<String>,
-    request_body: ChatCompletionsRequest,
     similarity_scores: Option<Vec<(String, f64)>>,
     up_stream_cluster: Option<String>,
     up_stream_cluster_path: Option<String>,
@@ -59,10 +63,14 @@ pub struct StreamContext {
     pub overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     tool_calls: Option<Vec<ToolCall>>,
+    tool_call_response: Option<String>,
+    arch_state: Option<Vec<ArchState>>,
+    message: Option<Message>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
-    chat_completions_request: bool,
+    is_chat_completions_request: bool,
+    chat_completions_request: Option<ChatCompletionsRequest>,
     llm_provider: Option<&'static LlmProvider<'static>>,
     prompt_guards: Rc<Option<PromptGuards>>,
 }
@@ -76,15 +84,19 @@ impl StreamContext {
         overrides: Rc<Option<Overrides>>,
     ) -> Self {
         StreamContext {
+            arch_state: None,
+            chat_completions_request: None,
+            tool_call_response: None,
             context_id,
             metrics,
             prompt_targets,
+            message: None,
             callouts: HashMap::new(),
             tool_calls: None,
             ratelimit_selector: None,
             streaming_response: false,
             response_tokens: 0,
-            chat_completions_request: false,
+            is_chat_completions_request: false,
             llm_provider: None,
             prompt_guards,
             overrides,
@@ -156,12 +168,12 @@ impl StreamContext {
             }
         };
 
-        let embeddings_vector = &embedding_response.data[0].embedding;
+        let prompt_embeddings_vector = &embedding_response.data[0].embedding;
 
         debug!(
             "embedding model: {}, vector length: {:?}",
             embedding_response.model,
-            embeddings_vector.len()
+            prompt_embeddings_vector.len()
         );
 
         let prompt_target_embeddings = match embeddings_store().read() {
@@ -172,6 +184,8 @@ impl StreamContext {
             }
         };
 
+        debug!("after embeddings_store read");
+
         let prompt_targets = match self.prompt_targets.read() {
             Ok(prompt_targets) => prompt_targets,
             Err(e) => {
@@ -180,6 +194,8 @@ impl StreamContext {
             }
         };
 
+        debug!("after embeddings_store read: 1.");
+
         let prompt_target_names = prompt_targets
             .iter()
             // exclude default target
@@ -187,23 +203,45 @@ impl StreamContext {
             .map(|(name, _)| name.clone())
             .collect();
 
+        debug!("after embeddings_store read: 2.");
+
         let similarity_scores: Vec<(String, f64)> = prompt_targets
             .iter()
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
-                let default_embeddings = HashMap::new();
-                let pte = prompt_target_embeddings
-                    .get(prompt_name)
-                    .unwrap_or(&default_embeddings);
-                let description_embeddings = pte.get(&EmbeddingType::Description);
-                let similarity_score_description = cos::cosine_similarity(
-                    &embeddings_vector,
-                    &description_embeddings.unwrap_or(&vec![0.0]),
-                );
+                debug!("after embeddings_store read: 2.1.");
+                let pte = match prompt_target_embeddings.get(prompt_name) {
+                    Some(embeddings) => embeddings,
+                    None => {
+                        debug!(
+                            "embeddings not found for prompt target name: {}",
+                            prompt_name
+                        );
+                        return (prompt_name.clone(), 0.0);
+                    }
+                };
+
+                debug!("after embeddings_store read: 2.2.");
+                let description_embeddings = match pte.get(&EmbeddingType::Description) {
+                    Some(embeddings) => embeddings,
+                    None => {
+                        debug!(
+                            "description embeddings not found for prompt target name: {}",
+                            prompt_name
+                        );
+                        return (prompt_name.clone(), 0.0);
+                    }
+                };
+                debug!("after embeddings_store read: 2.3.");
+                let similarity_score_description =
+                    cos::cosine_similarity(&prompt_embeddings_vector, &description_embeddings);
+                debug!("after embeddings_store read: 2.4.");
                 (prompt_name.clone(), similarity_score_description)
             })
             .collect();
+
+        debug!("after embeddings_store read: 3.");
 
         debug!(
             "similarity scores based on description embeddings match: {:?}",
@@ -315,7 +353,7 @@ impl StreamContext {
         // Check to see who responded to user message. This will help us identify if control should be passed to Arch FC or not.
         // If the last message was from Arch FC, then Arch FC is handling the conversation (possibly for parameter collection).
         let mut arch_assistant = false;
-        let messages = &callout_context.request_body.messages;
+        let messages = &self.chat_completions_request.as_ref().unwrap().messages;
         if messages.len() >= 2 {
             let latest_assistant_message = &messages[messages.len() - 2];
             if let Some(model) = latest_assistant_message.model.as_ref() {
@@ -362,7 +400,11 @@ impl StreamContext {
                     let mut params = HashMap::new();
                     params.insert(
                         ARCH_MESSAGES_KEY.to_string(),
-                        callout_context.request_body.messages.clone(),
+                        self.chat_completions_request
+                            .as_ref()
+                            .unwrap()
+                            .messages
+                            .clone(),
                     );
                     let arch_messages_json = serde_json::to_string(&params).unwrap();
                     debug!("no prompt target found with similarity score above threshold, using default prompt target");
@@ -453,12 +495,23 @@ impl StreamContext {
             });
         }
 
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            ARCH_STATE_HEADER.to_string(),
+            serde_json::to_string(&self.arch_state).unwrap(),
+        );
         let chat_completions = ChatCompletionsRequest {
             model: GPT_35_TURBO.to_string(),
-            messages: callout_context.request_body.messages.clone(),
+            messages: self
+                .chat_completions_request
+                .as_ref()
+                .unwrap()
+                .messages
+                .clone(),
             tools: Some(chat_completion_tools),
             stream: false,
             stream_options: None,
+            metadata: Some(metadata),
         };
 
         let msg_body = match serde_json::to_string(&chat_completions) {
@@ -520,8 +573,8 @@ impl StreamContext {
             Err(e) => {
                 return self.send_server_error(
                     format!(
-                        "Error deserializing function resolver response into ChatCompletion: {:?}",
-                        e
+                        "Error deserializing function resolver response into ChatCompletion: {:?}, request body: {}",
+                        e, body_str
                     ),
                     None,
                 );
@@ -563,7 +616,8 @@ impl StreamContext {
         let mut tool_params = tool_calls[0].function.arguments.clone();
         tool_params.insert(
             String::from(ARCH_MESSAGES_KEY),
-            serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
+            serde_yaml::to_value(&self.chat_completions_request.as_ref().unwrap().messages)
+                .unwrap(),
         );
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
@@ -633,7 +687,8 @@ impl StreamContext {
         }
         debug!("response received for function call response");
         let body_str: String = String::from_utf8(body).unwrap();
-        debug!("function_call_response response str: {}", body_str);
+        self.tool_call_response = Some(body_str.clone());
+        debug!("arch <= app response body: {}", body_str);
         let prompt_target_name = callout_context.prompt_target_name.unwrap();
         let prompt_target = self
             .prompt_targets
@@ -643,7 +698,8 @@ impl StreamContext {
             .unwrap()
             .clone();
 
-        let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
+        // let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
+        let mut messages: Vec<Message> = Vec::new();
 
         // add system prompt
         match prompt_target.system_prompt.as_ref() {
@@ -659,6 +715,23 @@ impl StreamContext {
             }
         }
 
+        for msg in self
+            .chat_completions_request
+            .as_ref()
+            .unwrap()
+            .messages
+            .iter()
+        {
+            messages.push(Message {
+                role: msg.role.clone(),
+                content: msg.content.clone(),
+                model: None,
+                tool_calls: None,
+            });
+        }
+
+        let user_msg = messages.pop().unwrap();
+
         // add data from function call response
         messages.push({
             Message {
@@ -668,23 +741,35 @@ impl StreamContext {
                 tool_calls: None,
             }
         });
+        messages.push(user_msg);
 
-        // add original user prompt
-        messages.push({
-            Message {
-                role: USER_ROLE.to_string(),
-                content: Some(callout_context.user_message.unwrap()),
-                model: None,
-                tool_calls: None,
-            }
-        });
+        // // add original user prompt
+        // messages.push({
+        //     Message {
+        //         role: USER_ROLE.to_string(),
+        //         content: Some(callout_context.user_message.unwrap()),
+        //         model: None,
+        //         tool_calls: None,
+        //     }
+        // });
 
-        let chat_completions_request: ChatCompletionsRequest = ChatCompletionsRequest {
-            model: callout_context.request_body.model,
+        let chat_completions_request = ChatCompletionsRequest {
+            model: self
+                .chat_completions_request
+                .as_ref()
+                .unwrap()
+                .model
+                .clone(),
             messages,
             tools: None,
-            stream: callout_context.request_body.stream,
-            stream_options: callout_context.request_body.stream_options,
+            stream: self.chat_completions_request.as_ref().unwrap().stream,
+            stream_options: self
+                .chat_completions_request
+                .as_ref()
+                .unwrap()
+                .stream_options
+                .clone(),
+            metadata: None,
         };
 
         let json_string = match serde_json::to_string(&chat_completions_request) {
@@ -694,35 +779,33 @@ impl StreamContext {
                     .send_server_error(format!("Error serializing request_body: {:?}", e), None);
             }
         };
-        debug!(
-            "function_calling sending request to openai: msg {}",
-            json_string
-        );
 
         // Tokenize and Ratelimit.
-        if let Some(selector) = self.ratelimit_selector.take() {
-            if let Ok(token_count) =
-                tokenizer::token_count(&chat_completions_request.model, &json_string)
-            {
-                match ratelimit::ratelimits(None).read().unwrap().check_limit(
-                    chat_completions_request.model,
-                    selector,
-                    NonZero::new(token_count as u32).unwrap(),
-                ) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        self.send_server_error(
-                            format!("Exceeded Ratelimit: {}", err),
-                            Some(StatusCode::TOO_MANY_REQUESTS),
-                        );
-                        self.metrics.ratelimited_rq.increment(1);
-                        return;
-                    }
-                }
-            }
-        }
+        // if let Some(selector) = self.ratelimit_selector.take() {
+        //     if let Ok(token_count) =
+        //         tokenizer::token_count(&chat_completions_request.model, &json_string)
+        //     {
+        //         match ratelimit::ratelimits(None).read().unwrap().check_limit(
+        //             chat_completions_request.model,
+        //             selector,
+        //             NonZero::new(token_count as u32).unwrap(),
+        //         ) {
+        //             Ok(_) => (),
+        //             Err(err) => {
+        //                 self.send_server_error(
+        //                     format!("Exceeded Ratelimit: {}", err),
+        //                     Some(StatusCode::TOO_MANY_REQUESTS),
+        //                 );
+        //                 self.metrics.ratelimited_rq.increment(1);
+        //                 return;
+        //             }
+        //         }
+        //     }
+        // }
 
-        self.set_http_request_body(0, json_string.len(), &json_string.into_bytes());
+        debug!("arch => openai: request body {}", json_string);
+
+        self.set_http_request_body(0, json_string.len(), json_string.as_bytes());
         self.resume_http_request();
     }
 
@@ -807,7 +890,6 @@ impl StreamContext {
             response_handler_type: ResponseHandlerType::GetEmbeddings,
             user_message: Some(user_message),
             prompt_target_name: None,
-            request_body: callout_context.request_body,
             similarity_scores: None,
             up_stream_cluster: None,
             up_stream_cluster_path: None,
@@ -862,7 +944,12 @@ impl StreamContext {
             .content
             .as_ref()
             .unwrap();
-        let mut messages = callout_context.request_body.messages;
+        let mut messages = self
+            .chat_completions_request
+            .as_ref()
+            .unwrap()
+            .messages
+            .clone();
 
         // add system prompt
         match prompt_target.system_prompt.as_ref() {
@@ -888,8 +975,14 @@ impl StreamContext {
             model: GPT_35_TURBO.to_string(),
             messages,
             tools: None,
-            stream: callout_context.request_body.stream,
-            stream_options: callout_context.request_body.stream_options,
+            stream: self.chat_completions_request.as_ref().unwrap().stream,
+            stream_options: self
+                .chat_completions_request
+                .as_ref()
+                .unwrap()
+                .stream_options
+                .clone(),
+            metadata: None,
         };
         let json_resp = serde_json::to_string(&chat_completion_request).unwrap();
         debug!("sending response back to default llm: {}", json_resp);
@@ -942,6 +1035,7 @@ impl HttpContext for StreamContext {
                 Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                     Ok(deserialized) => deserialized,
                     Err(msg) => {
+                        debug!("body bytes: {}", String::from_utf8_lossy(&body_bytes));
                         self.send_server_error(
                             format!("Failed to deserialize: {}", msg),
                             Some(StatusCode::BAD_REQUEST),
@@ -961,6 +1055,24 @@ impl HttpContext for StreamContext {
                 }
             };
 
+        let arch_state_str = match deserialized_body.metadata {
+            Some(ref metadata) => {
+                if metadata.contains_key("x-arch-state") {
+                    Some(metadata["x-arch-state"].clone())
+                } else {
+                    None
+                }
+            }
+            None => None,
+        };
+        if arch_state_str.is_some() {
+            let arch_state = arch_state_str.unwrap();
+            let arch_state: Vec<ArchState> = serde_json::from_str(&arch_state).unwrap();
+            self.arch_state = Some(arch_state);
+        }
+
+        debug!("arch_state: {:?}", self.arch_state);
+        self.is_chat_completions_request = true;
         // Set the model based on the chosen LLM Provider
         deserialized_body.model = String::from(self.llm_provider().choose_model());
 
@@ -971,17 +1083,25 @@ impl HttpContext for StreamContext {
             });
         }
 
-        let user_message = match deserialized_body
-            .messages
-            .last()
-            .and_then(|last_message| last_message.content.clone())
-        {
+        let message = match deserialized_body.messages.last() {
             Some(content) => content,
             None => {
                 warn!("No messages in the request body");
                 return Action::Continue;
             }
         };
+
+        self.message = Some(message.clone());
+
+        let user_message = match message.content {
+            Some(ref content) => content.clone(),
+            None => {
+                warn!("No content in the last message");
+                return Action::Continue;
+            }
+        };
+
+        self.chat_completions_request = Some(deserialized_body);
 
         let prompt_guards = match self.prompt_guards.as_ref() {
             Some(prompt_guards) => {
@@ -993,7 +1113,6 @@ impl HttpContext for StreamContext {
                     response_handler_type: ResponseHandlerType::ArchGuard,
                     user_message: Some(user_message),
                     prompt_target_name: None,
-                    request_body: deserialized_body,
                     similarity_scores: None,
                     up_stream_cluster: None,
                     up_stream_cluster_path: None,
@@ -1012,7 +1131,6 @@ impl HttpContext for StreamContext {
                 response_handler_type: ResponseHandlerType::ArchGuard,
                 user_message: Some(user_message),
                 prompt_target_name: None,
-                request_body: deserialized_body,
                 similarity_scores: None,
                 up_stream_cluster: None,
                 up_stream_cluster_path: None,
@@ -1066,7 +1184,6 @@ impl HttpContext for StreamContext {
             response_handler_type: ResponseHandlerType::ArchGuard,
             user_message: Some(user_message),
             prompt_target_name: None,
-            request_body: deserialized_body,
             similarity_scores: None,
             up_stream_cluster: None,
             up_stream_cluster_path: None,
@@ -1083,23 +1200,13 @@ impl HttpContext for StreamContext {
         Action::Pause
     }
 
-    fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        if let Some(tool_calls) = self.tool_calls.as_ref() {
-            if !tool_calls.is_empty() {
-                let tool_calls_str = serde_json::to_string(&tool_calls).unwrap();
-                self.add_http_response_header("x-arch-tool-calls", tool_calls_str.as_str());
-            }
-        }
-        Action::Continue
-    }
-
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         debug!(
             "recv [S={}] bytes={} end_stream={}",
             self.context_id, body_size, end_of_stream
         );
 
-        if !self.chat_completions_request {
+        if !self.is_chat_completions_request {
             if let Some(body_str) = self
                 .get_http_response_body(0, body_size)
                 .and_then(|bytes| String::from_utf8(bytes).ok())
@@ -1117,7 +1224,9 @@ impl HttpContext for StreamContext {
             .get_http_response_body(0, body_size)
             .expect("cant get response body");
 
-        let body_str = String::from_utf8(body).expect("body is not utf-8");
+        let body_decompressed = decompress_gzip(&body).unwrap_or(body);
+
+        let body_str = String::from_utf8(body_decompressed).expect("body is not utf-8");
 
         if self.streaming_response {
             debug!("streaming response");
@@ -1125,6 +1234,7 @@ impl HttpContext for StreamContext {
                 Some((_, chat_completions_data)) => chat_completions_data,
                 None => {
                     self.send_server_error(String::from("parsing error in streaming data"), None);
+                    debug!("on_http_response_body: 0.4");
                     return Action::Pause;
                 }
             };
@@ -1174,7 +1284,83 @@ impl HttpContext for StreamContext {
                 };
 
             self.response_tokens += chat_completions_response.usage.completion_tokens;
+
+            debug!("on_http_response_body: 0");
+            if let Some(tool_calls) = self.tool_calls.as_ref() {
+                debug!("on_http_response_body: 1");
+                if !tool_calls.is_empty() {
+                    debug!("on_http_response_body: 2");
+
+                    if self.arch_state.is_none() {
+                        self.arch_state = Some(Vec::new());
+                    }
+
+                    // compute sha hash from message history
+                    let mut hasher = Sha256::new();
+                    let prompts: Vec<String> = self
+                        .chat_completions_request
+                        .as_ref()
+                        .unwrap()
+                        .messages
+                        .iter()
+                        .filter(|msg| msg.role == USER_ROLE)
+                        .map(|msg| msg.content.clone().unwrap())
+                        .collect();
+                    let prompts_str = serde_json::to_string(&prompts).unwrap();
+                    debug!("prompts: {}", prompts_str);
+                    hasher.update(prompts_str);
+                    let hash_key = hasher.finalize();
+                    // conver hash to hex string
+                    let hash_key_str = format!("{:x}", hash_key);
+
+                    // create new tool call state
+                    let tool_call_state = ToolCallState {
+                        key: hash_key_str,
+                        message: self.message.clone(),
+                        tool_call: tool_calls[0].function.clone(),
+                        tool_response: self.tool_call_response.clone().unwrap(),
+                    };
+
+                    // push tool call state to arch state
+                    self.arch_state
+                        .as_mut()
+                        .unwrap()
+                        .push(ArchState::ToolCall(vec![tool_call_state]));
+
+                    let mut data: Value = serde_json::from_str(&body_str).unwrap();
+                    if let Value::Object(ref mut map) = data {
+                        // serialize arch state and add to metadata
+                        let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
+                        debug!("arch_state: {}", arch_state_str);
+                        let metadata = map
+                            .entry("metadata")
+                            .or_insert(Value::Object(serde_json::Map::new()));
+                        metadata.as_object_mut().unwrap().insert(
+                            ARCH_STATE_HEADER.to_string(),
+                            serde_json::Value::String(arch_state_str),
+                        );
+
+                        let data_serialized = serde_json::to_string(&data).unwrap();
+                        debug!("arch => user: {}", data_serialized);
+                        let compressed_data = match compress_to_gzip(data_serialized.as_bytes()) {
+                            Ok(compressed_data) => compressed_data,
+                            Err(e) => {
+                                self.send_server_error(
+                                    format!("Error compressing response: {:?}", e),
+                                    None,
+                                );
+                                return Action::Pause;
+                            }
+                        };
+                        self.set_http_response_body(0, compressed_data.len(), &compressed_data);
+
+                        return Action::Continue;
+                    };
+                }
+            }
         }
+
+        debug!("on_http_response_body: 0.5");
 
         debug!(
             "recv [S={}] total_tokens={} end_stream={}",

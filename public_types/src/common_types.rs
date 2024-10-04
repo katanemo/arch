@@ -50,6 +50,8 @@ pub mod open_ai {
         pub stream: bool,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub stream_options: Option<StreamOptions>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub metadata: Option<HashMap<String, String>>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -209,11 +211,26 @@ pub mod open_ai {
         pub arguments: HashMap<String, Value>,
     }
 
+    #[derive(Debug, Deserialize, Serialize)]
+    pub struct ToolCallState {
+        pub key: String,
+        pub message: Option<Message>,
+        pub tool_call: FunctionCallDetail,
+        pub tool_response: String,
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
+    #[serde(untagged)]
+    pub enum ArchState {
+        ToolCall(Vec<ToolCallState>),
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsResponse {
         pub usage: Usage,
         pub choices: Vec<Choice>,
         pub model: String,
+        pub metadata: Option<HashMap<String, String>>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]

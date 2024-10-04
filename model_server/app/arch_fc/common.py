@@ -10,3 +10,4 @@ class Message(BaseModel):
 class ChatMessage(BaseModel):
     messages: list[Message]
     tools: List[Dict[str, Any]]
+    metadata: Dict[str, str] = {}

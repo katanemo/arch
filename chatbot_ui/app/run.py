@@ -16,7 +16,10 @@ log.info("CHAT_COMPLETION_ENDPOINT: ", CHAT_COMPLETION_ENDPOINT)
 
 client = OpenAI(api_key=OPENAI_API_KEY, base_url=CHAT_COMPLETION_ENDPOINT)
 
+arch_state = None
+
 def predict(message, history):
+    global arch_state
     history.append({"role": "user", "content": message})
     log.info("CHAT_COMPLETION_ENDPOINT: ", CHAT_COMPLETION_ENDPOINT)
     log.info("history: ", history)
@@ -28,16 +31,15 @@ def predict(message, history):
         'x-arch-deterministic-provider': 'openai',
     }
 
-    updated_history = []
-    for h in history.copy():
-        updated_history.append(h)
-        if 'tool_calls' in h:
-            tool_calls = h.pop('tool_calls')
-            updated_history.append({"role": "assistant", "content": tool_calls})
+    metadata = {}
+    if arch_state:
+       metadata = {"x-arch-state": arch_state}
+
     try:
       raw_response = client.chat.completions.with_raw_response.create(model=MODEL_NAME,
-        messages = updated_history,
+        messages = history,
         temperature=1.0,
+        metadata=metadata,
         extra_headers=custom_headers
       )
     except Exception as e:
@@ -49,19 +51,13 @@ def predict(message, history):
       raise gr.Error("Error calling gateway API: {}".format(e.message))
 
     response = raw_response.parse()
-    headers = raw_response.headers
+    arch_state = json.loads(raw_response.text).get('metadata', {}).get('x-arch-state', arch_state)
 
     choices = response.choices
     message = choices[0].message
     content = message.content
 
-    history.append({"role": "assistant", "content": content})
-    history[-1]["model"] = response.model
-    if 'x-arch-tool-calls' in headers:
-        tool_calls_str = headers['x-arch-tool-calls']
-        tool_calls = json.loads(tool_calls_str)
-        history[-1]['tool_calls'] = f"<tool_call>\n{json.dumps(tool_calls[0]['function'])}\n</tool_call>"
-
+    history.append({"role": "assistant", "content": content, "model": response.model})
     messages = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
     return messages, history
 

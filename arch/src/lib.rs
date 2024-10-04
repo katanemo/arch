@@ -10,6 +10,7 @@ mod routing;
 mod stats;
 mod stream_context;
 mod tokenizer;
+mod utils;
 
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);

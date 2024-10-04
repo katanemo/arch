@@ -16,3 +16,4 @@ dateparser
 openai
 pandas
 tf-keras
+pytest

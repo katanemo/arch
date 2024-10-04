@@ -26,7 +26,7 @@ zero_shot_models = load_zero_shot_models()
 
 with open("guard_model_config.yaml") as f:
     guard_model_config = yaml.safe_load(f)
-with open('/root/arch_config.yaml') as f:
+with open('/Users/adilhafeez/src/intelligent-prompt-gateway/demos/function_calling/arch_config.yaml') as f:
     config = yaml.safe_load(f)
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")

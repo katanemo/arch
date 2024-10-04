@@ -428,6 +428,7 @@ fn request_ratelimited() {
     normal_flow(&mut module, filter_context, http_context);
 
     let arch_fc_resp = ChatCompletionsResponse {
+        metadata: None,
         usage: Usage {
             completion_tokens: 0,
         },
@@ -543,6 +544,7 @@ fn request_not_ratelimited() {
     normal_flow(&mut module, filter_context, http_context);
 
     let arch_fc_resp = ChatCompletionsResponse {
+        metadata: None,
         usage: Usage {
             completion_tokens: 0,
         },
