@@ -8,7 +8,7 @@ listener:
 
 endpoints:
   api_server:
-    endpoint: api_server:80
+    endpoint: host.docker.internal:18083
     connect_timeout: 0.005s
 
 overrides:
@@ -17,16 +17,17 @@ overrides:
 
 llm_providers:
   - name: open-ai-gpt-4
-    access_key: $OPENAI_ACCESS_KEY
+    access_key: $OPENAI_API_KEY
     provider: openai
     model: gpt-4
     default: true
   - name: mistral-large-latest
-    access_key: $MISTRAL_ACCESS_KEY
+    access_key: $MISTRAL_API_KEY
     provider: mistral
     model: large-latest
 
-system_prompt: You are a helpful assistant.
+system_prompt: |
+  You are a helpful assistant.
 
 prompt_targets:
   - name: weather_forecast

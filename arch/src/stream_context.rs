@@ -166,12 +166,12 @@ impl StreamContext {
             }
         };
 
-        let embeddings_vector = &embedding_response.data[0].embedding;
+        let prompt_embeddings_vector = &embedding_response.data[0].embedding;
 
         debug!(
             "embedding model: {}, vector length: {:?}",
             embedding_response.model,
-            embeddings_vector.len()
+            prompt_embeddings_vector.len()
         );
 
         let prompt_target_embeddings = match embeddings_store().read() {
@@ -202,15 +202,29 @@ impl StreamContext {
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
-                let default_embeddings = HashMap::new();
-                let pte = prompt_target_embeddings
-                    .get(prompt_name)
-                    .unwrap_or(&default_embeddings);
-                let description_embeddings = pte.get(&EmbeddingType::Description);
-                let similarity_score_description = cos::cosine_similarity(
-                    &embeddings_vector,
-                    &description_embeddings.unwrap_or(&vec![0.0]),
-                );
+                let pte = match prompt_target_embeddings.get(prompt_name) {
+                    Some(embeddings) => embeddings,
+                    None => {
+                        warn!(
+                            "embeddings not found for prompt target name: {}",
+                            prompt_name
+                        );
+                        return (prompt_name.clone(), f64::NAN);
+                    }
+                };
+
+                let description_embeddings = match pte.get(&EmbeddingType::Description) {
+                    Some(embeddings) => embeddings,
+                    None => {
+                        warn!(
+                            "description embeddings not found for prompt target name: {}",
+                            prompt_name
+                        );
+                        return (prompt_name.clone(), f64::NAN);
+                    }
+                };
+                let similarity_score_description =
+                    cos::cosine_similarity(&prompt_embeddings_vector, &description_embeddings);
                 (prompt_name.clone(), similarity_score_description)
             })
             .collect();
@@ -329,7 +343,7 @@ impl StreamContext {
         if messages.len() >= 2 {
             let latest_assistant_message = &messages[messages.len() - 2];
             if let Some(model) = latest_assistant_message.model.as_ref() {
-                if model.starts_with("Arch") {
+                if model.contains("Arch") {
                     arch_assistant = true;
                 }
             }
