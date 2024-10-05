@@ -175,8 +175,6 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&embeddings_response_buffer))
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Warn), None)
-        .expect_log(Some(LogLevel::Warn), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("model_server"),
