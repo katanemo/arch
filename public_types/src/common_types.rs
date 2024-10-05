@@ -7,7 +7,7 @@ pub struct EmbeddingRequest {
     pub prompt_target: PromptTarget,
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum EmbeddingType {
     Name,
     Description,

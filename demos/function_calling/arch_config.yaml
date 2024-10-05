@@ -17,14 +17,14 @@ overrides:
 
 llm_providers:
   - name: open-ai-gpt-4
-    access_key: adwas
+    access_key: OPENAI_API_KEY
     provider: openai
     model: gpt-4
     default: true
   - name: mistral-large-latest
-    access_key: adwas
+    access_key: MISTRAL_API_KEY
     provider: mistral
-    model: large-latest
+    model: mistral-large-latest
 
 system_prompt: |
   You are a helpful assistant.
