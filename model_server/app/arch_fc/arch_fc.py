@@ -36,7 +36,8 @@ if mode == "cloud":
         base_url=fc_url,
         api_key="EMPTY",
     )
-    chosen_model = "fc-cloud"
+    models = client.models.list()
+    chosen_model = models.data[0].id
     endpoint = fc_url
 else:
     client = OpenAI(
@@ -49,7 +50,6 @@ else:
 logger.info(f"serving mode: {mode}")
 logger.info(f"using model: {chosen_model}")
 logger.info(f"using endpoint: {endpoint}")
-
 
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
