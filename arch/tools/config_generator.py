@@ -22,6 +22,7 @@ def add_secret_key_to_llm_providers(config_yaml) :
 def validate_and_render_schema():
     env = Environment(loader=FileSystemLoader('./'))
     template = env.get_template('envoy.template.yaml')
+    print(f"Arch Config file: {ARCH_CONFIG_FILE}")
 
     try:
         validate_prompt_config(ARCH_CONFIG_FILE, ARCH_CONFIG_SCHEMA_FILE)
