@@ -1,0 +1,52 @@
+version: v0.1
+
+listener:
+  address: 127.0.0.1 | 0.0.0.0
+  port_value: 8080 # if you configure port 443, you'll need to update the listener with tls_certificates
+  messages: tuple | hugging-face-messages-api
+
+system_prompts:
+  - name: weather_assistant
+    content: You are an advanced weather forecasting assistant. Your role is to provide users with precise, up-to-date weather forecasts.
+
+llm_providers:
+    - name: OpenAI
+      access_key: $OPEN_AI_KEY
+      model: GPT-4o
+      default: true
+    - name: Mistral
+      access_key: $MISTRAL_KEY
+      model: mistral-large-latest
+
+prompt_endpoints:
+  - "http://127.0.0.2"
+  - "http://127.0.0.1"
+
+prompt_guards:
+   input-guard:
+     - name: #jailbreak
+       on-exception-message: It seems like there was an attempt to perform an action that isn't allowed for security reasons. Don't worry—this has been logged, and everything is still safe!
+
+prompt_targets:
+  - name: weather_forecast
+    description: Check what the weather is likely to be for the next day or few days for a given city
+    parameters:
+      - name: city
+        description: the name of the city
+        type: str
+        required: true
+      - name: days
+        description: the number of days
+        type: int
+        required: true
+      - name: units
+        description: the temperature unit, e.g., Celsius and Fahrenheit
+        type: str
+        default: Celsius
+    endpoint:
+      name: api_server
+      path: /weather
+
+error_target: # handle errors from Bolt or upstream LLMs
+    name: error_handler
+    path: /errors
