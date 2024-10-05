@@ -208,7 +208,7 @@ impl StreamContext {
                             "embeddings not found for prompt target name: {}",
                             prompt_name
                         );
-                        return (prompt_name.clone(), 0.0);
+                        return (prompt_name.clone(), f64::NAN);
                     }
                 };
 
@@ -219,7 +219,7 @@ impl StreamContext {
                             "description embeddings not found for prompt target name: {}",
                             prompt_name
                         );
-                        return (prompt_name.clone(), 0.0);
+                        return (prompt_name.clone(), f64::NAN);
                     }
                 };
                 let similarity_score_description =
