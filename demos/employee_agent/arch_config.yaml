@@ -8,18 +8,23 @@ listener:
 
 endpoints:
   api_server:
-    endpoint: api_server:80
+    endpoint: host.docker.internal:18083
     connect_timeout: 0.005s
-
-llm_providers:
-  - name: open-ai-gpt-4
-    access_key: $OPEN_AI_API_KEY
-    model: gpt-4
-    default: true
 
 overrides:
   # confidence threshold for prompt target intent matching
   prompt_target_intent_matching_threshold: 0.7
+
+llm_providers:
+  - name: open-ai-gpt-4
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4
+    default: true
+  - name: mistral-large-latest
+    access_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: large-latest
 
 system_prompt: |
   You are a helpful assistant.
@@ -264,7 +269,7 @@ prompt_targets:
       - name: track_hours
         description: Whether to track the hours worked by employees as part of the efficiency metric.
         required: false
-        type: boolean
+        type: bool
         default: true
       - name: min_projects_completed
         description: Minimum number of projects completed during the remote work period.
@@ -282,7 +287,7 @@ prompt_targets:
       Track the remote work efficiency of employees across departments, considering project deadlines, hours worked, and project completion. Include weighted productivity metrics.
 
 ratelimits:
-  - provider: gpt-3.5-turbo
+  - model: gpt-4
     selector:
       key: selector-key
       value: selector-value

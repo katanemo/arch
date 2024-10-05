@@ -133,12 +133,12 @@ properties:
           required:
             - tokens
             - unit
-      additionalProperties: false
+      additionalProperties: true
       required:
         - model
         - selector
         - limit
-additionalProperties: false
+additionalProperties: true
 required:
   - version
   - listener

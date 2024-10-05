@@ -67,7 +67,7 @@ def start_arch(arch_config_file, log_timeout=120, check_interval=1):
                 break
 
             #check to see if the status of one of the services has changed from prior. Print and loop over until finish, or error
-            for service_name in services_status.item():
+            for service_name, _ in services_status.items():
                 if services_status[service_name]['status'] != current_services_status[service_name]['status']:
                     print("One or more Arch services have changed state. Printing current state")
                     print_service_status(current_services_status)

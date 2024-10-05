@@ -19,4 +19,4 @@ cp "$source_compose" "$destination_dir/docker-compose.yaml"
 echo "Files copied successfully!"
 
 echo "Building the cli"
-pip install -e .
+pip3 install -e .
