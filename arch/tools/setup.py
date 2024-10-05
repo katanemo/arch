@@ -11,7 +11,7 @@ setup(
     package_data={
         '': ['config/docker-compose.yaml', 'config/arch_config_schema.yaml'] #Specify to include the docker-compose.yml file
     },
-    install_requires=['pyyaml', 'pydantic', 'click', 'jinja2','pyyaml','jsonschema'],  # Add dependencies here, e.g., 'PyYAML' for YAML processing
+    install_requires=['pyyaml', 'pydantic', 'click', 'jinja2','pyyaml','jsonschema', 'setuptools'],  # Add dependencies here, e.g., 'PyYAML' for YAML processing
     entry_points={
         'console_scripts': [
             'archgw=cli:main',
