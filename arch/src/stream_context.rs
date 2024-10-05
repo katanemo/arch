@@ -624,12 +624,17 @@ impl StreamContext {
         {
             use serde_json::Value;
             let v: Value = serde_json::from_str(&tool_params_json_str).unwrap();
-            let tool_params_dict: HashMap<String, String> = v
-                .as_object()
-                .unwrap()
-                .iter()
-                .map(|(key, value)| (key.clone(), value.as_str().unwrap().to_string()))
-                .collect();
+            let tool_params_dict: HashMap<String, String> = match v.as_object() {
+                Some(obj) => obj
+                    .iter()
+                    .filter_map(|(key, value)| {
+                        value
+                            .as_str()
+                            .map(|str_value| (key.clone(), str_value.to_string()))
+                    })
+                    .collect(),
+                None => HashMap::new(), // Return an empty HashMap if v is not an object
+            };
 
             let hallucination_classification_request = HallucinationClassificationRequest {
                 prompt: callout_context.user_message.as_ref().unwrap().clone(),
