@@ -678,9 +678,6 @@ impl StreamContext {
                 "dispatched call to model_server/hallucination token_id={}",
                 token_id
             );
-
-            self.metrics.active_http_calls.increment(1);
-            callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
         }
 
         let prompt_target = self
