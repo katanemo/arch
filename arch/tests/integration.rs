@@ -548,6 +548,23 @@ fn request_ratelimited() {
         .returning(Some(&arch_fc_resp_str))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_http_call(
+            Some("model_server"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/hallucination"),
+                (":authority", "model_server"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ]),
+            None,
+            None,
+            None,
+        )
+        .returning(Some(5))
+        .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -566,14 +583,14 @@ fn request_ratelimited() {
             None,
             None,
         )
-        .returning(Some(5))
+        .returning(Some(6))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
     let body_text = String::from("test body");
     module
-        .call_proxy_on_http_call_response(http_context, 5, 0, body_text.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 6, 0, body_text.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
@@ -675,6 +692,23 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_http_call(
+            Some("model_server"),
+            Some(vec![
+                (":method", "POST"),
+                (":path", "/hallucination"),
+                (":authority", "model_server"),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ]),
+            None,
+            None,
+            None,
+        )
+        .returning(Some(5))
+        .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -692,14 +726,14 @@ fn request_not_ratelimited() {
             None,
             None,
         )
-        .returning(Some(5))
+        .returning(Some(6))
         .expect_metric_increment("active_http_calls", 1)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
     let body_text = String::from("test body");
     module
-        .call_proxy_on_http_call_response(http_context, 5, 0, body_text.len() as i32, 0)
+        .call_proxy_on_http_call_response(http_context, 6, 0, body_text.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
