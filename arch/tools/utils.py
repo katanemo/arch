@@ -16,7 +16,7 @@ def run_docker_compose_ps(compose_file, env):
     try:
         # Run `docker-compose ps` to get the health status of each service
         ps_process = subprocess.Popen(
-            ["docker", "compose", "ps", "--format", "table{{.Service}}\t{{.State}}\t{{.Ports}}"],
+            ["docker", "compose", "-p", "arch", "ps", "--format", "table{{.Service}}\t{{.State}}\t{{.Ports}}"],
             cwd=os.path.dirname(compose_file),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

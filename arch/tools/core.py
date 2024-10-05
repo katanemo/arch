@@ -20,7 +20,7 @@ def start_arch(arch_config_file, env, log_timeout=120, check_interval=1):
     try:
         # Run the Docker Compose command in detached mode (-d)
         subprocess.run(
-            ["docker", "compose", "up", "-d"],
+            ["docker", "compose", "-p", "arch", "up", "-d",],
             cwd=os.path.dirname(compose_file),  # Ensure the Docker command runs in the correct path
             env=env,                   # Pass the modified environment
             check=True                 # Raise an exception if the command fails
@@ -83,12 +83,12 @@ def stop_arch():
     Args:
         path (str): The path where the docker-compose.yml file is located.
     """
-    compose_file = pkg_resources.resource_filename(__name__, 'docker-compose.yaml')
+    compose_file = pkg_resources.resource_filename(__name__, 'config/docker-compose.yaml')
 
     try:
         # Run `docker-compose down` to shut down all services
         subprocess.run(
-            ["docker", "compose", "down"],
+            ["docker", "compose", "-p", "arch", "down"],
             cwd=os.path.dirname(compose_file),
             check=True,
         )

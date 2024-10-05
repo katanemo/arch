@@ -24,7 +24,7 @@ llm_providers:
   - name: mistral-large-latest
     access_key: MISTRAL_API_KEY
     provider: mistral
-    model: large-latest
+    model: mistral-large-latest
 
 system_prompt: |
   You are a helpful assistant.

@@ -70,8 +70,6 @@ def validate_and_render_schema():
     arch_llm_providers = config_yaml["llm_providers"]
     arch_config_string = yaml.dump(config_yaml)
 
-    print("llm_providers:", arch_llm_providers)
-
     data = {
         'arch_config': arch_config_string,
         'arch_clusters': inferred_clusters,
