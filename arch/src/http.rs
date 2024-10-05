@@ -1,6 +1,6 @@
 use crate::stats::{Gauge, IncrementingMetric};
 use log::debug;
-use proxy_wasm::traits::Context;
+use proxy_wasm::{traits::Context, types::Status};
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, time::Duration};
 
 #[derive(Debug)]
@@ -30,31 +30,44 @@ impl<'a> CallArgs<'a> {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum ClientError {
+    #[error("Error dispatching HTTP call to `{upstream_name}`, error: {internal_status:?}")]
+    DispatchError {
+        upstream_name: String,
+        internal_status: Status,
+    },
+}
+
 pub trait Client: Context {
     type CallContext: Debug;
 
-    fn http_call(&self, call_args: CallArgs, call_context: Self::CallContext) {
+    fn http_call(
+        &self,
+        call_args: CallArgs,
+        call_context: Self::CallContext,
+    ) -> Result<(), ClientError> {
         debug!(
             "dispatching http call with args={:?} context={:?}",
             call_args, call_context
         );
-        let id = self
-            .dispatch_http_call(
-                call_args.upstream,
-                call_args.headers,
-                call_args.body,
-                call_args.trailers,
-                call_args.timeout,
-            )
-            .inspect_err(|err| {
-                panic!(
-                    "Error dispatching HTTP call to `{}`, error: {:?}",
-                    call_args.upstream, err
-                );
-            })
-            .unwrap();
 
-        self.add_call_context(id, call_context);
+        match self.dispatch_http_call(
+            call_args.upstream,
+            call_args.headers,
+            call_args.body,
+            call_args.trailers,
+            call_args.timeout,
+        ) {
+            Ok(id) => {
+                self.add_call_context(id, call_context);
+                Ok(())
+            }
+            Err(status) => Err(ClientError::DispatchError {
+                upstream_name: String::from(call_args.upstream),
+                internal_status: status.clone(),
+            }),
+        }
     }
 
     fn add_call_context(&self, id: u32, call_context: Self::CallContext) {

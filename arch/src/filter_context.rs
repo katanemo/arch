@@ -119,7 +119,9 @@ impl FilterContext {
             embedding_type,
         };
 
-        self.http_call(call_args, call_context);
+        if let Err(error) = self.http_call(call_args, call_context) {
+            panic!("{error}")
+        }
     }
 
     fn embedding_response_handler(
