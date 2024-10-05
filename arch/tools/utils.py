@@ -93,8 +93,6 @@ def load_env_file_to_dict(file_path):
 
     return env_dict
 
-import json
-
 def parse_docker_compose_ps_output(output):
     # Split the output into lines
     lines = output.strip().splitlines()
