@@ -216,6 +216,7 @@ async def hallucination(req: HallucinationRequest, res: Response):
     )
     result_score = result['scores']
     result_params = {k[0]: s for k, s in zip(req.parameters.items(), result_score)}
+    logger.info(f"hallucination result: {result_params}")
 
     return {
         "params_scores": result_params,
