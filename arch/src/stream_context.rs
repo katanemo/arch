@@ -679,7 +679,26 @@ impl StreamContext {
                 "dispatched call to model_server/hallucination token_id={}",
                 token_id
             );
-            callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
+
+            self.metrics.active_http_calls.increment(1);
+            if self
+                .callouts
+                .insert(
+                    token_id,
+                    CallContext {
+                        response_handler_type: ResponseHandlerType::HallucinationDetect,
+                        user_message: callout_context.user_message.clone(),
+                        prompt_target_name: callout_context.prompt_target_name.clone(),
+                        request_body: callout_context.request_body.clone(),
+                        similarity_scores: callout_context.similarity_scores.clone(),
+                        upstream_cluster: callout_context.upstream_cluster.clone(),
+                        upstream_cluster_path: callout_context.upstream_cluster_path.clone(),
+                    },
+                )
+                .is_some()
+            {
+                panic!("duplicate token_id")
+            }
         }
 
         let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
@@ -718,6 +737,7 @@ impl StreamContext {
         callout_context.upstream_cluster = Some(endpoint.name);
         callout_context.upstream_cluster_path = Some(path);
         callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
+        self.metrics.active_http_calls.increment(1);
         if self.callouts.insert(token_id, callout_context).is_some() {
             panic!("duplicate token_id")
         }
