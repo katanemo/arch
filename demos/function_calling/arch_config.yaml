@@ -21,10 +21,6 @@ llm_providers:
     provider: openai
     model: gpt-4
     default: true
-  - name: mistral-large-latest
-    access_key: MISTRAL_API_KEY
-    provider: mistral
-    model: mistral-large-latest
 
 system_prompt: |
   You are a helpful assistant.
