@@ -10,7 +10,7 @@ setup(
     include_package_data=True,
     # Specify to include the docker-compose.yml file
     package_data={
-        '': ['config/docker-compose.yaml', 'config/arch_config_schema.yaml']
+        '': ['config/docker-compose.yaml', 'config/arch_config_schema.yaml', 'config/stage.env'] #Specify to include the docker-compose.yml file
     },
     # Add dependencies here, e.g., 'PyYAML' for YAML processing
     install_requires=['pyyaml', 'pydantic', 'click', 'jinja2','pyyaml','jsonschema', 'setuptools'],

@@ -24,3 +24,4 @@ demos/network_copilot/ollama/models/
 arch_log/
 arch/tools/*.egg-info
 arch/tools/config
+model_server/venv_model_server
