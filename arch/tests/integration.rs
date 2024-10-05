@@ -53,6 +53,8 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .returning(Some("selector-value"))
         .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
         .returning(None)
+        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
+        .returning(Some("/v1/chat/completions"))
         .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
