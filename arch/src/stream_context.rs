@@ -1,9 +1,10 @@
 use crate::consts::{
     ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
-    ARC_FC_CLUSTER, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD,
-    GPT_35_TURBO, MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
-use crate::filter_context::{embeddings_store, WasmMetrics};
+use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
@@ -30,7 +31,6 @@ use public_types::embeddings::{
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
-use std::sync::RwLock;
 use std::time::Duration;
 
 enum ResponseHandlerType {
@@ -55,7 +55,8 @@ pub struct CallContext {
 pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
-    prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+    prompt_targets: Rc<HashMap<String, PromptTarget>>,
+    embeddings_store: Rc<EmbeddingsStore>,
     overrides: Rc<Option<Overrides>>,
     callouts: HashMap<u32, CallContext>,
     ratelimit_selector: Option<Header>,
@@ -71,15 +72,17 @@ impl StreamContext {
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
-        prompt_targets: Rc<RwLock<HashMap<String, PromptTarget>>>,
+        prompt_targets: Rc<HashMap<String, PromptTarget>>,
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
+        embeddings_store: Rc<EmbeddingsStore>,
     ) -> Self {
         StreamContext {
             context_id,
             metrics,
             prompt_targets,
+            embeddings_store,
             callouts: HashMap::new(),
             ratelimit_selector: None,
             streaming_response: false,
@@ -165,51 +168,51 @@ impl StreamContext {
             }
         };
 
-        let embeddings_vector = &embedding_response.data[0].embedding;
+        let prompt_embeddings_vector = &embedding_response.data[0].embedding;
 
         debug!(
             "embedding model: {}, vector length: {:?}",
             embedding_response.model,
-            embeddings_vector.len()
+            prompt_embeddings_vector.len()
         );
 
-        let prompt_target_embeddings = match embeddings_store().read() {
-            Ok(embeddings) => embeddings,
-            Err(e) => {
-                return self
-                    .send_server_error(format!("Error reading embeddings store: {:?}", e), None);
-            }
-        };
-
-        let prompt_targets = match self.prompt_targets.read() {
-            Ok(prompt_targets) => prompt_targets,
-            Err(e) => {
-                self.send_server_error(format!("Error reading prompt targets: {:?}", e), None);
-                return;
-            }
-        };
-
-        let prompt_target_names = prompt_targets
+        let prompt_target_names = self
+            .prompt_targets
             .iter()
             // exclude default target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(name, _)| name.clone())
             .collect();
 
-        let similarity_scores: Vec<(String, f64)> = prompt_targets
+        let similarity_scores: Vec<(String, f64)> = self
+            .prompt_targets
             .iter()
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
-                let default_embeddings = HashMap::new();
-                let pte = prompt_target_embeddings
-                    .get(prompt_name)
-                    .unwrap_or(&default_embeddings);
-                let description_embeddings = pte.get(&EmbeddingType::Description);
-                let similarity_score_description = cos::cosine_similarity(
-                    &embeddings_vector,
-                    &description_embeddings.unwrap_or(&vec![0.0]),
-                );
+                let pte = match self.embeddings_store.get(prompt_name) {
+                    Some(embeddings) => embeddings,
+                    None => {
+                        warn!(
+                            "embeddings not found for prompt target name: {}",
+                            prompt_name
+                        );
+                        return (prompt_name.clone(), f64::NAN);
+                    }
+                };
+
+                let description_embeddings = match pte.get(&EmbeddingType::Description) {
+                    Some(embeddings) => embeddings,
+                    None => {
+                        warn!(
+                            "description embeddings not found for prompt target name: {}",
+                            prompt_name
+                        );
+                        return (prompt_name.clone(), f64::NAN);
+                    }
+                };
+                let similarity_score_description =
+                    cos::cosine_similarity(&prompt_embeddings_vector, &description_embeddings);
                 (prompt_name.clone(), similarity_score_description)
             })
             .collect();
@@ -358,8 +361,6 @@ impl StreamContext {
                 debug!("checking for default prompt target");
                 if let Some(default_prompt_target) = self
                     .prompt_targets
-                    .read()
-                    .unwrap()
                     .values()
                     .find(|pt| pt.default.unwrap_or(false))
                 {
@@ -414,7 +415,7 @@ impl StreamContext {
             }
         }
 
-        let prompt_target = match self.prompt_targets.read().unwrap().get(&prompt_target_name) {
+        let prompt_target = match self.prompt_targets.get(&prompt_target_name) {
             Some(prompt_target) => prompt_target.clone(),
             None => {
                 return self.send_server_error(
@@ -426,7 +427,7 @@ impl StreamContext {
 
         info!("prompt_target name: {:?}", prompt_target_name);
         let mut chat_completion_tools: Vec<ChatCompletionTool> = Vec::new();
-        for pt in self.prompt_targets.read().unwrap().values() {
+        for pt in self.prompt_targets.values() {
             // only extract entity names
             let properties: HashMap<String, FunctionParameter> = match pt.parameters {
                 // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
@@ -577,13 +578,7 @@ impl StreamContext {
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
-        let prompt_target = self
-            .prompt_targets
-            .read()
-            .unwrap()
-            .get(&tools_call_name)
-            .unwrap()
-            .clone();
+        let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
 
         debug!("prompt_target_name: {}", prompt_target.name);
         debug!("tool_name(s): {:?}", tool_names);
@@ -645,8 +640,6 @@ impl StreamContext {
         let prompt_target_name = callout_context.prompt_target_name.unwrap();
         let prompt_target = self
             .prompt_targets
-            .read()
-            .unwrap()
             .get(&prompt_target_name)
             .unwrap()
             .clone();
@@ -817,8 +810,6 @@ impl StreamContext {
     fn default_target_handler(&self, body: Vec<u8>, callout_context: CallContext) {
         let prompt_target = self
             .prompt_targets
-            .read()
-            .unwrap()
             .get(callout_context.prompt_target_name.as_ref().unwrap())
             .unwrap()
             .clone();
@@ -904,6 +895,9 @@ impl HttpContext for StreamContext {
         }
         self.delete_content_length_header();
         self.save_ratelimit_header();
+
+        self.chat_completions_request =
+            self.get_http_request_header(":path").unwrap_or_default() == CHAT_COMPLETIONS_PATH;
 
         debug!(
             "S[{}] req_headers={:?}",

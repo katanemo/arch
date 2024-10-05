@@ -24,6 +24,7 @@ pub trait IncrementingMetric: Metric {
     }
 }
 
+#[allow(unused)]
 pub trait RecordingMetric: Metric {
     fn record(&self, value: u64) {
         match hostcalls::record_metric(self.id(), value) {

@@ -18,7 +18,7 @@ impl LlmProviders {
     }
 
     pub fn get(&self, name: &str) -> Option<Rc<LlmProvider>> {
-        self.providers.get(name).map(|rc| rc.clone())
+        self.providers.get(name).cloned()
     }
 }
 
