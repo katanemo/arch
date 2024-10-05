@@ -46,8 +46,8 @@ pub mod open_ai {
         pub messages: Vec<Message>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tools: Option<Vec<ChatCompletionTool>>,
-        #[serde(default)]
-        pub stream: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub stream: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub stream_options: Option<StreamOptions>,
         #[serde(skip_serializing_if = "Option::is_none")]

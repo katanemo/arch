@@ -55,6 +55,14 @@ static_resources:
                           cluster: mistral
                           timeout: 60s
               http_filters:
+                # - name: decompressor
+                #   typed_config:
+                #     "@type": type.googleapis.com/envoy.extensions.filters.http.decompressor.v3.Decompressor
+                #     decompressor_library:
+                #       name: basic
+                #       typed_config:
+                #         "@type": type.googleapis.com/envoy.extensions.compression.gzip.decompressor.v3.Gzip
+                #         window_bits: 10
                 - name: envoy.filters.http.wasm
                   typed_config:
                     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -71,6 +79,29 @@ static_resources:
                           code:
                             local:
                               filename: "/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm"
+                # - name: envoy.filters.http.compressor
+                #   typed_config:
+                #     "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+                #     response_direction_config:
+                #       common_config:
+                #         min_content_length: 100
+                #         content_type:
+                #         - text/html
+                #         - application/json
+                #       disable_on_etag_header: true
+                #     request_direction_config:
+                #       common_config:
+                #         enabled:
+                #           default_value: false
+                #           runtime_key: request_compressor_enabled
+                #     compressor_library:
+                #       name: text_optimized
+                #       typed_config:
+                #         "@type": type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip
+                #         memory_level: 3
+                #         window_bits: 10
+                #         compression_level: BEST_COMPRESSION
+                #         compression_strategy: DEFAULT_STRATEGY
                 - name: envoy.filters.http.router
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -84,10 +115,6 @@ static_resources:
       type: LOGICAL_DNS
       lb_policy: ROUND_ROBIN
       typed_extension_protocol_options:
-        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-          explicit_http_config:
-            http2_protocol_options: {}
       load_assignment:
         cluster_name: openai
         endpoints:
@@ -95,8 +122,10 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: api.openai.com
-                      port_value: 443
+                      # address: api.openai.com
+                      # port_value: 443
+                      address: host.docker.internal
+                      port_value: 1122
                   hostname: "api.openai.com"
       transport_socket:
         name: envoy.transport_sockets.tls
@@ -144,13 +173,14 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: host.docker.internal
-                      port_value: 8000
+                      address: model_server
+                      port_value: 80
                   hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
+      dns_lookup_family: V4_ONLY
       load_assignment:
         cluster_name: mistral_7b_instruct
         endpoints:
@@ -185,6 +215,7 @@ static_resources:
       {% endif -%}
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
+      dns_lookup_family: V4_ONLY
       load_assignment:
         cluster_name: {{ cluster.name }}
         endpoints:

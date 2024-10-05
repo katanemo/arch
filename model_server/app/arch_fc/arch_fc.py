@@ -61,29 +61,31 @@ def process_state(arch_state, history: list[Message]):
           for tool_state in tools_state:
               state_map[tool_state['key']] = tool_state
 
-    print(json.dumps(state_map))
+    print(f"state_map: {json.dumps(state_map)}")
 
     sha_history = []
     updated_history = []
     for hist in history:
+        updated_history.append({"role": hist.role, "content": hist.content})
         if hist.role == 'user':
             sha_history.append(hist.content)
             sha256_hash = hashlib.sha256()
             sha256_hash.update(json.dumps(sha_history).encode())
             sha_key = sha256_hash.hexdigest()
             print(f"sha_key: {sha_key}")
-            if hist.content in state_map:
-                tool_call_state = state_map[hist.content]
-                if 'tool_response' in tool_call_state:
-                    tool_resp = tool_call_state['tool_response']
-                    updated_history.append({"role": "user", "content": f"<tool_response>\n{tool_resp}\n</tool_response>"})
+            if sha_key in state_map:
+                tool_call_state = state_map[sha_key]
                 if 'tool_call' in tool_call_state:
                     tool_call_str = json.dumps(tool_call_state['tool_call'])
                     updated_history.append({"role": "assistant", "content": f"<tool_call>\n{tool_call_str}\n</tool_call>"})
+                if 'tool_response' in tool_call_state:
+                    tool_resp = tool_call_state['tool_response']
+                    #TODO: try with role = user as well
+                    updated_history.append({"role": "user", "content": f"<tool_response>\n{tool_resp}\n</tool_response>"})
                 # we dont want to match this state with any other messages
-                del(state_map[hist.content])
-        updated_history.append({"role": hist.role, "content": hist.content})
-    return updated_history[::-1]
+                del(state_map[sha_key])
+
+    return updated_history
 
 async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
@@ -96,7 +98,7 @@ async def chat_completion(req: ChatMessage, res: Response):
     for message in updated_history:
         messages.append({"role": message["role"], "content": message["content"]})
 
-    logger.info(f"request model: {chosen_model}, messages: {json.dumps(messages)}")
+    logger.info(f"model_server => arch_fc: {chosen_model}, messages: {json.dumps(messages)}")
     completions_params = params["params"]
     resp = client.chat.completions.create(
         messages=messages,
@@ -118,6 +120,6 @@ async def chat_completion(req: ChatMessage, res: Response):
     if tools:
         resp.choices[0].message.tool_calls = tool_calls
         resp.choices[0].message.content = None
-    logger.info(f"response (tools): {json.dumps(tools)}")
-    logger.info(f"response: {json.dumps(resp.to_dict())}")
+    logger.info(f"model_server <= arch_fc: (tools): {json.dumps(tools)}")
+    logger.info(f"model_server <= arch_fc: response body: {json.dumps(resp.to_dict())}")
     return resp

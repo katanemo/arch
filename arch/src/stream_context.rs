@@ -8,7 +8,7 @@ use crate::llm_providers::{LlmProvider, LlmProviders};
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
 use crate::tokenizer;
-use crate::utils::{compress_to_gzip, decompress_gzip};
+// use crate::utils::{compress_to_gzip, decompress_gzip};
 use crate::{ratelimit, routing};
 use acap::cos;
 use http::StatusCode;
@@ -501,7 +501,7 @@ impl StreamContext {
                 .messages
                 .clone(),
             tools: Some(chat_completion_tools),
-            stream: false,
+            stream: None,
             stream_options: None,
             metadata: Some(metadata),
         };
@@ -754,18 +754,28 @@ impl StreamContext {
                 .clone(),
             messages,
             tools: None,
-            stream: self.chat_completions_request.as_ref().unwrap().stream,
-            stream_options: self
-                .chat_completions_request
-                .as_ref()
-                .unwrap()
-                .stream_options
-                .clone(),
+            stream: None,
+            stream_options: None,
+            // stream: self.chat_completions_request.as_ref().unwrap().stream,
+            // stream_options: self
+            //     .chat_completions_request
+            //     .as_ref()
+            //     .unwrap()
+            //     .stream_options
+            //     .clone(),
             metadata: None,
         };
 
+        info!(
+            "arch => openai: request body 1. {:?}",
+            chat_completions_request
+        );
+
         let json_string = match serde_json::to_string(&chat_completions_request) {
-            Ok(json_string) => json_string,
+            Ok(json_string) => {
+                info!("arch => openai: request body 2. {}", json_string);
+                json_string
+            }
             Err(e) => {
                 return self
                     .send_server_error(format!("Error serializing request_body: {:?}", e), None);
@@ -773,29 +783,36 @@ impl StreamContext {
         };
 
         // Tokenize and Ratelimit.
-        // if let Some(selector) = self.ratelimit_selector.take() {
-        //     if let Ok(token_count) =
-        //         tokenizer::token_count(&chat_completions_request.model, &json_string)
-        //     {
-        //         match ratelimit::ratelimits(None).read().unwrap().check_limit(
-        //             chat_completions_request.model,
-        //             selector,
-        //             NonZero::new(token_count as u32).unwrap(),
-        //         ) {
-        //             Ok(_) => (),
-        //             Err(err) => {
-        //                 self.send_server_error(
-        //                     format!("Exceeded Ratelimit: {}", err),
-        //                     Some(StatusCode::TOO_MANY_REQUESTS),
-        //                 );
-        //                 self.metrics.ratelimited_rq.increment(1);
-        //                 return;
-        //             }
-        //         }
-        //     }
-        // }
+        if let Some(selector) = self.ratelimit_selector.take() {
+            if let Ok(token_count) =
+                tokenizer::token_count(&chat_completions_request.model, &json_string)
+            {
+                match ratelimit::ratelimits(None).read().unwrap().check_limit(
+                    chat_completions_request.model,
+                    selector,
+                    NonZero::new(token_count as u32).unwrap(),
+                ) {
+                    Ok(_) => (),
+                    Err(err) => {
+                        self.send_server_error(
+                            format!("Exceeded Ratelimit: {}", err),
+                            Some(StatusCode::TOO_MANY_REQUESTS),
+                        );
+                        self.metrics.ratelimited_rq.increment(1);
+                        return;
+                    }
+                }
+            }
+        }
 
         debug!("arch => openai: request body {}", json_string);
+
+        // let compressed_data = match compress_to_gzip(json_string.as_bytes()) {
+        //     Ok(compressed_data) => compressed_data,
+        //     Err(e) => {
+        //         return self.send_server_error(format!("Error compressing response: {:?}", e), None);
+        //     }
+        // };
 
         self.set_http_request_body(0, json_string.len(), json_string.as_bytes());
         self.resume_http_request();
@@ -860,7 +877,6 @@ impl StreamContext {
                 (":path", "/embeddings"),
                 (":authority", MODEL_SERVER_NAME),
                 ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
             ],
             Some(json_data.as_bytes()),
@@ -1068,8 +1084,9 @@ impl HttpContext for StreamContext {
         // Set the model based on the chosen LLM Provider
         deserialized_body.model = String::from(self.llm_provider().choose_model());
 
-        self.streaming_response = deserialized_body.stream;
-        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
+        self.streaming_response =
+            deserialized_body.stream.is_some() && deserialized_body.stream.unwrap();
+        if self.streaming_response && deserialized_body.stream_options.is_none() {
             deserialized_body.stream_options = Some(StreamOptions {
                 include_usage: true,
             });
@@ -1216,9 +1233,15 @@ impl HttpContext for StreamContext {
             .get_http_response_body(0, body_size)
             .expect("cant get response body");
 
-        let body_decompressed = decompress_gzip(&body).unwrap_or(body);
+        // let body_decompressed = match decompress_gzip(&body) {
+        //     Ok(body_decompressed) => body_decompressed,
+        //     Err(e) => {
+        //         warn!("Error decompressing response from open-ai: {:?}", e);
+        //         body
+        //     }
+        // };
 
-        let body_str = String::from_utf8(body_decompressed).expect("body is not utf-8");
+        let body_str = String::from_utf8(body).expect("body is not utf-8");
 
         if self.streaming_response {
             debug!("streaming response");
@@ -1304,6 +1327,7 @@ impl HttpContext for StreamContext {
                     let hash_key = hasher.finalize();
                     // conver hash to hex string
                     let hash_key_str = format!("{:x}", hash_key);
+                    debug!("hash_key: {}", hash_key_str);
 
                     // create new tool call state
                     let tool_call_state = ToolCallState {
@@ -1334,17 +1358,21 @@ impl HttpContext for StreamContext {
 
                         let data_serialized = serde_json::to_string(&data).unwrap();
                         debug!("arch => user: {}", data_serialized);
-                        let compressed_data = match compress_to_gzip(data_serialized.as_bytes()) {
-                            Ok(compressed_data) => compressed_data,
-                            Err(e) => {
-                                self.send_server_error(
-                                    format!("Error compressing response: {:?}", e),
-                                    None,
-                                );
-                                return Action::Pause;
-                            }
-                        };
-                        self.set_http_response_body(0, compressed_data.len(), &compressed_data);
+                        // let compressed_data = match compress_to_gzip(data_serialized.as_bytes()) {
+                        //     Ok(compressed_data) => compressed_data,
+                        //     Err(e) => {
+                        //         self.send_server_error(
+                        //             format!("Error compressing response: {:?}", e),
+                        //             None,
+                        //         );
+                        //         return Action::Pause;
+                        //     }
+                        // };
+                        self.set_http_response_body(
+                            0,
+                            data_serialized.len(),
+                            &data_serialized.as_bytes(),
+                        );
 
                         return Action::Continue;
                     };

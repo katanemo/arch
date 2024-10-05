@@ -17,11 +17,13 @@ services:
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./arch_log:/var/log/
       - ./arch_config.yaml:/config/arch_config.yaml
-    depends_on:
-      # config_generator:
-      #   condition: service_completed_successfully
-      model_server:
-        condition: service_healthy
+      - ../../arch/envoy.template.yaml:/config/envoy.template.yaml
+      - ../../arch/target/wasm32-wasi/release/intelligent_prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm
+    # depends_on:
+    #   # config_generator:
+    #   #   condition: service_completed_successfully
+    #   model_server:
+    #     condition: service_healthy
     environment:
       - LOG_LEVEL=debug
 

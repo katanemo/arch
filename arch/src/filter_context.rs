@@ -80,20 +80,20 @@ impl FilterContext {
         for values in prompt_targets.iter() {
             let prompt_target = &values.1;
 
-            // schedule embeddings call for prompt target name
-            let token_id = self.schedule_embeddings_call(prompt_target.name.clone());
-            if self
-                .callouts
-                .insert(token_id, {
-                    CallContext {
-                        prompt_target: prompt_target.name.clone(),
-                        embedding_type: EmbeddingType::Name,
-                    }
-                })
-                .is_some()
-            {
-                panic!("duplicate token_id")
-            }
+            // // schedule embeddings call for prompt target name
+            // let token_id = self.schedule_embeddings_call(prompt_target.name.clone());
+            // if self
+            //     .callouts
+            //     .insert(token_id, {
+            //         CallContext {
+            //             prompt_target: prompt_target.name.clone(),
+            //             embedding_type: EmbeddingType::Name,
+            //         }
+            //     })
+            //     .is_some()
+            // {
+            //     panic!("duplicate token_id")
+            // }
 
             // schedule embeddings call for prompt target description
             let token_id = self.schedule_embeddings_call(prompt_target.description.clone());
