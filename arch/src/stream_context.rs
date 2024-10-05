@@ -920,9 +920,8 @@ impl HttpContext for StreamContext {
         self.delete_content_length_header();
         self.save_ratelimit_header();
 
-        if self.get_http_response_header(":path").unwrap_or_default() == CHAT_COMPLETIONS_PATH {
-            self.chat_completions_request = true;
-        }
+        self.chat_completions_request =
+            self.get_http_request_header(":path").unwrap_or_default() == CHAT_COMPLETIONS_PATH;
 
         debug!(
             "S[{}] req_headers={:?}",
