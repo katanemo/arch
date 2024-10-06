@@ -276,22 +276,6 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
         )
         .returning(Some(101))
         .expect_metric_increment("active_http_calls", 1)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(
-            Some("model_server"),
-            Some(vec![
-                (":method", "POST"),
-                (":path", "/embeddings"),
-                (":authority", "model_server"),
-                ("content-type", "application/json"),
-                ("x-envoy-upstream-rq-timeout-ms", "60000"),
-            ]),
-            None,
-            None,
-            None,
-        )
-        .returning(Some(102))
-        .expect_metric_increment("active_http_calls", 1)
         .expect_set_tick_period_millis(Some(0))
         .execute_and_expect(ReturnType::None)
         .unwrap();
@@ -324,31 +308,6 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
                 format!(
                     "filter_context: on_http_call_response called with token_id: {:?}",
                     101
-                )
-                .as_str(),
-            ),
-        )
-        .expect_metric_increment("active_http_calls", -1)
-        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(&embedding_response_str))
-        .expect_log(Some(LogLevel::Debug), None)
-        .execute_and_expect(ReturnType::None)
-        .unwrap();
-
-    module
-        .call_proxy_on_http_call_response(
-            filter_context,
-            102,
-            0,
-            embedding_response_str.len() as i32,
-            0,
-        )
-        .expect_log(
-            Some(LogLevel::Debug),
-            Some(
-                format!(
-                    "filter_context: on_http_call_response called with token_id: {:?}",
-                    102
                 )
                 .as_str(),
             ),
