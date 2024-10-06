@@ -1,8 +1,8 @@
 name: Build and Deploy Documentation
 on:
+  pull_request:
   push:
-    branches:
-      - main  # Change this to the branch you want to trigger on
+    branches: [main]
 
 jobs:
   build:
