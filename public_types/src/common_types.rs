@@ -377,6 +377,7 @@ mod test {
             stream_options: Some(super::open_ai::StreamOptions {
                 include_usage: true,
             }),
+            metadata: None,
         };
 
         let serialized = serde_json::to_string_pretty(&chat_completions_request).unwrap();
