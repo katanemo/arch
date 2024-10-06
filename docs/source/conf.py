@@ -21,7 +21,7 @@ release = ' v0.1'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 
-root_doc = 'root'
+root_doc = 'index'
 
 nitpicky = True
 add_module_names = False

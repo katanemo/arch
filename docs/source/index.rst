@@ -5,7 +5,7 @@ Welcome to Arch!
    :width: 80%
    :align: center
 
-**Arch is built on (and by the core contributors of) Envoy proxy with the belief that:**
+**Arch is built by the contributors of Envoy with the belief that:**
 
   *Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization - all outside business logic.*
 
@@ -20,7 +20,7 @@ Welcome to Arch!
       get_started/overview
       get_started/intro_to_arch
       get_started/quickstart
-  
+
   .. tab-item:: Concepts
 
     .. toctree::
@@ -31,7 +31,7 @@ Welcome to Arch!
       concepts/llm_provider
       concepts/prompt_target
       concepts/error_target
-  
+
   .. tab-item:: Guides
 
     .. toctree::
@@ -50,7 +50,7 @@ Welcome to Arch!
 
       build_with_arch/agent
       build_with_arch/rag
-  
+
   .. tab-item:: Resources
 
     .. toctree::
