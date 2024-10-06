@@ -254,7 +254,7 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
     module
         .call_proxy_on_configure(filter_context, config.len() as i32)
         .expect_get_buffer_bytes(Some(BufferType::PluginConfiguration))
-        .returning(Some(&config))
+        .returning(Some(config))
         .execute_and_expect(ReturnType::Bool(true))
         .unwrap();
 
@@ -599,6 +599,7 @@ fn request_ratelimited() {
             },
         }],
         model: String::from("test"),
+        metadata: None,
     };
 
     let arch_fc_resp_str = serde_json::to_string(&arch_fc_resp).unwrap();
@@ -712,6 +713,7 @@ fn request_not_ratelimited() {
             },
         }],
         model: String::from("test"),
+        metadata: None,
     };
 
     let arch_fc_resp_str = serde_json::to_string(&arch_fc_resp).unwrap();
