@@ -1,0 +1,824 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tracing &#8212; Arch 0.1-beta documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=a3416100" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=2742c0eb"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'observability/tracing';</script>
+    <link rel="icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Monitoring" href="stats.html" />
+    <link rel="prev" title="Observability" href="observability.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../root.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/arch-nav-logo.png" class="logo__image only-light" alt="Arch 0.1-beta documentation - Home"/>
+    <script>document.write(`<img src="../_static/arch-nav-logo.png" class="logo__image only-dark" alt="Arch 0.1-beta documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../intro/intro.html">Introduction</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../intro/what_is_arch.html">What is Arch</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../intro/architecture/architecture.html">Technical Architecture</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../intro/architecture/intro/terminology.html">Terminology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../intro/architecture/intro/threading_model.html">Threading model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../intro/architecture/listeners/listeners.html">Listener</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../intro/architecture/prompt_processing/prompt_processing.html">Prompts</a></li>
+
+
+
+
+<li class="toctree-l3"><a class="reference internal" href="../intro/architecture/listeners/llm_provider.html">LLM Provider</a></li>
+
+<li class="toctree-l3"><a class="reference internal" href="../intro/architecture/model_serving/model_serving.html">Model Serving</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2"><a class="reference internal" href="../intro/life_of_a_request.html">Life of a Request</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../intro/getting_help.html">Getting help</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/use_cases/rag.html">Retrieval-Augmented (RAG)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/use_cases/function_calling.html">Agentic (Text-to-Action) Apps</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="observability.html">Observability</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Tracing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stats.html">Monitoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_logs.html">Access Logging</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1"><a class="reference internal" href="../llms/llms.html">LLMs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration_reference.html">Configuration Reference</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/observability/tracing.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Tracing</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#benefits-of-using-traceparent-headers">Benefits of using <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> headers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-initiate-a-trace">How to initiate a trace</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trace-propagation">Trace Propagation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#header-format">Header Format</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#instrumentation">Instrumentation</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#example-with-opentelemetry-in-python">Example with OpenTelemetry in Python</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ai-agent-tracing-visualization-example">AI Agent Tracing Visualization Example</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#trace-breakdown">Trace Breakdown:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#integrating-with-tracing-tools">Integrating with Tracing Tools</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#aws-x-ray">AWS X-Ray</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#datadog">Datadog</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusion">Conclusion</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-resources">Additional Resources</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="tracing">
+<span id="arch-overview-tracing"></span><h1>Tracing<a class="headerlink" href="#tracing" title="Link to this heading">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p><a class="reference external" href="https://opentelemetry.io/">OpenTelemetry</a> is an open-source observability framework providing APIs
+and instrumentation for generating, collecting, processing, and exporting telemetry data, such as traces,
+metrics, and logs. Its flexible design supports a wide range of backends and seamlessly integrates with
+modern application tools. A key feature of OpenTelemetry is its commitment to standards like the
+<a class="reference external" href="https://www.w3.org/TR/trace-context/">W3C Trace Context</a></p>
+<p><strong>Tracing</strong> is a critical tool that allows developers to visualize and understand the flow of
+requests in an AI application. With tracing, you can capture a detailed view of how requests propagate
+through various services and components, which is crucial for <strong>debugging</strong>, <strong>performance optimization</strong>,
+and understanding complex AI agent architectures like Co-pilots.</p>
+<p><strong>Arch</strong> propagates trace context using the W3C Trace Context standard, specifically through the
+<code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header. This allows each component in the system to record its part of the request
+flow, enabling <strong>end-to-end tracing</strong> across the entire application. By using OpenTelemetry, Arch ensures
+that developers can capture this trace data consistently and in a format compatible with various observability
+tools.
+______________________________________________________________________________________________</p>
+</section>
+<section id="benefits-of-using-traceparent-headers">
+<h2>Benefits of using <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> headers<a class="headerlink" href="#benefits-of-using-traceparent-headers" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Standardization</strong>: The W3C Trace Context standard ensures compatibility across ecosystem tools, allowing
+traces to be propagated uniformly through different layers of the system.</p></li>
+<li><p><strong>Ease of Integration</strong>: OpenTelemetry’s design allows developers to easily integrate tracing with minimal
+changes to their codebase, enabling quick adoption of end-to-end observability.</p></li>
+<li><p><strong>Interoperability</strong>: Works seamlessly with popular tracing tools like AWS X-Ray, Datadog, Jaeger, and many others,
+making it easy to visualize traces in the tools you’re already usi</p></li>
+</ul>
+</section>
+<section id="how-to-initiate-a-trace">
+<h2>How to initiate a trace<a class="headerlink" href="#how-to-initiate-a-trace" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Enable Tracing Configuration</strong>: Simply add the <code class="docutils literal notranslate"><span class="pre">tracing:</span> <span class="pre">100</span></code> flag to in the <a class="reference internal" href="../intro/architecture/listeners/listeners.html#arch-overview-listeners"><span class="std std-ref">listener</span></a> config</p></li>
+<li><p><strong>Trace Context Propagation</strong>: Arch automatically propagates the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header. When a request is received, Arch will:</p>
+<ul class="simple">
+<li><p>Generate a new <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header if one is not present.</p></li>
+<li><p>Extract the trace context from the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header if it exists.</p></li>
+<li><p>Start a new span representing its processing of the request.</p></li>
+<li><p>Forward the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header to downstream services.</p></li>
+</ul>
+</li>
+<li><p><strong>Sampling Policy</strong>: The 100 in <code class="docutils literal notranslate"><span class="pre">tracing:</span> <span class="pre">100</span></code> means that all the requests as sampled for tracing.
+You can adjust this value from 0-100.</p></li>
+</ol>
+</section>
+<section id="trace-propagation">
+<h2>Trace Propagation<a class="headerlink" href="#trace-propagation" title="Link to this heading">#</a></h2>
+<p>Arch uses the W3C Trace Context standard for trace propagation, which relies on the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header.
+This header carries tracing information in a standardized format, enabling interoperability between different
+tracing systems.</p>
+<section id="header-format">
+<h3>Header Format<a class="headerlink" href="#header-format" title="Link to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header has the following format:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">traceparent</span><span class="p">:</span> <span class="p">{</span><span class="n">version</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">trace</span><span class="o">-</span><span class="nb">id</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">parent</span><span class="o">-</span><span class="nb">id</span><span class="p">}</span><span class="o">-</span><span class="p">{</span><span class="n">trace</span><span class="o">-</span><span class="n">flags</span><span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>{version}: The version of the Trace Context specification (e.g., <code class="docutils literal notranslate"><span class="pre">00</span></code>).</p></li>
+<li><p>{trace-id}: A 16-byte (32-character hexadecimal) unique identifier for the trace.</p></li>
+<li><p>{parent-id}: An 8-byte (16-character hexadecimal) identifier for the parent span.</p></li>
+<li><p>{trace-flags}: Flags indicating trace options (e.g., sampling).</p></li>
+</ul>
+</section>
+<section id="instrumentation">
+<h3>Instrumentation<a class="headerlink" href="#instrumentation" title="Link to this heading">#</a></h3>
+<p>To integrate AI tracing, your application needs to follow a few simple steps. The steps
+below are very common practice, and not unique to Arch, when you reading tracing headers and export
+<a class="reference external" href="https://docs.lightstep.com/docs/understand-distributed-tracing">spans</a> for distributed tracing.</p>
+<ul class="simple">
+<li><p>Read the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header from incoming requests.</p></li>
+<li><p>Start new spans as children of the extracted context.</p></li>
+<li><p>Include the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header in outbound requests to propagate trace context.</p></li>
+<li><p>Send tracing data to a collector or tracing backend to export spans</p></li>
+</ul>
+<section id="example-with-opentelemetry-in-python">
+<h4>Example with OpenTelemetry in Python<a class="headerlink" href="#example-with-opentelemetry-in-python" title="Link to this heading">#</a></h4>
+<p>Install OpenTelemetry packages:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>opentelemetry-api<span class="w"> </span>opentelemetry-sdk<span class="w"> </span>opentelemetry-exporter-otlp
+pip<span class="w"> </span>install<span class="w"> </span>opentelemetry-instrumentation-requests
+</pre></div>
+</div>
+<p>Set up the tracer and exporter:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">opentelemetry</span> <span class="kn">import</span> <span class="n">trace</span>
+<span class="kn">from</span> <span class="nn">opentelemetry.exporter.otlp.proto.grpc.trace_exporter</span> <span class="kn">import</span> <span class="n">OTLPSpanExporter</span>
+<span class="kn">from</span> <span class="nn">opentelemetry.instrumentation.requests</span> <span class="kn">import</span> <span class="n">RequestsInstrumentor</span>
+<span class="kn">from</span> <span class="nn">opentelemetry.sdk.resources</span> <span class="kn">import</span> <span class="n">Resource</span>
+<span class="kn">from</span> <span class="nn">opentelemetry.sdk.trace</span> <span class="kn">import</span> <span class="n">TracerProvider</span>
+<span class="kn">from</span> <span class="nn">opentelemetry.sdk.trace.export</span> <span class="kn">import</span> <span class="n">BatchSpanProcessor</span>
+
+<span class="c1"># Define the service name</span>
+<span class="n">resource</span> <span class="o">=</span> <span class="n">Resource</span><span class="p">(</span><span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;service.name&quot;</span><span class="p">:</span> <span class="s2">&quot;customer-support-agent&quot;</span>
+<span class="p">})</span>
+
+<span class="c1"># Set up the tracer provider and exporter</span>
+<span class="n">tracer_provider</span> <span class="o">=</span> <span class="n">TracerProvider</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="n">resource</span><span class="p">)</span>
+<span class="n">otlp_exporter</span> <span class="o">=</span> <span class="n">OTLPSpanExporter</span><span class="p">(</span><span class="n">endpoint</span><span class="o">=</span><span class="s2">&quot;otel-collector:4317&quot;</span><span class="p">,</span> <span class="n">insecure</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">span_processor</span> <span class="o">=</span> <span class="n">BatchSpanProcessor</span><span class="p">(</span><span class="n">otlp_exporter</span><span class="p">)</span>
+<span class="n">tracer_provider</span><span class="o">.</span><span class="n">add_span_processor</span><span class="p">(</span><span class="n">span_processor</span><span class="p">)</span>
+<span class="n">trace</span><span class="o">.</span><span class="n">set_tracer_provider</span><span class="p">(</span><span class="n">tracer_provider</span><span class="p">)</span>
+
+<span class="c1"># Instrument HTTP requests</span>
+<span class="n">RequestsInstrumentor</span><span class="p">()</span><span class="o">.</span><span class="n">instrument</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Handle incoming requests:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">opentelemetry</span> <span class="kn">import</span> <span class="n">trace</span>
+<span class="kn">from</span> <span class="nn">opentelemetry.propagate</span> <span class="kn">import</span> <span class="n">extract</span><span class="p">,</span> <span class="n">inject</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="k">def</span> <span class="nf">handle_request</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="c1"># Extract the trace context</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">tracer</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">get_tracer</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">tracer</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">&quot;process_customer_request&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">):</span>
+        <span class="c1"># Example of processing a customer request</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Processing customer request...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Prepare headers for outgoing request to payment service</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">inject</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="c1"># Make outgoing request to external service (e.g., payment gateway)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;http://payment-service/api&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Payment service response: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="ai-agent-tracing-visualization-example">
+<h3>AI Agent Tracing Visualization Example<a class="headerlink" href="#ai-agent-tracing-visualization-example" title="Link to this heading">#</a></h3>
+<p>The following is an example of tracing for an AI-powered customer support system.
+A customer interacts with AI agents, which forward their requests through different
+specialized services and external systems.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">+--------------------------+</span>
+<span class="o">|</span>   <span class="n">Customer</span> <span class="n">Interaction</span>   <span class="o">|</span>
+<span class="o">+--------------------------+</span>
+           <span class="o">|</span>
+           <span class="n">v</span>
+<span class="o">+--------------------------+</span>        <span class="o">+--------------------------+</span>
+<span class="o">|</span>  <span class="n">Agent</span> <span class="mi">1</span> <span class="p">(</span><span class="n">Main</span> <span class="o">-</span> <span class="n">Arch</span><span class="p">)</span>   <span class="o">|</span> <span class="o">----&gt;</span>  <span class="o">|</span> <span class="n">External</span> <span class="n">Payment</span> <span class="n">Service</span> <span class="o">|</span>
+<span class="o">+--------------------------+</span>        <span class="o">+--------------------------+</span>
+           <span class="o">|</span>                                  <span class="o">|</span>
+           <span class="n">v</span>                                  <span class="n">v</span>
+<span class="o">+--------------------------+</span>        <span class="o">+--------------------------+</span>
+<span class="o">|</span>  <span class="n">Agent</span> <span class="mi">2</span> <span class="p">(</span><span class="n">Support</span> <span class="o">-</span> <span class="n">Arch</span><span class="p">)</span><span class="o">|</span> <span class="o">----&gt;</span>  <span class="o">|</span>   <span class="n">Internal</span> <span class="n">Tech</span> <span class="n">Support</span>  <span class="o">|</span>
+<span class="o">+--------------------------+</span>        <span class="o">+--------------------------+</span>
+           <span class="o">|</span>                                  <span class="o">|</span>
+           <span class="n">v</span>                                  <span class="n">v</span>
+<span class="o">+--------------------------+</span>        <span class="o">+--------------------------+</span>
+<span class="o">|</span> <span class="n">Agent</span> <span class="mi">3</span> <span class="p">(</span><span class="n">Orders</span><span class="o">-</span> <span class="n">Arch</span><span class="p">)</span>   <span class="o">|</span> <span class="o">----&gt;</span>  <span class="o">|</span>   <span class="n">Inventory</span> <span class="n">Management</span>   <span class="o">|</span>
+<span class="o">+--------------------------+</span>        <span class="o">+--------------------------+</span>
+</pre></div>
+</div>
+<section id="trace-breakdown">
+<h4>Trace Breakdown:<a class="headerlink" href="#trace-breakdown" title="Link to this heading">#</a></h4>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Customer Interaction:</dt><dd><ul>
+<li><p>Span 1: Customer initiates a request via the AI-powered chatbot for billing support (e.g., asking for payment details).</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>AI Agent 1 (Main - Arch):</dt><dd><ul>
+<li><p>Span 2: AI Agent 1 (Main) processes the request and identifies it as related to billing, forwarding the request
+to an external payment service.</p></li>
+<li><p>Span 3: AI Agent 1 determines that additional technical support is needed for processing and forwards the request
+to AI Agent 2.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>External Payment Service:</dt><dd><ul>
+<li><p>Span 4: The external payment service processes the payment-related request (e.g., verifying payment status) and sends
+the response back to AI Agent 1.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>AI Agent 2 (Tech - Arch):</dt><dd><ul>
+<li><p>Span 5: AI Agent 2, responsible for technical queries, processes a request forwarded from AI Agent 1 (e.g., checking for
+any account issues).</p></li>
+<li><p>Span 6: AI Agent 2 forwards the query to Internal Tech Support for further investigation.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Internal Tech Support:</dt><dd><ul>
+<li><p>Span 7: Internal Tech Support processes the request (e.g., resolving account access issues) and responds to AI Agent 2.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>AI Agent 3 (Orders - Arch):</dt><dd><ul>
+<li><p>Span 8: AI Agent 3 handles order-related queries. AI Agent 1 forwards the request to AI Agent 3 after payment verification
+is completed.</p></li>
+<li><p>Span 9: AI Agent 3 forwards a request to the Inventory Management system to confirm product availability for a pending order.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Inventory Management:</dt><dd><ul>
+<li><p>Span 10: The Inventory Management system checks stock and availability and returns the information to AI Agent 3.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="integrating-with-tracing-tools">
+<h2>Integrating with Tracing Tools<a class="headerlink" href="#integrating-with-tracing-tools" title="Link to this heading">#</a></h2>
+<section id="aws-x-ray">
+<h3>AWS X-Ray<a class="headerlink" href="#aws-x-ray" title="Link to this heading">#</a></h3>
+<p>To send tracing data to <a class="reference external" href="https://aws.amazon.com/xray/">AWS X-Ray</a> :</p>
+<ol class="arabic">
+<li><p><strong>Configure OpenTelemetry Collector</strong>: Set up the collector to export traces to AWS X-Ray.</p>
+<p>Collector configuration (<code class="docutils literal notranslate"><span class="pre">otel-collector-config.yaml</span></code>):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">receivers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">otlp</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">protocols</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">grpc</span><span class="p">:</span>
+
+<span class="nt">processors</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">batch</span><span class="p">:</span>
+
+<span class="nt">exporters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">awsxray</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">region</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">your-aws-region</span>
+
+<span class="nt">service</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pipelines</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">traces</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">awsxray</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Deploy the Collector</strong>: Run the collector as a Docker container, Kubernetes pod, or standalone service.</p></li>
+<li><p><strong>Ensure AWS Credentials</strong>: Provide AWS credentials to the collector, preferably via IAM roles.</p></li>
+<li><p><strong>Verify Traces</strong>: Access the AWS X-Ray console to view your traces.</p></li>
+</ol>
+</section>
+<section id="datadog">
+<h3>Datadog<a class="headerlink" href="#datadog" title="Link to this heading">#</a></h3>
+<p>Datadog</p>
+<p>To send tracing data to <a class="reference external" href="https://docs.datadoghq.com/getting_started/tracing/">Datadog</a>:</p>
+<ol class="arabic">
+<li><p><strong>Configure OpenTelemetry Collector</strong>: Set up the collector to export traces to Datadog.</p>
+<p>Collector configuration (<code class="docutils literal notranslate"><span class="pre">otel-collector-config.yaml</span></code>):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">receivers</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">otlp</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">protocols</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">grpc</span><span class="p">:</span>
+
+<span class="nt">processors</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">batch</span><span class="p">:</span>
+
+<span class="nt">exporters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">datadog</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">api</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;${DD_API_KEY}&quot;</span>
+<span class="w">    </span><span class="nt">site</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;${DD_SITE}&quot;</span>
+
+<span class="nt">service</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pipelines</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">traces</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">receivers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">otlp</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">processors</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">batch</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">exporters</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">datadog</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Set Environment Variables</strong>: Provide your Datadog API key and site.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">DD_API_KEY</span><span class="o">=</span>your_datadog_api_key
+<span class="nb">export</span><span class="w"> </span><span class="nv">DD_SITE</span><span class="o">=</span>datadoghq.com<span class="w">  </span><span class="c1"># Or datadoghq.eu</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Deploy the Collector</strong>: Run the collector in your environment.</p></li>
+<li><p><strong>Verify Traces</strong>: Access the Datadog APM dashboard to view your traces.</p></li>
+</ol>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Consistent Instrumentation</strong>: Ensure all services propagate the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header.</p></li>
+<li><p><strong>Secure Configuration</strong>: Protect sensitive data and secure communication between services.</p></li>
+<li><p><strong>Performance Monitoring</strong>: Be mindful of the performance impact and adjust sampling rates accordingly.</p></li>
+<li><p><strong>Error Handling</strong>: Implement proper error handling to prevent tracing issues from affecting your application.</p></li>
+</ul>
+</section>
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">#</a></h2>
+<p>By leveraging the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header for trace context propagation, Arch enables developers to implement
+tracing efficiently. This approach simplifies the process of collecting and analyzing tracing data in common
+tools like AWS X-Ray and Datadog, enhancing observability and facilitating faster debugging and optimization.</p>
+</section>
+<section id="additional-resources">
+<h2>Additional Resources<a class="headerlink" href="#additional-resources" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>OpenTelemetry Documentation</strong>: <a class="reference external" href="https://opentelemetry.io/docs/">https://opentelemetry.io/docs/</a></p></li>
+<li><p><strong>W3C Trace Context Specification</strong>: <a class="reference external" href="https://www.w3.org/TR/trace-context/">https://www.w3.org/TR/trace-context/</a></p></li>
+<li><p><strong>AWS X-Ray Exporter</strong>: <a class="github reference external" href="https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsxrayexporter">open-telemetry/opentelemetry-collector-contrib</a></p></li>
+<li><p><strong>Datadog Exporter</strong>: <a class="github reference external" href="https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/datadogexporter">open-telemetry/opentelemetry-collector-contrib</a></p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Replace placeholders like <code class="docutils literal notranslate"><span class="pre">your-aws-region</span></code>, and <code class="docutils literal notranslate"><span class="pre">DD_API_KEY</span></code> with your actual configurations.</p>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="observability.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Observability</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="stats.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Monitoring</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#benefits-of-using-traceparent-headers">Benefits of using <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> headers</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-initiate-a-trace">How to initiate a trace</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trace-propagation">Trace Propagation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#header-format">Header Format</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#instrumentation">Instrumentation</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#example-with-opentelemetry-in-python">Example with OpenTelemetry in Python</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ai-agent-tracing-visualization-example">AI Agent Tracing Visualization Example</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#trace-breakdown">Trace Breakdown:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#integrating-with-tracing-tools">Integrating with Tracing Tools</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#aws-x-ray">AWS X-Ray</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#datadog">Datadog</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#conclusion">Conclusion</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#additional-resources">Additional Resources</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Katanemo Labs, Inc
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2024, Katanemo Labs, Inc.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
