@@ -20,7 +20,7 @@ jobs:
       # Build and run the Docker container to generate the documentation
       - name: Build documentation using Docker
         run: |
-          cd docs
+          cd ./docs
           chmod +x build_docs.sh
           ./build_docs.sh
 
@@ -29,5 +29,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./arch/docs/build/html  # Adjust this path based on where the HTML is generated
+          publish_dir: ./docs/build/html  # Adjust this path based on where the HTML is generated
           publish_branch: gh-pages
