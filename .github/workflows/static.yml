@@ -20,7 +20,7 @@ jobs:
       # Build and run the Docker container to generate the documentation
       - name: Build documentation using Docker
         run: |
-          cd arch/docs
+          cd docs
           chmod +x build_docs.sh
           ./build_docs.sh
 
