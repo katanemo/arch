@@ -5,7 +5,7 @@ import config_generator
 import pkg_resources
 import sys
 import subprocess
-from core import start_arch, stop_arch
+from core import start_arch_modelserver, stop_arch_modelserver, start_arch, stop_arch
 from utils import get_llm_provider_access_keys, load_env_file_to_dict
 
 logo = r"""
@@ -26,7 +26,7 @@ def main(ctx):
 
 # Command to build archgw and model_server Docker images
 ARCHGW_DOCKERFILE = "./arch/Dockerfile"
-MODEL_SERVER_DOCKERFILE = "./model_server/Dockerfile"
+MODEL_SERVER_BUILD_FILE = "./model_server/pyproject.toml"
 
 @click.command()
 def build():
@@ -45,6 +45,20 @@ def build():
         sys.exit(1)
 
     click.echo("All images built successfully.")
+
+    """Install the model server dependencies using Poetry."""
+    # Check if pyproject.toml exists
+    if os.path.exists(MODEL_SERVER_BUILD_FILE):
+        click.echo("Installing model server dependencies with Poetry...")
+        try:
+            subprocess.run(["poetry", "install", "--no-cache"], cwd=os.path.dirname(MODEL_SERVER_BUILD_FILE), check=True)
+            click.echo("Model server dependencies installed successfully.")
+        except subprocess.CalledProcessError as e:
+            click.echo(f"Error installing model server dependencies: {e}")
+            sys.exit(1)
+    else:
+        click.echo(f"Error: pyproject.toml not found in {MODEL_SERVER_BUILD_FILE}")
+        sys.exit(1)
 
 @click.command()
 @click.argument('file', required=False)  # Optional file argument
@@ -107,11 +121,14 @@ def up(file, path):
     env = os.environ.copy()
     env.update(env_stage)
     env['ARCH_CONFIG_FILE'] = arch_config_file
+
+    start_arch_modelserver()
     start_arch(arch_config_file, env)
 
 @click.command()
 def down():
     """Stops Arch."""
+    stop_arch_modelserver()
     stop_arch()
 
 @click.command()

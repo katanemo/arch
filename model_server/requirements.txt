@@ -6,6 +6,7 @@ uvicorn==0.31.0
 transformers
 pyyaml==6.0.2
 accelerate
+psutil==6.0.0
 # guard inference packages
 optimum-intel
 openvino

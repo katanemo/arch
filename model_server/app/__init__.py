@@ -4,6 +4,7 @@ import os
 import signal
 import time
 import requests
+import psutil
 
 # Path to the file where the server process ID will be stored
 PID_FILE = "/tmp/model_server.pid"
@@ -47,7 +48,7 @@ def start_server():
         print(f"ARCH GW Model Server - Didn't Sart In Time. Shutting Down")
         process.terminate()
 
-def wait_for_health_check(url, timeout=60):
+def wait_for_health_check(url, timeout=180):
     """Wait for the Uvicorn server to respond to health-check requests."""
     start_time = time.time()
     while time.time() - start_time < timeout:
@@ -64,20 +65,34 @@ def wait_for_health_check(url, timeout=60):
 def stop_server():
     """Stop the running Uvicorn server."""
     if not os.path.exists(PID_FILE):
-        print("Server is not running.")
-        sys.exit(1)
+        print("Status: Archgw Model Server not running")
+        return
 
     # Read the process ID from the PID file
     with open(PID_FILE, "r") as f:
         pid = int(f.read())
 
-    # Kill the process
-    os.kill(pid, signal.SIGTERM)
-    os.remove(PID_FILE)
-    print(f"Server with PID {pid} stopped.")
+    try:
+        # Get process by PID
+        process = psutil.Process(pid)
 
+        # Gracefully terminate the process
+        process.terminate()  # Sends SIGTERM by default
+        process.wait(timeout=10)  # Wait for up to 10 seconds for the process to exit
+
+        print(f"Server with PID {pid} stopped.")
+        os.remove(PID_FILE)
+
+    except psutil.NoSuchProcess:
+        print(f"Process with PID {pid} not found. Cleaning up PID file.")
+        os.remove(PID_FILE)
+    except psutil.TimeoutExpired:
+        print(f"Process with PID {pid} did not terminate in time. Forcing shutdown.")
+        process.kill()  # Forcefully kill the process
+        os.remove(PID_FILE)
 
 def restart_server():
     """Restart the Uvicorn server."""
+    print("Check: Is Archgw Model Server running?")
     stop_server()
     start_server()
