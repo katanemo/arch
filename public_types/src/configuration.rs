@@ -206,7 +206,7 @@ mod test {
     #[test]
     fn test_deserialize_configuration() {
         let ref_config =
-            fs::read_to_string("../docs/source/_config/prompt-config-full-reference.yml")
+            fs::read_to_string("../docs/source/resources/includes/arch_config_full_reference.yaml")
                 .expect("reference config file not found");
 
         let config: super::Configuration = serde_yaml::from_str(&ref_config).unwrap();

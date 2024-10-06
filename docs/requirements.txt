@@ -1,2 +1,5 @@
-sphinx_book_theme==1.1.3
 sphinx_copybutton==0.5.2
+sphinxawesome-theme
+sphinx_sitemap
+sphinx_design
+sphinxawesome_theme
