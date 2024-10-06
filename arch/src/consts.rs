@@ -11,3 +11,5 @@ pub const MODEL_SERVER_NAME: &str = "model_server";
 pub const ARCH_ROUTING_HEADER: &str = "x-arch-llm-provider";
 pub const ARCH_MESSAGES_KEY: &str = "arch_messages";
 pub const ARCH_PROVIDER_HINT_HEADER: &str = "x-arch-llm-provider-hint";
+pub const CHAT_COMPLETIONS_PATH: &str = "v1/chat/completions";
+// pub const ARCH_STATE_HEADER: &str = "x-arch-state";
