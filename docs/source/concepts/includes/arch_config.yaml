@@ -9,17 +9,17 @@ system_prompts:
     content: You are a network assistant that just offers facts about the operational health of the network
 
 llm_providers:
-    - name: "OpenAI"
+    - name: OpenAI
       access_key: $OPEN_AI_KEY
       model: gpt-4o
       default: true
-    - name: "Mistral"
+    - name: Mistral
       access_key: $MISTRAL_KEY
       model: mixtral8-7B
 
 prompt_endpoints:
-  - "http://127.0.0.2"
-  - "http://127.0.0.1"
+  - http://127.0.0.2
+  - http://127.0.0.1
 
 prompt_guards:
    input-guard:
@@ -36,6 +36,8 @@ prompt_targets:
      path: /agent/action
      description: used to help network operators with perform device operations like rebooting a device.
      parameters:
+
 error_target: #handle errors from Bolt or upstream LLMs
-    name: “error_handler”
+  endpoint:
+    name: error_handler
     path: /errors

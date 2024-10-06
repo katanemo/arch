@@ -111,10 +111,12 @@ Intent Matching
 ~~~~~~~~~~~~~~~
 Arch analyzes the user's prompt to determine its intent and matches it with the most suitable prompt target based on the name and description defined in the configuration.
 
-Example:
+For example:
 
-Prompt: "Can you reboot the router?"
-Matching Target: reboot_device (based on description matching "reboot devices")
+.. code-block:: bash
+
+  Prompt: "Can you reboot the router?"
+  Matching Target: reboot_device (based on description matching "reboot devices")
 
 
 Summary

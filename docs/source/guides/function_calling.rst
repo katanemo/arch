@@ -16,25 +16,21 @@ This feature bridges the gap between generative AI systems and functional busine
 Function Calling Workflow
 -------------------------
 
-Prompt Parsing
-~~~~~~~~~~~~~~~~~~~~~~
-When a user submits a prompt, Arch analyzes it to determine the intent. 
-Based on this intent, the system identifies whether a function needs to be invoked and which parameters should be extracted.
+#. **Prompt Parsing**
 
-Parameter Extraction
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Arch’s advanced natural language processing capabilities automatically extract parameters from the prompt that are necessary for executing the function. 
-These parameters can include text, numbers, dates, locations, or other relevant data points.
+    When a user submits a prompt, Arch analyzes it to determine the intent. Based on this intent, the system identifies whether a function needs to be invoked and which parameters should be extracted.
 
-Function Invocation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Once the necessary parameters have been extracted, Arch invokes the relevant backend function. 
-This function could be an API, a database query, or any other form of backend logic. The function is executed with the extracted parameters to produce the desired output.
+#. **Parameter Extraction**
 
-Response Handling
-~~~~~~~~~~~~~~~~~~~~~~~~~
-After the function has been called and executed, the result is processed and a response is generated. 
-This response is typically delivered in a user-friendly format, which can include text explanations, data summaries, or even a confirmation message for critical actions.
+    Arch’s advanced natural language processing capabilities automatically extract parameters from the prompt that are necessary for executing the function. These parameters can include text, numbers, dates, locations, or other relevant data points.
+
+#. **Function Invocation**
+
+    Once the necessary parameters have been extracted, Arch invokes the relevant backend function. This function could be an API, a database query, or any other form of backend logic. The function is executed with the extracted parameters to produce the desired output.
+
+#. **Response Handling**
+
+    After the function has been called and executed, the result is processed and a response is generated. This response is typically delivered in a user-friendly format, which can include text explanations, data summaries, or even a confirmation message for critical actions.
 
 
 Arch-Function
