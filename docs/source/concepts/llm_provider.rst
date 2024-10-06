@@ -33,7 +33,7 @@ LLMs. Simply configure the details of the LLMs your application will use, and Ar
 make outbound LLM calls.
 
 Example: Using the OpenAI Python SDK
-----------------------------------
+------------------------------------
 
 .. code-block:: python
 

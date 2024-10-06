@@ -60,7 +60,7 @@ html_show_sphinx = False
 html_baseurl = './docs'
 
 html_sidebars = {
-  "**": ["sidebar_main_nav_links.html", "sidebar_toc.html"]
+  "**": ['analytics.html', "sidebar_main_nav_links.html", "sidebar_toc.html", ]
 }
 
 theme_options = ThemeOptions(
@@ -108,7 +108,13 @@ pygments_style = "lovelace"
 pygments_style_dark = "github-dark"
 
 sitemap_url_scheme = "{link}"
+# Add this configuration at the bottom of your conf.py
 
+html_context = {
+    'google_analytics_id': 'G-K2LXXSX6HB',  # Replace with your Google Analytics tracking ID
+}
+
+templates_path = ['_templates']
 
 # -- Register a :confval: interpreted text role ----------------------------------
 def setup(app: Sphinx) -> None:
