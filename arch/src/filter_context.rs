@@ -74,11 +74,6 @@ impl FilterContext {
             let prompt_target = values.1;
             self.schedule_embeddings_call(
                 &prompt_target.name,
-                &prompt_target.name,
-                EmbeddingType::Name,
-            );
-            self.schedule_embeddings_call(
-                &prompt_target.name,
                 &prompt_target.description,
                 EmbeddingType::Description,
             );

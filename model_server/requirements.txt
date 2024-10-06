@@ -17,3 +17,4 @@ openai
 pandas
 tf-keras
 onnx
+pytest

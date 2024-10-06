@@ -10,3 +10,5 @@ class Message(BaseModel):
 class ChatMessage(BaseModel):
     messages: list[Message]
     tools: List[Dict[str, Any]]
+    # todo: make it default none
+    metadata: Dict[str, str] = {}
