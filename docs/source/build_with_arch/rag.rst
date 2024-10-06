@@ -90,7 +90,5 @@ Once the prompt targets are configured as above, handling those parameters is
 
 .. literalinclude:: includes/rag/parameter_handling.py
     :language: python
-    :caption: Parameter handling with Flask 
+    :caption: Parameter handling with Flask
     :linenos:
-
-

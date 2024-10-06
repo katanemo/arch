@@ -3,14 +3,14 @@
 Function Calling
 ================
 
-**Function Calling** is a powerful feature in Arch that allows your application to dynamically execute backend functions or services based on user prompts. 
+**Function Calling** is a powerful feature in Arch that allows your application to dynamically execute backend functions or services based on user prompts.
 This enables seamless integration between natural language interactions and backend operations, turning user inputs into actionable results.
 
 
 What is Function Calling?
 -------------------------
 
-Function Calling refers to the mechanism where the user's prompt is parsed, relevant parameters are extracted, and a designated backend function (or API) is triggered to execute a particular task. 
+Function Calling refers to the mechanism where the user's prompt is parsed, relevant parameters are extracted, and a designated backend function (or API) is triggered to execute a particular task.
 This feature bridges the gap between generative AI systems and functional business logic, allowing users to interact with the system through natural language while the backend performs the necessary operations.
 
 Function Calling Workflow
@@ -35,8 +35,8 @@ Function Calling Workflow
 
 Arch-Function
 -------------------------
-The `Arch-Function <https://huggingface.co/collections/katanemolabs/arch-function-66f209a693ea8df14317ad68>`_ collection of large language models (LLMs) is a collection state-of-the-art (SOTA) LLMs specifically designed for **function calling** tasks. 
-The models are designed to understand complex function signatures, identify required parameters, and produce accurate function call outputs based on natural language prompts. 
+The `Arch-Function <https://huggingface.co/collections/katanemolabs/arch-function-66f209a693ea8df14317ad68>`_ collection of large language models (LLMs) is a collection state-of-the-art (SOTA) LLMs specifically designed for **function calling** tasks.
+The models are designed to understand complex function signatures, identify required parameters, and produce accurate function call outputs based on natural language prompts.
 Achieving performance on par with GPT-4, these models set a new benchmark in the domain of function-oriented tasks, making them suitable for scenarios where automated API interaction and function execution is crucial.
 
 In summary, the Arch-Function collection demonstrates:
@@ -93,10 +93,10 @@ Create or identify the backend function you want Arch to call. This could be an 
     def get_weather(location: str, unit: str = "fahrenheit"):
         if unit not in ["celsius", "fahrenheit"]:
             raise ValueError("Invalid unit. Choose either 'celsius' or 'fahrenheit'.")
-        
+
         api_server = "https://api.yourweatherapp.com"
         endpoint = f"{api_server}/weather"
-        
+
         params = {
             "location": location,
             "unit": unit
@@ -104,7 +104,7 @@ Create or identify the backend function you want Arch to call. This could be an 
 
         response = requests.get(endpoint, params=params)
         return response.json()
-    
+
     # Example usage
     weather_info = get_weather("Seattle, WA", "celsius")
     print(weather_info)
@@ -177,11 +177,11 @@ Here is ane example validation schema using the `jsonschema <https://json-schema
             validate(instance=params, schema=weather_validation_schema)
         except ValidationError as e:
             raise ValueError(f"Invalid input: {e.message}")
-        
+
         # Prepare the API request
         api_server = "https://api.yourweatherapp.com"
         endpoint = f"{api_server}/weather"
-        
+
         # Make the API request
         response = requests.get(endpoint, params=params)
         return response.json()
@@ -194,7 +194,7 @@ Here is ane example validation schema using the `jsonschema <https://json-schema
 Step 4: Execute and Return the Response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once the function is called, format the response and send it back to Arch-Function. 
+Once the function is called, format the response and send it back to Arch-Function.
 Next, Arch-Function provides users with coherent and user-friendly responses.
 
 

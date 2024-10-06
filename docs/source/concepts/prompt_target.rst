@@ -1,13 +1,13 @@
 Prompt Target
 ==============
 
-**Prompt Targets** are a fundamental component of Arch, enabling developers to define how different types of user prompts are processed and routed within their generative AI applications. 
+**Prompt Targets** are a fundamental component of Arch, enabling developers to define how different types of user prompts are processed and routed within their generative AI applications.
 This section provides an in-depth look at prompt targets, including their purpose, configuration, usage, and best practices to help you effectively leverage this feature in your projects.
 
 What Are Prompt Targets?
 ------------------------
-Prompt targets are predefined endpoints within Arch that handle specific types of user prompts. 
-They act as the bridge between user inputs and your backend services or APIs, enabling Arch to route, process, and manage prompts efficiently. 
+Prompt targets are predefined endpoints within Arch that handle specific types of user prompts.
+They act as the bridge between user inputs and your backend services or APIs, enabling Arch to route, process, and manage prompts efficiently.
 By defining prompt targets, you can separate your application's business logic from the complexities of prompt processing, ensuring a cleaner and more maintainable codebase.
 
 
@@ -36,7 +36,7 @@ Below are the key features of prompt targets that empower developers to build ef
 
 Configuring Prompt Targets
 --------------------------
-Configuring prompt targets involves defining them in Arch's configuration file. 
+Configuring prompt targets involves defining them in Arch's configuration file.
 Each Prompt target specifies how a particular type of prompt should be handled, including the endpoint to invoke and any parameters required.
 
 Basic Configuration
@@ -53,8 +53,8 @@ A prompt target configuration includes the following elements:
 
 Defining Parameters
 ~~~~~~~~~~~~~~~~~~~
-Parameters are the pieces of information that Arch needs to extract from the user's prompt to perform the desired action. 
-Each parameter can be marked as required or optional. 
+Parameters are the pieces of information that Arch needs to extract from the user's prompt to perform the desired action.
+Each parameter can be marked as required or optional.
 Here is a full list of parameter attributes that Arch can support:
 
 .. table::
@@ -99,12 +99,12 @@ Example Configuration
 
 Routing Logic
 -------------
-Prompt targets determine where and how user prompts are processed. 
+Prompt targets determine where and how user prompts are processed.
 Arch uses intelligent routing logic to ensure that prompts are directed to the appropriate targets based on their intent and context.
 
 Default Targets
 ~~~~~~~~~~~~~~~
-For general-purpose prompts that do not match any specific prompt target, Arch routes them to a designated default target. 
+For general-purpose prompts that do not match any specific prompt target, Arch routes them to a designated default target.
 This is useful for handling open-ended queries like document summarization or information extraction.
 
 Intent Matching
@@ -121,6 +121,6 @@ For example:
 
 Summary
 --------
-Prompt targets are essential for defining how user prompts are handled within your generative AI applications using Arch. 
-By carefully configuring prompt targets, you can ensure that prompts are accurately routed, necessary parameters are extracted, and backend services are invoked seamlessly. 
+Prompt targets are essential for defining how user prompts are handled within your generative AI applications using Arch.
+By carefully configuring prompt targets, you can ensure that prompts are accurately routed, necessary parameters are extracted, and backend services are invoked seamlessly.
 This modular approach not only simplifies your application's architecture but also enhances scalability, maintainability, and overall user experience.

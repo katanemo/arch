@@ -3,8 +3,8 @@
 Prompt Guard
 ================
 
-**Prompt guard** is a security and validation layer designed to protect prompt-based systems by filtering and analyzing inputs before they reach the core processing stages. 
-In applications where prompts generate responses or execute specific actions based on user inputs, prompt guard minimizes risks like malicious inputs, unexpected errors, or misaligned outputs. 
+**Prompt guard** is a security and validation layer designed to protect prompt-based systems by filtering and analyzing inputs before they reach the core processing stages.
+In applications where prompts generate responses or execute specific actions based on user inputs, prompt guard minimizes risks like malicious inputs, unexpected errors, or misaligned outputs.
 By adding a layer of input scrutiny, prompt guard ensures safer, more reliable, and accurate interactions in prompt-driven environments.
 
 Why Prompt Guard
@@ -35,13 +35,13 @@ Why Prompt Guard
 
 Arch-Guard
 ----------
-In the evolving landscape of LLM-powered applications, safeguarding against prompt attacks is crucial. 
-These attacks involve malicious prompts crafted to manipulate the intended behavior of the model, potentially leading to undesirable outcomes. 
+In the evolving landscape of LLM-powered applications, safeguarding against prompt attacks is crucial.
+These attacks involve malicious prompts crafted to manipulate the intended behavior of the model, potentially leading to undesirable outcomes.
 Arch-Guard is designed to address this challenge.
 
 What Is Arch-Guard
 ~~~~~~~~~~~~~~~~~~
-`Arch-Guard <https://huggingface.co/collections/katanemolabs/arch-guard-6702bdc08b889e4bce8f446d>`_ is a robust classifier model specifically trained on a diverse corpus of prompt attacks. 
+`Arch-Guard <https://huggingface.co/collections/katanemolabs/arch-guard-6702bdc08b889e4bce8f446d>`_ is a robust classifier model specifically trained on a diverse corpus of prompt attacks.
 It excels at detecting explicitly malicious prompts and assessing toxic content, providing an essential layer of security for LLM applications.
 
 By embedding Arch-Guard within the Arch architecture, we empower developers to build robust, LLM-powered applications while prioritizing security and safety. With Arch-Guard, you can navigate the complexities of prompt management with confidence, knowing you have a reliable defense against malicious input.
@@ -51,23 +51,23 @@ How Arch-Guard Works
 ----------------------
 
 #. **Pre-Processing Stage**
-    
+
     As a request or prompt is received, Prompt Guard first performs validation, applying any type, format, or constraint checks. If any violations are detected, the input is flagged, and a tailored error message may be returned.
 
 #. **Sanitization Stage**
-    
+
     The prompt is analyzed for potentially harmful or inappropriate content, and necessary filters are applied to clean the input.
 
 #. **Behavior Analysis**
-    
+
     Next, the system assesses the intent and context of the prompt, verifying that it aligns with predefined function requirements. If the prompt raises any red flags, it can be modified or flagged for review.
 
 #. **Error Handling and Feedback**
-    
+
     If the prompt contains errors or does not meet certain criteria, the user receives immediate feedback or correction suggestions, enhancing usability and reducing the chance of repeated input mistakes.
 
 #. **Output Control**
-    
+
     After input validation and filtering, the prompt is allowed to proceed to the main processing phase. The output can also undergo a final check to ensure compliance with content guidelines or role-based policies.
 
 
@@ -86,5 +86,5 @@ Benefits of Using Prompt Guard
 Summary
 -------
 
-Prompt guard is an essential tool for any prompt-based system that values security, accuracy, and compliance. 
+Prompt guard is an essential tool for any prompt-based system that values security, accuracy, and compliance.
 By implementing Prompt Guard, developers can provide a robust layer of input validation and security, leading to better-performing, reliable, and safer applications.
