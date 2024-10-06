@@ -61,32 +61,30 @@ best-in-class for critcal prompt-related tasks like:
   attempts or toxicity present in user's prompts without having to write a single line of code. To learn more
   about how to configure guardrails available in Arch, read :ref:`prompt processing <arch_overview_prompt_handling>`.
 
-* **Intent-Drift Detection:** Developers struggle to handle `follow-up <https://www.reddit.com/r/ChatGPTPromptGenius/comments/17dzmpy/how_to_use_rag_with_conversation_history_for/?>`_,
+* **[Coming Soon] Intent-Markers:** Developers struggle to handle `follow-up <https://www.reddit.com/r/ChatGPTPromptGenius/comments/17dzmpy/how_to_use_rag_with_conversation_history_for/?>`_,
   or `clarifying <https://www.reddit.com/r/LocalLLaMA/comments/18mqwg6/best_practice_for_rag_with_followup_chat/>`_
   questions. Specifically, when users ask for modifications or additions to previous responses their AI applications
-  often generate entirely new responses instead of adjusting the previous ones. Arch offers intent-drift detection as a
+  often generate entirely new responses instead of adjusting the previous ones. Arch offers intent-markers as a
   feature so that developers know when the user has shifted away from the previous intent so that they can improve
   their retrieval, lower overall token cost and dramatically improve the speed and accuracy of their responses back
-  to users.
+  to users. For more details :ref:`intent markers<arch_rag_guide>`
 
-**Traffic Management:** Arch offers several capabilities for LLM calls originating from your applications, including a
-vendor-agnostic SDK to make LLM calls, smart retries on errors from upstream LLMs, and automatic cutover to other LLMs
-configured in Arch for continuous availability and disaster recovery scenarios. Arch extends Envoy's `cluster subsystem
-<https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/cluster_manager>`_ to manage upstream connections
-to LLMs so that you can build resilient AI applications.
+**Traffic Management:** Arch offers several capabilities for LLM calls originating from your applications, including smart
+retries on errors from upstream LLMs, and automatic cutover to other LLMs configured in Arch for continuous availability
+and disaster recovery scenarios. Arch extends Envoy's `cluster subsystem <https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/cluster_manager>`_
+to manage upstream connections to LLMs so that you can build resilient AI applications.
 
 **Front/edge Gateway:** There is substantial benefit in using the same software at the edge (observability,
 traffic shaping alogirithms, applying guardrails, etc.) as for outbound LLM inference use cases. Arch has the feature set
-that makes it exceptionally well suited as an edge gateway for AI applications. This includes TLS termination, rate limiting,
-and prompt-based routing.
+that makes it exceptionally well suited as an edge gateway for AI applications. This includes TLS termination, applying
+guardrail early in the pricess, intelligent parameter gathering from prompts, and prompt-based routing to backend APIs.
 
-**Best-In Class Monitoring:** Arch offers several monitoring metrics that help you understand three
-critical aspects of your application: latency, token usage, and error rates by an upstream LLM provider. Latency
-measures the speed at which your application is responding to users, which includes metrics like time to first
-token (TFT), time per output token (TOT) metrics, and the total latency as perceived by users.
+**Best-In Class Monitoring:** Arch offers several monitoring metrics that help you understand three critical aspects of
+your application: latency, token usage, and error rates by an upstream LLM provider. Latency measures the speed at which
+your application is responding to users, which includes metrics like time to first token (TFT), time per output token (TOT)
+metrics, and the total latency as perceived by users.
 
-**End-to-End Tracing:** Arch propagates trace context using the W3C Trace Context standard, specifically through
-the ``traceparent`` header. This allows each component in the system to record its part of the request flow,
-enabling **end-to-end tracing** across the entire application. By using OpenTelemetry, Arch ensures that
-developers can capture this trace data consistently and in a format compatible with various observability tools.
-For more details, read :ref:`tracing <arch_overview_tracing>`.
+**End-to-End Tracing:** Arch propagates trace context using the W3C Trace Context standard, specifically through the
+``traceparent`` header. This allows each component in the system to record its part of the request flow, enabling **end-to-end tracing**
+across the entire application. By using OpenTelemetry, Arch ensures that developers can capture this trace data consistently and
+in a format compatible with various observability tools. For more details, read :ref:`tracing <arch_overview_tracing>`.

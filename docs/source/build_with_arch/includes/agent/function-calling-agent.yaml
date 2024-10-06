@@ -3,15 +3,15 @@ listen:
   address: 127.0.0.1 | 0.0.0.0
   port_value: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
 
-system_prompts:
-  - name: network_assistant
-    content: You are a network assistant that just offers facts about the operational health of the network
+system_prompt: |
+  You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
 llm_providers:
-    - name: "OpenAI"
-      access_key: $OPEN_AI_KEY
-      model: gpt-4o
-      default: true
+  - name: "OpenAI"
+    provider: "openai"
+    access_key: OPENAI_API_KEY
+    model: gpt-4o
+    stream: true
 
 prompt_targets:
   - name: reboot_devices
@@ -36,6 +36,12 @@ prompt_targets:
         description: "The name of the device group to reboot."
         required: false
 
-prompt_endpoints:
-  - "http://127.0.0.2"
-  - "http://127.0.0.1"
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+endpoints:
+  app_server:
+    # value could be ip address or a hostname with port
+    # this could also be a list of endpoints for load balancing
+    # for example endpoint: [ ip1:port, ip2:port ]
+    endpoint: "127.0.0.1:80"
+    # max time to wait for a connection to be established
+    connect_timeout: 0.005s

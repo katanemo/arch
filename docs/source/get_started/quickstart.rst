@@ -31,6 +31,18 @@ run the following command:
 
 This will install the archgw command-line tool globally on your system.
 
+.. tip::
+   We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch.
+   This ensures that `archgw` and its dependencies do not interfere with other packages on your system.
+
+   To create and activate a virtual environment, you can run the following commands:
+
+   .. code-block:: console
+
+      $ python -m venv venv
+      $ source venv/bin/activate   # On Windows, use: venv\Scripts\activate
+      $ pip install archgw
+
 
 Step 2: Config Arch
 -------------------
@@ -56,7 +68,7 @@ Step 3: Start Arch Gateway
 
 .. code-block:: console
 
-    $ archgw up --quick-start
+    $ archgw up [path_to_config]
 
 
 

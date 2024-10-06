@@ -1,7 +1,8 @@
 Overview
 ============
-Welcome to Arch, the intelligent prompt gateway designed to help developers build fast, secure, and personalized generative AI applications at scale. 
-In this documentation, you will learn how to quickly set up Arch to handle prompt routing, API calls, and prompt guardrails, all while simplifying your application development process.
+Welcome to Arch, the intelligent prompt gateway designed to help developers build **fast**, **secure**, and **personalized** generative AI apps at ANY scale.
+In this documentation, you will learn how to quickly set up Arch to trigger API calls via prompts, apply prompt guardrails without writing any application-level logic,
+simplify the interaction with upstream LLMs, and improve observability all while simplifying your application development process.
 
 
 Get Started

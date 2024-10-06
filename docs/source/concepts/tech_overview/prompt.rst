@@ -36,7 +36,8 @@ To add jailbreak guardrails, see example below:
 .. literalinclude:: ../includes/arch_config.yaml
     :language: yaml
     :linenos:
-    :emphasize-lines: 24-27
+    :lines: 1-45
+    :emphasize-lines: 22-26
     :caption: Example Configuration
 
 .. Note::
@@ -49,9 +50,9 @@ Prompt Targets
 --------------
 
 Once a prompt passes any configured guardrail checks, Arch processes the contents of the incoming conversation
-and identifies where to forwad the conversation to via its essential ``prompt_targets`` primitve. Prompt targets
-are endpoints that receive prompts that are processed by Arch. For example, Arch enriches incoming prompts with
-metadata like knowing when a user's intent has changed so that you can build faster, more accurate RAG apps.
+and identifies where to forwad the conversation to via its ``prompt_targets`` primitve. Prompt targets are endpoints
+that receive prompts that are processed by Arch. For example, Arch enriches incoming prompts with metadata like knowing
+when a user's intent has changed so that you can build faster, more accurate RAG apps.
 
 Configuring ``prompt_targets`` is simple. See example below:
 
@@ -97,34 +98,14 @@ Prompting LLMs
 Arch is a single piece of software that is designed to manage both ingress and egress prompt traffic, drawing its
 distributed proxy nature from the robust `Envoy <https://envoyproxy.io>`_. This makes it extremely efficient and capable
 of handling upstream connections to LLMs. If your application is originating code to an API-based LLM, simply use
-Arch's Python or JavaScript client SDK to send traffic to the desired LLM of choice. By sending traffic through Arch,
-you can propagate traces, manage and monitor traffic, apply rate limits, and utilize a large set of traffic management
-capabilities in a central place.
+the OpenAI client and configure it with Arch. By sending traffic through Arch, you can propagate traces, manage and monitor
+traffic, apply rate limits, and utilize a large set of traffic management capabilities in a centralized way.
 
 .. Attention::
    When you start Arch, it automatically creates a listener port for egress calls to upstream LLMs. This is based on the
    ``llm_providers`` configuration section in the ``prompt_config.yml`` file. Arch binds itself to a local address such as
-   127.0.0.1:9000/v1  or a DNS-based address like arch.local:9000/v1 for outgoing traffic.
+   127.0.0.1:51001/v1.
 
-Example: Using the Arch Python SDK
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-   from arch_client import ArchClient
-
-   # Initialize the Arch client
-   client = ArchClient(base_url="http://127.0.0.1:9000/v1")
-
-   # Define your LLM provider and prompt
-   model_id = "openai"
-   prompt = "What is the capital of France?"
-
-   # Send the prompt to the LLM through Arch
-   response = client.completions.create(llm_provider=llm_provider, prompt=prompt)
-
-   # Print the response
-   print("LLM Response:", response)
 
 Example: Using OpenAI Client with Arch as an Egress Gateway
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -134,7 +115,7 @@ Example: Using OpenAI Client with Arch as an Egress Gateway
    import openai
 
    # Set the OpenAI API base URL to the Arch gateway endpoint
-   openai.api_base = "http://127.0.0.1:9000/v1"
+   openai.api_base = "http://127.0.0.1:51001/v1"
 
    # No need to set openai.api_key since it's configured in Arch's gateway
 
@@ -148,8 +129,8 @@ Example: Using OpenAI Client with Arch as an Egress Gateway
 
 In these examples:
 
-    The ArchClient is used to send traffic directly through the Arch egress proxy to the LLM of your choice, such as OpenAI.
-    The OpenAI client is configured to route traffic via Arch by setting the proxy to 127.0.0.1:9000, assuming Arch is
+    The OpenAI client is used to send traffic directly through the Arch egress proxy to the LLM of your choice, such as OpenAI.
+    The OpenAI client is configured to route traffic via Arch by setting the proxy to 127.0.0.1:51001, assuming Arch is
     running locally and bound to that address and port.
 
 This setup allows you to take advantage of Arch's advanced traffic management features while interacting with LLM APIs like OpenAI.
