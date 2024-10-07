@@ -1,0 +1,32 @@
+name: Build and Deploy Documentation
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the code from the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      # Build and run the Docker container to generate the documentation
+      - name: Build documentation using Docker
+        run: |
+          cd ./docs
+          chmod +x build_docs.sh
+          ./build_docs.sh
+
+      # Deploy the docs to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build/html  # Adjust this path based on where the HTML is generated
+          publish_branch: gh-pages

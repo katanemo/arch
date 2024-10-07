@@ -1,0 +1,71 @@
+version: "0.1-beta"
+
+listener:
+  address: 0.0.0.0 # or 127.0.0.1
+  port: 10000
+  # Defines how Arch should parse the content from application/json or text/pain Content-type in the http request
+  message_format: huggingface
+
+# Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
+llm_providers:
+  - name: "OpenAI"
+    provider: "openai"
+    access_key: $OPENAI_API_KEY
+    model: gpt-4o
+    default: true
+    stream: true
+
+# default system prompt used by all prompt targets
+system_prompt: |
+  You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
+
+prompt_guards:
+  input_guards:
+    jailbreak:
+      on_exception:
+        message: "Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
+
+prompt_targets:
+  - name: "reboot_network_device"
+    description: "Helps network operators perform device operations like rebooting a device."
+    endpoint:
+      name: app_server
+      path: "/agent/action"
+    parameters:
+      - name: "device_id"
+        # additional type options include: int | float | bool | string | list | dict
+        type: "string"
+        description: "Identifier of the network device to reboot."
+        required: true
+      - name: "confirmation"
+        type: "string"
+        description: "Confirmation flag to proceed with reboot."
+        default: "no"
+        enum: [yes, no]
+
+  - name: "information_extraction"
+    default: true
+    description: "This prompt handles all scenarios that are question and answer in nature. Like summarization, information extraction, etc."
+    endpoint:
+      name: app_server
+      path: "/agent/summary"
+    # Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM
+    auto_llm_dispatch_on_response: true
+    # override system prompt for this prompt target
+    system_prompt: |
+      You are a helpful information extraction assistant. Use the information that is provided to you.
+
+error_target:
+  endpoint:
+    name: error_target_1
+    path: /error
+
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+endpoints:
+  app_server:
+    # value could be ip address or a hostname with port
+    # this could also be a list of endpoints for load balancing
+    # for example endpoint: [ ip1:port, ip2:port ]
+    endpoint: "127.0.0.1:80"
+    # max time to wait for a connection to be established
+    connect_timeout: 0.005s

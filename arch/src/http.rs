@@ -65,7 +65,7 @@ pub trait Client: Context {
             }
             Err(status) => Err(ClientError::DispatchError {
                 upstream_name: String::from(call_args.upstream),
-                internal_status: status.clone(),
+                internal_status: status,
             }),
         }
     }
