@@ -302,6 +302,26 @@ impl StreamContext {
                     return;
                 }
             };
+        for (key, value) in &hallucination_response.params_scores {
+            if *value < 0.1 {
+                self.send_server_error(
+                    format!(
+                        "Hallucination detected: score for {} : {} is less than 0.1",
+                        key, value
+                    ),
+                    None,
+                );
+                let param_str = format!(
+                    "Hallucination detected: score for {} : {} is less than 0.1, please enter again or try a different prompt",
+                    key, value
+                );
+                return self.send_http_response(
+                    StatusCode::OK.as_u16().into(),
+                    vec![("Powered-By", "Katanemo")],
+                    Some(param_str.as_bytes()),
+                );
+            }
+        }
         let params_scores_str = hallucination_response
             .params_scores
             .iter()
