@@ -1,8 +1,9 @@
 use crate::consts::{
     ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER,
     ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO,
-    MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use crate::llm_providers::LlmProviders;
@@ -317,10 +318,9 @@ impl StreamContext {
                     return;
                 }
             };
-
         let mut keys_with_low_score: Vec<String> = Vec::new();
         for (key, value) in &hallucination_response.params_scores {
-            if *value < 0.9 {
+            if *value < DEFAULT_HALLUCINATED_THRESHOLD {
                 debug!(
                     "hallucination detected: score for {} : {} is less than 0.1",
                     key, value
