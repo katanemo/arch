@@ -1,5 +1,6 @@
 name: Build and Deploy Documentation
 on:
+  pull_request:
   push:
     branches: [main]
 
@@ -22,6 +23,9 @@ jobs:
           cd ./docs
           chmod +x build_docs.sh
           ./build_docs.sh
+
+      - name: Copy CNAME to HTML Build Directory
+        run: cp docs/CNAME docs/build/html/CNAME
 
       # Deploy the docs to GitHub Pages
       - name: Deploy to GitHub Pages
