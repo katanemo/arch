@@ -69,14 +69,9 @@ static_resources:
   clusters:
     - name: openai
       connect_timeout: 5s
-      dns_lookup_family: V4_ONLY
       type: LOGICAL_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
-      typed_extension_protocol_options:
-        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-          explicit_http_config:
-            http2_protocol_options: {}
       load_assignment:
         cluster_name: openai
         endpoints:
@@ -98,14 +93,9 @@ static_resources:
               tls_maximum_protocol_version: TLSv1_3
     - name: mistral
       connect_timeout: 5s
-      dns_lookup_family: V4_ONLY
       type: LOGICAL_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
-      typed_extension_protocol_options:
-        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-          explicit_http_config:
-            http2_protocol_options: {}
       load_assignment:
         cluster_name: mistral
         endpoints:
@@ -124,6 +114,7 @@ static_resources:
     - name: model_server
       connect_timeout: 5s
       type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: model_server
@@ -132,12 +123,13 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
-                      port_value: 80
+                      address: host.docker.internal
+                      port_value: 51000
                   hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: mistral_7b_instruct
@@ -152,6 +144,7 @@ static_resources:
     - name: arch_fc
       connect_timeout: 5s
       type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
         cluster_name: arch_fc
@@ -160,8 +153,8 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
-                      port_value: 80
+                      address: host.docker.internal
+                      port_value: 51000
                   hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}

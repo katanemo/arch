@@ -3,6 +3,8 @@ import os
 import time
 import select
 import shlex
+import yaml
+import json
 
 def run_docker_compose_ps(compose_file, env):
     """
@@ -14,7 +16,7 @@ def run_docker_compose_ps(compose_file, env):
     try:
         # Run `docker-compose ps` to get the health status of each service
         ps_process = subprocess.Popen(
-            ["docker-compose", "ps"],
+            ["docker", "compose", "-p", "arch", "ps", "--format", "table{{.Service}}\t{{.State}}\t{{.Ports}}"],
             cwd=os.path.dirname(compose_file),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -29,31 +31,7 @@ def run_docker_compose_ps(compose_file, env):
             print(f"Error while checking service status:\n{error_output}", file=os.sys.stderr)
             return {}
 
-        lines = services_status.strip().splitlines()
-        services = {}
-
-        # Skip the header row and parse each service
-        for line in lines[1:]:
-            parts = shlex.split(line)
-            if len(parts) >= 5:
-                service_name = parts[0]  # Service name
-                status_index = 3  # Status is typically at index 3, but may have multiple words
-
-                # Check if the status has multiple words (e.g., "running (healthy)")
-                if '(' in parts[status_index+1] :
-                    # Combine the status field if it's split over two parts
-                    status = f"{parts[status_index]} {parts[status_index + 1]}"
-                    ports = parts[status_index + 2]
-                else:
-                    status = parts[status_index]
-                    ports = parts[status_index + 1]
-
-                # Store both status and ports in a dictionary for each service
-                services[service_name] = {
-                    'status': status,
-                    'ports': ports
-                }
-
+        services = parse_docker_compose_ps_output(services_status)
         return services
 
     except subprocess.CalledProcessError as e:
@@ -62,18 +40,82 @@ def run_docker_compose_ps(compose_file, env):
 
 #Helper method to print service status
 def print_service_status(services):
-    print(f"{'Service Name':<25} {'Status':<20} {'Ports'}")
+    print(f"{'Service Name':<25} {'State':<20} {'Ports'}")
     print("="*72)
     for service_name, info in services.items():
-        status = info['status']
-        ports = info['ports']
+        status = info['STATE']
+        ports = info['PORTS']
         print(f"{service_name:<25} {status:<20} {ports}")
 
 #check for states based on the states passed in
 def check_services_state(services, states):
     for service_name, service_info in services.items():
-        status = service_info['status'].lower()  # Convert status to lowercase for easier comparison
+        status = service_info['STATE'].lower()  # Convert status to lowercase for easier comparison
         if any(state in status for state in states):
             return True
 
     return False
+
+def get_llm_provider_access_keys(arch_config_file):
+    with open(arch_config_file, 'r') as file:
+        arch_config = file.read()
+        arch_config_yaml = yaml.safe_load(arch_config)
+
+    access_key_list = []
+    for llm_provider in arch_config_yaml.get("llm_providers", []):
+        acess_key = llm_provider.get("access_key")
+        if acess_key is not None:
+            access_key_list.append(acess_key)
+
+    return access_key_list
+
+def load_env_file_to_dict(file_path):
+    env_dict = {}
+
+    # Open and read the .env file
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Strip any leading/trailing whitespaces
+            line = line.strip()
+
+            # Skip empty lines and comments
+            if not line or line.startswith('#'):
+                continue
+
+            # Split the line into key and value at the first '=' sign
+            if '=' in line:
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+
+                # Add key-value pair to the dictionary
+                env_dict[key] = value
+
+    return env_dict
+
+def parse_docker_compose_ps_output(output):
+    # Split the output into lines
+    lines = output.strip().splitlines()
+
+    # Extract the headers (first row) and the rest of the data
+    headers = lines[0].split()
+    service_data = lines[1:]
+
+    # Initialize the result dictionary
+    services = {}
+
+    # Iterate over each line of data after the headers
+    for line in service_data:
+        # Split the line by tabs or multiple spaces
+        parts = line.split()
+
+        # Create a dictionary entry using the header names
+        service_info = {
+            headers[1]: parts[1],  # State
+            headers[2]: parts[2]   # Ports
+        }
+
+        # Add to the result dictionary using the service name as the key
+        services[parts[0]] = service_info
+
+    return services

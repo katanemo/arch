@@ -10,6 +10,9 @@
       "request": "launch",
       "module": "uvicorn",
       "args": ["app.main:app","--reload", "--port", "8000"],
+      "env": {
+        "MODE": "local-cpu",
+      }
     }
   ]
 }

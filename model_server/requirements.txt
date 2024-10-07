@@ -1,19 +1,20 @@
 #TOOD: pin versions
-fastapi
-sentence-transformers
-torch
-uvicorn
-gliner
+fastapi==0.115.0
+sentence-transformers==3.1.1
+torch==2.4.1
+uvicorn==0.31.0
 transformers
-pyyaml
+pyyaml==6.0.2
 accelerate
+psutil==6.0.0
 # guard inference packages
 optimum-intel
 openvino
 psutil
 pandas
 dateparser
-openai
+openai==1.50.2
 pandas
 tf-keras
 onnx
+pytest

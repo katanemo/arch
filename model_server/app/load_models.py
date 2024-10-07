@@ -17,8 +17,6 @@ def get_device():
 def load_transformers(models=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
     transformers = {}
     device = get_device()
-
-    print(f"Using device: {device}")
     for model in models.split(","):
         transformers[model] = sentence_transformers.SentenceTransformer(model, device=device)
 

@@ -10,7 +10,7 @@ COPY public_types /public_types
 RUN cargo build --release --target wasm32-wasi
 
 # copy built filter into envoy image
-FROM envoyproxy/envoy:v1.30-latest as envoy
+FROM envoyproxy/envoy:v1.31-latest as envoy
 
 #Build config generator, so that we have a single build image for both Rust and Python
 FROM python:3-slim as arch
