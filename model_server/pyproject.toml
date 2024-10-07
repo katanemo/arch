@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "archgw_modelserver"
+version = "0.1.0"
+description = "A model server for serving models"
+authors = ["Katanemo Labs, Inc <archgw@katanemo.com>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [
+    { include = "app" }, # Include the 'app' package
+    { include = "app/arch_fc" }, # Include the 'app' package
+]
+include = ["app/*.yaml"]
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+fastapi = "0.115.0"
+sentence-transformers = "3.1.1"
+torch = "2.4.1"
+uvicorn = "0.31.0"
+transformers = "*"
+pyyaml = "6.0.2"
+accelerate = "*"
+psutil = "6.0.0"
+optimum-intel = "*"
+openvino = "*"
+pandas = "*"
+dateparser = "*"
+openai = "1.50.2"
+tf-keras = "*"
+onnx = "*"
+
+[tool.poetry.scripts]
+archgw_modelserver = "app:run_server"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
