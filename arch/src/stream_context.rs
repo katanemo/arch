@@ -322,8 +322,8 @@ impl StreamContext {
         for (key, value) in &hallucination_response.params_scores {
             if *value < DEFAULT_HALLUCINATED_THRESHOLD {
                 debug!(
-                    "hallucination detected: score for {} : {} is less than 0.1",
-                    key, value
+                    "hallucination detected: score for {} : {} is less than threshold {}",
+                    key, value, DEFAULT_HALLUCINATED_THRESHOLD
                 );
                 keys_with_low_score.push(key.clone().to_string());
             }
