@@ -819,7 +819,6 @@ impl StreamContext {
         };
 
         self.tool_calls = callout_context.tool_calls.clone();
-        self.metrics.active_http_calls.increment(1);
         if self
             .callouts
             .insert(

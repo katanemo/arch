@@ -5,7 +5,7 @@ use proxy_wasm_test_framework::types::{
 };
 use public_types::common_types::open_ai::{ChatCompletionsResponse, Choice, Message, Usage};
 use public_types::common_types::open_ai::{FunctionCallDetail, ToolCall, ToolType};
-use public_types::common_types::PromptGuardResponse;
+use public_types::common_types::{HallucinationClassificationResponse, PromptGuardResponse};
 use public_types::embeddings::{
     create_embedding_response, embedding, CreateEmbeddingResponse, CreateEmbeddingResponseUsage,
     Embedding,
@@ -695,6 +695,7 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("model_server"),
             Some(vec![
@@ -712,7 +713,26 @@ fn request_not_ratelimited() {
         .returning(Some(5))
         .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
+        .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    // hallucination should return that parameters were not halliucinated
+    //     prompt: str
+    // parameters: dict
+    // model: str
+
+    let hallucatination_body = HallucinationClassificationResponse {
+        params_scores: HashMap::from([("city".to_string(), 0.99)]),
+        model: "nli-model".to_string(),
+    };
+
+    let body_text = serde_json::to_string(&hallucatination_body).unwrap();
+
+    module
+        .call_proxy_on_http_call_response(http_context, 5, 0, body_text.len() as i32, 0)
+        .expect_metric_increment("active_http_calls", -1)
+        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
+        .returning(Some(&body_text))
         .expect_http_call(
             Some("api_server"),
             Some(vec![
@@ -732,7 +752,6 @@ fn request_not_ratelimited() {
         .unwrap();
 
     let response_headers_with_200 = vec![(":status", "200"), ("content-type", "application/json")];
-
     let body_text = String::from("test body");
     module
         .call_proxy_on_http_call_response(http_context, 6, 0, body_text.len() as i32, 0)
