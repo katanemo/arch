@@ -23,6 +23,9 @@ jobs:
           chmod +x build_docs.sh
           ./build_docs.sh
 
+      - name: Copy CNAME to HTML Build Directory
+        run: cp docs/CNAME docs/build/html/CNAME
+
       # Deploy the docs to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
