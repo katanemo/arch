@@ -2,6 +2,14 @@ import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 import time
 import torch
+import pkg_resources
+import yaml
+
+def load_yaml_config(file_name):
+    # Load the YAML file from the package
+    yaml_path = pkg_resources.resource_filename('app', file_name)
+    with open(yaml_path, 'r') as yaml_file:
+        return yaml.safe_load(yaml_file)
 
 
 def split_text_into_chunks(text, max_words=300):
@@ -20,7 +28,6 @@ def split_text_into_chunks(text, max_words=300):
 
 def softmax(x):
     return np.exp(x) / np.exp(x).sum(axis=0)
-
 
 class PredictionHandler:
     def __init__(self, model, tokenizer, device, task="toxic", hardware_config="cpu"):

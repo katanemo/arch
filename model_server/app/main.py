@@ -5,9 +5,10 @@ from app.load_models import (
     load_transformers,
     load_guard_model,
     load_zero_shot_models,
+    get_device
 )
 import os
-from app.utils import GuardHandler, split_text_into_chunks
+from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config
 import torch
 import yaml
 import string
@@ -23,9 +24,7 @@ logger = logging.getLogger(__name__)
 
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
-
-with open("guard_model_config.yaml") as f:
-    guard_model_config = yaml.safe_load(f)
+guard_model_config = load_yaml_config("guard_model_config.yaml")
 
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")
@@ -48,11 +47,7 @@ class EmbeddingRequest(BaseModel):
 
 @app.get("/healthz")
 async def healthz():
-    import os
-
-    print(os.getcwd())
     return {"status": "ok"}
-
 
 @app.get("/models")
 async def models():
@@ -66,6 +61,7 @@ async def models():
 
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
+    print(f"Embedding Call Start Time: {time.time()}")
     if req.model not in transformers:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
@@ -80,6 +76,7 @@ async def embedding(req: EmbeddingRequest, res: Response):
         "prompt_tokens": 0,
         "total_tokens": 0,
     }
+    print(f"Embedding Call Complete Time: {time.time()}")
     return {"data": data, "model": req.model, "object": "list", "usage": usage}
 
 
