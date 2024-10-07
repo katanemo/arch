@@ -569,6 +569,8 @@ fn request_ratelimited() {
         .returning(Some(&arch_fc_resp_str))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("model_server"),
             Some(vec![
@@ -586,8 +588,21 @@ fn request_ratelimited() {
         .returning(Some(5))
         .expect_metric_increment("active_http_calls", 1)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
+        .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    let hallucatination_body = HallucinationClassificationResponse {
+        params_scores: HashMap::from([("city".to_string(), 0.99)]),
+        model: "nli-model".to_string(),
+    };
+
+    let body_text = serde_json::to_string(&hallucatination_body).unwrap();
+
+    module
+        .call_proxy_on_http_call_response(http_context, 5, 0, body_text.len() as i32, 0)
+        .expect_metric_increment("active_http_calls", -1)
+        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
+        .returning(Some(&body_text))
         .expect_http_call(
             Some("api_server"),
             Some(vec![
