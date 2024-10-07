@@ -123,8 +123,8 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
-                      port_value: 80
+                      address: host.docker.internal
+                      port_value: 51000
                   hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
@@ -153,8 +153,8 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: model_server
-                      port_value: 80
+                      address: host.docker.internal
+                      port_value: 51000
                   hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}

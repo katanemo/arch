@@ -44,14 +44,8 @@ RUN if command -v nvcc >/dev/null 2>&1; then \
 
 COPY . /src
 
-#
-# output
-#
-
-
 # Specify list of models that will go into the image as a comma separated list
 ENV MODELS="BAAI/bge-large-en-v1.5"
-ENV NER_MODELS="urchade/gliner_large-v2.1"
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY /app /app
