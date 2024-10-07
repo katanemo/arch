@@ -5,9 +5,10 @@ import signal
 import time
 import requests
 import psutil
+import tempfile
 
 # Path to the file where the server process ID will be stored
-PID_FILE = "/tmp/model_server.pid"
+PID_FILE = os.path.join(tempfile.gettempdir(), "model_server.pid")
 
 def run_server():
     """Start, stop, or restart the Uvicorn server based on command-line arguments."""
