@@ -1,12 +1,16 @@
 use crate::stats::{Gauge, IncrementingMetric};
+use derivative::Derivative;
 use log::debug;
 use proxy_wasm::{traits::Context, types::Status};
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, time::Duration};
 
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct CallArgs<'a> {
     upstream: &'a str,
+    path: &'a str,
     headers: Vec<(&'a str, &'a str)>,
+    #[derivative(Debug = "ignore")]
     body: Option<&'a [u8]>,
     trailers: Vec<(&'a str, &'a str)>,
     timeout: Duration,
@@ -15,6 +19,7 @@ pub struct CallArgs<'a> {
 impl<'a> CallArgs<'a> {
     pub fn new(
         upstream: &'a str,
+        path: &'a str,
         headers: Vec<(&'a str, &'a str)>,
         body: Option<&'a [u8]>,
         trailers: Vec<(&'a str, &'a str)>,
@@ -22,6 +27,7 @@ impl<'a> CallArgs<'a> {
     ) -> Self {
         CallArgs {
             upstream,
+            path,
             headers,
             body,
             trailers,
@@ -32,9 +38,10 @@ impl<'a> CallArgs<'a> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
-    #[error("Error dispatching HTTP call to `{upstream_name}`, error: {internal_status:?}")]
+    #[error("Error dispatching HTTP call to `{upstream_name}/{path}`, error: {internal_status:?}")]
     DispatchError {
         upstream_name: String,
+        path: String,
         internal_status: Status,
     },
 }
@@ -46,7 +53,7 @@ pub trait Client: Context {
         &self,
         call_args: CallArgs,
         call_context: Self::CallContext,
-    ) -> Result<(), ClientError> {
+    ) -> Result<u32, ClientError> {
         debug!(
             "dispatching http call with args={:?} context={:?}",
             call_args, call_context
@@ -61,10 +68,11 @@ pub trait Client: Context {
         ) {
             Ok(id) => {
                 self.add_call_context(id, call_context);
-                Ok(())
+                Ok(id)
             }
             Err(status) => Err(ClientError::DispatchError {
                 upstream_name: String::from(call_args.upstream),
+                path: String::from(call_args.path),
                 internal_status: status,
             }),
         }
