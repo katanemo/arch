@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/arch-website-assets/favicon.ico">
+    <title>Arch - Intelligent Prompt Gateway</title>
+    <style>
+        body {
+            font-family: -apple-system, "BlinkMacSystemFont", "Segoe UI", "Helvetica Neue", "Arial", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            text-align: center;
+        }
+        header {
+            background-color: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        header a {
+            text-decoration: none;
+            color: #666;
+            font-size: 16px;
+            padding: 10px;
+            transition: color 0.3s ease;
+        }
+        header a:hover {
+            color: #0056b3;
+        }
+        .divider {
+            border: 0;
+            height: 1px;
+            background-color: #ccc;
+            margin: 0 0 20px 0;
+        }
+        .container {
+            max-width: 800px;
+            padding: 30px;
+            margin: 30px auto;
+        }
+        .image-placeholder {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .image-placeholder img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        h2.bold-text {
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            line-height: 2rem;
+        }
+        .subheading {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .buttons {
+            margin-bottom: 30px;
+        }
+        .buttons a {
+            text-decoration: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            color: #fff;
+            background-color: #007BFF;
+            border-radius: 5px;
+            margin: 0 10px;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .buttons a:hover {
+            background-color: #0056b3;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background-color: #ccc;
+        }
+        .why_arch {
+            text-align: left;
+            font-size: 16px;
+            margin-bottom: 50px;
+            line-height: 1.5;
+        }
+        .why_arch blockquote {
+            margin: 20px 0;
+            padding-left: 20px;
+            border-left: 3px solid #ddd;
+            font-style: italic;
+        }
+        .features_heading {
+            text-align: left;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            text-align: left;
+        }
+        .feature-block {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            font-size: 14px;
+        }
+        .feature-block ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        .feature-block ul li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .feature-block a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .feature-block a:hover {
+            text-decoration: underline;
+        }
+        h2.get-started {
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            line-height: 2rem;
+        }
+
+        /* Media Queries for mobile devices */
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            h2.bold-text {
+                font-size: 1.25rem;
+                line-height: 1.75rem;
+            }
+            .buttons a {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+            .features {
+                grid-template-columns: 1fr;
+            }
+            h2.get-started {
+                font-size: 1.25rem;
+                line-height: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="https://github.com/">GitHub</a>
+        <a href="https://katanemo.github.io/arch/">Docs</a>
+        <a href="https://discord.gg/rbjqVbpa">Discord</a>
+        <a href="https://github.com/katanemo/arch?tab=readme-ov-file#contact">Contact</a>
+    </header>
+    <div class="container">
+        <div class="image-placeholder">
+            <img src="https://storage.googleapis.com/arch-website-assets/arch-logo.png" alt="Arch Gateway Logo" title="Arch Gateway Logo">
+        </div>
+        <h2 class="bold-text">Build fast, robust, and personalized GenAI apps</h2>
+        <div class="subheading">An OSS intelligent gateway engineered with (fast) LLMs to handle the <b>muck</b> of prompts.</div>
+        <div class="buttons">
+            <a href="https://github.com/katanemo/arch?tab=readme-ov-file#getstarted">Download</a>
+            <a href="https://katanemo.github.io/arch/">Documentation</a>
+        </div>
+        <hr>
+        <div class="why_arch">
+            <h3>Why Arch?</h3>
+            <p>The open source project was born out of the belief that:</p>
+            <blockquote>
+                <p><em>Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests
+                including secure handling, intelligent routing, robust observability, and seamless integration with backend (API)
+                systems for personalization — all outside business logic.</em></p>
+            </blockquote>
+        </div>
+        <h3 class="features_heading">Key Features</h3>
+        <div class="features">
+            <div class="feature-block">
+                <h3>Out-of-process architecture, built on <a href="http://envoyproxy.io/" target="_blank">Envoy</a></h3>
+                Arch takes a dependency on Envoy and is a self-contained process designed to run alongside your application servers.
+                Arch extend's Envoy's HTTP connection management subsystem, filtering, and telemetry capabilities exclusively for
+                prompts and LLMs.
+                <ul>
+                    <li>Proven success with companies like <a href="https://www.airbnb.com" target="_blank">Airbnb</a>, <a href="https://www.dropbox.com" target="_blank">Dropbox</a>, <a href="https://www.google.com" target="_blank">Google</a>, and others.</li>
+                    <li>Works with any application language such as Python, Java, C++, Go, PHP, etc.</li>
+                    <li>Quick deployment and transparent upgrades.</li>
+                </ul>
+            </div>
+
+            <div class="feature-block">
+                <h3>Engineered with (fast) LLMs</h3>
+                Arch is engineered with specialized (sub-billion) LLMs that are designed for fast, cost-effective, and accurate handling of prompts.
+                These LLMs are best-in-class for critical prompt-related tasks like:
+                <ul>
+                    <li><strong>Function Calling:</strong> Function-calling helps you personalize GenAI applications with your API operations via user prompts.</li>
+                    <li><strong>Prompt Guards:</strong> Centrally manages safety features to prevent toxic or jailbreak prompts.</li>
+                    <li><strong>Intent-drift detection:</strong> Aable to detect shifts in user intent to improve retrieval accuracy and response efficiency.</li>
+                </ul>
+            </div>
+
+            <div class="feature-block">
+                <h3>Traffic Management</h3>
+                Arch offers several capabilities for LLM calls originating from your applications, including a vendor-agnostic SDK to make LLM calls, smart retries on errors from upstream LLMs, and automatic cutover to other LLMs configured in Arch for continuous availability and disaster recovery scenarios.
+                <br><br>Arch extends Envoy’s cluster subsystem to manage upstream connections to LLMs so that you can build resilient AI applications.
+            </div>
+
+            <div class="feature-block">
+                <h3>Front/Edge Gateway</h3>
+                There is substantial benefit in using the same software at the edge (observability, traffic shaping algorithms, applying guardrails, etc.) as for outbound LLM inference use cases. <br><br> Arch is exceptionally well suited as an edge gateway for AI applications. This includes TLS termination, rate limiting, and prompt-based routing.
+            </div>
+
+            <div class="feature-block">
+                <h3>Best-in-Class Monitoring</h3>
+                Arch offers several monitoring metrics that help you understand three critical aspects of your application: latency, token usage, and error rates by an upstream LLM provider.
+                <br><br> Latency measures the speed at which your application is responding to users, which includes metrics like time to first token (TFT), time per output token (TOT), and the total latency as perceived by users.
+            </div>
+
+            <div class="feature-block">
+                <h3>End-to-End Tracing</h3>
+                Arch propagates trace context using the W3C Trace Context standard, specifically through the <b>traceparent</b> header compatible with OpenTelemetry.
+                <br><br> This allows each component in the system to record its part of the request flow, enabling end-to-end tracing across the entire application. Arch ensures that developers can capture this trace data consistently and in a format compatible with various observability tools.
+            </div>
+        </div>
+    </div>
+    <h2 class="get-started">Let's get started </h2>
+    <div class="buttons">
+        <a href="https://github.com/katanemo/arch?tab=readme-ov-file#getstarted">Download</a>
+        <a href="https://katanemo.github.io/arch/">Documentation</a>
+    </div>
+</body>
+</html>
