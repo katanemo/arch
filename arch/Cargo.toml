@@ -21,6 +21,7 @@ tiktoken-rs = "0.5.9"
 acap = "0.3.0"
 rand = "0.8.5"
 thiserror = "1.0.64"
+sha2 = "0.10.8"
 
 [dev-dependencies]
 proxy-wasm-test-framework = { git = "https://github.com/katanemo/test-framework.git", branch = "new" }
