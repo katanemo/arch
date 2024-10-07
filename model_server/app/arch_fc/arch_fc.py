@@ -69,7 +69,8 @@ def process_state(arch_state, history: list[Message]):
         if hist.role == 'user':
             sha_history.append(hist.content)
             sha256_hash = hashlib.sha256()
-            sha256_hash.update(json.dumps(sha_history).encode())
+            joined_key_str = ('#.#').join(sha_history)
+            sha256_hash.update(joined_key_str.encode())
             sha_key = sha256_hash.hexdigest()
             print(f"sha_key: {sha_key}")
             if sha_key in state_map:
