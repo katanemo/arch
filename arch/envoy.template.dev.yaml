@@ -13,7 +13,7 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
               stat_prefix: arch_ingress_http
-              codec_type: HTTP1
+              codec_type: AUTO
               scheme_header_transformation:
                 scheme_to_overwrite: https
               access_log:
@@ -72,11 +72,6 @@ static_resources:
       type: LOGICAL_DNS
       dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
-      # typed_extension_protocol_options:
-      #   envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
-      #     "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
-      #     explicit_http_config:
-      #       http2_protocol_options: {}
       load_assignment:
         cluster_name: openai
         endpoints:
@@ -129,7 +124,7 @@ static_resources:
                   address:
                     socket_address:
                       address: host.docker.internal
-                      port_value: 8000
+                      port_value: 51000
                   hostname: "model_server"
     - name: mistral_7b_instruct
       connect_timeout: 5s
@@ -159,7 +154,7 @@ static_resources:
                   address:
                     socket_address:
                       address: host.docker.internal
-                      port_value: 8000
+                      port_value: 51000
                   hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}

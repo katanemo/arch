@@ -227,7 +227,7 @@ pub mod open_ai {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsResponse {
-        pub usage: Usage,
+        pub usage: Option<Usage>,
         pub choices: Vec<Choice>,
         pub model: String,
         pub metadata: Option<HashMap<String, String>>,

@@ -1,8 +1,8 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
-    ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
-    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER,
+    ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH,
+    DEFAULT_EMBEDDING_MODEL, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO,
+    MODEL_SERVER_NAME, RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use crate::llm_providers::LlmProviders;
@@ -16,8 +16,8 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
     ArchState, ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
-    ChatCompletionsResponse, FunctionDefinition, FunctionParameter, FunctionParameters, Message,
-    ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
+    ChatCompletionsResponse, Choice, FunctionDefinition, FunctionParameter, FunctionParameters,
+    Message, ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
 };
 use public_types::common_types::{
     EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
@@ -51,6 +51,7 @@ pub struct CallContext {
     user_message: Option<String>,
     prompt_target_name: Option<String>,
     request_body: ChatCompletionsRequest,
+    tool_calls: Option<Vec<ToolCall>>,
     similarity_scores: Option<Vec<(String, f64)>>,
     upstream_cluster: Option<String>,
     upstream_cluster_path: Option<String>,
@@ -300,7 +301,7 @@ impl StreamContext {
     fn hallucination_classification_resp_handler(
         &mut self,
         body: Vec<u8>,
-        _callout_context: CallContext,
+        callout_context: CallContext,
     ) {
         let hallucination_response: HallucinationClassificationResponse =
             match serde_json::from_slice(&body) {
@@ -328,23 +329,44 @@ impl StreamContext {
             }
         }
 
-        let response =
-            "It seems I’m missing some information. Could you provide the following details: "
-                .to_string()
-                + &keys_with_low_score.join(", ")
-                + " ?";
-        let message = Message {
-            role: SYSTEM_ROLE.to_string(),
-            content: Some(response),
-            model: None,
-            tool_calls: None,
-        };
+        if !keys_with_low_score.is_empty() {
+            let response =
+                "It seems I’m missing some information. Could you provide the following details: "
+                    .to_string()
+                    + &keys_with_low_score.join(", ")
+                    + " ?";
+            let message = Message {
+                role: SYSTEM_ROLE.to_string(),
+                content: Some(response),
+                model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                tool_calls: None,
+            };
 
-        self.send_http_response(
-            StatusCode::OK.as_u16().into(),
-            vec![("Powered-By", "Katanemo")],
-            Some(serde_json::to_string(&message).unwrap().as_bytes()),
-        );
+            let chat_completion_response = ChatCompletionsResponse {
+                choices: vec![Choice {
+                    message,
+                    index: 0,
+                    finish_reason: "done".to_string(),
+                }],
+                usage: None,
+                model: ARCH_FC_MODEL_NAME.to_string(),
+                metadata: None,
+            };
+
+            debug!("hallucination response: {:?}", chat_completion_response);
+            self.send_http_response(
+                StatusCode::OK.as_u16().into(),
+                vec![("Powered-By", "Katanemo")],
+                Some(
+                    serde_json::to_string(&chat_completion_response)
+                        .unwrap()
+                        .as_bytes(),
+                ),
+            );
+        } else {
+            // not a hallucination, resume the flow
+            self.schedule_api_call_request(callout_context);
+        }
     }
 
     fn zero_shot_intent_detection_resp_handler(
@@ -655,6 +677,14 @@ impl StreamContext {
 
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
+        let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
+        callout_context.tool_calls = Some(tool_calls.clone());
+
+        debug!(
+            "prompt_target_name: {}, tool_name(s): {:?}",
+            prompt_target.name, tool_names
+        );
+        debug!("tool_params: {}", tool_params_json_str);
 
         if model_resp.message.tool_calls.is_some()
             && !model_resp.message.tool_calls.as_ref().unwrap().is_empty()
@@ -729,21 +759,37 @@ impl StreamContext {
                         similarity_scores: callout_context.similarity_scores.clone(),
                         upstream_cluster: callout_context.upstream_cluster.clone(),
                         upstream_cluster_path: callout_context.upstream_cluster_path.clone(),
+                        tool_calls: callout_context.tool_calls,
                     },
                 )
                 .is_some()
             {
                 panic!("duplicate token_id")
             }
+        } else {
+            self.schedule_api_call_request(callout_context);
         }
+    }
+
+    fn schedule_api_call_request(&mut self, callout_context: CallContext) {
+        let tools_call_name = callout_context.tool_calls.as_ref().unwrap()[0]
+            .function
+            .name
+            .clone();
 
         let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
 
-        debug!(
-            "prompt_target_name: {}, tool_name(s): {:?}",
-            prompt_target.name, tool_names
+        //HACK: for now we only support one tool call, we will support multiple tool calls in the future
+        let mut tool_params = callout_context.tool_calls.as_ref().unwrap()[0]
+            .function
+            .arguments
+            .clone();
+        tool_params.insert(
+            String::from(ARCH_MESSAGES_KEY),
+            serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
         );
-        debug!("tool_params: {}", tool_params_json_str);
+
+        let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
@@ -772,12 +818,25 @@ impl StreamContext {
             }
         };
 
-        self.tool_calls = Some(tool_calls.clone());
-        callout_context.upstream_cluster = Some(endpoint.name);
-        callout_context.upstream_cluster_path = Some(path);
-        callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
+        self.tool_calls = callout_context.tool_calls.clone();
         self.metrics.active_http_calls.increment(1);
-        if self.callouts.insert(token_id, callout_context).is_some() {
+        if self
+            .callouts
+            .insert(
+                token_id,
+                CallContext {
+                    response_handler_type: ResponseHandlerType::FunctionCall,
+                    user_message: callout_context.user_message,
+                    prompt_target_name: callout_context.prompt_target_name,
+                    request_body: callout_context.request_body,
+                    tool_calls: None,
+                    similarity_scores: callout_context.similarity_scores.clone(),
+                    upstream_cluster: Some(endpoint.name.clone()),
+                    upstream_cluster_path: Some(path.clone()),
+                },
+            )
+            .is_some()
+        {
             panic!("duplicate token_id")
         }
         self.metrics.active_http_calls.increment(1);
@@ -958,6 +1017,7 @@ impl StreamContext {
             similarity_scores: None,
             upstream_cluster: None,
             upstream_cluster_path: None,
+            tool_calls: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(
@@ -1168,6 +1228,7 @@ impl HttpContext for StreamContext {
                 similarity_scores: None,
                 upstream_cluster: None,
                 upstream_cluster_path: None,
+                tool_calls: None,
             };
             self.get_embeddings(callout_context);
             return Action::Pause;
@@ -1229,6 +1290,7 @@ impl HttpContext for StreamContext {
             similarity_scores: None,
             upstream_cluster: None,
             upstream_cluster_path: None,
+            tool_calls: None,
         };
         if self.callouts.insert(token_id, call_context).is_some() {
             panic!(
@@ -1322,7 +1384,13 @@ impl HttpContext for StreamContext {
                     }
                 };
 
-            self.response_tokens += chat_completions_response.usage.completion_tokens;
+            if chat_completions_response.usage.is_some() {
+                self.response_tokens += chat_completions_response
+                    .usage
+                    .as_ref()
+                    .unwrap()
+                    .completion_tokens;
+            }
 
             if let Some(tool_calls) = self.tool_calls.as_ref() {
                 if !tool_calls.is_empty() {
