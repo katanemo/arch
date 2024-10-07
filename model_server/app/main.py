@@ -5,7 +5,7 @@ from app.load_models import (
     load_transformers,
     load_guard_model,
     load_zero_shot_models,
-    get_device
+    get_device,
 )
 import os
 from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config
@@ -21,17 +21,17 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
+logger.info("Device used: " + get_device())
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
 guard_model_config = load_yaml_config("guard_model_config.yaml")
 
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")
-if mode not in ['cloud', 'local-gpu', 'local-cpu']:
+if mode not in ["cloud", "local-gpu", "local-cpu"]:
     raise ValueError(f"Invalid mode: {mode}")
-if mode == 'local-cpu':
-    hardware = 'cpu'
+if mode == "local-cpu":
+    hardware = "cpu"
 else:
     hardware = "gpu" if torch.cuda.is_available() else "cpu"
 
@@ -39,6 +39,7 @@ jailbreak_model = load_guard_model(guard_model_config["jailbreak"][hardware], ha
 guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
+
 
 class EmbeddingRequest(BaseModel):
     input: str
@@ -48,6 +49,7 @@ class EmbeddingRequest(BaseModel):
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
+
 
 @app.get("/models")
 async def models():
@@ -61,12 +63,11 @@ async def models():
 
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
-    print(f"Embedding Call Start Time: {time.time()}")
     if req.model not in transformers:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
-
+    start = time.time()
     embeddings = transformers[req.model].encode([req.input])
-
+    print(f"Embedding Call Complete Time: {time.time()-start}")
     data = []
 
     for embedding in embeddings.tolist():
@@ -76,7 +77,7 @@ async def embedding(req: EmbeddingRequest, res: Response):
         "prompt_tokens": 0,
         "total_tokens": 0,
     }
-    print(f"Embedding Call Complete Time: {time.time()}")
+
     return {"data": data, "model": req.model, "object": "list", "usage": usage}
 
 
@@ -197,10 +198,10 @@ class HallucinationRequest(BaseModel):
 @app.post("/hallucination")
 async def hallucination(req: HallucinationRequest, res: Response):
     """
-        Hallucination API, take input as text and return the prediction of hallucination for each parameter
-        parameters: dictionary of parameters and values
-            example     {"name": "John", "age": "25"}
-        prompt: input prompt from the user
+    Hallucination API, take input as text and return the prediction of hallucination for each parameter
+    parameters: dictionary of parameters and values
+        example     {"name": "John", "age": "25"}
+    prompt: input prompt from the user
     """
     if req.model not in zero_shot_models:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
@@ -209,9 +210,12 @@ async def hallucination(req: HallucinationRequest, res: Response):
     candidate_labels = [f"{k} is {v}" for k, v in req.parameters.items()]
     hypothesis_template = "{}"
     result = classifier(
-        req.prompt, candidate_labels=candidate_labels, hypothesis_template=hypothesis_template, multi_label=True
+        req.prompt,
+        candidate_labels=candidate_labels,
+        hypothesis_template=hypothesis_template,
+        multi_label=True,
     )
-    result_score = result['scores']
+    result_score = result["scores"]
     result_params = {k[0]: s for k, s in zip(req.parameters.items(), result_score)}
 
     return {

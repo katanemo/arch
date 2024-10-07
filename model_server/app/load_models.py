@@ -4,6 +4,7 @@ from transformers import AutoTokenizer, pipeline
 import sqlite3
 import torch
 
+
 def get_device():
     if torch.cuda.is_available():
         device = "cuda"
@@ -14,13 +15,17 @@ def get_device():
 
     return device
 
+
 def load_transformers(models=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
     transformers = {}
     device = get_device()
     for model in models.split(","):
-        transformers[model] = sentence_transformers.SentenceTransformer(model, device=device)
+        transformers[model] = sentence_transformers.SentenceTransformer(
+            model, device=device
+        )
 
     return transformers
+
 
 def load_guard_model(
     model_name,
@@ -57,9 +62,12 @@ def load_zero_shot_models(
     zero_shot_models = {}
     device = get_device()
     for model in models.split(","):
-        zero_shot_models[model] = pipeline("zero-shot-classification", model=model, device=device)
+        zero_shot_models[model] = pipeline(
+            "zero-shot-classification", model=model, device=device
+        )
 
     return zero_shot_models
 
-if __name__ =="__main__":
+
+if __name__ == "__main__":
     print(get_device())
