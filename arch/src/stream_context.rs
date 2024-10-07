@@ -527,6 +527,7 @@ impl StreamContext {
             tools: Some(chat_completion_tools),
             stream: false,
             stream_options: None,
+            metadata: None,
         };
 
         let msg_body = match serde_json::to_string(&chat_completions) {
@@ -831,6 +832,7 @@ impl StreamContext {
             tools: None,
             stream: callout_context.request_body.stream,
             stream_options: callout_context.request_body.stream_options,
+            metadata: None,
         };
 
         let json_string = match serde_json::to_string(&chat_completions_request) {
@@ -1020,6 +1022,7 @@ impl StreamContext {
             tools: None,
             stream: callout_context.request_body.stream,
             stream_options: callout_context.request_body.stream_options,
+            metadata: None,
         };
         let json_resp = serde_json::to_string(&chat_completion_request).unwrap();
         debug!("sending response back to default llm: {}", json_resp);

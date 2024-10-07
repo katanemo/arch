@@ -1,6 +1,0 @@
-{
-    "user_id": "user123",
-    "messages": [
-      {"role": "user", "content": "Tell me a joke."}
-    ]
-}
