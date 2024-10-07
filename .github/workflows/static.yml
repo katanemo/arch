@@ -24,6 +24,10 @@ jobs:
           chmod +x build_docs.sh
           ./build_docs.sh
 
+      # Ensure the build directory has executable permissions
+      - name: Set Permissions for Build Directory
+        run: chmod -R 777 docs/build/html
+
       - name: Copy CNAME to HTML Build Directory
         run: cp docs/CNAME docs/build/html/CNAME
 
