@@ -300,7 +300,7 @@ impl StreamContext {
     fn hallucination_classification_resp_handler(
         &mut self,
         body: Vec<u8>,
-        callout_context: CallContext,
+        _callout_context: CallContext,
     ) {
         let hallucination_response: HallucinationClassificationResponse =
             match serde_json::from_slice(&body) {
@@ -316,37 +316,34 @@ impl StreamContext {
                     return;
                 }
             };
+
+        let mut keys_with_low_score: Vec<String> = Vec::new();
         for (key, value) in &hallucination_response.params_scores {
             if *value < 0.9 {
-                self.send_server_error(
-                    format!(
-                        "Hallucination detected: score for {} : {} is less than 0.1",
-                        key, value
-                    ),
-                    None,
+                debug!(
+                    "hallucination detected: score for {} : {} is less than 0.1",
+                    key, value
                 );
-                let param_str = format!(
-                    "It seems I’m missing some information. Could you provide the following details {} ?",
-                    key
-                );
-                return self.send_http_response(
-                    StatusCode::OK.as_u16().into(),
-                    vec![("Powered-By", "Katanemo")],
-                    Some(param_str.as_bytes()),
-                );
+                keys_with_low_score.push(key.clone().to_string());
             }
         }
-        let params_scores_str = hallucination_response
-            .params_scores
-            .iter()
-            .map(|(key, value)| format!("{}: {:.3}", key, value))
-            .collect::<Vec<_>>()
-            .join(", ");
 
-        info!(
-            "hallucination score: {}, prompt: {}",
-            params_scores_str,
-            callout_context.user_message.as_ref().unwrap()
+        let response =
+            "It seems I’m missing some information. Could you provide the following details: "
+                .to_string()
+                + &keys_with_low_score.join(", ")
+                + " ?";
+        let message = Message {
+            role: SYSTEM_ROLE.to_string(),
+            content: Some(response),
+            model: None,
+            tool_calls: None,
+        };
+
+        self.send_http_response(
+            StatusCode::OK.as_u16().into(),
+            vec![("Powered-By", "Katanemo")],
+            Some(serde_json::to_string(&message).unwrap().as_bytes()),
         );
     }
 
