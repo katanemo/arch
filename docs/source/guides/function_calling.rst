@@ -83,7 +83,7 @@ Here’s a step-by-step guide to configuring function calling within your Arch s
 
 Step 1: Define the Function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Create or identify the backend function you want Arch to call. This could be an API endpoint, a script, or any other executable backend logic.
+First, create or identify the backend function you want Arch to call. This could be an API endpoint, a script, or any other executable backend logic.
 
 .. code-block:: python
     :caption: Example Function
@@ -112,11 +112,11 @@ Create or identify the backend function you want Arch to call. This could be an 
 
 Step 2: Configure Prompt Targets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Map the function to a prompt target, defining the intent and parameters that Arch will extract from the user’s prompt.
+Next, map the function to a prompt target, defining the intent and parameters that Arch will extract from the user’s prompt.
+Specify the parameters your function needs and how Arch should interpret these.
 
 .. code-block:: yaml
-    :caption: Example Config
+    :caption: Prompt Target Example Configuration
 
     prompt_targets:
       - name: get_weather
@@ -134,10 +134,10 @@ Map the function to a prompt target, defining the intent and parameters that Arc
           name: api_server
           path: /weather
 
-Step 3: Validate Parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Arch will validate parameters and ensure that the required parameters (e.g., location) are present in the prompt, and add validation rules if necessary.
+Step 3: Arch Takes Over
+~~~~~~~~~~~~~~~~~~~~~~~
+Once you have defined the functions and configured the prompt targets, Arch takes care of the remaining work.
+It will automatically validate parameters validate parameters and ensure that the required parameters (e.g., location) are present in the prompt, and add validation rules if necessary.
 Here is ane example validation schema using the `jsonschema <https://json-schema.org/docs>`_ library
 
 .. code-block:: python
@@ -191,12 +191,8 @@ Here is ane example validation schema using the `jsonschema <https://json-schema
     print(weather_info)
 
 
-Step 4: Execute and Return the Response
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Once the function is called, format the response and send it back to Arch-Function.
-Next, Arch-Function provides users with coherent and user-friendly responses.
-
+Once the functions are called, Arch formats the response and deliver back to users.
+By completing these setup steps, you enable Arch to manage the process from validation to response, ensuring users receive consistent, reliable results.
 
 Example Use Cases
 -----------------

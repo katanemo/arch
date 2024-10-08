@@ -1,21 +1,15 @@
 prompt_targets:
   - name: get_device_statistics
-    description: >
-      This prompt target ensures that when users request device-related statistics, the system accurately retrieves and presents the relevant data
-      based on the specified devices and time range. Examples of user prompts, include:
-
-      - "Show me the performance stats for device 12345 over the past week."
-      - "What are the error rates for my devices in the last 24 hours?"
-      - "I need statistics on device 789 over the last 10 days."
+    description: Retrieve and present the relevant data based on the specified devices and time range
 
     path: /agent/device_summary
     parameters:
-      - name: "device_ids"
-        type: list  # Options: integer | float | list | dictionary | set
-        description: "A list of device identifiers (IDs) for which the statistics are requested."
+      - name: device_ids
+        type: list
+        description: A list of device identifiers (IDs) to reboot.
         required: true
-      - name: "time_range"
-        type: integer  # Options: integer | float | list | dictionary | set
-        description: "The number of days in the past over which to retrieve device statistics. Defaults to 7 days if not specified."
+      - name: time_range
+        type: int
+        description: The number of days in the past over which to retrieve device statistics
         required: false
         default: 7

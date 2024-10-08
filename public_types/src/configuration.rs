@@ -210,7 +210,7 @@ mod test {
                 .expect("reference config file not found");
 
         let config: super::Configuration = serde_yaml::from_str(&ref_config).unwrap();
-        assert_eq!(config.version, "0.1-beta");
+        assert_eq!(config.version, "v0.1");
 
         let open_ai_provider = config
             .llm_providers
@@ -220,7 +220,7 @@ mod test {
         assert_eq!(open_ai_provider.name.to_lowercase(), "openai");
         assert_eq!(
             open_ai_provider.access_key,
-            Some("$OPENAI_API_KEY".to_string())
+            Some("OPENAI_API_KEY".to_string())
         );
         assert_eq!(open_ai_provider.model, "gpt-4o");
         assert_eq!(open_ai_provider.default, Some(true));

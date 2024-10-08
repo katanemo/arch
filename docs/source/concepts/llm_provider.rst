@@ -3,7 +3,7 @@
 LLM Provider
 ============
 
-``llm_provider`` is a top-level primitive in Arch, helping developers centrally define, secure, observe,
+**LLM provider** is a top-level primitive in Arch, helping developers centrally define, secure, observe,
 and manage the usage of of their LLMs. Arch builds on Envoy's reliable `cluster subsystem <https://www.envoyproxy.io/docs/envoy/v1.31.2/intro/arch_overview/upstream/cluster_manager>`_
 to manage egress traffic to LLMs, which includes intelligent routing, retry and fail-over mechanisms,
 ensuring high availability and fault tolerance. This abstraction also enables developers to seamlessly
