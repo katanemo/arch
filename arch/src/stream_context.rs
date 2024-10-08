@@ -1,10 +1,12 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
-    ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER,
+    ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH,
+    DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
+use crate::http::{CallArgs, Client, ClientError};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit::Header;
 use crate::stats::IncrementingMetric;
@@ -16,12 +18,13 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
     ArchState, ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
-    ChatCompletionsResponse, FunctionDefinition, FunctionParameter, FunctionParameters, Message,
-    ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
+    ChatCompletionsResponse, Choice, FunctionDefinition, FunctionParameter, FunctionParameters,
+    Message, ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
 };
 use public_types::common_types::{
-    EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
-    ZeroShotClassificationRequest, ZeroShotClassificationResponse,
+    EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
+    PromptGuardRequest, PromptGuardResponse, PromptGuardTask, ZeroShotClassificationRequest,
+    ZeroShotClassificationResponse,
 };
 use public_types::configuration::LlmProvider;
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
@@ -30,37 +33,69 @@ use public_types::embeddings::{
 };
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
 use std::time::Duration;
 
+#[derive(Debug, Clone)]
 enum ResponseHandlerType {
     GetEmbeddings,
     FunctionResolver,
     FunctionCall,
     ZeroShotIntent,
+    HallucinationDetect,
     ArchGuard,
     DefaultTarget,
 }
 
-pub struct CallContext {
+#[derive(Debug, Clone)]
+pub struct StreamCallContext {
     response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
     prompt_target_name: Option<String>,
     request_body: ChatCompletionsRequest,
+    tool_calls: Option<Vec<ToolCall>>,
     similarity_scores: Option<Vec<(String, f64)>>,
     upstream_cluster: Option<String>,
     upstream_cluster_path: Option<String>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum ServerError {
+    #[error(transparent)]
+    HttpDispatch(ClientError),
+    #[error(transparent)]
+    Deserialization(serde_json::Error),
+    #[error(transparent)]
+    Serialization(serde_json::Error),
+    #[error("{0}")]
+    LogicError(String),
+    #[error("upstream error response authority={authority}, path={path}, status={status}")]
+    Upstream {
+        authority: String,
+        path: String,
+        status: String,
+    },
+    #[error(transparent)]
+    ExceededRatelimit(ratelimit::Error),
+    #[error("jailbreak detected: {0}")]
+    Jailbreak(String),
+    #[error("{why}")]
+    BadRequest { why: String },
+    #[error("{why}")]
+    NoMessagesFound { why: String },
+}
+
 pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
+    system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
     embeddings_store: Rc<EmbeddingsStore>,
     overrides: Rc<Option<Overrides>>,
-    callouts: HashMap<u32, CallContext>,
+    callouts: RefCell<HashMap<u32, StreamCallContext>>,
     tool_calls: Option<Vec<ToolCall>>,
     tool_call_response: Option<String>,
     arch_state: Option<Vec<ArchState>>,
@@ -80,6 +115,7 @@ impl StreamContext {
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
+        system_prompt: Rc<Option<String>>,
         prompt_targets: Rc<HashMap<String, PromptTarget>>,
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
@@ -89,10 +125,11 @@ impl StreamContext {
         StreamContext {
             context_id,
             metrics,
+            system_prompt,
             prompt_targets,
             embeddings_store,
+            callouts: RefCell::new(HashMap::new()),
             chat_completions_request: None,
-            callouts: HashMap::new(),
             tool_calls: None,
             tool_call_response: None,
             arch_state: None,
@@ -129,11 +166,17 @@ impl StreamContext {
         self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
     }
 
-    fn modify_auth_headers(&mut self) -> Result<(), String> {
-        let llm_provider_api_key_value = self.llm_provider().access_key.as_ref().ok_or(format!(
-            "No access key configured for selected LLM Provider \"{}\"",
+    fn modify_auth_headers(&mut self) -> Result<(), ServerError> {
+        let llm_provider_api_key_value =
             self.llm_provider()
-        ))?;
+                .access_key
+                .as_ref()
+                .ok_or(ServerError::BadRequest {
+                    why: format!(
+                        "No access key configured for selected LLM Provider \"{}\"",
+                        self.llm_provider()
+                    ),
+                })?;
 
         let authorization_header_value = format!("Bearer {}", llm_provider_api_key_value);
 
@@ -159,7 +202,7 @@ impl StreamContext {
             });
     }
 
-    fn send_server_error(&self, error: String, override_status_code: Option<StatusCode>) {
+    fn send_server_error(&self, error: ServerError, override_status_code: Option<StatusCode>) {
         debug!("server error occurred: {}", error);
         self.send_http_response(
             override_status_code
@@ -167,18 +210,15 @@ impl StreamContext {
                 .as_u16()
                 .into(),
             vec![],
-            Some(error.as_bytes()),
+            Some(format!("{error}").as_bytes()),
         );
     }
 
-    fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
+    fn embeddings_handler(&mut self, body: Vec<u8>, mut callout_context: StreamCallContext) {
         let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
             Ok(embedding_response) => embedding_response,
             Err(e) => {
-                return self.send_server_error(
-                    format!("Error deserializing embedding response: {:?}", e),
-                    None,
-                );
+                return self.send_server_error(ServerError::Deserialization(e), None);
             }
         };
 
@@ -248,13 +288,13 @@ impl StreamContext {
         let json_data: String = match serde_json::to_string(&zero_shot_classification_request) {
             Ok(json_data) => json_data,
             Err(error) => {
-                let error = format!("Error serializing zero shot request: {}", error);
-                return self.send_server_error(error, None);
+                return self.send_server_error(ServerError::Serialization(error), None);
             }
         };
 
-        let token_id = match self.dispatch_http_call(
+        let call_args = CallArgs::new(
             MODEL_SERVER_NAME,
+            "/zeroshot",
             vec![
                 (":method", "POST"),
                 (":path", "/zeroshot"),
@@ -266,49 +306,87 @@ impl StreamContext {
             Some(json_data.as_bytes()),
             vec![],
             Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                let error_msg = format!(
-                    "Error dispatching embedding server HTTP call for zero-shot-intent-detection: {:?}",
-                    e
-                );
-                return self.send_server_error(error_msg, None);
-            }
-        };
-        debug!(
-            "dispatched call to model_server/zeroshot token_id={}",
-            token_id
         );
-
-        self.metrics.active_http_calls.increment(1);
         callout_context.response_handler_type = ResponseHandlerType::ZeroShotIntent;
 
-        if self.callouts.insert(token_id, callout_context).is_some() {
-            panic!(
-                "duplicate token_id={} in embedding server requests",
-                token_id
-            )
+        if let Err(e) = self.http_call(call_args, callout_context) {
+            self.send_server_error(ServerError::HttpDispatch(e), None);
+        }
+    }
+
+    fn hallucination_classification_resp_handler(
+        &mut self,
+        body: Vec<u8>,
+        callout_context: StreamCallContext,
+    ) {
+        let hallucination_response: HallucinationClassificationResponse =
+            match serde_json::from_slice(&body) {
+                Ok(hallucination_response) => hallucination_response,
+                Err(e) => {
+                    return self.send_server_error(ServerError::Deserialization(e), None);
+                }
+            };
+        let mut keys_with_low_score: Vec<String> = Vec::new();
+        for (key, value) in &hallucination_response.params_scores {
+            if *value < DEFAULT_HALLUCINATED_THRESHOLD {
+                debug!(
+                    "hallucination detected: score for {} : {} is less than threshold {}",
+                    key, value, DEFAULT_HALLUCINATED_THRESHOLD
+                );
+                keys_with_low_score.push(key.clone().to_string());
+            }
+        }
+
+        if !keys_with_low_score.is_empty() {
+            let response =
+                "It seems I’m missing some information. Could you provide the following details: "
+                    .to_string()
+                    + &keys_with_low_score.join(", ")
+                    + " ?";
+            let message = Message {
+                role: SYSTEM_ROLE.to_string(),
+                content: Some(response),
+                model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                tool_calls: None,
+            };
+
+            let chat_completion_response = ChatCompletionsResponse {
+                choices: vec![Choice {
+                    message,
+                    index: 0,
+                    finish_reason: "done".to_string(),
+                }],
+                usage: None,
+                model: ARCH_FC_MODEL_NAME.to_string(),
+                metadata: None,
+            };
+
+            debug!("hallucination response: {:?}", chat_completion_response);
+            self.send_http_response(
+                StatusCode::OK.as_u16().into(),
+                vec![("Powered-By", "Katanemo")],
+                Some(
+                    serde_json::to_string(&chat_completion_response)
+                        .unwrap()
+                        .as_bytes(),
+                ),
+            );
+        } else {
+            // not a hallucination, resume the flow
+            self.schedule_api_call_request(callout_context);
         }
     }
 
     fn zero_shot_intent_detection_resp_handler(
         &mut self,
         body: Vec<u8>,
-        mut callout_context: CallContext,
+        mut callout_context: StreamCallContext,
     ) {
         let zeroshot_intent_response: ZeroShotClassificationResponse =
             match serde_json::from_slice(&body) {
                 Ok(zeroshot_response) => zeroshot_response,
                 Err(e) => {
-                    self.send_server_error(
-                        format!(
-                            "Error deserializing zeroshot intent detection response: {:?}",
-                            e
-                        ),
-                        None,
-                    );
-                    return;
+                    return self.send_server_error(ServerError::Deserialization(e), None);
                 }
             };
 
@@ -390,40 +468,34 @@ impl StreamContext {
                     );
                     let arch_messages_json = serde_json::to_string(&params).unwrap();
                     debug!("no prompt target found with similarity score above threshold, using default prompt target");
-                    let token_id = match self.dispatch_http_call(
+
+                    let timeout_str = ARCH_FC_REQUEST_TIMEOUT_MS.to_string();
+                    let call_args = CallArgs::new(
                         &upstream_endpoint,
+                        &upstream_path,
                         vec![
                             (":method", "POST"),
                             (":path", &upstream_path),
                             (":authority", &upstream_endpoint),
                             ("content-type", "application/json"),
                             ("x-envoy-max-retries", "3"),
-                            (
-                                "x-envoy-upstream-rq-timeout-ms",
-                                ARCH_FC_REQUEST_TIMEOUT_MS.to_string().as_str(),
-                            ),
+                            ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
                         ],
                         Some(arch_messages_json.as_bytes()),
                         vec![],
                         Duration::from_secs(5),
-                    ) {
-                        Ok(token_id) => token_id,
-                        Err(e) => {
-                            let error_msg =
-                                format!("Error dispatching HTTP call for default-target: {:?}", e);
-                            return self
-                                .send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
-                        }
-                    };
-
-                    self.metrics.active_http_calls.increment(1);
+                    );
                     callout_context.response_handler_type = ResponseHandlerType::DefaultTarget;
                     callout_context.prompt_target_name = Some(default_prompt_target.name.clone());
-                    if self.callouts.insert(token_id, callout_context).is_some() {
-                        panic!("duplicate token_id")
+
+                    if let Err(e) = self.http_call(call_args, callout_context) {
+                        return self.send_server_error(
+                            ServerError::HttpDispatch(e),
+                            Some(StatusCode::BAD_REQUEST),
+                        );
                     }
-                    return;
                 }
+
                 self.resume_http_request();
                 return;
             }
@@ -433,7 +505,9 @@ impl StreamContext {
             Some(prompt_target) => prompt_target.clone(),
             None => {
                 return self.send_server_error(
-                    format!("Prompt target not found: {}", prompt_target_name),
+                    ServerError::LogicError(format!(
+                        "Prompt target not found: {prompt_target_name}"
+                    )),
                     None,
                 );
             }
@@ -499,62 +573,42 @@ impl StreamContext {
                 msg_body
             }
             Err(e) => {
-                return self
-                    .send_server_error(format!("Error serializing request_params: {:?}", e), None);
+                return self.send_server_error(ServerError::Serialization(e), None);
             }
         };
 
-        let token_id = match self.dispatch_http_call(
+        let timeout_str = ARCH_FC_REQUEST_TIMEOUT_MS.to_string();
+        let call_args = CallArgs::new(
             ARC_FC_CLUSTER,
+            "/v1/chat/completions",
             vec![
                 (":method", "POST"),
                 (":path", "/v1/chat/completions"),
                 (":authority", ARC_FC_CLUSTER),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
-                (
-                    "x-envoy-upstream-rq-timeout-ms",
-                    ARCH_FC_REQUEST_TIMEOUT_MS.to_string().as_str(),
-                ),
+                ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
             ],
             Some(msg_body.as_bytes()),
             vec![],
             Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                let error_msg = format!("Error dispatching HTTP call for function-call: {:?}", e);
-                return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
-            }
-        };
-
-        debug!(
-            "dispatched call to function {} token_id={}",
-            ARC_FC_CLUSTER, token_id
         );
-
-        self.metrics.active_http_calls.increment(1);
         callout_context.response_handler_type = ResponseHandlerType::FunctionResolver;
         callout_context.prompt_target_name = Some(prompt_target.name);
-        if self.callouts.insert(token_id, callout_context).is_some() {
-            panic!("duplicate token_id")
+
+        if let Err(e) = self.http_call(call_args, callout_context) {
+            self.send_server_error(ServerError::HttpDispatch(e), Some(StatusCode::BAD_REQUEST));
         }
     }
 
-    fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: CallContext) {
+    fn function_resolver_handler(&mut self, body: Vec<u8>, mut callout_context: StreamCallContext) {
         let body_str = String::from_utf8(body).unwrap();
         debug!("arch <= app response body: {}", body_str);
 
         let arch_fc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
             Ok(arch_fc_response) => arch_fc_response,
             Err(e) => {
-                return self.send_server_error(
-                    format!(
-                        "Error deserializing function resolver response into ChatCompletion: {:?}",
-                        e
-                    ),
-                    None,
-                );
+                return self.send_server_error(ServerError::Deserialization(e), None);
             }
         };
 
@@ -578,6 +632,9 @@ impl StreamContext {
 
         let tool_calls = model_resp.message.tool_calls.as_ref().unwrap();
 
+        // TODO CO:  pass nli check
+        // If hallucination, pass chat template to check parameters
+
         // extract all tool names
         let tool_names: Vec<String> = tool_calls
             .iter()
@@ -594,10 +651,11 @@ impl StreamContext {
             String::from(ARCH_MESSAGES_KEY),
             serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
         );
+
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
-
         let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
+        callout_context.tool_calls = Some(tool_calls.clone());
 
         debug!(
             "prompt_target_name: {}, tool_name(s): {:?}",
@@ -605,13 +663,89 @@ impl StreamContext {
         );
         debug!("tool_params: {}", tool_params_json_str);
 
+        if model_resp.message.tool_calls.is_some()
+            && !model_resp.message.tool_calls.as_ref().unwrap().is_empty()
+        {
+            use serde_json::Value;
+            let v: Value = serde_json::from_str(&tool_params_json_str).unwrap();
+            let tool_params_dict: HashMap<String, String> = match v.as_object() {
+                Some(obj) => obj
+                    .iter()
+                    .filter_map(|(key, value)| {
+                        value
+                            .as_str()
+                            .map(|str_value| (key.clone(), str_value.to_string()))
+                    })
+                    .collect(),
+                None => HashMap::new(), // Return an empty HashMap if v is not an object
+            };
+
+            let hallucination_classification_request = HallucinationClassificationRequest {
+                prompt: callout_context.user_message.as_ref().unwrap().clone(),
+                model: String::from(DEFAULT_INTENT_MODEL),
+                parameters: tool_params_dict,
+            };
+
+            let json_data: String =
+                match serde_json::to_string(&hallucination_classification_request) {
+                    Ok(json_data) => json_data,
+                    Err(error) => {
+                        return self.send_server_error(ServerError::Serialization(error), None);
+                    }
+                };
+            let call_args = CallArgs::new(
+                MODEL_SERVER_NAME,
+                "/hallucination",
+                vec![
+                    (":method", "POST"),
+                    (":path", "/hallucination"),
+                    (":authority", MODEL_SERVER_NAME),
+                    ("content-type", "application/json"),
+                    ("x-envoy-max-retries", "3"),
+                    ("x-envoy-upstream-rq-timeout-ms", "60000"),
+                ],
+                Some(json_data.as_bytes()),
+                vec![],
+                Duration::from_secs(5),
+            );
+            callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
+
+            if let Err(e) = self.http_call(call_args, callout_context) {
+                self.send_server_error(ServerError::HttpDispatch(e), None);
+            }
+        } else {
+            self.schedule_api_call_request(callout_context);
+        }
+    }
+
+    fn schedule_api_call_request(&mut self, mut callout_context: StreamCallContext) {
+        let tools_call_name = callout_context.tool_calls.as_ref().unwrap()[0]
+            .function
+            .name
+            .clone();
+
+        let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
+
+        //HACK: for now we only support one tool call, we will support multiple tool calls in the future
+        let mut tool_params = callout_context.tool_calls.as_ref().unwrap()[0]
+            .function
+            .arguments
+            .clone();
+        tool_params.insert(
+            String::from(ARCH_MESSAGES_KEY),
+            serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
+        );
+
+        let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
+
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
-        let token_id = match self.dispatch_http_call(
+        let call_args = CallArgs::new(
             &endpoint.name,
+            &path,
             vec![
                 (":method", "POST"),
-                (":path", path.as_ref()),
+                (":path", &path),
                 (":authority", endpoint.name.as_str()),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
@@ -619,46 +753,41 @@ impl StreamContext {
             Some(tool_params_json_str.as_bytes()),
             vec![],
             Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                let error_msg = format!(
-                    "Error dispatching call to cluster: {}, path: {}, err: {:?}",
-                    &endpoint.name, path, e
-                );
-                debug!("{}", error_msg);
-                return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
-            }
-        };
-
-        self.tool_calls = Some(tool_calls.clone());
-        callout_context.upstream_cluster = Some(endpoint.name);
-        callout_context.upstream_cluster_path = Some(path);
+        );
+        callout_context.upstream_cluster = Some(endpoint.name.clone());
+        callout_context.upstream_cluster_path = Some(path.clone());
         callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
-        if self.callouts.insert(token_id, callout_context).is_some() {
-            panic!("duplicate token_id")
+
+        if let Err(e) = self.http_call(call_args, callout_context) {
+            self.send_server_error(ServerError::HttpDispatch(e), Some(StatusCode::BAD_REQUEST));
         }
-        self.metrics.active_http_calls.increment(1);
     }
 
-    fn function_call_response_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
-        let headers = self.get_http_call_response_headers();
-        if let Some(http_status) = headers.iter().find(|(key, _)| key == ":status") {
-            if http_status.1 != StatusCode::OK.as_str() {
-                let error_msg = format!(
-                    "Error in function call response: cluster: {}, path: {}, status code: {}",
-                    callout_context.upstream_cluster.unwrap(),
-                    callout_context.upstream_cluster_path.unwrap(),
-                    http_status.1
+    fn function_call_response_handler(
+        &mut self,
+        body: Vec<u8>,
+        mut callout_context: StreamCallContext,
+    ) {
+        if let Some(http_status) = self.get_http_call_response_header(":status") {
+            if http_status != StatusCode::OK.as_str() {
+                return self.send_server_error(
+                    ServerError::Upstream {
+                        authority: callout_context.upstream_cluster.unwrap(),
+                        path: callout_context.upstream_cluster_path.unwrap(),
+                        status: http_status,
+                    },
+                    None,
                 );
-                return self.send_server_error(error_msg, Some(StatusCode::BAD_REQUEST));
             }
         } else {
             warn!("http status code not found in api response");
         }
-        let body_str: String = String::from_utf8(body).unwrap();
-        self.tool_call_response = Some(body_str.clone());
-        debug!("arch <= app response body: {}", body_str);
+        let app_function_call_response_str: String = String::from_utf8(body).unwrap();
+        self.tool_call_response = Some(app_function_call_response_str.clone());
+        debug!(
+            "arch <= app response body: {}",
+            app_function_call_response_str
+        );
         let prompt_target_name = callout_context.prompt_target_name.unwrap();
         let prompt_target = self
             .prompt_targets
@@ -666,37 +795,51 @@ impl StreamContext {
             .unwrap()
             .clone();
 
-        let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
+        let mut messages: Vec<Message> = Vec::new();
 
         // add system prompt
-        match prompt_target.system_prompt.as_ref() {
-            None => {}
-            Some(system_prompt) => {
-                let system_prompt_message = Message {
-                    role: SYSTEM_ROLE.to_string(),
-                    content: Some(system_prompt.clone()),
-                    model: None,
-                    tool_calls: None,
-                };
-                messages.push(system_prompt_message);
-            }
-        }
-
-        // add data from function call response
-        messages.push({
-            Message {
-                role: USER_ROLE.to_string(),
-                content: Some(body_str),
+        let system_prompt = match prompt_target.system_prompt.as_ref() {
+            None => match self.system_prompt.as_ref() {
+                None => None,
+                Some(system_prompt) => Some(system_prompt.clone()),
+            },
+            Some(system_prompt) => Some(system_prompt.clone()),
+        };
+        if system_prompt.is_some() {
+            let system_prompt_message = Message {
+                role: SYSTEM_ROLE.to_string(),
+                content: system_prompt,
                 model: None,
                 tool_calls: None,
+            };
+            messages.push(system_prompt_message);
+        }
+
+        messages.append(callout_context.request_body.messages.as_mut());
+
+        let user_message = match messages.pop() {
+            Some(user_message) => user_message,
+            None => {
+                return self.send_server_error(
+                    ServerError::NoMessagesFound {
+                        why: "no user messages found".to_string(),
+                    },
+                    None,
+                );
             }
-        });
+        };
+
+        let final_prompt = format!(
+            "{}\ncontext: {}",
+            user_message.content.unwrap(),
+            app_function_call_response_str
+        );
 
         // add original user prompt
         messages.push({
             Message {
                 role: USER_ROLE.to_string(),
-                content: Some(callout_context.user_message.unwrap()),
+                content: Some(final_prompt),
                 model: None,
                 tool_calls: None,
             }
@@ -714,8 +857,7 @@ impl StreamContext {
         let json_string = match serde_json::to_string(&chat_completions_request) {
             Ok(json_string) => json_string,
             Err(e) => {
-                return self
-                    .send_server_error(format!("Error serializing request_body: {:?}", e), None);
+                return self.send_server_error(ServerError::Serialization(e), None);
             }
         };
         debug!("arch => openai request body: {}", json_string);
@@ -733,7 +875,7 @@ impl StreamContext {
                     Ok(_) => (),
                     Err(err) => {
                         self.send_server_error(
-                            format!("Exceeded Ratelimit: {}", err),
+                            ServerError::ExceededRatelimit(err),
                             Some(StatusCode::TOO_MANY_REQUESTS),
                         );
                         self.metrics.ratelimited_rq.increment(1);
@@ -747,7 +889,7 @@ impl StreamContext {
         self.resume_http_request();
     }
 
-    fn arch_guard_handler(&mut self, body: Vec<u8>, callout_context: CallContext) {
+    fn arch_guard_handler(&mut self, body: Vec<u8>, callout_context: StreamCallContext) {
         debug!("response received for arch guard");
         let prompt_guard_resp: PromptGuardResponse = serde_json::from_slice(&body).unwrap();
         debug!("prompt_guard_resp: {:?}", prompt_guard_resp);
@@ -757,14 +899,17 @@ impl StreamContext {
             let msg = self
                 .prompt_guards
                 .jailbreak_on_exception_message()
-                .unwrap_or("Jailbreak detected. Please refrain from discussing jailbreaking.");
-            return self.send_server_error(msg.to_string(), Some(StatusCode::BAD_REQUEST));
+                .unwrap_or("refrain from discussing jailbreaking.");
+            return self.send_server_error(
+                ServerError::Jailbreak(String::from(msg)),
+                Some(StatusCode::BAD_REQUEST),
+            );
         }
 
         self.get_embeddings(callout_context);
     }
 
-    fn get_embeddings(&mut self, callout_context: CallContext) {
+    fn get_embeddings(&mut self, callout_context: StreamCallContext) {
         let user_message = callout_context.user_message.unwrap();
         let get_embeddings_input = CreateEmbeddingRequest {
             // Need to clone into input because user_message is used below.
@@ -778,13 +923,13 @@ impl StreamContext {
         let json_data: String = match serde_json::to_string(&get_embeddings_input) {
             Ok(json_data) => json_data,
             Err(error) => {
-                let error_msg = format!("Error serializing embeddings input: {}", error);
-                return self.send_server_error(error_msg, None);
+                return self.send_server_error(ServerError::Deserialization(error), None);
             }
         };
 
-        let token_id = match self.dispatch_http_call(
+        let call_args = CallArgs::new(
             MODEL_SERVER_NAME,
+            "/embeddings",
             vec![
                 (":method", "POST"),
                 (":path", "/embeddings"),
@@ -796,19 +941,8 @@ impl StreamContext {
             Some(json_data.as_bytes()),
             vec![],
             Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                let error_msg = format!("dispatched call to model_server/embeddings: {:?}", e);
-                return self.send_server_error(error_msg, None);
-            }
-        };
-        debug!(
-            "dispatched call to model_server/embeddings token_id={}",
-            token_id
         );
-
-        let call_context = CallContext {
+        let call_context = StreamCallContext {
             response_handler_type: ResponseHandlerType::GetEmbeddings,
             user_message: Some(user_message),
             prompt_target_name: None,
@@ -816,18 +950,15 @@ impl StreamContext {
             similarity_scores: None,
             upstream_cluster: None,
             upstream_cluster_path: None,
+            tool_calls: None,
         };
-        if self.callouts.insert(token_id, call_context).is_some() {
-            panic!(
-                "duplicate token_id={} in embedding server requests",
-                token_id
-            )
-        }
 
-        self.metrics.active_http_calls.increment(1);
+        if let Err(e) = self.http_call(call_args, call_context) {
+            self.send_server_error(ServerError::HttpDispatch(e), None);
+        }
     }
 
-    fn default_target_handler(&self, body: Vec<u8>, callout_context: CallContext) {
+    fn default_target_handler(&self, body: Vec<u8>, callout_context: StreamCallContext) {
         let prompt_target = self
             .prompt_targets
             .get(callout_context.prompt_target_name.as_ref().unwrap())
@@ -856,10 +987,7 @@ impl StreamContext {
         let chat_completions_resp: ChatCompletionsResponse = match serde_json::from_slice(&body) {
             Ok(chat_completions_resp) => chat_completions_resp,
             Err(e) => {
-                return self.send_server_error(
-                    format!("Error deserializing default target response: {:?}", e),
-                    None,
-                );
+                return self.send_server_error(ServerError::Deserialization(e), None);
             }
         };
         let api_resp = chat_completions_resp.choices[0]
@@ -948,9 +1076,9 @@ impl HttpContext for StreamContext {
             match self.get_http_request_body(0, body_size) {
                 Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                     Ok(deserialized) => deserialized,
-                    Err(msg) => {
+                    Err(e) => {
                         self.send_server_error(
-                            format!("Failed to deserialize: {}", msg),
+                            ServerError::Deserialization(e),
                             Some(StatusCode::BAD_REQUEST),
                         );
                         return Action::Pause;
@@ -958,10 +1086,10 @@ impl HttpContext for StreamContext {
                 },
                 None => {
                     self.send_server_error(
-                        format!(
+                        ServerError::LogicError(format!(
                             "Failed to obtain body bytes even though body_size is {}",
                             body_size
-                        ),
+                        )),
                         None,
                     );
                     return Action::Pause;
@@ -1018,7 +1146,7 @@ impl HttpContext for StreamContext {
 
         if !prompt_guard_jailbreak_task {
             debug!("Missing input guard. Making inline call to retrieve");
-            let callout_context = CallContext {
+            let callout_context = StreamCallContext {
                 response_handler_type: ResponseHandlerType::ArchGuard,
                 user_message: user_message_str.clone(),
                 prompt_target_name: None,
@@ -1026,6 +1154,7 @@ impl HttpContext for StreamContext {
                 similarity_scores: None,
                 upstream_cluster: None,
                 upstream_cluster_path: None,
+                tool_calls: None,
             };
             self.get_embeddings(callout_context);
             return Action::Pause;
@@ -1046,14 +1175,14 @@ impl HttpContext for StreamContext {
         let json_data: String = match serde_json::to_string(&get_prompt_guards_request) {
             Ok(json_data) => json_data,
             Err(error) => {
-                let error_msg = format!("Error serializing prompt guard request: {}", error);
-                self.send_server_error(error_msg, None);
+                self.send_server_error(ServerError::Serialization(error), None);
                 return Action::Pause;
             }
         };
 
-        let token_id = match self.dispatch_http_call(
+        let call_args = CallArgs::new(
             MODEL_SERVER_NAME,
+            "/guard",
             vec![
                 (":method", "POST"),
                 (":path", "/guard"),
@@ -1065,21 +1194,8 @@ impl HttpContext for StreamContext {
             Some(json_data.as_bytes()),
             vec![],
             Duration::from_secs(5),
-        ) {
-            Ok(token_id) => token_id,
-            Err(e) => {
-                let error_msg = format!(
-                    "Error dispatching embedding server HTTP call for prompt-guard: {:?}",
-                    e
-                );
-                self.send_server_error(error_msg, None);
-                return Action::Pause;
-            }
-        };
-
-        debug!("dispatched HTTP call to arch_guard token_id={}", token_id);
-
-        let call_context = CallContext {
+        );
+        let call_context = StreamCallContext {
             response_handler_type: ResponseHandlerType::ArchGuard,
             user_message: self.user_prompt.as_ref().unwrap().content.clone(),
             prompt_target_name: None,
@@ -1087,15 +1203,12 @@ impl HttpContext for StreamContext {
             similarity_scores: None,
             upstream_cluster: None,
             upstream_cluster_path: None,
+            tool_calls: None,
         };
-        if self.callouts.insert(token_id, call_context).is_some() {
-            panic!(
-                "duplicate token_id={} in embedding server requests",
-                token_id
-            )
-        }
 
-        self.metrics.active_http_calls.increment(1);
+        if let Err(e) = self.http_call(call_args, call_context) {
+            self.send_server_error(ServerError::HttpDispatch(e), None);
+        }
 
         Action::Pause
     }
@@ -1130,7 +1243,10 @@ impl HttpContext for StreamContext {
             let chat_completions_data = match body_str.split_once("data: ") {
                 Some((_, chat_completions_data)) => chat_completions_data,
                 None => {
-                    self.send_server_error(String::from("parsing error in streaming data"), None);
+                    self.send_server_error(
+                        ServerError::LogicError(String::from("parsing error in streaming data")),
+                        None,
+                    );
                     return Action::Pause;
                 }
             };
@@ -1141,7 +1257,9 @@ impl HttpContext for StreamContext {
                     Err(_) => {
                         if chat_completions_data != "[NONE]" {
                             self.send_server_error(
-                                String::from("error in streaming response"),
+                                ServerError::LogicError(String::from(
+                                    "error in streaming response",
+                                )),
                                 None,
                             );
                             return Action::Continue;
@@ -1168,19 +1286,18 @@ impl HttpContext for StreamContext {
                 match serde_json::from_slice(&body) {
                     Ok(de) => de,
                     Err(e) => {
-                        self.send_server_error(
-                            format!(
-                                "error in non-streaming response: {}\n response was={}",
-                                e,
-                                String::from_utf8(body).unwrap()
-                            ),
-                            None,
-                        );
+                        self.send_server_error(ServerError::Deserialization(e), None);
                         return Action::Pause;
                     }
                 };
 
-            self.response_tokens += chat_completions_response.usage.completion_tokens;
+            if chat_completions_response.usage.is_some() {
+                self.response_tokens += chat_completions_response
+                    .usage
+                    .as_ref()
+                    .unwrap()
+                    .completion_tokens;
+            }
 
             if let Some(tool_calls) = self.tool_calls.as_ref() {
                 if !tool_calls.is_empty() {
@@ -1260,7 +1377,11 @@ impl Context for StreamContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        let callout_context = self.callouts.remove(&token_id).expect("invalid token_id");
+        let callout_context = self
+            .callouts
+            .get_mut()
+            .remove(&token_id)
+            .expect("invalid token_id");
         self.metrics.active_http_calls.increment(-1);
 
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
@@ -1270,6 +1391,9 @@ impl Context for StreamContext {
                 }
                 ResponseHandlerType::ZeroShotIntent => {
                     self.zero_shot_intent_detection_resp_handler(body, callout_context)
+                }
+                ResponseHandlerType::HallucinationDetect => {
+                    self.hallucination_classification_resp_handler(body, callout_context)
                 }
                 ResponseHandlerType::FunctionResolver => {
                     self.function_resolver_handler(body, callout_context)
@@ -1284,9 +1408,21 @@ impl Context for StreamContext {
             }
         } else {
             self.send_server_error(
-                String::from("No response body in inline HTTP request"),
+                ServerError::LogicError(String::from("No response body in inline HTTP request")),
                 None,
             );
         }
+    }
+}
+
+impl Client for StreamContext {
+    type CallContext = StreamCallContext;
+
+    fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {
+        &self.callouts
+    }
+
+    fn active_http_calls(&self) -> &crate::stats::Gauge {
+        &self.metrics.active_http_calls
     }
 }

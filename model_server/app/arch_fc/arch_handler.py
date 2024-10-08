@@ -52,7 +52,6 @@ class ArchHandler:
         messages: list[dict],
         execution_results: list,
     ) -> dict:
-
         content = []
         for result in execution_results:
             content.append(f"<tool_response>\n{json.dumps(result)}\n</tool_response>")

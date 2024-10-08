@@ -10,6 +10,7 @@ import tempfile
 # Path to the file where the server process ID will be stored
 PID_FILE = os.path.join(tempfile.gettempdir(), "model_server.pid")
 
+
 def run_server():
     """Start, stop, or restart the Uvicorn server based on command-line arguments."""
     if len(sys.argv) > 1:
@@ -37,6 +38,9 @@ def start_server():
     print(f"Starting Archgw Model Server")
     process = subprocess.Popen(
         ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "51000"],
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,  # Suppress standard output. There is a logger that model_server prints to
+        stderr=subprocess.DEVNULL,  # Suppress standard error. There is a logger that model_server prints to
     )
 
     if wait_for_health_check("http://0.0.0.0:51000/healthz"):
@@ -45,9 +49,10 @@ def start_server():
             f.write(str(process.pid))
         print(f"ARCH GW Model Server started with PID {process.pid}")
     else:
-        #Add model_server boot-up logs
+        # Add model_server boot-up logs
         print(f"ARCH GW Model Server - Didn't Sart In Time. Shutting Down")
         process.terminate()
+
 
 def wait_for_health_check(url, timeout=180):
     """Wait for the Uvicorn server to respond to health-check requests."""
@@ -91,6 +96,7 @@ def stop_server():
         print(f"Process with PID {pid} did not terminate in time. Forcing shutdown.")
         process.kill()  # Forcefully kill the process
         os.remove(PID_FILE)
+
 
 def restart_server():
     """Restart the Uvicorn server."""

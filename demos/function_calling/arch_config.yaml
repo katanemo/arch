@@ -19,7 +19,7 @@ llm_providers:
   - name: open-ai-gpt-4
     access_key: OPENAI_API_KEY
     provider: openai
-    model: gpt-4
+    model: gpt-4o
     default: true
 
 system_prompt: |
@@ -27,43 +27,38 @@ system_prompt: |
 
 prompt_targets:
   - name: weather_forecast
-    description: This function provides realtime weather forecast information for a given city.
+    description: Check weather information for a given city.
     parameters:
       - name: city
+        description: the name of the city
         required: true
-        description: The city for which the weather forecast is requested.
-        type: string
+        type: str
       - name: days
-        description: The number of days for which the weather forecast is requested.
-        type: integer
+        description: the number of days
+        type: int
+        required: true
       - name: units
-        description: The units in which the weather forecast is requested.
-        type: string
+        description: the temperature unit, e.g., Celsius and Fahrenheit
+        type: str
+        default: Celsius
     endpoint:
       name: api_server
       path: /weather
-    system_prompt: |
-      You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
-      - Use farenheight for temperature
-      - Use miles per hour for wind speed
 
   - name: insurance_claim_details
-    description: This function resolver provides insurance claim details for a given policy number.
+    description: Get the details of the insurance claim for a given policy number
     parameters:
       - name: policy_number
+        type: str
+        description: the policy number for the insurance claim
         required: true
-        description: The policy number for which the insurance claim details are requested.
-        type: string
       - name: include_expired
-        description: whether to include expired insurance claims in the response.
+        description: indicate whether to include expired insurance claims
         type: bool
         required: true
     endpoint:
       name: api_server
       path: /insurance_claim_details
-    system_prompt: |
-      You are a helpful insurance claim details provider. Use insurance claim data that is provided to you. Please following following guidelines when responding to user queries:
-      - Use policy number to retrieve insurance claim details
 
   - name: default_target
     default: true
