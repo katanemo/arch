@@ -156,27 +156,20 @@ def get_model_server_logger():
             os.makedirs(log_dir, exist_ok=True)  # Create directory if it doesn't exist
 
         # Check if the script has write permission in the log directory
-        if os.access(log_dir, os.W_OK):
-            # Configure logging to file and console using basicConfig
-            logging.basicConfig(
-                level=logging.INFO,
-                format="%(asctime)s - %(levelname)s - %(message)s",
-                handlers=[
-                    logging.FileHandler(log_file_path, mode='w'),  # Overwrite logs in file
-                    logging.StreamHandler()  # Log to console as fallback
-                ]
-            )
-        else:
+        if not os.access(log_dir, os.W_OK):
             raise PermissionError(f"No write permission for the directory: {log_dir}")
-    except (PermissionError, OSError) as e:
-        # Fallback to console logging if there are issues writing to the log file
+            # Configure logging to file and console using basicConfig
+
         logging.basicConfig(
-            level=logging.WARNING,
+            level=logging.INFO,
             format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[logging.StreamHandler()]  # Log to console only
+            handlers=[
+                logging.FileHandler(log_file_path, mode='w'),  # Overwrite logs in file
+            ]
         )
-        logger = logging.getLogger("model_server_logger")
-        logger.warning(f"Failed to write logs to {log_file_path}: {e}. Logging to console instead.")
+    except (PermissionError, OSError) as e:
+        # Dont' fallback to console logging if there are issues writing to the log file
+        raise RuntimeError(f"No write permission for the directory: {log_dir}")
 
     # Initialize the logger instance after configuring handlers
     logger_instance = logging.getLogger("model_server_logger")

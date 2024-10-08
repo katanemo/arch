@@ -66,7 +66,6 @@ async def embedding(req: EmbeddingRequest, res: Response):
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
     start = time.time()
-    logger.info(f"Embedding Call Start Time: {time.time()}")
     embeddings = transformers[req.model].encode([req.input])
     logger.info(f"Embedding Call Complete Time: {time.time()-start}")
     data = []
