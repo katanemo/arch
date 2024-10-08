@@ -105,6 +105,7 @@ def start_arch_modelserver():
         subprocess.run(
             ['archgw_modelserver', 'restart'],
             check=True,
+            start_new_session=True
         )
         print("Successfull run the archgw model_server")
     except subprocess.CalledProcessError as e:
