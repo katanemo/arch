@@ -314,9 +314,6 @@ impl StreamContext {
         }
     }
 
-    // compute the hallucination score, print handler
-    // resume the flow
-    // pr for zershot vs hallucination
     fn hallucination_classification_resp_handler(
         &mut self,
         body: Vec<u8>,
@@ -713,31 +710,8 @@ impl StreamContext {
             );
             callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
 
-            if let Err(e) = self.http_call(call_args, callout_context.clone()) {
+            if let Err(e) = self.http_call(call_args, callout_context) {
                 self.send_server_error(ServerError::HttpDispatch(e), None);
-            }
-            let callout_context_clone = callout_context.clone();
-            self.metrics.active_http_calls.increment(1);
-            let token_id = 1;
-            if self
-                .callouts
-                .borrow_mut()
-                .insert(
-                    token_id,
-                    StreamCallContext {
-                        response_handler_type: ResponseHandlerType::HallucinationDetect,
-                        user_message: callout_context_clone.user_message.clone(),
-                        prompt_target_name: callout_context_clone.prompt_target_name.clone(),
-                        request_body: callout_context_clone.request_body.clone(),
-                        similarity_scores: callout_context_clone.similarity_scores.clone(),
-                        upstream_cluster: callout_context_clone.upstream_cluster.clone(),
-                        upstream_cluster_path: callout_context_clone.upstream_cluster_path.clone(),
-                        tool_calls: callout_context_clone.tool_calls.clone(),
-                    },
-                )
-                .is_some()
-            {
-                panic!("duplicate token_id")
             }
         } else {
             self.schedule_api_call_request(callout_context);
