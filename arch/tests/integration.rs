@@ -604,6 +604,7 @@ fn request_ratelimited() {
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("api_server"),
             Some(vec![
@@ -749,6 +750,7 @@ fn request_not_ratelimited() {
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("api_server"),
             Some(vec![
