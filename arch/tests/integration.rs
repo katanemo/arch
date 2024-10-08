@@ -571,6 +571,7 @@ fn request_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("model_server"),
             Some(vec![
@@ -621,15 +622,14 @@ fn request_ratelimited() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    let response_headers_with_200 = vec![(":status", "200"), ("content-type", "application/json")];
     let body_text = String::from("test body");
     module
         .call_proxy_on_http_call_response(http_context, 6, 0, body_text.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
-        .expect_get_header_map_pairs(Some(MapType::HttpCallResponseHeaders))
-        .returning(Some(response_headers_with_200))
+        .expect_get_header_map_value(Some(MapType::HttpCallResponseHeaders), Some(":status"))
+        .returning(Some("200"))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -711,6 +711,7 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("model_server"),
             Some(vec![
@@ -766,15 +767,14 @@ fn request_not_ratelimited() {
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
-    let response_headers_with_200 = vec![(":status", "200"), ("content-type", "application/json")];
     let body_text = String::from("test body");
     module
         .call_proxy_on_http_call_response(http_context, 6, 0, body_text.len() as i32, 0)
         .expect_metric_increment("active_http_calls", -1)
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
-        .expect_get_header_map_pairs(Some(MapType::HttpCallResponseHeaders))
-        .returning(Some(response_headers_with_200))
+        .expect_get_header_map_value(Some(MapType::HttpCallResponseHeaders), Some(":status"))
+        .returning(Some("200"))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)

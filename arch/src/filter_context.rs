@@ -97,6 +97,7 @@ impl FilterContext {
 
         let call_args = CallArgs::new(
             MODEL_SERVER_NAME,
+            "/embeddings",
             vec![
                 (":method", "POST"),
                 (":path", "/embeddings"),
