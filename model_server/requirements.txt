@@ -11,7 +11,6 @@ psutil==6.0.0
 optimum-intel
 openvino
 psutil
-pandas
 dateparser
 openai==1.50.2
 pandas

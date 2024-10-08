@@ -3,6 +3,7 @@ import sentence_transformers
 from transformers import AutoTokenizer, pipeline
 import sqlite3
 import torch
+from optimum.onnxruntime import ORTModelForFeatureExtraction, ORTModelForSequenceClassification  # type: ignore
 
 
 def get_device():
@@ -16,13 +17,13 @@ def get_device():
     return device
 
 
-def load_transformers(models=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
+def load_transformers(model_name=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
     transformers = {}
-    device = get_device()
-    for model in models.split(","):
-        transformers[model] = sentence_transformers.SentenceTransformer(
-            model, device=device
-        )
+    transformers["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
+    transformers["model"] = ORTModelForFeatureExtraction.from_pretrained(
+        model_name, export=True
+    )
+    transformers["model_name"] = model_name
 
     return transformers
 
@@ -31,16 +32,16 @@ def load_guard_model(
     model_name,
     hardware_config="cpu",
 ):
-    guard_mode = {}
-    guard_mode["tokenizer"] = AutoTokenizer.from_pretrained(
+    guard_model = {}
+    guard_model["tokenizer"] = AutoTokenizer.from_pretrained(
         model_name, trust_remote_code=True
     )
-    guard_mode["model_name"] = model_name
+    guard_model["model_name"] = model_name
     if hardware_config == "cpu":
         from optimum.intel import OVModelForSequenceClassification
 
         device = "cpu"
-        guard_mode["model"] = OVModelForSequenceClassification.from_pretrained(
+        guard_model["model"] = OVModelForSequenceClassification.from_pretrained(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
     elif hardware_config == "gpu":
@@ -48,25 +49,34 @@ def load_guard_model(
         import torch
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        guard_mode["model"] = AutoModelForSequenceClassification.from_pretrained(
+        guard_model["model"] = AutoModelForSequenceClassification.from_pretrained(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
-    guard_mode["device"] = device
-    guard_mode["hardware_config"] = hardware_config
-    return guard_mode
+    guard_model["device"] = device
+    guard_model["hardware_config"] = hardware_config
+    return guard_model
 
 
 def load_zero_shot_models(
-    models=os.getenv("ZERO_SHOT_MODELS", "tasksource/deberta-base-long-nli")
+    model_name=os.getenv("ZERO_SHOT_MODELS", "katanemolabs/deberta-base-nli-onnx")
 ):
-    zero_shot_models = {}
+    zero_shot_model = {}
     device = get_device()
-    for model in models.split(","):
-        zero_shot_models[model] = pipeline(
-            "zero-shot-classification", model=model, device=device
-        )
+    zero_shot_model["model"] = ORTModelForSequenceClassification.from_pretrained(
+        model_name
+    )
+    zero_shot_model["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
 
-    return zero_shot_models
+    # create pipeline
+    zero_shot_model["pipeline"] = pipeline(
+        "zero-shot-classification",
+        model=zero_shot_model["model"],
+        tokenizer=zero_shot_model["tokenizer"],
+        device=device,
+    )
+    zero_shot_model["model_name"] = model_name
+
+    return zero_shot_model
 
 
 if __name__ == "__main__":
