@@ -293,9 +293,10 @@ impl StreamContext {
         };
 
         let call_args = CallArgs::new(
-            MODEL_SERVER_NAME,
+            "arch_internal",
             "/zeroshot",
             vec![
+                ("host-internal", MODEL_SERVER_NAME),
                 (":method", "POST"),
                 (":path", "/zeroshot"),
                 (":authority", MODEL_SERVER_NAME),
@@ -471,9 +472,10 @@ impl StreamContext {
 
                     let timeout_str = ARCH_FC_REQUEST_TIMEOUT_MS.to_string();
                     let call_args = CallArgs::new(
-                        &upstream_endpoint,
+                        "arch_internal",
                         &upstream_path,
                         vec![
+                            ("host-internal", &upstream_endpoint),
                             (":method", "POST"),
                             (":path", &upstream_path),
                             (":authority", &upstream_endpoint),
@@ -579,9 +581,10 @@ impl StreamContext {
 
         let timeout_str = ARCH_FC_REQUEST_TIMEOUT_MS.to_string();
         let call_args = CallArgs::new(
-            ARC_FC_CLUSTER,
+            "arch_internal",
             "/v1/chat/completions",
             vec![
+                ("host-internal", ARC_FC_CLUSTER),
                 (":method", "POST"),
                 (":path", "/v1/chat/completions"),
                 (":authority", ARC_FC_CLUSTER),
@@ -694,9 +697,10 @@ impl StreamContext {
                     }
                 };
             let call_args = CallArgs::new(
-                MODEL_SERVER_NAME,
+                "arch_internal",
                 "/hallucination",
                 vec![
+                    ("host-internal", MODEL_SERVER_NAME),
                     (":method", "POST"),
                     (":path", "/hallucination"),
                     (":authority", MODEL_SERVER_NAME),
@@ -741,9 +745,10 @@ impl StreamContext {
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
         let call_args = CallArgs::new(
-            &endpoint.name,
+            "arch_internal",
             &path,
             vec![
+                ("host-internal", endpoint.name.as_str()),
                 (":method", "POST"),
                 (":path", &path),
                 (":authority", endpoint.name.as_str()),
@@ -928,9 +933,10 @@ impl StreamContext {
         };
 
         let call_args = CallArgs::new(
-            MODEL_SERVER_NAME,
+            "arch_internal",
             "/embeddings",
             vec![
+                ("host-internal", MODEL_SERVER_NAME),
                 (":method", "POST"),
                 (":path", "/embeddings"),
                 (":authority", MODEL_SERVER_NAME),
@@ -1181,9 +1187,10 @@ impl HttpContext for StreamContext {
         };
 
         let call_args = CallArgs::new(
-            MODEL_SERVER_NAME,
+            "arch_internal",
             "/guard",
             vec![
+                ("host-internal", MODEL_SERVER_NAME),
                 (":method", "POST"),
                 (":path", "/guard"),
                 (":authority", MODEL_SERVER_NAME),
@@ -1286,6 +1293,7 @@ impl HttpContext for StreamContext {
                 match serde_json::from_slice(&body) {
                     Ok(de) => de,
                     Err(e) => {
+                        debug!("invalid response: {}", String::from_utf8_lossy(&body));
                         self.send_server_error(ServerError::Deserialization(e), None);
                         return Action::Pause;
                     }
