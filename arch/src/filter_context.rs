@@ -1,4 +1,7 @@
-use crate::consts::{DEFAULT_EMBEDDING_MODEL, MODEL_SERVER_NAME};
+use crate::consts::{
+    ARCH_INTERNAL_CLUSTER_NAME, ARCH_UPSTREAM_HOST_HEADER, DEFAULT_EMBEDDING_MODEL,
+    MODEL_SERVER_NAME,
+};
 use crate::http::{CallArgs, Client};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit;
@@ -98,9 +101,10 @@ impl FilterContext {
         let json_data = serde_json::to_string(&embeddings_input).unwrap();
 
         let call_args = CallArgs::new(
-            MODEL_SERVER_NAME,
+            ARCH_INTERNAL_CLUSTER_NAME,
             "/embeddings",
             vec![
+                (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
                 (":method", "POST"),
                 (":path", "/embeddings"),
                 (":authority", MODEL_SERVER_NAME),
