@@ -2,6 +2,7 @@ use governor::{DefaultKeyedRateLimiter, InsufficientCapacity, Quota};
 use log::debug;
 use public_types::configuration;
 use public_types::configuration::{Limit, Ratelimit, TimeUnit};
+use std::fmt::Display;
 use std::num::{NonZero, NonZeroU32};
 use std::sync::RwLock;
 use std::{collections::HashMap, sync::OnceLock};
@@ -28,11 +29,16 @@ pub struct RatelimitMap {
 }
 
 // This version of Header demands that the user passes a header value to match on.
-#[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Header {
     pub key: String,
     pub value: String,
+}
+
+impl Display for Header {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
 
 impl From<Header> for configuration::Header {
@@ -42,6 +48,16 @@ impl From<Header> for configuration::Header {
             value: Some(header.value),
         }
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("exceeded limit provider={provider}, selector={selector}, tokens_used={tokens_used}")]
+    ExceededLimit {
+        provider: String,
+        selector: Header,
+        tokens_used: NonZeroU32,
+    },
 }
 
 impl RatelimitMap {
@@ -82,7 +98,7 @@ impl RatelimitMap {
         provider: String,
         selector: Header,
         tokens_used: NonZeroU32,
-    ) -> Result<(), String> {
+    ) -> Result<(), Error> {
         debug!(
             "Checking limit for provider={}, with selector={:?}, consuming tokens={:?}",
             provider, selector, tokens_used
@@ -96,7 +112,7 @@ impl RatelimitMap {
             Some(limit) => limit,
         };
 
-        let mut config_selector = configuration::Header::from(selector);
+        let mut config_selector = configuration::Header::from(selector.clone());
 
         let (limit, limit_key) = match provider_limits.get(&config_selector) {
             // This is a specific limit, i.e one that was configured with both key, and value.
@@ -119,8 +135,11 @@ impl RatelimitMap {
 
         match limit.check_key_n(&limit_key, tokens_used) {
             Ok(Ok(())) => Ok(()),
-            Ok(Err(_)) => Err(String::from("Not allowed")),
-            Err(InsufficientCapacity(_)) => Err(String::from("Not allowed")),
+            Ok(Err(_)) | Err(InsufficientCapacity(_)) => Err(Error::ExceededLimit {
+                provider,
+                selector,
+                tokens_used,
+            }),
         }
     }
 }
