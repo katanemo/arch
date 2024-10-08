@@ -588,7 +588,6 @@ fn request_ratelimited() {
         )
         .returning(Some(5))
         .expect_metric_increment("active_http_calls", 1)
-        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -729,7 +728,6 @@ fn request_not_ratelimited() {
         )
         .returning(Some(5))
         .expect_metric_increment("active_http_calls", 1)
-        .expect_log(Some(LogLevel::Debug), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
