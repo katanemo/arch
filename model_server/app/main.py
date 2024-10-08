@@ -59,6 +59,7 @@ async def models():
 
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
+    logger.info(f"Embedding req: {req}")
     if req.model != transformers["model_name"]:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
@@ -70,7 +71,7 @@ async def embedding(req: EmbeddingRequest, res: Response):
     embeddings = embeddings[0][:, 0]
     # normalize embeddings
     embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1).detach().numpy()
-    print(f"Embedding Call Complete Time: {time.time()-start}")
+    logger.info(f"Embedding Call Complete Time: {time.time()-start}")
     data = []
 
     for embedding in embeddings.tolist():
