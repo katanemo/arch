@@ -8,12 +8,12 @@ pyyaml==6.0.2
 accelerate
 psutil==6.0.0
 # guard inference packages
-optimum-intel
-openvino
+optimum-intel==1.19.0
+openvino==2024.4.0
 psutil
 dateparser
 openai==1.50.2
 pandas
 tf-keras
-onnx
+onnx==1.17.0
 pytest
