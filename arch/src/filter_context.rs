@@ -48,6 +48,7 @@ pub struct FilterContext {
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, FilterCallContext>>,
     overrides: Rc<Option<Overrides>>,
+    system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
@@ -60,6 +61,7 @@ impl FilterContext {
         FilterContext {
             callouts: RefCell::new(HashMap::new()),
             metrics: Rc::new(WasmMetrics::new()),
+            system_prompt: Rc::new(None),
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
@@ -245,6 +247,7 @@ impl RootContext for FilterContext {
         for pt in config.prompt_targets {
             prompt_targets.insert(pt.name.clone(), pt.clone());
         }
+        self.system_prompt = Rc::new(config.system_prompt);
         self.prompt_targets = Rc::new(prompt_targets);
 
         ratelimit::ratelimits(config.ratelimits);
@@ -273,6 +276,7 @@ impl RootContext for FilterContext {
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
+            Rc::clone(&self.system_prompt),
             Rc::clone(&self.prompt_targets),
             Rc::clone(&self.prompt_guards),
             Rc::clone(&self.overrides),
