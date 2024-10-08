@@ -16,4 +16,5 @@ openai==1.50.2
 pandas
 tf-keras
 onnx==1.17.0
+onnxruntime==1.19.2
 pytest
