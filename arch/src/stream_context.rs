@@ -622,7 +622,7 @@ impl StreamContext {
     fn function_call_response_handler(
         &mut self,
         body: Vec<u8>,
-        callout_context: StreamCallContext,
+        mut callout_context: StreamCallContext,
     ) {
         if let Some(http_status) = self.get_http_call_response_header(":status") {
             if http_status != StatusCode::OK.as_str() {
@@ -651,7 +651,28 @@ impl StreamContext {
             .unwrap()
             .clone();
 
-        let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
+        let mut messages: Vec<Message> = Vec::new();
+
+        // add system prompt
+        let system_prompt = match prompt_target.system_prompt.as_ref() {
+            None => match self.system_prompt.as_ref() {
+                None => None,
+                Some(system_prompt) => Some(system_prompt.clone()),
+            },
+            Some(system_prompt) => Some(system_prompt.clone()),
+        };
+        if system_prompt.is_some() {
+            let system_prompt_message = Message {
+                role: SYSTEM_ROLE.to_string(),
+                content: system_prompt,
+                model: None,
+                tool_calls: None,
+            };
+            messages.push(system_prompt_message);
+        }
+
+        messages.append(callout_context.request_body.messages.as_mut());
+
         let user_message = match messages.pop() {
             Some(user_message) => user_message,
             None => {
@@ -663,25 +684,6 @@ impl StreamContext {
                 );
             }
         };
-
-        // add system prompt
-        let system_prompt = match prompt_target.system_prompt.as_ref() {
-            None => match self.system_prompt.as_ref() {
-                None => None,
-                Some(system_prompt) => Some(system_prompt.clone()),
-            },
-            Some(system_prompt) => Some(system_prompt.clone()),
-        };
-
-        if system_prompt.is_some() {
-            let system_prompt_message = Message {
-                role: SYSTEM_ROLE.to_string(),
-                content: system_prompt,
-                model: None,
-                tool_calls: None,
-            };
-            messages.push(system_prompt_message);
-        }
 
         let final_prompt = format!(
             "{}\nhere is context: {}",
