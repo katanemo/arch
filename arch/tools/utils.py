@@ -21,6 +21,7 @@ def run_docker_compose_ps(compose_file, env):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            start_new_session=True,
             env=env
         )
         # Capture the output of `docker-compose ps`

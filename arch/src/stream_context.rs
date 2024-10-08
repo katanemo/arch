@@ -869,7 +869,7 @@ impl StreamContext {
         };
 
         let final_prompt = format!(
-            "{}\nhere is context: {}",
+            "{}\ncontext: {}",
             user_message.content.unwrap(),
             app_function_call_response_str
         );

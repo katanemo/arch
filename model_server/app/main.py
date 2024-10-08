@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI, Response, HTTPException
 from pydantic import BaseModel
 from app.load_models import (
@@ -8,7 +7,7 @@ from app.load_models import (
     get_device,
 )
 import os
-from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config
+from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config, get_model_server_logger
 import torch
 import yaml
 import string
@@ -17,11 +16,10 @@ import logging
 from app.arch_fc.arch_fc import chat_completion as arch_fc_chat_completion, ChatMessage
 import os.path
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-logger.info("Device used: " + get_device())
+
+logger = get_model_server_logger()
+logger.info(f"Devices Avialble: {get_device()}")
+
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
 guard_model_config = load_yaml_config("guard_model_config.yaml")
@@ -40,7 +38,6 @@ guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
 
-
 class EmbeddingRequest(BaseModel):
     input: str
     model: str
@@ -55,19 +52,24 @@ async def healthz():
 async def models():
     models = []
 
-    for model in transformers.keys():
-        models.append({"id": model, "object": "model"})
+    models.append({"id": transformers["model_name"], "object": "model"})
 
     return {"data": models, "object": "list"}
 
 
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
-    print(f"Embedding Call Start Time: {time.time()}")
-    if req.model not in transformers:
+    if req.model != transformers["model_name"]:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
+
     start = time.time()
-    embeddings = transformers[req.model].encode([req.input])
+    encoded_input = transformers["tokenizer"](
+        req.input, padding=True, truncation=True, return_tensors="pt"
+    )
+    embeddings = transformers["model"](**encoded_input)
+    embeddings = embeddings[0][:, 0]
+    # normalize embeddings
+    embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1).detach().numpy()
     print(f"Embedding Call Complete Time: {time.time()-start}")
     data = []
 
@@ -78,9 +80,7 @@ async def embedding(req: EmbeddingRequest, res: Response):
         "prompt_tokens": 0,
         "total_tokens": 0,
     }
-    print(f"Embedding Call Complete Time: {time.time()}")
     return {"data": data, "model": req.model, "object": "list", "usage": usage}
-
 
 class GuardRequest(BaseModel):
     input: str
@@ -168,11 +168,13 @@ def remove_punctuations(s, lower=True):
 
 @app.post("/zeroshot")
 async def zeroshot(req: ZeroShotRequest, res: Response):
-    if req.model not in zero_shot_models:
+    logger.info(f"zero-shot request: {req}")
+    if req.model != zero_shot_models["model_name"]:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
-    classifier = zero_shot_models[req.model]
+    classifier = zero_shot_models["pipeline"]
     labels_without_punctuations = [remove_punctuations(label) for label in req.labels]
+    start = time.time()
     predicted_classes = classifier(
         req.input, candidate_labels=labels_without_punctuations, multi_label=True
     )
@@ -181,6 +183,7 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
     orig_map = [label_map[label] for label in predicted_classes["labels"]]
     final_scores = dict(zip(orig_map, predicted_classes["scores"]))
     predicted_class = label_map[predicted_classes["labels"][0]]
+    logger.info(f"zero-shot taking {time.time()-start} seconds")
 
     return {
         "predicted_class": predicted_class,
@@ -204,10 +207,11 @@ async def hallucination(req: HallucinationRequest, res: Response):
         example     {"name": "John", "age": "25"}
     prompt: input prompt from the user
     """
-    if req.model not in zero_shot_models:
+    if req.model != zero_shot_models["model_name"]:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
-    classifier = zero_shot_models[req.model]
+    start = time.time()
+    classifier = zero_shot_models["pipeline"]
     candidate_labels = [f"{k} is {v}" for k, v in req.parameters.items()]
     hypothesis_template = "{}"
     result = classifier(
@@ -218,7 +222,9 @@ async def hallucination(req: HallucinationRequest, res: Response):
     )
     result_score = result["scores"]
     result_params = {k[0]: s for k, s in zip(req.parameters.items(), result_score)}
-    logger.info(f"hallucination result: {result_params}")
+    logger.info(
+        f"hallucination result: {result_params}, taking {time.time()-start} seconds"
+    )
 
     return {
         "params_scores": result_params,

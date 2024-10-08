@@ -1,6 +1,6 @@
 .. _error_target:
 
-Error Targets
+Error Target
 =============
 
 **Error targets** are designed to capture and manage specific issues or exceptions that occur during Arch's function or system's execution.
@@ -12,24 +12,20 @@ The errors are communicated to the application via headers like ``X-Arch-[ERROR-
 Key Concepts
 ------------
 
-**Error Type**: Categorizes the nature of the error, such as "ValidationError" or "RuntimeError." These error types help in identifying what
-kind of issue occurred and provide context for troubleshooting.
+- **Error Type**: Categorizes the nature of the error, such as "ValidationError" or "RuntimeError." These error types help in identifying what kind of issue occurred and provide context for troubleshooting.
 
-**Error Message**: A clear, human-readable message describing the error. This should provide enough detail to inform users or developers of
-the root cause or required action.
+- **Error Message**: A clear, human-readable message describing the error. This should provide enough detail to inform users or developers of the root cause or required action.
 
-**Target Prompt**: The specific prompt or operation where the error occurred. Understanding where the error happened helps with debugging
- and pinpointing the source of the problem.
+- **Target Prompt**: The specific prompt or operation where the error occurred. Understanding where the error happened helps with debugging and pinpointing the source of the problem.
 
-**Parameter-Specific Errors**: Errors that arise due to invalid or missing parameters when invoking a function. These errors are critical
-for ensuring the correctness of inputs.
+- **Parameter-Specific Errors**: Errors that arise due to invalid or missing parameters when invoking a function. These errors are critical for ensuring the correctness of inputs.
 
 
 Error Header Example
 --------------------
 
-.. code-block:: http
-
+.. code-block:: bash
+  :caption: Error Header Example
 
     HTTP/1.1 400 Bad Request
     X-Arch-Error-Type: FunctionValidationError
@@ -38,14 +34,15 @@ Error Header Example
     Content-Type: application/json
 
     "messages": [
-    {
-      "role": "user",
-      "content": "Please create a user with the following ID: 1234"
-    },
-    {
-      "role": "system",
-      "content": "Expected a string for 'user_id', but got an integer."
-    }]
+        {
+          "role": "user",
+          "content": "Please create a user with the following ID: 1234"
+        },
+        {
+          "role": "system",
+          "content": "Expected a string for 'user_id', but got an integer."
+        }
+    ]
 
 
 Best Practices and Tips

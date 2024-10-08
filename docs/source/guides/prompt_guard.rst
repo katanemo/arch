@@ -47,6 +47,16 @@ It excels at detecting explicitly malicious prompts and assessing toxic content,
 By embedding Arch-Guard within the Arch architecture, we empower developers to build robust, LLM-powered applications while prioritizing security and safety. With Arch-Guard, you can navigate the complexities of prompt management with confidence, knowing you have a reliable defense against malicious input.
 
 
+Example Configuration
+~~~~~~~~~~~~~~~~~~~~~
+Here is an example of using Arch-Guard in Arch:
+
+.. literalinclude:: includes/arch_config.yaml
+    :language: yaml
+    :linenos:
+    :lines: 22-26
+    :caption: Arch-Guard Example Configuration
+
 How Arch-Guard Works
 ----------------------
 

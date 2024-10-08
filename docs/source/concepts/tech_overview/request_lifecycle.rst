@@ -61,7 +61,7 @@ The request processing path in Arch has three main parts:
   forwarding prompts ``prompt_targets`` and establishes the lifecycle of any **upstream** connection to a
   hosted endpoint that implements domain-specific business logic for incoming promots. This is where knowledge
   of targets and endpoint health, load balancing and connection pooling exists.
-* :ref:`Model serving subsystem <arch_model_serving>` which helps Arch make intelligent decisions about the
+* :ref:`Model serving subsystem <model_serving>` which helps Arch make intelligent decisions about the
   incoming prompts. The model server is designed to call the purpose-built LLMs in Arch.
 
 The three subsystems are bridged with either the HTTP router filter, and the cluster manager subsystems of Envoy.

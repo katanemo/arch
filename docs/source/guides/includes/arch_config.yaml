@@ -5,28 +5,6 @@ listener:
   port: 10000
   # Defines how Arch should parse the content from application/json or text/pain Content-type in the http request
   message_format: huggingface
-  common_tls_context: # If you configure port 443, you'll need to update the listener with your TLS certificates
-    tls_certificates:
-      - certificate_chain:
-          filename: /etc/certs/cert.pem
-        private_key:
-          filename: /etc/certs/key.pem
-
-# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
-endpoints:
-  app_server:
-    # value could be ip address or a hostname with port
-    # this could also be a list of endpoints for load balancing
-    # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: 127.0.0.1:80
-    # max time to wait for a connection to be established
-    connect_timeout: 0.005s
-
-  mistral_local:
-    endpoint: 127.0.0.1:8001
-
-  error_target:
-    endpoint: error_target_1
 
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
 llm_providers:
@@ -36,30 +14,6 @@ llm_providers:
     model: gpt-4o
     default: true
     stream: true
-    rate_limits:
-      selector: #optional headers, to add rate limiting based on http headers like JWT tokens or API keys
-        http_header:
-          name: Authorization
-          value: "" # Empty value means each separate value has a separate limit
-      limit:
-        tokens: 100000 # Tokens per unit
-        unit: minute
-
-  - name: Mistral8x7b
-    provider: mistral
-    access_key: MISTRAL_API_KEY
-    model: mistral-8x7b
-
-  - name: MistralLocal7b
-    provider: local
-    model: mistral-7b-instruct
-    endpoint: mistral_local
-
-# provides a way to override default settings for the arch system
-overrides:
-  # By default Arch uses an NLI + embedding approach to match an incomming prompt to a prompt target.
-  # The intent matching threshold is kept at 0.80, you can overide this behavior if you would like
-  prompt_target_intent_matching_threshold: 0.60
 
 # default system prompt used by all prompt targets
 system_prompt: You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
@@ -83,7 +37,7 @@ prompt_targets:
     system_prompt: You are a helpful information extraction assistant. Use the information that is provided to you.
 
   - name: reboot_network_device
-    description: Reboot a specific network device
+    description: Perform device operations like rebooting a device.
     endpoint:
       name: app_server
       path: /agent/action
@@ -103,6 +57,12 @@ error_target:
     name: error_target_1
     path: /error
 
-tracing:
-  # sampling rate. Note by default Arch works on OpenTelemetry compatible tracing.
-  sampling_rate: 0.1
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+endpoints:
+  app_server:
+    # value could be ip address or a hostname with port
+    # this could also be a list of endpoints for load balancing
+    # for example endpoint: [ ip1:port, ip2:port ]
+    endpoint: 127.0.0.1:80
+    # max time to wait for a connection to be established
+    connect_timeout: 0.005s
