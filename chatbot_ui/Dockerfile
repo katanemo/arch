@@ -6,14 +6,6 @@ WORKDIR /src
 
 COPY requirements.txt /src/
 
-# RUN apt-get update
-
-# RUN apt-get install -y \
-#     build-essential \
-#     curl
-
-# RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 
 COPY . /src
