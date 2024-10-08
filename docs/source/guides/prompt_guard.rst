@@ -21,7 +21,6 @@ Why Prompt Guard
 
 - **Intent Detection**
     - **Behavioral Analysis**: Analyzes prompt intent to detect if the input aligns with the function’s intended use. This can help prevent unwanted behavior, such as attempts to bypass limitations or misuse system functions.
-    - **Sentiment and Tone Checking**: Examines the tone of prompts to ensure they align with application guidelines, useful in conversational systems and customer support interactions.
 
 - **Dynamic Error Handling**
     - **Automatic Correction**: Applies error-handling techniques to suggest corrections for minor input errors, such as typos or misformatted data.
@@ -41,7 +40,7 @@ Arch-Guard is designed to address this challenge.
 What Is Arch-Guard
 ~~~~~~~~~~~~~~~~~~
 `Arch-Guard <https://huggingface.co/collections/katanemolabs/arch-guard-6702bdc08b889e4bce8f446d>`_ is a robust classifier model specifically trained on a diverse corpus of prompt attacks.
-It excels at detecting explicitly malicious prompts and assessing toxic content, providing an essential layer of security for LLM applications.
+It excels at detecting explicitly malicious prompts, providing an essential layer of security for LLM applications.
 
 By embedding Arch-Guard within the Arch architecture, we empower developers to build robust, LLM-powered applications while prioritizing security and safety. With Arch-Guard, you can navigate the complexities of prompt management with confidence, knowing you have a reliable defense against malicious input.
 
