@@ -15,3 +15,6 @@ pub const ARCH_PROVIDER_HINT_HEADER: &str = "x-arch-llm-provider-hint";
 pub const CHAT_COMPLETIONS_PATH: &str = "v1/chat/completions";
 pub const ARCH_STATE_HEADER: &str = "x-arch-state";
 pub const ARCH_FC_MODEL_NAME: &str = "Arch-Function-1.5B";
+pub const REQUEST_ID_HEADER: &str = "x-request-id";
+pub const ARCH_INTERNAL_CLUSTER_NAME: &str = "arch_internal";
+pub const ARCH_UPSTREAM_HOST_HEADER: &str = "x-arch-upstream";

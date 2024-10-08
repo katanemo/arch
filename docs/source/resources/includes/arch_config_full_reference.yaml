@@ -106,4 +106,6 @@ error_target:
     name: error_target_1
     path: /error
 
-tracing: 100 #sampling rate. Note by default Arch works on OpenTelemetry compatible tracing.
+tracing:
+  # sampling rate. Note by default Arch works on OpenTelemetry compatible tracing.
+  sampling_rate: 0.1

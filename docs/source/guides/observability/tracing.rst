@@ -37,7 +37,7 @@ Benefits of Using ``Traceparent`` Headers
 How to Initiate A Trace
 -----------------------
 
-1. **Enable Tracing Configuration**: Simply add the ``tracing: 100`` flag to in the :ref:`listener <arch_overview_listeners>` config
+1. **Enable Tracing Configuration**: Simply add the ``random_sampling`` in ``tracing`` section to 100`` flag to in the :ref:`listener <arch_overview_listeners>` config
 
 2. **Trace Context Propagation**: Arch automatically propagates the ``traceparent`` header. When a request is received, Arch will:
 
@@ -46,7 +46,7 @@ How to Initiate A Trace
    - Start a new span representing its processing of the request.
    - Forward the ``traceparent`` header to downstream services.
 
-3. **Sampling Policy**: The 100 in ``tracing: 100`` means that all the requests as sampled for tracing.
+3. **Sampling Policy**: The 100 in ``random_sampling: 100`` means that all the requests as sampled for tracing.
    You can adjust this value from 0-100.
 
 

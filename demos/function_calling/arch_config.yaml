@@ -80,3 +80,6 @@ ratelimits:
     limit:
       tokens: 1
       unit: minute
+
+tracing:
+  random_sampling: 100
