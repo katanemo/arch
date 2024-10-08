@@ -64,4 +64,3 @@ Arch (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) was b
       :titlesonly:
 
       resources/configuration_reference
-      resources/error_target

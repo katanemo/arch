@@ -7,7 +7,7 @@ from app.load_models import (
     get_device,
 )
 import os
-from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config
+from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config, get_model_server_logger
 import torch
 import yaml
 import string
@@ -16,11 +16,10 @@ import logging
 from app.arch_fc.arch_fc import chat_completion as arch_fc_chat_completion, ChatMessage
 import os.path
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-logger.info("Device used: " + get_device())
+
+logger = get_model_server_logger()
+logger.info(f"Devices Avialble: {get_device()}")
+
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
 guard_model_config = load_yaml_config("guard_model_config.yaml")
@@ -38,7 +37,6 @@ jailbreak_model = load_guard_model(guard_model_config["jailbreak"][hardware], ha
 guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
-
 
 class EmbeddingRequest(BaseModel):
     input: str
@@ -63,6 +61,7 @@ async def models():
 async def embedding(req: EmbeddingRequest, res: Response):
     if req.model != transformers["model_name"]:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
+
     start = time.time()
     encoded_input = transformers["tokenizer"](
         req.input, padding=True, truncation=True, return_tensors="pt"
@@ -82,7 +81,6 @@ async def embedding(req: EmbeddingRequest, res: Response):
         "total_tokens": 0,
     }
     return {"data": data, "model": req.model, "object": "list", "usage": usage}
-
 
 class GuardRequest(BaseModel):
     input: str

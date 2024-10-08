@@ -9,6 +9,7 @@ Tech Overview
     terminology
     threading_model
     listener
-    model_serving
     prompt
+    model_serving
     request_lifecycle
+    error_target

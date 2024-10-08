@@ -38,6 +38,9 @@ def start_server():
     print(f"Starting Archgw Model Server")
     process = subprocess.Popen(
         ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "51000"],
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,  # Suppress standard output. There is a logger that model_server prints to
+        stderr=subprocess.DEVNULL,  # Suppress standard error. There is a logger that model_server prints to
     )
 
     if wait_for_health_check("http://0.0.0.0:51000/healthz"):
