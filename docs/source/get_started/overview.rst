@@ -1,3 +1,6 @@
+.. _overview:
+
+
 Overview
 ============
 Welcome to Arch, the intelligent prompt gateway designed to help developers build **fast**, **secure**, and **personalized** generative AI apps at ANY scale.

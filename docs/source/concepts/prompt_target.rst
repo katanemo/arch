@@ -1,3 +1,5 @@
+.. _prompt_target:
+
 Prompt Target
 ==============
 
@@ -89,9 +91,10 @@ Example Configuration
             type: str
             required: true
           - name: unit
-            description: The unit of temperature to return
+            description: The unit of temperature
             type: str
-            enum: ["celsius", "fahrenheit"]
+            default: fahrenheit
+            enum: [celsius, fahrenheit]
         endpoint:
           name: api_server
           path: /weather
