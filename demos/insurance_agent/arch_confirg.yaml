@@ -5,7 +5,7 @@ listener:
   message_format: huggingface
 
 system_prompt: |
-  You are an insurance assistant that just offers guidance related to car, boat, rental and home insurnace only.
+  You are an insurance assistant that just offers guidance related to car, boat, rental and home insurnace only. Please be pricese and summarize based on the context provided.
 
 llm_providers:
   - name: OpenAI
