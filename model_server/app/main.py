@@ -8,7 +8,7 @@ from app.load_models import (
     get_device,
 )
 import os
-from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config
+from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config, get_model_server_logger
 import torch
 import yaml
 import string
@@ -17,11 +17,10 @@ import logging
 from app.arch_fc.arch_fc import chat_completion as arch_fc_chat_completion, ChatMessage
 import os.path
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-logger.info("Device used: " + get_device())
+
+logger = get_model_server_logger()
+logger.info(f"Devices Avialble: {get_device()}")
+
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
 guard_model_config = load_yaml_config("guard_model_config.yaml")
@@ -39,7 +38,6 @@ jailbreak_model = load_guard_model(guard_model_config["jailbreak"][hardware], ha
 guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
-
 
 class EmbeddingRequest(BaseModel):
     input: str
@@ -63,12 +61,14 @@ async def models():
 
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
-    print(f"Embedding Call Start Time: {time.time()}")
+
     if req.model not in transformers:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
+
     start = time.time()
+    logger.info(f"Embedding Call Start Time: {time.time()}")
     embeddings = transformers[req.model].encode([req.input])
-    print(f"Embedding Call Complete Time: {time.time()-start}")
+    logger.info(f"Embedding Call Complete Time: {time.time()-start}")
     data = []
 
     for embedding in embeddings.tolist():
@@ -78,9 +78,7 @@ async def embedding(req: EmbeddingRequest, res: Response):
         "prompt_tokens": 0,
         "total_tokens": 0,
     }
-    print(f"Embedding Call Complete Time: {time.time()}")
     return {"data": data, "model": req.model, "object": "list", "usage": usage}
-
 
 class GuardRequest(BaseModel):
     input: str

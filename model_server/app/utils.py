@@ -4,7 +4,10 @@ import time
 import torch
 import pkg_resources
 import yaml
+import os
+import logging
 
+logger_instance = None
 
 def load_yaml_config(file_name):
     # Load the YAML file from the package
@@ -134,3 +137,47 @@ class GuardHandler:
                 f"{self.task}_sentence": sentence,
             }
         return result_dict
+
+def get_model_server_logger():
+    global logger_instance
+
+    if logger_instance is not None:
+        # If the logger is already initialized, return the existing instance
+        return logger_instance
+
+    # Define log file path outside current directory (e.g., ~/archgw_logs)
+    log_dir = os.path.expanduser("~/archgw_logs")
+    log_file = "modelserver.log"
+    log_file_path = os.path.join(log_dir, log_file)
+
+    # Ensure the log directory exists, create it if necessary, handle permissions errors
+    try:
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)  # Create directory if it doesn't exist
+
+        # Check if the script has write permission in the log directory
+        if os.access(log_dir, os.W_OK):
+            # Configure logging to file and console using basicConfig
+            logging.basicConfig(
+                level=logging.INFO,
+                format="%(asctime)s - %(levelname)s - %(message)s",
+                handlers=[
+                    logging.FileHandler(log_file_path, mode='w'),  # Overwrite logs in file
+                    logging.StreamHandler()  # Log to console as fallback
+                ]
+            )
+        else:
+            raise PermissionError(f"No write permission for the directory: {log_dir}")
+    except (PermissionError, OSError) as e:
+        # Fallback to console logging if there are issues writing to the log file
+        logging.basicConfig(
+            level=logging.WARNING,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[logging.StreamHandler()]  # Log to console only
+        )
+        logger = logging.getLogger("model_server_logger")
+        logger.warning(f"Failed to write logs to {log_file_path}: {e}. Logging to console instead.")
+
+    # Initialize the logger instance after configuring handlers
+    logger_instance = logging.getLogger("model_server_logger")
+    return logger_instance
