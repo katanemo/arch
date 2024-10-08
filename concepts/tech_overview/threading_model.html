@@ -101,9 +101,10 @@
 <li class="toctree-l2"><a class="reference internal" href="terminology.html">Terminology</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Threading Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="listener.html">Listener</a></li>
+<li class="toctree-l2"><a class="reference internal" href="prompt.html">Prompts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_serving.html">Model Serving</a></li>
-<li class="toctree-l2"><a class="reference internal" href="prompt.html">Prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="request_lifecycle.html">Request Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="error_target.html">Error Target</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../llm_provider.html">LLM Provider</a></li>
@@ -128,7 +129,6 @@
 <p class="caption" role="heading"><span class="caption-text">Resources</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../resources/configuration_reference.html">Configuration Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../resources/error_target.html">Error Targets</a></li>
 </ul>
 </nav>
 </div>
@@ -161,7 +161,7 @@ threads perform filtering, and forwarding.</p>
 thread. All the functionality around prompt handling from a downstream client is handled in a separate worker thread.
 This allows the majority of Arch to be largely single threaded (embarrassingly parallel) with a small amount
 of more complex code handling coordination between the worker threads.</p>
-<p>Generally Arch is written to be 100% non-blocking.</p>
+<p>Generally, Arch is written to be 100% non-blocking.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>For most workloads we recommend configuring the number of worker threads to be equal to the number of

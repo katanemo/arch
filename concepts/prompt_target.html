@@ -101,9 +101,10 @@
 <li class="toctree-l2"><a class="reference internal" href="tech_overview/terminology.html">Terminology</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tech_overview/threading_model.html">Threading Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tech_overview/listener.html">Listener</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tech_overview/prompt.html">Prompts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tech_overview/model_serving.html">Model Serving</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tech_overview/prompt.html">Prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tech_overview/request_lifecycle.html">Request Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tech_overview/error_target.html">Error Target</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="llm_provider.html">LLM Provider</a></li>
@@ -128,7 +129,6 @@
 <p class="caption" role="heading"><span class="caption-text">Resources</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../resources/configuration_reference.html">Configuration Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../resources/error_target.html">Error Targets</a></li>
 </ul>
 </nav>
 </div>
@@ -152,7 +152,7 @@
 </nav>
 <div id="content" role="main">
 <section id="prompt-target">
-<h1>Prompt Target<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt-target"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
+<span id="id1"></span><h1>Prompt Target<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt-target"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
 <p><strong>Prompt Targets</strong> are a fundamental component of Arch, enabling developers to define how different types of user prompts are processed and routed within their generative AI applications.
 This section provides an in-depth look at prompt targets, including their purpose, configuration, usage, and best practices to help you effectively leverage this feature in your projects.</p>
 <section id="what-are-prompt-targets">
@@ -263,12 +263,13 @@ Here is a full list of parameter attributes that Arch can support:</p>
 </span><span id="line-7">        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
 </span><span id="line-8">        <span class="n">required</span><span class="p">:</span> <span class="n">true</span>
 </span><span id="line-9">      <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">unit</span>
-</span><span id="line-10">        <span class="n">description</span><span class="p">:</span> <span class="n">The</span> <span class="n">unit</span> <span class="n">of</span> <span class="n">temperature</span> <span class="n">to</span> <span class="k">return</span>
+</span><span id="line-10">        <span class="n">description</span><span class="p">:</span> <span class="n">The</span> <span class="n">unit</span> <span class="n">of</span> <span class="n">temperature</span>
 </span><span id="line-11">        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="line-12">        <span class="n">enum</span><span class="p">:</span> <span class="p">[</span><span class="s2">"celsius"</span><span class="p">,</span> <span class="s2">"fahrenheit"</span><span class="p">]</span>
-</span><span id="line-13">    <span class="n">endpoint</span><span class="p">:</span>
-</span><span id="line-14">      <span class="n">name</span><span class="p">:</span> <span class="n">api_server</span>
-</span><span id="line-15">      <span class="n">path</span><span class="p">:</span> <span class="o">/</span><span class="n">weather</span>
+</span><span id="line-12">        <span class="n">default</span><span class="p">:</span> <span class="n">fahrenheit</span>
+</span><span id="line-13">        <span class="n">enum</span><span class="p">:</span> <span class="p">[</span><span class="n">celsius</span><span class="p">,</span> <span class="n">fahrenheit</span><span class="p">]</span>
+</span><span id="line-14">    <span class="n">endpoint</span><span class="p">:</span>
+</span><span id="line-15">      <span class="n">name</span><span class="p">:</span> <span class="n">api_server</span>
+</span><span id="line-16">      <span class="n">path</span><span class="p">:</span> <span class="o">/</span><span class="n">weather</span>
 </span></code></pre></div>
 </div>
 </section>

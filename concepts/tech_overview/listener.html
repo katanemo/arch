@@ -18,7 +18,7 @@
 <link href="./docs/concepts/tech_overview/listener.html" rel="canonical"/>
 <link href="../../_static/favicon.ico" rel="icon"/>
 <link href="../../search.html" rel="search" title="Search"/>
-<link href="model_serving.html" rel="next" title="Model Serving"/>
+<link href="prompt.html" rel="next" title="Prompts"/>
 <link href="threading_model.html" rel="prev" title="Threading Model"/>
 <script>
     <!-- Prevent Flash of wrong theme -->
@@ -101,9 +101,10 @@
 <li class="toctree-l2"><a class="reference internal" href="terminology.html">Terminology</a></li>
 <li class="toctree-l2"><a class="reference internal" href="threading_model.html">Threading Model</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Listener</a></li>
+<li class="toctree-l2"><a class="reference internal" href="prompt.html">Prompts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_serving.html">Model Serving</a></li>
-<li class="toctree-l2"><a class="reference internal" href="prompt.html">Prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="request_lifecycle.html">Request Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="error_target.html">Error Target</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../llm_provider.html">LLM Provider</a></li>
@@ -128,7 +129,6 @@
 <p class="caption" role="heading"><span class="caption-text">Resources</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../resources/configuration_reference.html">Configuration Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../resources/error_target.html">Error Targets</a></li>
 </ul>
 </nav>
 </div>
@@ -154,7 +154,7 @@
 <div id="content" role="main">
 <section id="listener">
 <span id="arch-overview-listeners"></span><h1>Listener<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#listener"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
-<p>Listener is a top level primitive in Arch, which simplifies the configuration required to bind incoming
+<p><strong>Listener</strong> is a top level primitive in Arch, which simplifies the configuration required to bind incoming
 connections from downstream clients, and for egress connections to LLMs (hosted or API)</p>
 <p>Arch builds on Envoy’s Listener subsystem to streamline connection managemet for developers. Arch minimizes
 the complexity of Envoy’s listener setup by using best-practices and exposing only essential settings,
@@ -165,33 +165,33 @@ simplification ensures that connections are secure, reliable, and optimized for 
 <p>Developers can configure Arch to accept connections from downstream clients. A downstream listener acts as the
 primary entry point for incoming traffic, handling initial connection setup, including network filtering, gurdrails,
 and additional network security checks. For more details on prompt security and safety,
-see <a class="reference internal" href="prompt.html#arch-overview-prompt-handling"><span class="std std-ref">here</span></a></p>
+see <a class="reference internal" href="prompt.html#arch-overview-prompt-handling"><span class="std std-ref">here</span></a>.</p>
 </section>
 <section id="upstream-egress">
 <h2>Upstream (Egress)<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#upstream-egress" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#upstream-egress'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <p>Arch automatically configures a listener to route requests from your application to upstream LLM API providers (or hosts).
-When you start Arch, it creates a listener for egress traffic based on the presence of the <code class="docutils literal notranslate"><span class="pre">llm_providers</span></code> configuration
-section in the <code class="docutils literal notranslate"><span class="pre">prompt_config.yml</span></code> file. Arch binds itself to a local address such as <code class="docutils literal notranslate"><span class="pre">127.0.0.1:9000/v1</span></code> or a DNS-based
-address like <code class="docutils literal notranslate"><span class="pre">arch.local:9000/v1</span></code> for outgoing traffic. For more details on LLM providers, read <a class="reference internal" href="../llm_provider.html#llm-provider"><span class="std std-ref">here</span></a></p>
+When you start Arch, it creates a listener for egress traffic based on the presence of the <code class="docutils literal notranslate"><span class="pre">listener</span></code> configuration
+section in the configuration file. Arch binds itself to a local address such as <code class="docutils literal notranslate"><span class="pre">127.0.0.1:9000/v1</span></code> or a DNS-based
+address like <code class="docutils literal notranslate"><span class="pre">arch.local:9000/v1</span></code> for outgoing traffic. For more details on LLM providers, read <a class="reference internal" href="../llm_provider.html#llm-provider"><span class="std std-ref">here</span></a>.</p>
 </section>
 <section id="configure-listener">
 <h2>Configure Listener<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#configure-listener" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#configure-listener'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>To configure a Downstream (Ingress) Listner, simply add the <code class="docutils literal notranslate"><span class="pre">listener</span></code> directive to your <code class="docutils literal notranslate"><span class="pre">prompt_config.yml</span></code> file:</p>
+<p>To configure a Downstream (Ingress) Listner, simply add the <code class="docutils literal notranslate"><span class="pre">listener</span></code> directive to your configuration file:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1-beta"</span>
-</span><span id="line-2"><mark><span class="linenos"> 2</span>
-</mark></span><span id="line-3"><mark><span class="linenos"> 3</span><span class="nt">listener</span><span class="p">:</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
+</span><span id="line-2"><span class="linenos"> 2</span>
+</span><span id="line-3"><mark><span class="linenos"> 3</span><span class="nt">listener</span><span class="p">:</span>
 </mark></span><span id="line-4"><mark><span class="linenos"> 4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
 </mark></span><span id="line-5"><mark><span class="linenos"> 5</span><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
-</mark></span><span id="line-6"><span class="linenos"> 6</span><span class="w">  </span><span class="c1"># Defines how Arch should parse the content from application/json or text/pain Content-type in the http request</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
-</span><span id="line-8"><span class="linenos"> 8</span>
+</mark></span><span id="line-6"><mark><span class="linenos"> 6</span><span class="w">  </span><span class="c1"># Defines how Arch should parse the content from application/json or text/pain Content-type in the http request</span>
+</mark></span><span id="line-7"><mark><span class="linenos"> 7</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
+</mark></span><span id="line-8"><span class="linenos"> 8</span>
 </span><span id="line-9"><span class="linenos"> 9</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
 </span><span id="line-10"><span class="linenos">10</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"OpenAI"</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"openai"</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$OPENAI_API_KEY</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
 </span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
 </span><span id="line-15"><span class="linenos">15</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="line-16"><span class="linenos">16</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
@@ -212,8 +212,8 @@ address like <code class="docutils literal notranslate"><span class="pre">arch.l
       </a>
 </div>
 <div class="ml-auto">
-<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="model_serving.html">
-        Model Serving
+<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="prompt.html">
+        Prompts
         <svg class="ml-2 h-4 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
 <polyline points="9 18 15 12 9 6"></polyline>
 </svg>

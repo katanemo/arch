@@ -18,7 +18,6 @@
 <link href="./docs/resources/configuration_reference.html" rel="canonical"/>
 <link href="../_static/favicon.ico" rel="icon"/>
 <link href="../search.html" rel="search" title="Search"/>
-<link href="error_target.html" rel="next" title="Error Targets"/>
 <link href="../build_with_arch/rag.html" rel="prev" title="RAG Application"/>
 <script>
     <!-- Prevent Flash of wrong theme -->
@@ -101,9 +100,10 @@
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/terminology.html">Terminology</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/threading_model.html">Threading Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/listener.html">Listener</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/prompt.html">Prompts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/model_serving.html">Model Serving</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/prompt.html">Prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/request_lifecycle.html">Request Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/error_target.html">Error Target</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../concepts/llm_provider.html">LLM Provider</a></li>
@@ -128,7 +128,6 @@
 <p class="caption" role="heading"><span class="caption-text">Resources</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="error_target.html">Error Targets</a></li>
 </ul>
 </nav>
 </div>
@@ -160,7 +159,7 @@ options, etc). Our belief that the simple things, should be simple. So we offert
 that they can spend more of their time in building features unique to their AI experience.</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text"><a class="reference download internal" download="" href="../_downloads/ca9d3b7116524473d8adbde7cf15d167/arch_config_full_reference.yaml"><code class="xref download docutils literal notranslate"><span class="pre">Arch</span> <span class="pre">Configuration</span> <span class="pre">-</span> <span class="pre">Full</span> <span class="pre">Reference</span></code></a></span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos">  1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1-beta"</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos">  1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
 </span><span id="line-2"><span class="linenos">  2</span>
 </span><span id="line-3"><span class="linenos">  3</span><span class="nt">listener</span><span class="p">:</span>
 </span><span id="line-4"><span class="linenos">  4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
@@ -170,9 +169,9 @@ that they can spend more of their time in building features unique to their AI e
 </span><span id="line-8"><span class="linenos">  8</span><span class="w">  </span><span class="nt">common_tls_context</span><span class="p">:</span><span class="w"> </span><span class="c1"># If you configure port 443, you'll need to update the listener with your TLS certificates</span>
 </span><span id="line-9"><span class="linenos">  9</span><span class="w">    </span><span class="nt">tls_certificates</span><span class="p">:</span>
 </span><span id="line-10"><span class="linenos"> 10</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">certificate_chain</span><span class="p">:</span>
-</span><span id="line-11"><span class="linenos"> 11</span><span class="w">          </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="s">"/etc/certs/cert.pem"</span>
+</span><span id="line-11"><span class="linenos"> 11</span><span class="w">          </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/certs/cert.pem</span>
 </span><span id="line-12"><span class="linenos"> 12</span><span class="w">        </span><span class="nt">private_key</span><span class="p">:</span>
-</span><span id="line-13"><span class="linenos"> 13</span><span class="w">          </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="s">"/etc/certs/key.pem"</span>
+</span><span id="line-13"><span class="linenos"> 13</span><span class="w">          </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/certs/key.pem</span>
 </span><span id="line-14"><span class="linenos"> 14</span>
 </span><span id="line-15"><span class="linenos"> 15</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
 </span><span id="line-16"><span class="linenos"> 16</span><span class="nt">endpoints</span><span class="p">:</span>
@@ -180,42 +179,42 @@ that they can spend more of their time in building features unique to their AI e
 </span><span id="line-18"><span class="linenos"> 18</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
 </span><span id="line-19"><span class="linenos"> 19</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
 </span><span id="line-20"><span class="linenos"> 20</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
-</span><span id="line-21"><span class="linenos"> 21</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">"127.0.0.1:80"</span>
+</span><span id="line-21"><span class="linenos"> 21</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:80</span>
 </span><span id="line-22"><span class="linenos"> 22</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
 </span><span id="line-23"><span class="linenos"> 23</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
 </span><span id="line-24"><span class="linenos"> 24</span>
 </span><span id="line-25"><span class="linenos"> 25</span><span class="w">  </span><span class="nt">mistral_local</span><span class="p">:</span>
-</span><span id="line-26"><span class="linenos"> 26</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">"127.0.0.1:8001"</span>
+</span><span id="line-26"><span class="linenos"> 26</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:8001</span>
 </span><span id="line-27"><span class="linenos"> 27</span>
 </span><span id="line-28"><span class="linenos"> 28</span><span class="w">  </span><span class="nt">error_target</span><span class="p">:</span>
-</span><span id="line-29"><span class="linenos"> 29</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">"error_target_1"</span>
+</span><span id="line-29"><span class="linenos"> 29</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error_target_1</span>
 </span><span id="line-30"><span class="linenos"> 30</span>
 </span><span id="line-31"><span class="linenos"> 31</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
 </span><span id="line-32"><span class="linenos"> 32</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-33"><span class="linenos"> 33</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"OpenAI"</span>
-</span><span id="line-34"><span class="linenos"> 34</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"openai"</span>
-</span><span id="line-35"><span class="linenos"> 35</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$OPENAI_API_KEY</span>
+</span><span id="line-33"><span class="linenos"> 33</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-34"><span class="linenos"> 34</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-35"><span class="linenos"> 35</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
 </span><span id="line-36"><span class="linenos"> 36</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
 </span><span id="line-37"><span class="linenos"> 37</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="line-38"><span class="linenos"> 38</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="line-39"><span class="linenos"> 39</span><span class="w">    </span><span class="nt">rate_limits</span><span class="p">:</span>
 </span><span id="line-40"><span class="linenos"> 40</span><span class="w">      </span><span class="nt">selector</span><span class="p">:</span><span class="w"> </span><span class="c1">#optional headers, to add rate limiting based on http headers like JWT tokens or API keys</span>
 </span><span id="line-41"><span class="linenos"> 41</span><span class="w">        </span><span class="nt">http_header</span><span class="p">:</span>
-</span><span id="line-42"><span class="linenos"> 42</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"Authorization"</span>
+</span><span id="line-42"><span class="linenos"> 42</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Authorization</span>
 </span><span id="line-43"><span class="linenos"> 43</span><span class="w">          </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">""</span><span class="w"> </span><span class="c1"># Empty value means each separate value has a separate limit</span>
 </span><span id="line-44"><span class="linenos"> 44</span><span class="w">      </span><span class="nt">limit</span><span class="p">:</span>
 </span><span id="line-45"><span class="linenos"> 45</span><span class="w">        </span><span class="nt">tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100000</span><span class="w"> </span><span class="c1"># Tokens per unit</span>
-</span><span id="line-46"><span class="linenos"> 46</span><span class="w">        </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="s">"minute"</span>
+</span><span id="line-46"><span class="linenos"> 46</span><span class="w">        </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">minute</span>
 </span><span id="line-47"><span class="linenos"> 47</span>
-</span><span id="line-48"><span class="linenos"> 48</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"Mistral8x7b"</span>
-</span><span id="line-49"><span class="linenos"> 49</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"mistral"</span>
-</span><span id="line-50"><span class="linenos"> 50</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$MISTRAL_API_KEY</span>
-</span><span id="line-51"><span class="linenos"> 51</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">"mistral-8x7b"</span>
+</span><span id="line-48"><span class="linenos"> 48</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Mistral8x7b</span>
+</span><span id="line-49"><span class="linenos"> 49</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mistral</span>
+</span><span id="line-50"><span class="linenos"> 50</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MISTRAL_API_KEY</span>
+</span><span id="line-51"><span class="linenos"> 51</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mistral-8x7b</span>
 </span><span id="line-52"><span class="linenos"> 52</span>
-</span><span id="line-53"><span class="linenos"> 53</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"MistralLocal7b"</span>
-</span><span id="line-54"><span class="linenos"> 54</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"local"</span>
-</span><span id="line-55"><span class="linenos"> 55</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">"mistral-7b-instruct"</span>
-</span><span id="line-56"><span class="linenos"> 56</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">"mistral_local"</span>
+</span><span id="line-53"><span class="linenos"> 53</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MistralLocal7b</span>
+</span><span id="line-54"><span class="linenos"> 54</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local</span>
+</span><span id="line-55"><span class="linenos"> 55</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mistral-7b-instruct</span>
+</span><span id="line-56"><span class="linenos"> 56</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mistral_local</span>
 </span><span id="line-57"><span class="linenos"> 57</span>
 </span><span id="line-58"><span class="linenos"> 58</span><span class="c1"># provides a way to override default settings for the arch system</span>
 </span><span id="line-59"><span class="linenos"> 59</span><span class="nt">overrides</span><span class="p">:</span>
@@ -224,51 +223,48 @@ that they can spend more of their time in building features unique to their AI e
 </span><span id="line-62"><span class="linenos"> 62</span><span class="w">  </span><span class="nt">prompt_target_intent_matching_threshold</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.60</span>
 </span><span id="line-63"><span class="linenos"> 63</span>
 </span><span id="line-64"><span class="linenos"> 64</span><span class="c1"># default system prompt used by all prompt targets</span>
-</span><span id="line-65"><span class="linenos"> 65</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-66"><span class="linenos"> 66</span><span class="w">  </span><span class="no">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
-</span><span id="line-67"><span class="linenos"> 67</span>
-</span><span id="line-68"><span class="linenos"> 68</span><span class="nt">prompt_guards</span><span class="p">:</span>
-</span><span id="line-69"><span class="linenos"> 69</span><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
-</span><span id="line-70"><span class="linenos"> 70</span><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
-</span><span id="line-71"><span class="linenos"> 71</span><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
-</span><span id="line-72"><span class="linenos"> 72</span><span class="w">        </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="s">"Looks</span><span class="nv"> </span><span class="s">like</span><span class="nv"> </span><span class="s">you're</span><span class="nv"> </span><span class="s">curious</span><span class="nv"> </span><span class="s">about</span><span class="nv"> </span><span class="s">my</span><span class="nv"> </span><span class="s">abilities,</span><span class="nv"> </span><span class="s">but</span><span class="nv"> </span><span class="s">I</span><span class="nv"> </span><span class="s">can</span><span class="nv"> </span><span class="s">only</span><span class="nv"> </span><span class="s">provide</span><span class="nv"> </span><span class="s">assistance</span><span class="nv"> </span><span class="s">within</span><span class="nv"> </span><span class="s">my</span><span class="nv"> </span><span class="s">programmed</span><span class="nv"> </span><span class="s">parameters."</span>
-</span><span id="line-73"><span class="linenos"> 73</span>
-</span><span id="line-74"><span class="linenos"> 74</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</span><span id="line-75"><span class="linenos"> 75</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"reboot_network_device"</span>
-</span><span id="line-76"><span class="linenos"> 76</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Helps</span><span class="nv"> </span><span class="s">network</span><span class="nv"> </span><span class="s">operators</span><span class="nv"> </span><span class="s">perform</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">operations</span><span class="nv"> </span><span class="s">like</span><span class="nv"> </span><span class="s">rebooting</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">device."</span>
+</span><span id="line-65"><span class="linenos"> 65</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+</span><span id="line-66"><span class="linenos"> 66</span>
+</span><span id="line-67"><span class="linenos"> 67</span><span class="nt">prompt_guards</span><span class="p">:</span>
+</span><span id="line-68"><span class="linenos"> 68</span><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
+</span><span id="line-69"><span class="linenos"> 69</span><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
+</span><span id="line-70"><span class="linenos"> 70</span><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
+</span><span id="line-71"><span class="linenos"> 71</span><span class="w">        </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters.</span>
+</span><span id="line-72"><span class="linenos"> 72</span>
+</span><span id="line-73"><span class="linenos"> 73</span><span class="nt">prompt_targets</span><span class="p">:</span>
+</span><span id="line-74"><span class="linenos"> 74</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">information_extraction</span>
+</span><span id="line-75"><span class="linenos"> 75</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-76"><span class="linenos"> 76</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">handel all scenarios that are question and answer in nature. Like summarization, information extraction, etc.</span>
 </span><span id="line-77"><span class="linenos"> 77</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
 </span><span id="line-78"><span class="linenos"> 78</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
-</span><span id="line-79"><span class="linenos"> 79</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">"/agent/action"</span>
-</span><span id="line-80"><span class="linenos"> 80</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</span><span id="line-81"><span class="linenos"> 81</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"device_id"</span>
-</span><span id="line-82"><span class="linenos"> 82</span><span class="w">        </span><span class="c1"># additional type options include: int | float | bool | string | list | dict</span>
-</span><span id="line-83"><span class="linenos"> 83</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">"string"</span>
-</span><span id="line-84"><span class="linenos"> 84</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Identifier</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">network</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">reboot."</span>
-</span><span id="line-85"><span class="linenos"> 85</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-86"><span class="linenos"> 86</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"confirmation"</span>
-</span><span id="line-87"><span class="linenos"> 87</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">"string"</span>
-</span><span id="line-88"><span class="linenos"> 88</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Confirmation</span><span class="nv"> </span><span class="s">flag</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">proceed</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">reboot."</span>
-</span><span id="line-89"><span class="linenos"> 89</span><span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
-</span><span id="line-90"><span class="linenos"> 90</span><span class="w">        </span><span class="nt">enum</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">yes</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">no</span><span class="p p-Indicator">]</span>
-</span><span id="line-91"><span class="linenos"> 91</span>
-</span><span id="line-92"><span class="linenos"> 92</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"information_extraction"</span>
-</span><span id="line-93"><span class="linenos"> 93</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-94"><span class="linenos"> 94</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"This</span><span class="nv"> </span><span class="s">prompt</span><span class="nv"> </span><span class="s">handles</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">scenarios</span><span class="nv"> </span><span class="s">that</span><span class="nv"> </span><span class="s">are</span><span class="nv"> </span><span class="s">question</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">answer</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">nature.</span><span class="nv"> </span><span class="s">Like</span><span class="nv"> </span><span class="s">summarization,</span><span class="nv"> </span><span class="s">information</span><span class="nv"> </span><span class="s">extraction,</span><span class="nv"> </span><span class="s">etc."</span>
-</span><span id="line-95"><span class="linenos"> 95</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
-</span><span id="line-96"><span class="linenos"> 96</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
-</span><span id="line-97"><span class="linenos"> 97</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">"/agent/summary"</span>
-</span><span id="line-98"><span class="linenos"> 98</span><span class="w">    </span><span class="c1"># Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM</span>
-</span><span id="line-99"><span class="linenos"> 99</span><span class="w">    </span><span class="nt">auto_llm_dispatch_on_response</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-100"><span class="linenos">100</span><span class="w">    </span><span class="c1"># override system prompt for this prompt target</span>
-</span><span id="line-101"><span class="linenos">101</span><span class="w">    </span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-102"><span class="linenos">102</span><span class="w">      </span><span class="no">You are a helpful information extraction assistant. Use the information that is provided to you.</span>
-</span><span id="line-103"><span class="linenos">103</span>
-</span><span id="line-104"><span class="linenos">104</span><span class="nt">error_target</span><span class="p">:</span>
-</span><span id="line-105"><span class="linenos">105</span><span class="w">  </span><span class="nt">endpoint</span><span class="p">:</span>
-</span><span id="line-106"><span class="linenos">106</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error_target_1</span>
-</span><span id="line-107"><span class="linenos">107</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/error</span>
-</span><span id="line-108"><span class="linenos">108</span>
-</span><span id="line-109"><span class="linenos">109</span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w"> </span><span class="c1">#sampling rate. Note by default Arch works on OpenTelemetry compatible tracing.</span>
+</span><span id="line-79"><span class="linenos"> 79</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/summary</span>
+</span><span id="line-80"><span class="linenos"> 80</span><span class="w">    </span><span class="c1"># Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM</span>
+</span><span id="line-81"><span class="linenos"> 81</span><span class="w">    </span><span class="nt">auto_llm_dispatch_on_response</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-82"><span class="linenos"> 82</span><span class="w">    </span><span class="c1"># override system prompt for this prompt target</span>
+</span><span id="line-83"><span class="linenos"> 83</span><span class="w">    </span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a helpful information extraction assistant. Use the information that is provided to you.</span>
+</span><span id="line-84"><span class="linenos"> 84</span>
+</span><span id="line-85"><span class="linenos"> 85</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_network_device</span>
+</span><span id="line-86"><span class="linenos"> 86</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot a specific network device</span>
+</span><span id="line-87"><span class="linenos"> 87</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-88"><span class="linenos"> 88</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</span><span id="line-89"><span class="linenos"> 89</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/action</span>
+</span><span id="line-90"><span class="linenos"> 90</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+</span><span id="line-91"><span class="linenos"> 91</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_id</span>
+</span><span id="line-92"><span class="linenos"> 92</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">str</span>
+</span><span id="line-93"><span class="linenos"> 93</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Identifier of the network device to reboot.</span>
+</span><span id="line-94"><span class="linenos"> 94</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-95"><span class="linenos"> 95</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confirmation</span>
+</span><span id="line-96"><span class="linenos"> 96</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bool</span>
+</span><span id="line-97"><span class="linenos"> 97</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Confirmation flag to proceed with reboot.</span>
+</span><span id="line-98"><span class="linenos"> 98</span><span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="line-99"><span class="linenos"> 99</span><span class="w">        </span><span class="nt">enum</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">true</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">]</span>
+</span><span id="line-100"><span class="linenos">100</span>
+</span><span id="line-101"><span class="linenos">101</span><span class="nt">error_target</span><span class="p">:</span>
+</span><span id="line-102"><span class="linenos">102</span><span class="w">  </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-103"><span class="linenos">103</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error_target_1</span>
+</span><span id="line-104"><span class="linenos">104</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/error</span>
+</span><span id="line-105"><span class="linenos">105</span>
+</span><span id="line-106"><span class="linenos">106</span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w"> </span><span class="c1">#sampling rate. Note by default Arch works on OpenTelemetry compatible tracing.</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -281,14 +277,6 @@ that they can spend more of their time in building features unique to their AI e
 </svg>
         RAG Application
       </a>
-</div>
-<div class="ml-auto">
-<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="error_target.html">
-        Error Targets
-        <svg class="ml-2 h-4 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-<polyline points="9 18 15 12 9 6"></polyline>
-</svg>
-</a>
 </div>
 </div></div>
 </main>

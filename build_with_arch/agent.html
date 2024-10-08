@@ -101,9 +101,10 @@
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/terminology.html">Terminology</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/threading_model.html">Threading Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/listener.html">Listener</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/prompt.html">Prompts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/model_serving.html">Model Serving</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/prompt.html">Prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/request_lifecycle.html">Request Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/tech_overview/error_target.html">Error Target</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../concepts/llm_provider.html">LLM Provider</a></li>
@@ -128,7 +129,6 @@
 <p class="caption" role="heading"><span class="caption-text">Resources</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../resources/configuration_reference.html">Configuration Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../resources/error_target.html">Error Targets</a></li>
 </ul>
 </nav>
 </div>
@@ -160,7 +160,7 @@ you have the flexibility to support “agentic” apps tailored to specific use 
 claims to creating ad campaigns - via prompts.</p>
 <p>Arch analyzes prompts, extracts critical information from prompts, engages in lightweight conversation with
 the user to gather any missing parameters and makes API calls so that you can focus on writing business logic.
-Arch does this via its purpose-built <a class="reference internal" href="../guides/function_calling.html#function-calling"><span class="std std-ref">Arch-FC LLM</span></a> - the fastest (200ms p90 - 10x faser than GPT-4o)
+Arch does this via its purpose-built <a class="reference internal" href="../guides/function_calling.html#function-calling"><span class="std std-ref">Arch-Function</span></a> - the fastest (200ms p90 - 10x faser than GPT-4o)
 and cheapest (100x than GPT-40) function-calling LLM that matches performance with frontier models.</p>
 <a class="reference internal image-reference" href="../_images/function-calling-flow.jpg"><img alt="../_images/function-calling-flow.jpg" class="align-center" src="../_images/function-calling-flow.jpg" style="width: 100%;"/>
 </a>
@@ -169,175 +169,171 @@ and cheapest (100x than GPT-40) function-calling LLM that matches performance wi
 <p>In the most common scenario, users will request a single action via prompts, and Arch efficiently processes the
 request by extracting relevant parameters, validating the input, and calling the designated function or API. Here
 is how you would go about enabling this scenario with Arch:</p>
-<section id="step-1-define-prompt-targets-with-functions">
-<h3>Step 1: Define prompt targets with functions<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-1-define-prompt-targets-with-functions" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-1-define-prompt-targets-with-functions'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
-<div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">Define prompt targets that can enable users to engage with API and backened functions of an app</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1-beta"</span>
-</span><span id="line-2"><span class="linenos"> 2</span><span class="nt">listen</span><span class="p">:</span>
-</span><span id="line-3"><span class="linenos"> 3</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1 | 0.0.0.0</span>
-</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">port_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"> </span><span class="c1">#If you configure port 443, you'll need to update the listener with tls_certificates</span>
-</span><span id="line-5"><span class="linenos"> 5</span>
-</span><span id="line-6"><span class="linenos"> 6</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="w">  </span><span class="no">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+<section id="step-1-define-prompt-targets">
+<h3>Step 1: Define Prompt Targets<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-1-define-prompt-targets" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-1-define-prompt-targets'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Prompt Target Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
+</span><span id="line-2"><span class="linenos"> 2</span>
+</span><span id="line-3"><span class="linenos"> 3</span><span class="nt">listen</span><span class="p">:</span>
+</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
+</span><span id="line-5"><span class="linenos"> 5</span><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
+</span><span id="line-6"><span class="linenos"> 6</span><span class="w">  </span><span class="c1"># Defines how Arch should parse the content from application/json or text/pain Content-type in the http request</span>
+</span><span id="line-7"><span class="linenos"> 7</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
 </span><span id="line-8"><span class="linenos"> 8</span>
-</span><span id="line-9"><span class="linenos"> 9</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-10"><span class="linenos">10</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"OpenAI"</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"openai"</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
-</span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-15"><span class="linenos">15</span>
-</span><span id="line-16"><mark><span class="linenos">16</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</mark></span><span id="line-17"><mark><span class="linenos">17</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
-</mark></span><span id="line-18"><mark><span class="linenos">18</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-</mark></span><span id="line-19"><mark><span class="linenos">19</span><span class="w">      </span><span class="no">This prompt target handles user requests to reboot devices.</span>
-</mark></span><span id="line-20"><mark><span class="linenos">20</span><span class="w">      </span><span class="no">It ensures that when users request to reboot specific devices or device groups, the system processes the reboot commands accurately.</span>
-</mark></span><span id="line-21"><mark><span class="linenos">21</span>
-</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">      </span><span class="no">**Examples of user prompts:**</span>
-</mark></span><span id="line-23"><mark><span class="linenos">23</span>
-</mark></span><span id="line-24"><mark><span class="linenos">24</span><span class="w">      </span><span class="no">- "Please reboot device 12345."</span>
-</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">      </span><span class="no">- "Restart all devices in tenant group tenant-XYZ</span>
-</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">      </span><span class="no">- "I need to reboot devices A, B, and C."</span>
-</mark></span><span id="line-27"><mark><span class="linenos">27</span>
-</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
-</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"device_ids"</span>
-</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span><span class="w">  </span><span class="c1"># Options: integer | float | list | dictionary | set</span>
-</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"A</span><span class="nv"> </span><span class="s">list</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">identifiers</span><span class="nv"> </span><span class="s">(IDs)</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">reboot."</span>
-</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"device_group"</span>
-</mark></span><span id="line-35"><mark><span class="linenos">35</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span><span class="w">  </span><span class="c1"># Options: string | integer | float | list | dictionary | set</span>
-</mark></span><span id="line-36"><mark><span class="linenos">36</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"The</span><span class="nv"> </span><span class="s">name</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">group</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">reboot."</span>
-</mark></span><span id="line-37"><mark><span class="linenos">37</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-38"><span class="linenos">38</span>
-</span><span id="line-39"><span class="linenos">39</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
-</span><span id="line-40"><span class="linenos">40</span><span class="nt">endpoints</span><span class="p">:</span>
-</span><span id="line-41"><span class="linenos">41</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
-</span><span id="line-43"><span class="linenos">43</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
-</span><span id="line-44"><span class="linenos">44</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
-</span><span id="line-45"><span class="linenos">45</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">"127.0.0.1:80"</span>
-</span><span id="line-46"><span class="linenos">46</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
-</span><span id="line-47"><span class="linenos">47</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-9"><span class="linenos"> 9</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
+</span><span id="line-10"><span class="linenos">10</span><span class="nt">llm_providers</span><span class="p">:</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
+</span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+</span><span id="line-15"><span class="linenos">15</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-16"><span class="linenos">16</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-17"><span class="linenos">17</span>
+</span><span id="line-18"><span class="linenos">18</span><span class="c1"># default system prompt used by all prompt targets</span>
+</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+</span><span id="line-20"><span class="linenos">20</span>
+</span><span id="line-21"><mark><span class="linenos">21</span><span class="nt">prompt_targets</span><span class="p">:</span>
+</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
+</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot specific devices or device groups</span>
+</mark></span><span id="line-24"><mark><span class="linenos">24</span>
+</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
+</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+</mark></span><span id="line-27"><mark><span class="linenos">27</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
+</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
+</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
+</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_group</span>
+</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">str</span>
+</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The name of the device group to reboot</span>
+</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</mark></span><span id="line-35"><span class="linenos">35</span>
+</span><span id="line-36"><span class="linenos">36</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
+</span><span id="line-37"><span class="linenos">37</span><span class="nt">endpoints</span><span class="p">:</span>
+</span><span id="line-38"><span class="linenos">38</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
+</span><span id="line-39"><span class="linenos">39</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
+</span><span id="line-40"><span class="linenos">40</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
+</span><span id="line-41"><span class="linenos">41</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
+</span><span id="line-42"><span class="linenos">42</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:80</span>
+</span><span id="line-43"><span class="linenos">43</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
+</span><span id="line-44"><span class="linenos">44</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
 </span></code></pre></div>
 </div>
 </div>
 </section>
-<section id="step-2-process-request-parameters-in-flask">
-<h3>Step 2: Process request parameters in Flask<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-2-process-request-parameters-in-flask" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-2-process-request-parameters-in-flask'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<section id="step-2-process-request-parameters">
+<h3>Step 2: Process Request Parameters<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-2-process-request-parameters" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-2-process-request-parameters'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
 <p>Once the prompt targets are configured as above, handling those parameters is</p>
-<div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">Parameter handling with Flask</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Parameter handling with Flask</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id3"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
 </span><span id="line-2"><span class="linenos"> 2</span>
 </span><span id="line-3"><span class="linenos"> 3</span><span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 </span><span id="line-4"><span class="linenos"> 4</span>
-</span><span id="line-5"><span class="linenos"> 5</span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">'/agent/device_summary'</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">'POST'</span><span class="p">])</span>
-</span><span id="line-6"><span class="linenos"> 6</span><span class="k">def</span> <span class="nf">get_device_summary</span><span class="p">():</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="w">    </span><span class="sd">"""</span>
-</span><span id="line-8"><span class="linenos"> 8</span><span class="sd">    Endpoint to retrieve device statistics based on device IDs and an optional time range.</span>
-</span><span id="line-9"><span class="linenos"> 9</span><span class="sd">    """</span>
-</span><span id="line-10"><span class="linenos">10</span>    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
-</span><span id="line-11"><span class="linenos">11</span>
-</span><span id="line-12"><span class="linenos">12</span>    <span class="c1"># Validate 'device_ids' parameter</span>
-</span><span id="line-13"><span class="linenos">13</span>    <span class="n">device_ids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'device_ids'</span><span class="p">)</span>
-</span><span id="line-14"><span class="linenos">14</span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">device_ids</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-</span><span id="line-15"><span class="linenos">15</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">'error'</span><span class="p">:</span> <span class="s2">"'device_ids' parameter is required and must be a list"</span><span class="p">}),</span> <span class="mi">400</span>
-</span><span id="line-16"><span class="linenos">16</span>
-</span><span id="line-17"><span class="linenos">17</span>    <span class="c1"># Validate 'time_range' parameter (optional, defaults to 7)</span>
-</span><span id="line-18"><span class="linenos">18</span>    <span class="n">time_range</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'time_range'</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
-</span><span id="line-19"><span class="linenos">19</span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_range</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="line-20"><span class="linenos">20</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">'error'</span><span class="p">:</span> <span class="s2">"'time_range' must be an integer"</span><span class="p">}),</span> <span class="mi">400</span>
-</span><span id="line-21"><span class="linenos">21</span>
-</span><span id="line-22"><span class="linenos">22</span>    <span class="c1"># Simulate retrieving statistics for the given device IDs and time range</span>
-</span><span id="line-23"><span class="linenos">23</span>    <span class="c1"># In a real application, you would query your database or external service here</span>
-</span><span id="line-24"><span class="linenos">24</span>    <span class="n">statistics</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="line-25"><span class="linenos">25</span>    <span class="k">for</span> <span class="n">device_id</span> <span class="ow">in</span> <span class="n">device_ids</span><span class="p">:</span>
-</span><span id="line-26"><span class="linenos">26</span>        <span class="c1"># Placeholder for actual data retrieval</span>
-</span><span id="line-27"><span class="linenos">27</span>        <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-28"><span class="linenos">28</span>            <span class="s1">'device_id'</span><span class="p">:</span> <span class="n">device_id</span><span class="p">,</span>
-</span><span id="line-29"><span class="linenos">29</span>            <span class="s1">'time_range'</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'Last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s1"> days'</span><span class="p">,</span>
-</span><span id="line-30"><span class="linenos">30</span>            <span class="s1">'data'</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'Statistics data for device </span><span class="si">{</span><span class="n">device_id</span><span class="si">}</span><span class="s1"> over the last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s1"> days.'</span>
-</span><span id="line-31"><span class="linenos">31</span>        <span class="p">}</span>
-</span><span id="line-32"><span class="linenos">32</span>        <span class="n">statistics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
-</span><span id="line-33"><span class="linenos">33</span>
-</span><span id="line-34"><span class="linenos">34</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-35"><span class="linenos">35</span>        <span class="s1">'statistics'</span><span class="p">:</span> <span class="n">statistics</span>
-</span><span id="line-36"><span class="linenos">36</span>    <span class="p">}</span>
-</span><span id="line-37"><span class="linenos">37</span>
-</span><span id="line-38"><span class="linenos">38</span>    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="mi">200</span>
-</span><span id="line-39"><span class="linenos">39</span>
-</span><span id="line-40"><span class="linenos">40</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
-</span><span id="line-41"><span class="linenos">41</span>    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="line-5"><span class="linenos"> 5</span>
+</span><span id="line-6"><span class="linenos"> 6</span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">"/agent/device_summary"</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">"POST"</span><span class="p">])</span>
+</span><span id="line-7"><span class="linenos"> 7</span><span class="k">def</span> <span class="nf">get_device_summary</span><span class="p">():</span>
+</span><span id="line-8"><span class="linenos"> 8</span><span class="w">    </span><span class="sd">"""</span>
+</span><span id="line-9"><span class="linenos"> 9</span><span class="sd">    Endpoint to retrieve device statistics based on device IDs and an optional time range.</span>
+</span><span id="line-10"><span class="linenos">10</span><span class="sd">    """</span>
+</span><span id="line-11"><span class="linenos">11</span>    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+</span><span id="line-12"><span class="linenos">12</span>
+</span><span id="line-13"><span class="linenos">13</span>    <span class="c1"># Validate 'device_ids' parameter</span>
+</span><span id="line-14"><span class="linenos">14</span>    <span class="n">device_ids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"device_ids"</span><span class="p">)</span>
+</span><span id="line-15"><span class="linenos">15</span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">device_ids</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+</span><span id="line-16"><span class="linenos">16</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
+</span><span id="line-17"><span class="linenos">17</span>            <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'device_ids' parameter is required and must be a list"</span><span class="p">}</span>
+</span><span id="line-18"><span class="linenos">18</span>        <span class="p">),</span> <span class="mi">400</span>
+</span><span id="line-19"><span class="linenos">19</span>
+</span><span id="line-20"><span class="linenos">20</span>    <span class="c1"># Validate 'time_range' parameter (optional, defaults to 7)</span>
+</span><span id="line-21"><span class="linenos">21</span>    <span class="n">time_range</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"time_range"</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</span><span id="line-22"><span class="linenos">22</span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_range</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="line-23"><span class="linenos">23</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'time_range' must be an integer"</span><span class="p">}),</span> <span class="mi">400</span>
+</span><span id="line-24"><span class="linenos">24</span>
+</span><span id="line-25"><span class="linenos">25</span>    <span class="c1"># Simulate retrieving statistics for the given device IDs and time range</span>
+</span><span id="line-26"><span class="linenos">26</span>    <span class="c1"># In a real application, you would query your database or external service here</span>
+</span><span id="line-27"><span class="linenos">27</span>    <span class="n">statistics</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="line-28"><span class="linenos">28</span>    <span class="k">for</span> <span class="n">device_id</span> <span class="ow">in</span> <span class="n">device_ids</span><span class="p">:</span>
+</span><span id="line-29"><span class="linenos">29</span>        <span class="c1"># Placeholder for actual data retrieval</span>
+</span><span id="line-30"><span class="linenos">30</span>        <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-31"><span class="linenos">31</span>            <span class="s2">"device_id"</span><span class="p">:</span> <span class="n">device_id</span><span class="p">,</span>
+</span><span id="line-32"><span class="linenos">32</span>            <span class="s2">"time_range"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days"</span><span class="p">,</span>
+</span><span id="line-33"><span class="linenos">33</span>            <span class="s2">"data"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Statistics data for device </span><span class="si">{</span><span class="n">device_id</span><span class="si">}</span><span class="s2"> over the last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days."</span><span class="p">,</span>
+</span><span id="line-34"><span class="linenos">34</span>        <span class="p">}</span>
+</span><span id="line-35"><span class="linenos">35</span>        <span class="n">statistics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
+</span><span id="line-36"><span class="linenos">36</span>
+</span><span id="line-37"><span class="linenos">37</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"statistics"</span><span class="p">:</span> <span class="n">statistics</span><span class="p">}</span>
+</span><span id="line-38"><span class="linenos">38</span>
+</span><span id="line-39"><span class="linenos">39</span>    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="mi">200</span>
+</span><span id="line-40"><span class="linenos">40</span>
+</span><span id="line-41"><span class="linenos">41</span>
+</span><span id="line-42"><span class="linenos">42</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+</span><span id="line-43"><span class="linenos">43</span>    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 </div>
 </div>
 </section>
 </section>
 <section id="parallel-multiple-function-calling">
-<h2>Parallel/ Multiple Function Calling<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#parallel-multiple-function-calling" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#parallel-multiple-function-calling'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<h2>Parallel &amp; Multiple Function Calling<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#parallel-multiple-function-calling" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#parallel-multiple-function-calling'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <p>In more complex use cases, users may request multiple actions or need multiple APIs/functions to be called
 simultaneously or sequentially. With Arch, you can handle these scenarios efficiently using parallel or multiple
 function calling. This allows your application to engage in a broader range of interactions, such as updating
 different datasets, triggering events across systems, or collecting results from multiple services in one prompt.</p>
 <p>Arch-FC1B is built to manage these parallel tasks efficiently, ensuring low latency and high throughput, even
 when multiple functions are invoked. It provides two mechanisms to handle these cases:</p>
-<section id="step-1-define-multiple-function-targets">
-<h3>Step 1: Define Multiple Function Targets<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-1-define-multiple-function-targets" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-1-define-multiple-function-targets'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<section id="id1">
+<h3>Step 1: Define Prompt Targets<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#id1'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
 <p>When enabling multiple function calling, define the prompt targets in a way that supports multiple functions or
 API calls based on the user’s prompt. These targets can be triggered in parallel or sequentially, depending on
 the user’s intent.</p>
 <p>Example of Multiple Prompt Targets in YAML:</p>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">Define prompt targets that can enable users to engage with API and backened functions of an app</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id3"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1-beta"</span>
-</span><span id="line-2"><span class="linenos"> 2</span><span class="nt">listen</span><span class="p">:</span>
-</span><span id="line-3"><span class="linenos"> 3</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1 | 0.0.0.0</span>
-</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">port_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"> </span><span class="c1">#If you configure port 443, you'll need to update the listener with tls_certificates</span>
-</span><span id="line-5"><span class="linenos"> 5</span>
-</span><span id="line-6"><span class="linenos"> 6</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="w">  </span><span class="no">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">Prompt Target Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id4"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
+</span><span id="line-2"><span class="linenos"> 2</span>
+</span><span id="line-3"><span class="linenos"> 3</span><span class="nt">listen</span><span class="p">:</span>
+</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
+</span><span id="line-5"><span class="linenos"> 5</span><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
+</span><span id="line-6"><span class="linenos"> 6</span><span class="w">  </span><span class="c1"># Defines how Arch should parse the content from application/json or text/pain Content-type in the http request</span>
+</span><span id="line-7"><span class="linenos"> 7</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
 </span><span id="line-8"><span class="linenos"> 8</span>
-</span><span id="line-9"><span class="linenos"> 9</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-10"><span class="linenos">10</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"OpenAI"</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"openai"</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
-</span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-15"><span class="linenos">15</span>
-</span><span id="line-16"><mark><span class="linenos">16</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</mark></span><span id="line-17"><mark><span class="linenos">17</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
-</mark></span><span id="line-18"><mark><span class="linenos">18</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-</mark></span><span id="line-19"><mark><span class="linenos">19</span><span class="w">      </span><span class="no">This prompt target handles user requests to reboot devices.</span>
-</mark></span><span id="line-20"><mark><span class="linenos">20</span><span class="w">      </span><span class="no">It ensures that when users request to reboot specific devices or device groups, the system processes the reboot commands accurately.</span>
-</mark></span><span id="line-21"><mark><span class="linenos">21</span>
-</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">      </span><span class="no">**Examples of user prompts:**</span>
-</mark></span><span id="line-23"><mark><span class="linenos">23</span>
-</mark></span><span id="line-24"><mark><span class="linenos">24</span><span class="w">      </span><span class="no">- "Please reboot device 12345."</span>
-</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">      </span><span class="no">- "Restart all devices in tenant group tenant-XYZ</span>
-</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">      </span><span class="no">- "I need to reboot devices A, B, and C."</span>
-</mark></span><span id="line-27"><mark><span class="linenos">27</span>
-</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
-</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"device_ids"</span>
-</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span><span class="w">  </span><span class="c1"># Options: integer | float | list | dictionary | set</span>
-</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"A</span><span class="nv"> </span><span class="s">list</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">identifiers</span><span class="nv"> </span><span class="s">(IDs)</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">reboot."</span>
-</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"device_group"</span>
-</mark></span><span id="line-35"><mark><span class="linenos">35</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span><span class="w">  </span><span class="c1"># Options: string | integer | float | list | dictionary | set</span>
-</mark></span><span id="line-36"><mark><span class="linenos">36</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"The</span><span class="nv"> </span><span class="s">name</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">group</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">reboot."</span>
-</mark></span><span id="line-37"><mark><span class="linenos">37</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-38"><span class="linenos">38</span>
-</span><span id="line-39"><span class="linenos">39</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
-</span><span id="line-40"><span class="linenos">40</span><span class="nt">endpoints</span><span class="p">:</span>
-</span><span id="line-41"><span class="linenos">41</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
-</span><span id="line-43"><span class="linenos">43</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
-</span><span id="line-44"><span class="linenos">44</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
-</span><span id="line-45"><span class="linenos">45</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">"127.0.0.1:80"</span>
-</span><span id="line-46"><span class="linenos">46</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
-</span><span id="line-47"><span class="linenos">47</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-9"><span class="linenos"> 9</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
+</span><span id="line-10"><span class="linenos">10</span><span class="nt">llm_providers</span><span class="p">:</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
+</span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+</span><span id="line-15"><span class="linenos">15</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-16"><span class="linenos">16</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-17"><span class="linenos">17</span>
+</span><span id="line-18"><span class="linenos">18</span><span class="c1"># default system prompt used by all prompt targets</span>
+</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+</span><span id="line-20"><span class="linenos">20</span>
+</span><span id="line-21"><mark><span class="linenos">21</span><span class="nt">prompt_targets</span><span class="p">:</span>
+</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
+</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot specific devices or device groups</span>
+</mark></span><span id="line-24"><mark><span class="linenos">24</span>
+</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
+</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+</mark></span><span id="line-27"><mark><span class="linenos">27</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
+</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
+</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
+</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_group</span>
+</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">str</span>
+</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The name of the device group to reboot</span>
+</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</mark></span><span id="line-35"><span class="linenos">35</span>
+</span><span id="line-36"><span class="linenos">36</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
+</span><span id="line-37"><span class="linenos">37</span><span class="nt">endpoints</span><span class="p">:</span>
+</span><span id="line-38"><span class="linenos">38</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
+</span><span id="line-39"><span class="linenos">39</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
+</span><span id="line-40"><span class="linenos">40</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
+</span><span id="line-41"><span class="linenos">41</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
+</span><span id="line-42"><span class="linenos">42</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:80</span>
+</span><span id="line-43"><span class="linenos">43</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
+</span><span id="line-44"><span class="linenos">44</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -365,12 +361,12 @@ the user’s intent.</p>
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
 <li><a :data-current="activeSection === '#single-function-call'" class="reference internal" href="#single-function-call">Single Function Call</a><ul>
-<li><a :data-current="activeSection === '#step-1-define-prompt-targets-with-functions'" class="reference internal" href="#step-1-define-prompt-targets-with-functions">Step 1: Define prompt targets with functions</a></li>
-<li><a :data-current="activeSection === '#step-2-process-request-parameters-in-flask'" class="reference internal" href="#step-2-process-request-parameters-in-flask">Step 2: Process request parameters in Flask</a></li>
+<li><a :data-current="activeSection === '#step-1-define-prompt-targets'" class="reference internal" href="#step-1-define-prompt-targets">Step 1: Define Prompt Targets</a></li>
+<li><a :data-current="activeSection === '#step-2-process-request-parameters'" class="reference internal" href="#step-2-process-request-parameters">Step 2: Process Request Parameters</a></li>
 </ul>
 </li>
-<li><a :data-current="activeSection === '#parallel-multiple-function-calling'" class="reference internal" href="#parallel-multiple-function-calling">Parallel/ Multiple Function Calling</a><ul>
-<li><a :data-current="activeSection === '#step-1-define-multiple-function-targets'" class="reference internal" href="#step-1-define-multiple-function-targets">Step 1: Define Multiple Function Targets</a></li>
+<li><a :data-current="activeSection === '#parallel-multiple-function-calling'" class="reference internal" href="#parallel-multiple-function-calling">Parallel &amp; Multiple Function Calling</a><ul>
+<li><a :data-current="activeSection === '#id1'" class="reference internal" href="#id1">Step 1: Define Prompt Targets</a></li>
 </ul>
 </li>
 </ul>

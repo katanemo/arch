@@ -7,9 +7,9 @@
 <meta content="white" media="(prefers-color-scheme: light)" name="theme-color"/>
 <meta content="black" media="(prefers-color-scheme: dark)" name="theme-color"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Prompt | Arch Docs v0.1</title>
-<meta content="Prompt | Arch Docs v0.1" property="og:title"/>
-<meta content="Prompt | Arch Docs v0.1" name="twitter:title"/>
+<title>Prompts | Arch Docs v0.1</title>
+<meta content="Prompts | Arch Docs v0.1" property="og:title"/>
+<meta content="Prompts | Arch Docs v0.1" name="twitter:title"/>
 <link href="../../_static/pygments.css?v=75ebff74" rel="stylesheet" type="text/css"/>
 <link href="../../_static/theme.css?v=edd7d3d2" rel="stylesheet" type="text/css"/>
 <link href="../../_static/_static/custom.css" rel="stylesheet" type="text/css"/>
@@ -18,8 +18,8 @@
 <link href="./docs/concepts/tech_overview/prompt.html" rel="canonical"/>
 <link href="../../_static/favicon.ico" rel="icon"/>
 <link href="../../search.html" rel="search" title="Search"/>
-<link href="request_lifecycle.html" rel="next" title="Request Lifecycle"/>
-<link href="model_serving.html" rel="prev" title="Model Serving"/>
+<link href="model_serving.html" rel="next" title="Model Serving"/>
+<link href="listener.html" rel="prev" title="Listener"/>
 <script>
     <!-- Prevent Flash of wrong theme -->
       const userPreference = localStorage.getItem('darkMode');
@@ -101,9 +101,10 @@
 <li class="toctree-l2"><a class="reference internal" href="terminology.html">Terminology</a></li>
 <li class="toctree-l2"><a class="reference internal" href="threading_model.html">Threading Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="listener.html">Listener</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Prompts</a></li>
 <li class="toctree-l2"><a class="reference internal" href="model_serving.html">Model Serving</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="request_lifecycle.html">Request Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="error_target.html">Error Target</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../llm_provider.html">LLM Provider</a></li>
@@ -128,7 +129,6 @@
 <p class="caption" role="heading"><span class="caption-text">Resources</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../resources/configuration_reference.html">Configuration Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../resources/error_target.html">Error Targets</a></li>
 </ul>
 </nav>
 </div>
@@ -149,20 +149,19 @@
 </svg>
 </a>
 <div class="mr-1">/</div><a class="hover:text-foreground overflow-hidden text-ellipsis whitespace-nowrap" href="tech_overview.html">Tech Overview</a>
-<div class="mr-1">/</div><span aria-current="page" class="font-medium text-foreground overflow-hidden text-ellipsis whitespace-nowrap">Prompt</span>
+<div class="mr-1">/</div><span aria-current="page" class="font-medium text-foreground overflow-hidden text-ellipsis whitespace-nowrap">Prompts</span>
 </nav>
 <div id="content" role="main">
-<section id="prompt">
-<span id="arch-overview-prompt-handling"></span><h1>Prompt<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
+<section id="prompts">
+<span id="arch-overview-prompt-handling"></span><h1>Prompts<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompts"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
 <p>Arch’s primary design point is to securely accept, process and handle prompts. To do that effectively,
 Arch relies on Envoy’s HTTP <a class="reference external" href="https://www.envoyproxy.io/docs/envoy/v1.31.2/intro/arch_overview/http/http_connection_management" rel="nofollow noopener">connection management<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>,
 subsystem and its <strong>prompt handler</strong> subsystem engineered with purpose-built LLMs to
 implement critical functionality on behalf of developers so that you can stay focused on business logic.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Arch’s <strong>prompt handler</strong> subsystem interacts with the <strong>model</strong> subsytem through Envoy’s cluster manager
-system to ensure robust, resilient and fault-tolerant experience in managing incoming prompts. Read more
-about the <a class="reference internal" href="model_serving.html#arch-model-serving"><span class="std std-ref">model subsystem</span></a> and how the LLMs are hosted in Arch.</p>
+<p>Arch’s <strong>prompt handler</strong> subsystem interacts with the <strong>model subsytem</strong> through Envoy’s cluster manager system to ensure robust, resilient and fault-tolerant experience in managing incoming prompts.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Read more about the <a class="reference internal" href="model_serving.html#model-serving"><span class="std std-ref">model subsystem</span></a> and how the LLMs are hosted in Arch.</p>
 </div>
 <section id="messages">
 <h2>Messages<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#messages" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#messages'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
@@ -176,15 +175,15 @@ containing two key-value pairs:</p>
 </ul>
 </div></blockquote>
 </section>
-<section id="prompt-guardrails">
-<h2>Prompt Guardrails<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt-guardrails" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#prompt-guardrails'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<section id="prompt-guard">
+<h2>Prompt Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt-guard" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#prompt-guard'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <p>Arch is engineered with <a class="reference internal" href="../../guides/prompt_guard.html#prompt-guard"><span class="std std-ref">Arch-Guard</span></a>, an industry leading safety layer, powered by a
 compact and high-performimg LLM that monitors incoming prompts to detect and reject jailbreak attempts -
 ensuring that unauthorized or harmful behaviors are intercepted early in the process.</p>
 <p>To add jailbreak guardrails, see example below:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1-beta"</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
 </span><span id="line-2"><span class="linenos"> 2</span>
 </span><span id="line-3"><span class="linenos"> 3</span><span class="nt">listener</span><span class="p">:</span>
 </span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
@@ -194,46 +193,27 @@ ensuring that unauthorized or harmful behaviors are intercepted early in the pro
 </span><span id="line-8"><span class="linenos"> 8</span>
 </span><span id="line-9"><span class="linenos"> 9</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
 </span><span id="line-10"><span class="linenos">10</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"OpenAI"</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"openai"</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$OPENAI_API_KEY</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
 </span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
 </span><span id="line-15"><span class="linenos">15</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="line-16"><span class="linenos">16</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="line-17"><span class="linenos">17</span>
 </span><span id="line-18"><span class="linenos">18</span><span class="c1"># default system prompt used by all prompt targets</span>
-</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-20"><span class="linenos">20</span><span class="w">  </span><span class="no">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
-</span><span id="line-21"><span class="linenos">21</span>
-</span><span id="line-22"><mark><span class="linenos">22</span><span class="nt">prompt_guards</span><span class="p">:</span>
-</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
-</mark></span><span id="line-24"><mark><span class="linenos">24</span><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
-</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
-</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">        </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="s">"Looks</span><span class="nv"> </span><span class="s">like</span><span class="nv"> </span><span class="s">you're</span><span class="nv"> </span><span class="s">curious</span><span class="nv"> </span><span class="s">about</span><span class="nv"> </span><span class="s">my</span><span class="nv"> </span><span class="s">abilities,</span><span class="nv"> </span><span class="s">but</span><span class="nv"> </span><span class="s">I</span><span class="nv"> </span><span class="s">can</span><span class="nv"> </span><span class="s">only</span><span class="nv"> </span><span class="s">provide</span><span class="nv"> </span><span class="s">assistance</span><span class="nv"> </span><span class="s">within</span><span class="nv"> </span><span class="s">my</span><span class="nv"> </span><span class="s">programmed</span><span class="nv"> </span><span class="s">parameters."</span>
-</mark></span><span id="line-27"><span class="linenos">27</span>
-</span><span id="line-28"><span class="linenos">28</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</span><span id="line-29"><span class="linenos">29</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"reboot_network_device"</span>
-</span><span id="line-30"><span class="linenos">30</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Helps</span><span class="nv"> </span><span class="s">network</span><span class="nv"> </span><span class="s">operators</span><span class="nv"> </span><span class="s">perform</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">operations</span><span class="nv"> </span><span class="s">like</span><span class="nv"> </span><span class="s">rebooting</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">device."</span>
-</span><span id="line-31"><span class="linenos">31</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
-</span><span id="line-32"><span class="linenos">32</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
-</span><span id="line-33"><span class="linenos">33</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">"/agent/action"</span>
-</span><span id="line-34"><span class="linenos">34</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</span><span id="line-35"><span class="linenos">35</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"device_id"</span>
-</span><span id="line-36"><span class="linenos">36</span><span class="w">        </span><span class="c1"># additional type options include: int | float | bool | string | list | dict</span>
-</span><span id="line-37"><span class="linenos">37</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">"string"</span>
-</span><span id="line-38"><span class="linenos">38</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Identifier</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">network</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">reboot."</span>
-</span><span id="line-39"><span class="linenos">39</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-40"><span class="linenos">40</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"confirmation"</span>
-</span><span id="line-41"><span class="linenos">41</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">"string"</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Confirmation</span><span class="nv"> </span><span class="s">flag</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">proceed</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">reboot."</span>
-</span><span id="line-43"><span class="linenos">43</span><span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
-</span><span id="line-44"><span class="linenos">44</span><span class="w">        </span><span class="nt">enum</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">yes</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">no</span><span class="p p-Indicator">]</span>
-</span></code></pre></div>
+</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+</span><span id="line-20"><span class="linenos">20</span>
+</span><span id="line-21"><mark><span class="linenos">21</span><span class="nt">prompt_guards</span><span class="p">:</span>
+</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
+</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
+</mark></span><span id="line-24"><mark><span class="linenos">24</span><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
+</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">        </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters.</span>
+</mark></span></code></pre></div>
 </div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>As a roadmap item, Arch will expose the ability for developers to define custom guardrails via Arch-Guard-v2,
+<p>As a roadmap item, Arch will expose the ability for developers to define custom guardrails via Arch-Guard,
 and add support for additional safety checks defined by developers and hazardous categories like, violent crimes, privacy, hate,
 etc. To offer feedback on our roadmap, please visit our <a class="reference external" href="https://github.com/orgs/katanemo/projects/1" rel="nofollow noopener">github page<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></p>
 </div>
@@ -247,7 +227,7 @@ when a user’s intent has changed so that you can build faster, more accurate R
 <p>Configuring <code class="docutils literal notranslate"><span class="pre">prompt_targets</span></code> is simple. See example below:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1-beta"</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
 </span><span id="line-2"><span class="linenos"> 2</span>
 </span><span id="line-3"><span class="linenos"> 3</span><span class="nt">listener</span><span class="p">:</span>
 </span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
@@ -257,69 +237,70 @@ when a user’s intent has changed so that you can build faster, more accurate R
 </span><span id="line-8"><span class="linenos"> 8</span>
 </span><span id="line-9"><span class="linenos"> 9</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
 </span><span id="line-10"><span class="linenos">10</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"OpenAI"</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="s">"openai"</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$OPENAI_API_KEY</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
 </span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
 </span><span id="line-15"><span class="linenos">15</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="line-16"><span class="linenos">16</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </span><span id="line-17"><span class="linenos">17</span>
 </span><span id="line-18"><span class="linenos">18</span><span class="c1"># default system prompt used by all prompt targets</span>
-</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-20"><span class="linenos">20</span><span class="w">  </span><span class="no">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
-</span><span id="line-21"><span class="linenos">21</span>
-</span><span id="line-22"><span class="linenos">22</span><span class="nt">prompt_guards</span><span class="p">:</span>
-</span><span id="line-23"><span class="linenos">23</span><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
-</span><span id="line-24"><span class="linenos">24</span><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
-</span><span id="line-25"><span class="linenos">25</span><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
-</span><span id="line-26"><span class="linenos">26</span><span class="w">        </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="s">"Looks</span><span class="nv"> </span><span class="s">like</span><span class="nv"> </span><span class="s">you're</span><span class="nv"> </span><span class="s">curious</span><span class="nv"> </span><span class="s">about</span><span class="nv"> </span><span class="s">my</span><span class="nv"> </span><span class="s">abilities,</span><span class="nv"> </span><span class="s">but</span><span class="nv"> </span><span class="s">I</span><span class="nv"> </span><span class="s">can</span><span class="nv"> </span><span class="s">only</span><span class="nv"> </span><span class="s">provide</span><span class="nv"> </span><span class="s">assistance</span><span class="nv"> </span><span class="s">within</span><span class="nv"> </span><span class="s">my</span><span class="nv"> </span><span class="s">programmed</span><span class="nv"> </span><span class="s">parameters."</span>
-</span><span id="line-27"><span class="linenos">27</span>
-</span><span id="line-28"><span class="linenos">28</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</span><span id="line-29"><mark><span class="linenos">29</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"reboot_network_device"</span>
-</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Helps</span><span class="nv"> </span><span class="s">network</span><span class="nv"> </span><span class="s">operators</span><span class="nv"> </span><span class="s">perform</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">operations</span><span class="nv"> </span><span class="s">like</span><span class="nv"> </span><span class="s">rebooting</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">device."</span>
-</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
-</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
-</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">"/agent/action"</span>
-</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</mark></span><span id="line-35"><mark><span class="linenos">35</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"device_id"</span>
-</mark></span><span id="line-36"><mark><span class="linenos">36</span><span class="w">        </span><span class="c1"># additional type options include: int | float | bool | string | list | dict</span>
-</mark></span><span id="line-37"><mark><span class="linenos">37</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">"string"</span>
-</mark></span><span id="line-38"><mark><span class="linenos">38</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Identifier</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">network</span><span class="nv"> </span><span class="s">device</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">reboot."</span>
-</mark></span><span id="line-39"><span class="linenos">39</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-40"><span class="linenos">40</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"confirmation"</span>
-</span><span id="line-41"><span class="linenos">41</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">"string"</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Confirmation</span><span class="nv"> </span><span class="s">flag</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">proceed</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">reboot."</span>
-</span><span id="line-43"><span class="linenos">43</span><span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">"no"</span>
-</span><span id="line-44"><span class="linenos">44</span><span class="w">        </span><span class="nt">enum</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">yes</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">no</span><span class="p p-Indicator">]</span>
-</span><span id="line-45"><span class="linenos">45</span>
-</span><span id="line-46"><span class="linenos">46</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"information_extraction"</span>
-</span><span id="line-47"><span class="linenos">47</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-48"><span class="linenos">48</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"This</span><span class="nv"> </span><span class="s">prompt</span><span class="nv"> </span><span class="s">handles</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">scenarios</span><span class="nv"> </span><span class="s">that</span><span class="nv"> </span><span class="s">are</span><span class="nv"> </span><span class="s">question</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">answer</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">nature.</span><span class="nv"> </span><span class="s">Like</span><span class="nv"> </span><span class="s">summarization,</span><span class="nv"> </span><span class="s">information</span><span class="nv"> </span><span class="s">extraction,</span><span class="nv"> </span><span class="s">etc."</span>
-</span><span id="line-49"><span class="linenos">49</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
-</span><span id="line-50"><span class="linenos">50</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
-</span><span id="line-51"><span class="linenos">51</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">"/agent/summary"</span>
-</span><span id="line-52"><span class="linenos">52</span><span class="w">    </span><span class="c1"># Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM</span>
-</span><span id="line-53"><span class="linenos">53</span><span class="w">    </span><span class="nt">auto_llm_dispatch_on_response</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-54"><span class="linenos">54</span><span class="w">    </span><span class="c1"># override system prompt for this prompt target</span>
-</span><span id="line-55"><span class="linenos">55</span><span class="w">    </span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-56"><span class="linenos">56</span><span class="w">      </span><span class="no">You are a helpful information extraction assistant. Use the information that is provided to you.</span>
-</span><span id="line-57"><span class="linenos">57</span>
-</span><span id="line-58"><span class="linenos">58</span><span class="nt">error_target</span><span class="p">:</span>
-</span><span id="line-59"><span class="linenos">59</span><span class="w">  </span><span class="nt">endpoint</span><span class="p">:</span>
-</span><span id="line-60"><span class="linenos">60</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error_target_1</span>
-</span><span id="line-61"><span class="linenos">61</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/error</span>
-</span><span id="line-62"><span class="linenos">62</span>
-</span><span id="line-63"><span class="linenos">63</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
-</span><span id="line-64"><span class="linenos">64</span><span class="nt">endpoints</span><span class="p">:</span>
-</span><span id="line-65"><span class="linenos">65</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
-</span><span id="line-66"><span class="linenos">66</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
-</span><span id="line-67"><span class="linenos">67</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
-</span><span id="line-68"><span class="linenos">68</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
-</span><span id="line-69"><span class="linenos">69</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="s">"127.0.0.1:80"</span>
-</span><span id="line-70"><span class="linenos">70</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
-</span><span id="line-71"><span class="linenos">71</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+</span><span id="line-20"><span class="linenos">20</span>
+</span><span id="line-21"><span class="linenos">21</span><span class="nt">prompt_guards</span><span class="p">:</span>
+</span><span id="line-22"><span class="linenos">22</span><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
+</span><span id="line-23"><span class="linenos">23</span><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
+</span><span id="line-24"><span class="linenos">24</span><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
+</span><span id="line-25"><span class="linenos">25</span><span class="w">        </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters.</span>
+</span><span id="line-26"><span class="linenos">26</span>
+</span><span id="line-27"><span class="linenos">27</span><span class="nt">prompt_targets</span><span class="p">:</span>
+</span><span id="line-28"><span class="linenos">28</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">information_extraction</span>
+</span><span id="line-29"><span class="linenos">29</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-30"><span class="linenos">30</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">handel all scenarios that are question and answer in nature. Like summarization, information extraction, etc.</span>
+</span><span id="line-31"><span class="linenos">31</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-32"><span class="linenos">32</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</span><span id="line-33"><span class="linenos">33</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/summary</span>
+</span><span id="line-34"><span class="linenos">34</span><span class="w">    </span><span class="c1"># Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM</span>
+</span><span id="line-35"><span class="linenos">35</span><span class="w">    </span><span class="nt">auto_llm_dispatch_on_response</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-36"><span class="linenos">36</span><span class="w">    </span><span class="c1"># override system prompt for this prompt target</span>
+</span><span id="line-37"><span class="linenos">37</span><span class="w">    </span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a helpful information extraction assistant. Use the information that is provided to you.</span>
+</span><span id="line-38"><span class="linenos">38</span>
+</span><span id="line-39"><mark><span class="linenos">39</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_network_device</span>
+</mark></span><span id="line-40"><mark><span class="linenos">40</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot a specific network device</span>
+</mark></span><span id="line-41"><mark><span class="linenos">41</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
+</mark></span><span id="line-42"><mark><span class="linenos">42</span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</mark></span><span id="line-43"><mark><span class="linenos">43</span><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/action</span>
+</mark></span><span id="line-44"><mark><span class="linenos">44</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+</mark></span><span id="line-45"><mark><span class="linenos">45</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_id</span>
+</mark></span><span id="line-46"><mark><span class="linenos">46</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">str</span>
+</mark></span><span id="line-47"><mark><span class="linenos">47</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Identifier of the network device to reboot.</span>
+</mark></span><span id="line-48"><mark><span class="linenos">48</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</mark></span><span id="line-49"><mark><span class="linenos">49</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confirmation</span>
+</mark></span><span id="line-50"><mark><span class="linenos">50</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bool</span>
+</mark></span><span id="line-51"><mark><span class="linenos">51</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Confirmation flag to proceed with reboot.</span>
+</mark></span><span id="line-52"><mark><span class="linenos">52</span><span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</mark></span><span id="line-53"><mark><span class="linenos">53</span><span class="w">        </span><span class="nt">enum</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">true</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">]</span>
+</mark></span><span id="line-54"><span class="linenos">54</span>
+</span><span id="line-55"><span class="linenos">55</span><span class="nt">error_target</span><span class="p">:</span>
+</span><span id="line-56"><span class="linenos">56</span><span class="w">  </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-57"><span class="linenos">57</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error_target_1</span>
+</span><span id="line-58"><span class="linenos">58</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/error</span>
+</span><span id="line-59"><span class="linenos">59</span>
+</span><span id="line-60"><span class="linenos">60</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
+</span><span id="line-61"><span class="linenos">61</span><span class="nt">endpoints</span><span class="p">:</span>
+</span><span id="line-62"><span class="linenos">62</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
+</span><span id="line-63"><span class="linenos">63</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
+</span><span id="line-64"><span class="linenos">64</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
+</span><span id="line-65"><span class="linenos">65</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
+</span><span id="line-66"><span class="linenos">66</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:80</span>
+</span><span id="line-67"><span class="linenos">67</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
+</span><span id="line-68"><span class="linenos">68</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
 </span></code></pre></div>
 </div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Check <a class="reference internal" href="../prompt_target.html#prompt-target"><span class="std std-ref">Prompt Target</span></a> for more details!</p>
 </div>
 <section id="intent-detection-and-prompt-matching">
 <h3>Intent Detection and Prompt Matching:<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#intent-detection-and-prompt-matching" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#intent-detection-and-prompt-matching'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
@@ -382,28 +363,24 @@ traffic, apply rate limits, and utilize a large set of traffic management capabi
 </span><span id="line-14"><span class="nb">print</span><span class="p">(</span><span class="s2">"OpenAI Response:"</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
 </span></code></pre></div>
 </div>
-<p>In these examples:</p>
-<blockquote>
-<div><p>The OpenAI client is used to send traffic directly through the Arch egress proxy to the LLM of your choice, such as OpenAI.
-The OpenAI client is configured to route traffic via Arch by setting the proxy to 127.0.0.1:51001, assuming Arch is
-running locally and bound to that address and port.</p>
-</div></blockquote>
-<p>This setup allows you to take advantage of Arch’s advanced traffic management features while interacting with LLM APIs like OpenAI.</p>
+<p>In these examples, the OpenAI client is used to send traffic directly through the Arch egress proxy to the LLM of your choice, such as OpenAI.
+The OpenAI client is configured to route traffic via Arch by setting the proxy to <code class="docutils literal notranslate"><span class="pre">127.0.0.1:51001</span></code>, assuming Arch is running locally and bound to that address and port.
+This setup allows you to take advantage of Arch’s advanced traffic management features while interacting with LLM APIs like OpenAI.</p>
 </section>
 </section>
 </section>
 </div><div class="flex justify-between items-center pt-6 mt-12 border-t border-border gap-4">
 <div class="mr-auto">
-<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="model_serving.html">
+<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="listener.html">
 <svg class="mr-2 h-4 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
 <polyline points="15 18 9 12 15 6"></polyline>
 </svg>
-        Model Serving
+        Listener
       </a>
 </div>
 <div class="ml-auto">
-<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="request_lifecycle.html">
-        Request Lifecycle
+<a class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-input hover:bg-accent hover:text-accent-foreground py-2 px-4" href="model_serving.html">
+        Model Serving
         <svg class="ml-2 h-4 w-4" fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
 <polyline points="9 18 15 12 9 6"></polyline>
 </svg>
@@ -413,7 +390,7 @@ running locally and bound to that address and port.</p>
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
 <li><a :data-current="activeSection === '#messages'" class="reference internal" href="#messages">Messages</a></li>
-<li><a :data-current="activeSection === '#prompt-guardrails'" class="reference internal" href="#prompt-guardrails">Prompt Guardrails</a></li>
+<li><a :data-current="activeSection === '#prompt-guard'" class="reference internal" href="#prompt-guard">Prompt Guard</a></li>
 <li><a :data-current="activeSection === '#prompt-targets'" class="reference internal" href="#prompt-targets">Prompt Targets</a><ul>
 <li><a :data-current="activeSection === '#intent-detection-and-prompt-matching'" class="reference internal" href="#intent-detection-and-prompt-matching">Intent Detection and Prompt Matching:</a></li>
 <li><a :data-current="activeSection === '#agentic-apps-via-prompt-targets'" class="reference internal" href="#agentic-apps-via-prompt-targets">Agentic Apps via Prompt Targets</a></li>
