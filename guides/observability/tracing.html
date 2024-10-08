@@ -185,7 +185,7 @@ making it easy to visualize traces in the tools you’re already usi</p></li>
 <section id="how-to-initiate-a-trace">
 <h2>How to Initiate A Trace<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#how-to-initiate-a-trace" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#how-to-initiate-a-trace'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <ol class="arabic simple">
-<li><p><strong>Enable Tracing Configuration</strong>: Simply add the <code class="docutils literal notranslate"><span class="pre">tracing:</span> <span class="pre">100</span></code> flag to in the <a class="reference internal" href="../../concepts/tech_overview/listener.html#arch-overview-listeners"><span class="std std-ref">listener</span></a> config</p></li>
+<li><p><strong>Enable Tracing Configuration</strong>: Simply add the <code class="docutils literal notranslate"><span class="pre">random_sampling</span></code> in <code class="docutils literal notranslate"><span class="pre">tracing</span></code> section to 100`` flag to in the <a class="reference internal" href="../../concepts/tech_overview/listener.html#arch-overview-listeners"><span class="std std-ref">listener</span></a> config</p></li>
 <li><p><strong>Trace Context Propagation</strong>: Arch automatically propagates the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header. When a request is received, Arch will:</p>
 <ul class="simple">
 <li><p>Generate a new <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header if one is not present.</p></li>
@@ -194,7 +194,7 @@ making it easy to visualize traces in the tools you’re already usi</p></li>
 <li><p>Forward the <code class="docutils literal notranslate"><span class="pre">traceparent</span></code> header to downstream services.</p></li>
 </ul>
 </li>
-<li><p><strong>Sampling Policy</strong>: The 100 in <code class="docutils literal notranslate"><span class="pre">tracing:</span> <span class="pre">100</span></code> means that all the requests as sampled for tracing.
+<li><p><strong>Sampling Policy</strong>: The 100 in <code class="docutils literal notranslate"><span class="pre">random_sampling:</span> <span class="pre">100</span></code> means that all the requests as sampled for tracing.
 You can adjust this value from 0-100.</p></li>
 </ol>
 </section>
