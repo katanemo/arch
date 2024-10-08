@@ -1,7 +1,7 @@
 .. _arch_overview_prompt_handling:
 
-Prompt
-======
+Prompts
+=======
 
 Arch's primary design point is to securely accept, process and handle prompts. To do that effectively,
 Arch relies on Envoy's HTTP `connection management <https://www.envoyproxy.io/docs/envoy/v1.31.2/intro/arch_overview/http/http_connection_management>`_,
