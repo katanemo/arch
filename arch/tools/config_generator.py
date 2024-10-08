@@ -67,12 +67,14 @@ def validate_and_render_schema():
 
     config_yaml = add_secret_key_to_llm_providers(config_yaml)
     arch_llm_providers = config_yaml["llm_providers"]
+    arch_tracing = config_yaml.get("tracing", {})
     arch_config_string = yaml.dump(config_yaml)
 
     data = {
         'arch_config': arch_config_string,
         'arch_clusters': inferred_clusters,
-        'arch_llm_providers': arch_llm_providers
+        'arch_llm_providers': arch_llm_providers,
+        'arch_tracing': arch_tracing
     }
 
     rendered = template.render(data)

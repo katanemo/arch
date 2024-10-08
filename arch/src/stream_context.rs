@@ -1,9 +1,9 @@
 use crate::consts::{
-    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER,
-    ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
-    RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY,
+    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER,
+    ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
+    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use crate::http::{CallArgs, Client, ClientError};
@@ -109,9 +109,11 @@ pub struct StreamContext {
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
+    request_id: Option<String>,
 }
 
 impl StreamContext {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
@@ -143,6 +145,7 @@ impl StreamContext {
             llm_provider: None,
             prompt_guards,
             overrides,
+            request_id: None,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -292,17 +295,24 @@ impl StreamContext {
             }
         };
 
+        let mut headers = vec![
+            (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+            (":method", "POST"),
+            (":path", "/zeroshot"),
+            (":authority", MODEL_SERVER_NAME),
+            ("content-type", "application/json"),
+            ("x-envoy-max-retries", "3"),
+            ("x-envoy-upstream-rq-timeout-ms", "60000"),
+        ];
+
+        if self.request_id.is_some() {
+            headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
+
         let call_args = CallArgs::new(
-            MODEL_SERVER_NAME,
+            ARCH_INTERNAL_CLUSTER_NAME,
             "/zeroshot",
-            vec![
-                (":method", "POST"),
-                (":path", "/zeroshot"),
-                (":authority", MODEL_SERVER_NAME),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-                ("x-envoy-upstream-rq-timeout-ms", "60000"),
-            ],
+            headers,
             Some(json_data.as_bytes()),
             vec![],
             Duration::from_secs(5),
@@ -470,17 +480,25 @@ impl StreamContext {
                     debug!("no prompt target found with similarity score above threshold, using default prompt target");
 
                     let timeout_str = ARCH_FC_REQUEST_TIMEOUT_MS.to_string();
+
+                    let mut headers = vec![
+                        (":method", "POST"),
+                        (ARCH_UPSTREAM_HOST_HEADER, &upstream_endpoint),
+                        (":path", &upstream_path),
+                        (":authority", &upstream_endpoint),
+                        ("content-type", "application/json"),
+                        ("x-envoy-max-retries", "3"),
+                        ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
+                    ];
+
+                    if self.request_id.is_some() {
+                        headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+                    }
+
                     let call_args = CallArgs::new(
-                        &upstream_endpoint,
+                        ARCH_INTERNAL_CLUSTER_NAME,
                         &upstream_path,
-                        vec![
-                            (":method", "POST"),
-                            (":path", &upstream_path),
-                            (":authority", &upstream_endpoint),
-                            ("content-type", "application/json"),
-                            ("x-envoy-max-retries", "3"),
-                            ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
-                        ],
+                        headers,
                         Some(arch_messages_json.as_bytes()),
                         vec![],
                         Duration::from_secs(5),
@@ -578,17 +596,25 @@ impl StreamContext {
         };
 
         let timeout_str = ARCH_FC_REQUEST_TIMEOUT_MS.to_string();
+
+        let mut headers = vec![
+            (":method", "POST"),
+            (ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER),
+            (":path", "/v1/chat/completions"),
+            (":authority", ARC_FC_CLUSTER),
+            ("content-type", "application/json"),
+            ("x-envoy-max-retries", "3"),
+            ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
+        ];
+
+        if self.request_id.is_some() {
+            headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
+
         let call_args = CallArgs::new(
-            ARC_FC_CLUSTER,
+            ARCH_INTERNAL_CLUSTER_NAME,
             "/v1/chat/completions",
-            vec![
-                (":method", "POST"),
-                (":path", "/v1/chat/completions"),
-                (":authority", ARC_FC_CLUSTER),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-                ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
-            ],
+            headers,
             Some(msg_body.as_bytes()),
             vec![],
             Duration::from_secs(5),
@@ -693,17 +719,25 @@ impl StreamContext {
                         return self.send_server_error(ServerError::Serialization(error), None);
                     }
                 };
+
+            let mut headers = vec![
+                (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+                (":method", "POST"),
+                (":path", "/hallucination"),
+                (":authority", MODEL_SERVER_NAME),
+                ("content-type", "application/json"),
+                ("x-envoy-max-retries", "3"),
+                ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ];
+
+            if self.request_id.is_some() {
+                headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+            }
+
             let call_args = CallArgs::new(
-                MODEL_SERVER_NAME,
+                ARCH_INTERNAL_CLUSTER_NAME,
                 "/hallucination",
-                vec![
-                    (":method", "POST"),
-                    (":path", "/hallucination"),
-                    (":authority", MODEL_SERVER_NAME),
-                    ("content-type", "application/json"),
-                    ("x-envoy-max-retries", "3"),
-                    ("x-envoy-upstream-rq-timeout-ms", "60000"),
-                ],
+                headers,
                 Some(json_data.as_bytes()),
                 vec![],
                 Duration::from_secs(5),
@@ -740,16 +774,24 @@ impl StreamContext {
 
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
+
+        let mut headers = vec![
+            (ARCH_UPSTREAM_HOST_HEADER, endpoint.name.as_str()),
+            (":method", "POST"),
+            (":path", &path),
+            (":authority", endpoint.name.as_str()),
+            ("content-type", "application/json"),
+            ("x-envoy-max-retries", "3"),
+        ];
+
+        if self.request_id.is_some() {
+            headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
+
         let call_args = CallArgs::new(
-            &endpoint.name,
+            ARCH_INTERNAL_CLUSTER_NAME,
             &path,
-            vec![
-                (":method", "POST"),
-                (":path", &path),
-                (":authority", endpoint.name.as_str()),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-            ],
+            headers,
             Some(tool_params_json_str.as_bytes()),
             vec![],
             Duration::from_secs(5),
@@ -799,10 +841,7 @@ impl StreamContext {
 
         // add system prompt
         let system_prompt = match prompt_target.system_prompt.as_ref() {
-            None => match self.system_prompt.as_ref() {
-                None => None,
-                Some(system_prompt) => Some(system_prompt.clone()),
-            },
+            None => self.system_prompt.as_ref().clone(),
             Some(system_prompt) => Some(system_prompt.clone()),
         };
         if system_prompt.is_some() {
@@ -927,17 +966,22 @@ impl StreamContext {
             }
         };
 
+        let mut headers = vec![
+            (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+            (":method", "POST"),
+            (":path", "/embeddings"),
+            (":authority", MODEL_SERVER_NAME),
+            ("content-type", "application/json"),
+            ("x-envoy-max-retries", "3"),
+            ("x-envoy-upstream-rq-timeout-ms", "60000"),
+        ];
+        if self.request_id.is_some() {
+            headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
         let call_args = CallArgs::new(
-            MODEL_SERVER_NAME,
+            ARCH_INTERNAL_CLUSTER_NAME,
             "/embeddings",
-            vec![
-                (":method", "POST"),
-                (":path", "/embeddings"),
-                (":authority", MODEL_SERVER_NAME),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-                ("x-envoy-upstream-rq-timeout-ms", "60000"),
-            ],
+            headers,
             Some(json_data.as_bytes()),
             vec![],
             Duration::from_secs(5),
@@ -1053,6 +1097,8 @@ impl HttpContext for StreamContext {
             self.context_id,
             self.get_http_request_headers()
         );
+
+        self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
 
         Action::Continue
     }
@@ -1180,17 +1226,24 @@ impl HttpContext for StreamContext {
             }
         };
 
+        let mut headers = vec![
+            (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+            (":method", "POST"),
+            (":path", "/guard"),
+            (":authority", MODEL_SERVER_NAME),
+            ("content-type", "application/json"),
+            ("x-envoy-max-retries", "3"),
+            ("x-envoy-upstream-rq-timeout-ms", "60000"),
+        ];
+
+        if self.request_id.is_some() {
+            headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
+
         let call_args = CallArgs::new(
-            MODEL_SERVER_NAME,
+            ARCH_INTERNAL_CLUSTER_NAME,
             "/guard",
-            vec![
-                (":method", "POST"),
-                (":path", "/guard"),
-                (":authority", MODEL_SERVER_NAME),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-                ("x-envoy-upstream-rq-timeout-ms", "60000"),
-            ],
+            headers,
             Some(json_data.as_bytes()),
             vec![],
             Duration::from_secs(5),
@@ -1286,6 +1339,7 @@ impl HttpContext for StreamContext {
                 match serde_json::from_slice(&body) {
                     Ok(de) => de,
                     Err(e) => {
+                        debug!("invalid response: {}", String::from_utf8_lossy(&body));
                         self.send_server_error(ServerError::Deserialization(e), None);
                         return Action::Pause;
                     }
