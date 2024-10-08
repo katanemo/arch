@@ -15,7 +15,7 @@ WORKDIR /src
 # specify list of models that will go into the image as a comma separated list
 # following models have been tested to work with this image
 # "sentence-transformers/all-MiniLM-L6-v2,sentence-transformers/all-mpnet-base-v2,thenlper/gte-base,thenlper/gte-large,thenlper/gte-small"
-ENV MODELS="BAAI/bge-large-en-v1.5"
+ENV MODELS="katanemo/bge-large-en-v1.5-onnx"
 
 COPY ./app ./app
 COPY ./app/guard_model_config.yaml .
