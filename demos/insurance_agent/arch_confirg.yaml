@@ -20,7 +20,7 @@ endpoints:
     # value could be ip address or a hostname with port
     # this could also be a list of endpoints for load balancing
     # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: 127.0.0.1:80
+    endpoint: host.docker.internal:18083
     # max time to wait for a connection to be established
     connect_timeout: 0.05s
 
@@ -89,3 +89,12 @@ prompt_targets:
       type: float
       description: the deductible amount set of the policy
       required: true
+
+ratelimits:
+  - model: gpt-4
+    selector:
+      key: selector-key
+      value: selector-value
+    limit:
+      tokens: 1
+      unit: minute

@@ -1,18 +1,10 @@
-import openai
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 app = FastAPI()
-openai.api_base = "http://127.0.0.1:10000/v1"  # Local proxy
-
-# Data models
-# Define a Pydantic model for the incoming request
-class Message(BaseModel):
-    role: str
-    content: str
 
 class Conversation(BaseModel):
-    messages: list[Message]
+    arch_messages: list
 
 class PolicyCoverageRequest(BaseModel):
     policy_type: str = Field(..., description="The type of a policy held by the customer For, e.g. car, boat, house, motorcycle)")
@@ -93,34 +85,22 @@ async def policy_qa(conversation: Conversation):
     This method handles Q/A related to general issues in insurance.
     It forwards the conversation to the OpenAI client via a local proxy and returns the response.
     """
-    try:
-        # Get the latest user message from the conversation
-        user_message = conversation.messages  # Assuming the last message is from the user
-
-        # Call the OpenAI API through the Python client
-        response = openai.Completion.create(
-            model="gpt-4o",  # Replace with the model you want to use
-            prompt=user_message,
-            max_tokens=150
-        )
-
-        # Extract the response text from OpenAI
-        completion = response.choices[0].text.strip()
-
-        # Build the assistant's response message
-        assistant_message = Message(role="assistant", content=completion)
-
-        # Append the assistant's response to the conversation and return it
-        updated_conversation = Conversation(
-            messages=conversation.messages + [assistant_message]
-        )
-
-        return updated_conversation
-
-    except openai.error.OpenAIError as e:
-        raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+    return {
+            "choices": [
+              {
+                "message": {
+                  "role": "assistant",
+                  "content": "I am a helpful insurance agent, and can only help with insurance things"
+                },
+                "finish_reason": "completed",
+                "index": 0
+              }
+            ],
+            "model": "insurance_agent",
+            "usage": {
+              "completion_tokens": 0
+            }
+          }
 
 # Run the app using:
 # uvicorn main:app --reload
