@@ -1,7 +1,8 @@
 use crate::consts::{
-    ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
-    ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER,
+    ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH,
+    DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
@@ -17,12 +18,13 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::open_ai::{
     ArchState, ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
-    ChatCompletionsResponse, FunctionDefinition, FunctionParameter, FunctionParameters, Message,
-    ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
+    ChatCompletionsResponse, Choice, FunctionDefinition, FunctionParameter, FunctionParameters,
+    Message, ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
 };
 use public_types::common_types::{
-    EmbeddingType, PromptGuardRequest, PromptGuardResponse, PromptGuardTask,
-    ZeroShotClassificationRequest, ZeroShotClassificationResponse,
+    EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
+    PromptGuardRequest, PromptGuardResponse, PromptGuardTask, ZeroShotClassificationRequest,
+    ZeroShotClassificationResponse,
 };
 use public_types::configuration::LlmProvider;
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
@@ -37,22 +39,24 @@ use std::num::NonZero;
 use std::rc::Rc;
 use std::time::Duration;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum ResponseHandlerType {
     GetEmbeddings,
     FunctionResolver,
     FunctionCall,
     ZeroShotIntent,
+    HallucinationDetect,
     ArchGuard,
     DefaultTarget,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StreamCallContext {
     response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
     prompt_target_name: Option<String>,
     request_body: ChatCompletionsRequest,
+    tool_calls: Option<Vec<ToolCall>>,
     similarity_scores: Option<Vec<(String, f64)>>,
     upstream_cluster: Option<String>,
     upstream_cluster_path: Option<String>,
@@ -307,6 +311,69 @@ impl StreamContext {
 
         if let Err(e) = self.http_call(call_args, callout_context) {
             self.send_server_error(ServerError::HttpDispatch(e), None);
+        }
+    }
+
+    fn hallucination_classification_resp_handler(
+        &mut self,
+        body: Vec<u8>,
+        callout_context: StreamCallContext,
+    ) {
+        let hallucination_response: HallucinationClassificationResponse =
+            match serde_json::from_slice(&body) {
+                Ok(hallucination_response) => hallucination_response,
+                Err(e) => {
+                    return self.send_server_error(ServerError::Deserialization(e), None);
+                }
+            };
+        let mut keys_with_low_score: Vec<String> = Vec::new();
+        for (key, value) in &hallucination_response.params_scores {
+            if *value < DEFAULT_HALLUCINATED_THRESHOLD {
+                debug!(
+                    "hallucination detected: score for {} : {} is less than threshold {}",
+                    key, value, DEFAULT_HALLUCINATED_THRESHOLD
+                );
+                keys_with_low_score.push(key.clone().to_string());
+            }
+        }
+
+        if !keys_with_low_score.is_empty() {
+            let response =
+                "It seems I’m missing some information. Could you provide the following details: "
+                    .to_string()
+                    + &keys_with_low_score.join(", ")
+                    + " ?";
+            let message = Message {
+                role: SYSTEM_ROLE.to_string(),
+                content: Some(response),
+                model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                tool_calls: None,
+            };
+
+            let chat_completion_response = ChatCompletionsResponse {
+                choices: vec![Choice {
+                    message,
+                    index: 0,
+                    finish_reason: "done".to_string(),
+                }],
+                usage: None,
+                model: ARCH_FC_MODEL_NAME.to_string(),
+                metadata: None,
+            };
+
+            debug!("hallucination response: {:?}", chat_completion_response);
+            self.send_http_response(
+                StatusCode::OK.as_u16().into(),
+                vec![("Powered-By", "Katanemo")],
+                Some(
+                    serde_json::to_string(&chat_completion_response)
+                        .unwrap()
+                        .as_bytes(),
+                ),
+            );
+        } else {
+            // not a hallucination, resume the flow
+            self.schedule_api_call_request(callout_context);
         }
     }
 
@@ -565,6 +632,9 @@ impl StreamContext {
 
         let tool_calls = model_resp.message.tool_calls.as_ref().unwrap();
 
+        // TODO CO:  pass nli check
+        // If hallucination, pass chat template to check parameters
+
         // extract all tool names
         let tool_names: Vec<String> = tool_calls
             .iter()
@@ -581,16 +651,92 @@ impl StreamContext {
             String::from(ARCH_MESSAGES_KEY),
             serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
         );
+
         let tools_call_name = tool_calls[0].function.name.clone();
         let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
-
         let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
+        callout_context.tool_calls = Some(tool_calls.clone());
 
         debug!(
             "prompt_target_name: {}, tool_name(s): {:?}",
             prompt_target.name, tool_names
         );
         debug!("tool_params: {}", tool_params_json_str);
+
+        if model_resp.message.tool_calls.is_some()
+            && !model_resp.message.tool_calls.as_ref().unwrap().is_empty()
+        {
+            use serde_json::Value;
+            let v: Value = serde_json::from_str(&tool_params_json_str).unwrap();
+            let tool_params_dict: HashMap<String, String> = match v.as_object() {
+                Some(obj) => obj
+                    .iter()
+                    .filter_map(|(key, value)| {
+                        value
+                            .as_str()
+                            .map(|str_value| (key.clone(), str_value.to_string()))
+                    })
+                    .collect(),
+                None => HashMap::new(), // Return an empty HashMap if v is not an object
+            };
+
+            let hallucination_classification_request = HallucinationClassificationRequest {
+                prompt: callout_context.user_message.as_ref().unwrap().clone(),
+                model: String::from(DEFAULT_INTENT_MODEL),
+                parameters: tool_params_dict,
+            };
+
+            let json_data: String =
+                match serde_json::to_string(&hallucination_classification_request) {
+                    Ok(json_data) => json_data,
+                    Err(error) => {
+                        return self.send_server_error(ServerError::Serialization(error), None);
+                    }
+                };
+            let call_args = CallArgs::new(
+                MODEL_SERVER_NAME,
+                "/hallucination",
+                vec![
+                    (":method", "POST"),
+                    (":path", "/hallucination"),
+                    (":authority", MODEL_SERVER_NAME),
+                    ("content-type", "application/json"),
+                    ("x-envoy-max-retries", "3"),
+                    ("x-envoy-upstream-rq-timeout-ms", "60000"),
+                ],
+                Some(json_data.as_bytes()),
+                vec![],
+                Duration::from_secs(5),
+            );
+            callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
+
+            if let Err(e) = self.http_call(call_args, callout_context) {
+                self.send_server_error(ServerError::HttpDispatch(e), None);
+            }
+        } else {
+            self.schedule_api_call_request(callout_context);
+        }
+    }
+
+    fn schedule_api_call_request(&mut self, mut callout_context: StreamCallContext) {
+        let tools_call_name = callout_context.tool_calls.as_ref().unwrap()[0]
+            .function
+            .name
+            .clone();
+
+        let prompt_target = self.prompt_targets.get(&tools_call_name).unwrap().clone();
+
+        //HACK: for now we only support one tool call, we will support multiple tool calls in the future
+        let mut tool_params = callout_context.tool_calls.as_ref().unwrap()[0]
+            .function
+            .arguments
+            .clone();
+        tool_params.insert(
+            String::from(ARCH_MESSAGES_KEY),
+            serde_yaml::to_value(&callout_context.request_body.messages).unwrap(),
+        );
+
+        let tool_params_json_str = serde_json::to_string(&tool_params).unwrap();
 
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
@@ -612,8 +758,6 @@ impl StreamContext {
         callout_context.upstream_cluster_path = Some(path.clone());
         callout_context.response_handler_type = ResponseHandlerType::FunctionCall;
 
-        self.tool_calls = Some(tool_calls.clone());
-
         if let Err(e) = self.http_call(call_args, callout_context) {
             self.send_server_error(ServerError::HttpDispatch(e), Some(StatusCode::BAD_REQUEST));
         }
@@ -622,7 +766,7 @@ impl StreamContext {
     fn function_call_response_handler(
         &mut self,
         body: Vec<u8>,
-        callout_context: StreamCallContext,
+        mut callout_context: StreamCallContext,
     ) {
         if let Some(http_status) = self.get_http_call_response_header(":status") {
             if http_status != StatusCode::OK.as_str() {
@@ -651,7 +795,28 @@ impl StreamContext {
             .unwrap()
             .clone();
 
-        let mut messages: Vec<Message> = callout_context.request_body.messages.clone();
+        let mut messages: Vec<Message> = Vec::new();
+
+        // add system prompt
+        let system_prompt = match prompt_target.system_prompt.as_ref() {
+            None => match self.system_prompt.as_ref() {
+                None => None,
+                Some(system_prompt) => Some(system_prompt.clone()),
+            },
+            Some(system_prompt) => Some(system_prompt.clone()),
+        };
+        if system_prompt.is_some() {
+            let system_prompt_message = Message {
+                role: SYSTEM_ROLE.to_string(),
+                content: system_prompt,
+                model: None,
+                tool_calls: None,
+            };
+            messages.push(system_prompt_message);
+        }
+
+        messages.append(callout_context.request_body.messages.as_mut());
+
         let user_message = match messages.pop() {
             Some(user_message) => user_message,
             None => {
@@ -663,25 +828,6 @@ impl StreamContext {
                 );
             }
         };
-
-        // add system prompt
-        let system_prompt = match prompt_target.system_prompt.as_ref() {
-            None => match self.system_prompt.as_ref() {
-                None => None,
-                Some(system_prompt) => Some(system_prompt.clone()),
-            },
-            Some(system_prompt) => Some(system_prompt.clone()),
-        };
-
-        if system_prompt.is_some() {
-            let system_prompt_message = Message {
-                role: SYSTEM_ROLE.to_string(),
-                content: system_prompt,
-                model: None,
-                tool_calls: None,
-            };
-            messages.push(system_prompt_message);
-        }
 
         let final_prompt = format!(
             "{}\nhere is context: {}",
@@ -804,6 +950,7 @@ impl StreamContext {
             similarity_scores: None,
             upstream_cluster: None,
             upstream_cluster_path: None,
+            tool_calls: None,
         };
 
         if let Err(e) = self.http_call(call_args, call_context) {
@@ -1007,6 +1154,7 @@ impl HttpContext for StreamContext {
                 similarity_scores: None,
                 upstream_cluster: None,
                 upstream_cluster_path: None,
+                tool_calls: None,
             };
             self.get_embeddings(callout_context);
             return Action::Pause;
@@ -1055,6 +1203,7 @@ impl HttpContext for StreamContext {
             similarity_scores: None,
             upstream_cluster: None,
             upstream_cluster_path: None,
+            tool_calls: None,
         };
 
         if let Err(e) = self.http_call(call_args, call_context) {
@@ -1142,7 +1291,13 @@ impl HttpContext for StreamContext {
                     }
                 };
 
-            self.response_tokens += chat_completions_response.usage.completion_tokens;
+            if chat_completions_response.usage.is_some() {
+                self.response_tokens += chat_completions_response
+                    .usage
+                    .as_ref()
+                    .unwrap()
+                    .completion_tokens;
+            }
 
             if let Some(tool_calls) = self.tool_calls.as_ref() {
                 if !tool_calls.is_empty() {
@@ -1236,6 +1391,9 @@ impl Context for StreamContext {
                 }
                 ResponseHandlerType::ZeroShotIntent => {
                     self.zero_shot_intent_detection_resp_handler(body, callout_context)
+                }
+                ResponseHandlerType::HallucinationDetect => {
+                    self.hallucination_classification_resp_handler(body, callout_context)
                 }
                 ResponseHandlerType::FunctionResolver => {
                     self.function_resolver_handler(body, callout_context)

@@ -227,7 +227,7 @@ pub mod open_ai {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsResponse {
-        pub usage: Usage,
+        pub usage: Option<Usage>,
         pub choices: Vec<Choice>,
         pub model: String,
         pub metadata: Option<HashMap<String, String>>,
@@ -269,6 +269,19 @@ pub struct ZeroShotClassificationResponse {
     pub predicted_class: String,
     pub predicted_class_score: f64,
     pub scores: HashMap<String, f64>,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HallucinationClassificationRequest {
+    pub prompt: String,
+    pub parameters: HashMap<String, String>,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HallucinationClassificationResponse {
+    pub params_scores: HashMap<String, f64>,
     pub model: String,
 }
 

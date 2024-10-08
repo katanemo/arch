@@ -5,28 +5,9 @@ services:
       - "10000:10000"
       - "19901:9901"
     volumes:
-      - ${ARCH_CONFIG_FILE:-./demos/function_calling/arch_config.yaml}:/config/arch_config.yaml
+      - ${ARCH_CONFIG_FILE:-../demos/function_calling/arch_config.yaml}:/config/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./envoy.template.dev.yaml:/config/envoy.template.yaml
       - ./target/wasm32-wasi/release/intelligent_prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm
-    depends_on:
-      model_server:
-        condition: service_healthy
     env_file:
       - stage.env
-
-  model_server:
-    image: model_server:latest
-    ports:
-      - "18081:80"
-    healthcheck:
-        test: ["CMD", "curl" ,"http://localhost/healthz"]
-        interval: 5s
-        retries: 20
-    volumes:
-      - ~/.cache/huggingface:/root/.cache/huggingface
-    environment:
-      - OLLAMA_ENDPOINT=${OLLAMA_ENDPOINT:-host.docker.internal}
-      - OLLAMA_MODEL=Arch-Function-Calling-3B-Q4_K_M
-      - MODE=${MODE:-cloud}
-      - FC_URL=${FC_URL:-https://arch-fc-free-trial-4mzywewe.uc.gateway.dev/v1}
