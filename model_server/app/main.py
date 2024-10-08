@@ -67,7 +67,13 @@ async def embedding(req: EmbeddingRequest, res: Response):
     if req.model not in transformers:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
     start = time.time()
-    embeddings = transformers[req.model].encode([req.input])
+    encoded_input = transformers[req.model]["tokenizer"](req.input, return_tensors="pt")
+    embeddings = transformers[req.model]["model"](**encoded_input)
+    embeddings = embeddings[0][:, 0]
+    # normalize embeddings
+    embeddings = (
+        torch.nn.functional.normalize(embeddings, p=2, dim=1).detach().numpy()[0]
+    )
     print(f"Embedding Call Complete Time: {time.time()-start}")
     data = []
 
