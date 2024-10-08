@@ -17,11 +17,12 @@ def get_device():
     return device
 
 
-def load_transformers(model_name=os.getenv("MODELS", "BAAI/bge-large-en-v1.5")):
+def load_transformers(model_name=os.getenv("MODELS", "katanemolabs/bge-large-en-v1.5-onnx")):
     transformers = {}
+    device = get_device()
     transformers["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
     transformers["model"] = ORTModelForFeatureExtraction.from_pretrained(
-        model_name, export=True
+        model_name, device_map = device
     )
     transformers["model_name"] = model_name
 
