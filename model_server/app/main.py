@@ -63,6 +63,7 @@ async def models():
 
 @app.post("/embeddings")
 async def embedding(req: EmbeddingRequest, res: Response):
+    print(f"Embedding Call Start Time: {time.time()}")
     if req.model not in transformers:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
     start = time.time()
@@ -77,7 +78,7 @@ async def embedding(req: EmbeddingRequest, res: Response):
         "prompt_tokens": 0,
         "total_tokens": 0,
     }
-
+    print(f"Embedding Call Complete Time: {time.time()}")
     return {"data": data, "model": req.model, "object": "list", "usage": usage}
 
 
@@ -217,10 +218,10 @@ async def hallucination(req: HallucinationRequest, res: Response):
     )
     result_score = result["scores"]
     result_params = {k[0]: s for k, s in zip(req.parameters.items(), result_score)}
+    logger.info(f"hallucination result: {result_params}")
 
     return {
         "params_scores": result_params,
-        "raw_result": result,
         "model": req.model,
     }
 

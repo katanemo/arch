@@ -1,6 +1,7 @@
 pub const DEFAULT_EMBEDDING_MODEL: &str = "BAAI/bge-large-en-v1.5";
 pub const DEFAULT_INTENT_MODEL: &str = "tasksource/deberta-base-long-nli";
 pub const DEFAULT_PROMPT_TARGET_THRESHOLD: f64 = 0.8;
+pub const DEFAULT_HALLUCINATED_THRESHOLD: f64 = 0.1;
 pub const RATELIMIT_SELECTOR_HEADER_KEY: &str = "x-arch-ratelimit-selector";
 pub const SYSTEM_ROLE: &str = "system";
 pub const USER_ROLE: &str = "user";
@@ -13,3 +14,4 @@ pub const ARCH_MESSAGES_KEY: &str = "arch_messages";
 pub const ARCH_PROVIDER_HINT_HEADER: &str = "x-arch-llm-provider-hint";
 pub const CHAT_COMPLETIONS_PATH: &str = "v1/chat/completions";
 pub const ARCH_STATE_HEADER: &str = "x-arch-state";
+pub const ARCH_FC_MODEL_NAME: &str = "Arch-Function-1.5B";
