@@ -17,7 +17,7 @@ Why Prompt Guard
     - **Value Constraints**: Restricts inputs to valid ranges, lengths, or patterns to avoid unusual or incorrect responses.
 
 - **Prompt Sanitization**
-    - **Injection Prevention**: Detects and filters inputs that might attempt injection attacks, like adding code or SQL queries in a prompt-based application.
+    - **Jailbreak Prevention**: Detects and filters inputs that might attempt jailbreak attacks, like alternating LLM intended behavior, exposing the system prompt, or bypassing ethnics safety.
     - **Content Filtering**: Identifies and removes potentially harmful, sensitive, or inappropriate content from inputs to maintain safe interactions.
 
 - **Intent Detection**
