@@ -1,4 +1,4 @@
-version: "0.1-beta"
+version: v0.1
 listener:
   address: 127.0.0.1
   port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
@@ -8,8 +8,9 @@ system_prompt: |
   You are an insurance assistant that just offers guidance related to car, boat, rental and home insurnace only.
 
 llm_providers:
-  - name: "OpenAI"
-    access_key: $OPEN_AI_KEY
+  - name: OpenAI
+    provider: openai
+    access_key: OPENAI_API_KEY
     model: gpt-4o
     default: true
 
@@ -19,16 +20,16 @@ endpoints:
     # value could be ip address or a hostname with port
     # this could also be a list of endpoints for load balancing
     # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: "127.0.0.1:80"
+    endpoint: 127.0.0.1:80
     # max time to wait for a connection to be established
-    connect_timeout: 500ms
+    connect_timeout: 0.05s
 
 prompt_targets:
   - name: policy_qa
     endpoint:
       name: app_server
       path: /policy/qa
-    description: "This method handles Q/A related to general issues in insurance. It forwards the conversation to the OpenAI client via a local proxy and returns the response."
+    description: Handle general Q/A related to insurance.
     default: true
 
   - name: get_policy_coverage
@@ -39,51 +40,52 @@ prompt_targets:
     parameters:
     - name: policy_type
       type: str
-      description: The
-      default: 'car'
+      description: The type of policy, option - car, boat, house, motorcycle.
+      default: car
       required: true
 
   - name: initiate_policy
     endpoint:
       name: app_server
       path: /policy/initiate
-    description: Initiate policy coverage for a car, boat, house, or motorcycle.
+    description: Start a policy coverage for car, boat, motorcycle or house.
     parameters:
     - name: policy_type
       type: str
-      description: Field definition from Pydantic model. Requires fixes PolicyRequest
+      description: The type of policy, option - car, boat, house, motorcycle.
+      default: car
       required: true
-    - name: details
-      type: Unknown
-      description: Field definition from Pydantic model. Requires fixes PolicyRequest
-      required: false
+    - name: deductible
+      type: float
+      description: the deductible amount set of the policy
+      required: true
 
   - name: update_claim
     endpoint:
       name: app_server
       path: /policy/claim
-    description: Update the status or details of a claim.
+    description: Update the notes on the claim
     parameters:
     - name: claim_id
-      type: int
-      description: Field definition from Pydantic model. Requires fixes ClaimUpdate
-      required: true
-    - name: update
       type: str
-      description: Field definition from Pydantic model. Requires fixes ClaimUpdate
+      description: the claim number
+      required: true
+    - name: notes
+      type: str
+      description: notes about the cliam number for your adjustor to see
       required: false
 
   - name: update_deductible
     endpoint:
       name: app_server
       path: /policy/deductible
-    description: Update the deductible amount for a specific policy.
+    description: Update the deductible amount for a specific policy coverage.
     parameters:
     - name: policy_id
-      type: int
-      description: Field definition from Pydantic model. Requires fixes DeductibleUpdate
+      type: str
+      description: The id of the policy
       required: true
-    - name: new_deductible
+    - name: deductible
       type: float
-      description: Field definition from Pydantic model. Requires fixes DeductibleUpdate
-      required: false
+      description: the deductible amount set of the policy
+      required: true
