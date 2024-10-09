@@ -1,7 +1,7 @@
 services:
   api_server:
     build:
-      context: api_server
+      context: .
       dockerfile: Dockerfile
     ports:
       - "18083:80"

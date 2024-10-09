@@ -29,3 +29,4 @@ model_server/model_server.egg-info
 model_server/venv_model_server
 model_server/build
 model_server/dist
+arch_logs/

@@ -144,6 +144,12 @@ properties:
         - model
         - selector
         - limit
+  tracing:
+    type: object
+    properties:
+      random_sampling:
+        type: integer
+      additionalProperties: false
 additionalProperties: false
 required:
   - version

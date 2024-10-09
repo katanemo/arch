@@ -8,6 +8,11 @@ pub struct Overrides {
     pub prompt_target_intent_matching_threshold: Option<f64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Tracing {
+    pub sampling_rate: Option<f64>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub version: String,
@@ -19,8 +24,8 @@ pub struct Configuration {
     pub prompt_guards: Option<PromptGuards>,
     pub prompt_targets: Vec<PromptTarget>,
     pub error_target: Option<ErrorTargetDetail>,
-    pub tracing: Option<i16>,
     pub ratelimits: Option<Vec<Ratelimit>>,
+    pub tracing: Option<Tracing>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -277,6 +282,6 @@ mod test {
         );
 
         let tracing = config.tracing.as_ref().unwrap();
-        assert_eq!(*tracing, 100);
+        assert_eq!(tracing.sampling_rate.unwrap(), 0.1);
     }
 }

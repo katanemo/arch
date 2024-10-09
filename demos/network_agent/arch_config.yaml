@@ -13,29 +13,43 @@ llm_providers:
     default: true
 
 # default system prompt used by all prompt targets
-system_prompt: You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
+system_prompt: |
+  You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
 prompt_targets:
-  - name: reboot_devices
-    description: Reboot specific devices or device groups
-    endpoint:
-      name: app_server
-      path: /agent/device_reboot
-    parameters:
-      - name: device_ids
-        type: list
-        description: A list of device identifiers (IDs) to reboot.
-        required: false
-      - name: device_group
-        type: str
-        description: The name of the device group to reboot
-        required: false
-  - name: network_qa
-    endpoint:
-      name: app_server
-      path: /agent/network_summary
-    description: Handle general Q/A related to networking.
-    default: true
+    - name: reboot_devices
+      description: Reboot specific devices or device groups
+      endpoint:
+        name: app_server
+        path: /agent/device_reboot
+      parameters:
+        - name: device_ids
+          type: list
+          description: A list of device identifiers (IDs) to reboot.
+          required: true
+        - name: time_range
+          type: int
+          description: Optional time range in days for reboot operations. Defaults to 7.
+    - name: network_qa
+      endpoint:
+        name: app_server
+        path: /agent/network_summary
+      description: Handle general Q/A related to networking.
+      default: true
+    - name: device_summary
+      description: Retrieve statistics for specific devices within a time range
+      endpoint:
+        name: app_server
+        path: /agent/device_summary
+      parameters:
+        - name: device_ids
+          type: list
+          description: A list of device identifiers (IDs) to retrieve statistics for.
+          required: true  # device_ids are required to get device statistics
+        - name: time_range
+          type: int
+          description: Time range in days for which to gather device statistics. Defaults to 7.
+          default: "7"
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
 endpoints:
@@ -43,7 +57,7 @@ endpoints:
     # value could be ip address or a hostname with port
     # this could also be a list of endpoints for load balancing
     # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: host.docker.internal:80
+    endpoint: host.docker.internal:18083
     # max time to wait for a connection to be established
     connect_timeout: 0.005s
 

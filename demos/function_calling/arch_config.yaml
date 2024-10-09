@@ -40,7 +40,7 @@ prompt_targets:
       - name: units
         description: the temperature unit, e.g., Celsius and Fahrenheit
         type: str
-        default: Celsius
+        default: Fahrenheit
     endpoint:
       name: api_server
       path: /weather
@@ -80,3 +80,6 @@ ratelimits:
     limit:
       tokens: 1
       unit: minute
+
+tracing:
+  random_sampling: 100
