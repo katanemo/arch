@@ -17,12 +17,6 @@ system_prompt: |
   You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
 prompt_targets:
-    - name: network_qa
-      endpoint:
-        name: app_server
-        path: /agent/network_summary
-      description: Handle general Q/A related to networking.
-      default: true
     - name: reboot_devices
       description: Reboot specific devices or device groups
       endpoint:
@@ -33,6 +27,15 @@ prompt_targets:
           type: list
           description: A list of device identifiers (IDs) to reboot.
           required: true
+        - name: time_range
+          type: int
+          description: Optional time range in days for reboot operations. Defaults to 7.
+    - name: network_qa
+      endpoint:
+        name: app_server
+        path: /agent/network_summary
+      description: Handle general Q/A related to networking.
+      default: true
     - name: device_summary
       description: Retrieve statistics for specific devices within a time range
       endpoint:
@@ -57,3 +60,12 @@ endpoints:
     endpoint: host.docker.internal:18083
     # max time to wait for a connection to be established
     connect_timeout: 0.005s
+
+ratelimits:
+  - model: gpt-4
+    selector:
+      key: selector-key
+      value: selector-value
+    limit:
+      tokens: 1
+      unit: minute

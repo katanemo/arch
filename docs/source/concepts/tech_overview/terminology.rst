@@ -21,7 +21,7 @@ before forwarding them to your application server endpoints. rch enables you to 
 .. Note::
 
    When you start Arch, you specify a listener address/port that you want to bind downstream. But, Arch uses are predefined port
-   that you can use (``127.0.0.1:10000``) to proxy egress calls originating from your application to LLMs (API-based or hosted).
+   that you can use (``127.0.0.1:12000``) to proxy egress calls originating from your application to LLMs (API-based or hosted).
    For more details, check out :ref:`LLM provider <llm_provider>`.
 
 **Instance**: An instance of the Arch gateway. When you start Arch it creates at most two processes. One to handle Layer 7

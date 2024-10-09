@@ -19,7 +19,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
-      - CHAT_COMPLETION_ENDPOINT=http://host.docker.internal:10000/v1
+      - CHAT_COMPLETION_ENDPOINT=http://host.docker.internal:10000/v1 #this is only because we are running the sample app in the same docker container environemtn as archgw
 
   opentelemetry:
     build:
