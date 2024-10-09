@@ -150,6 +150,11 @@ properties:
       random_sampling:
         type: integer
       additionalProperties: false
+  mode:
+    type: string
+    enum:
+      - llm
+      - prompt
 additionalProperties: false
 required:
   - version

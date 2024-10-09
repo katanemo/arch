@@ -11,7 +11,9 @@ use log::debug;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::EmbeddingType;
-use public_types::configuration::{Configuration, Overrides, PromptGuards, PromptTarget};
+use public_types::configuration::{
+    Configuration, GatewayMode, Overrides, PromptGuards, PromptTarget,
+};
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
@@ -53,6 +55,7 @@ pub struct FilterContext {
     overrides: Rc<Option<Overrides>>,
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
+    mode: GatewayMode,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
     embeddings_store: Option<Rc<EmbeddingsStore>>,
@@ -68,8 +71,9 @@ impl FilterContext {
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
+            mode: GatewayMode::Prompt,
             llm_providers: None,
-            embeddings_store: None,
+            embeddings_store: Some(Rc::new(HashMap::new())),
             temp_embeddings_store: HashMap::new(),
         }
     }
@@ -253,6 +257,7 @@ impl RootContext for FilterContext {
         }
         self.system_prompt = Rc::new(config.system_prompt);
         self.prompt_targets = Rc::new(prompt_targets);
+        self.mode = config.mode.unwrap_or_default();
 
         ratelimit::ratelimits(config.ratelimits);
 
@@ -275,8 +280,15 @@ impl RootContext for FilterContext {
         );
 
         // No StreamContext can be created until the Embedding Store is fully initialized.
-        self.embeddings_store.as_ref()?;
-
+        let embedding_store;
+        match self.mode {
+            GatewayMode::Llm => {
+                embedding_store = None;
+            }
+            GatewayMode::Prompt => {
+                embedding_store = Some(Rc::clone(self.embeddings_store.as_ref().unwrap()))
+            }
+        }
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
@@ -289,11 +301,8 @@ impl RootContext for FilterContext {
                     .as_ref()
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
-            Rc::clone(
-                self.embeddings_store
-                    .as_ref()
-                    .expect("Embeddings Store must exist when StreamContext is being constructed"),
-            ),
+            embedding_store,
+            self.mode.clone(),
         )))
     }
 
@@ -307,7 +316,11 @@ impl RootContext for FilterContext {
     }
 
     fn on_tick(&mut self) {
-        self.process_prompt_targets();
+        debug!("starting up arch filter in mode: {:?}", self.mode);
+        if self.mode == GatewayMode::Prompt {
+            self.process_prompt_targets();
+        }
+
         self.set_tick_period(Duration::from_secs(0));
     }
 }

@@ -18,3 +18,4 @@ pub const ARCH_FC_MODEL_NAME: &str = "Arch-Function-1.5B";
 pub const REQUEST_ID_HEADER: &str = "x-request-id";
 pub const ARCH_INTERNAL_CLUSTER_NAME: &str = "arch_internal";
 pub const ARCH_UPSTREAM_HOST_HEADER: &str = "x-arch-upstream";
+pub const ARCH_LLM_UPSTREAM_LISTENER: &str = "arch_llm_listener";
