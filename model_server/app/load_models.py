@@ -74,7 +74,7 @@ def load_zero_shot_models(
             model_name, file_name="onnx/model.onnx"
         )
     else:
-        zero_shot_model["model"] = AutoModel.from_pretrained(model_name)
+        zero_shot_model["model"] = model_name
     zero_shot_model["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
 
     # create pipeline
