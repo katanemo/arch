@@ -205,34 +205,35 @@ streamline data retrieval and processing to build more efficient and precise RAG
 </span><span id="line-13"><span class="linenos">13</span>    <span class="c1"># Validate 'device_ids' parameter</span>
 </span><span id="line-14"><span class="linenos">14</span>    <span class="n">device_ids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"device_ids"</span><span class="p">)</span>
 </span><span id="line-15"><span class="linenos">15</span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">device_ids</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-</span><span id="line-16"><span class="linenos">16</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
-</span><span id="line-17"><span class="linenos">17</span>            <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'device_ids' parameter is required and must be a list"</span><span class="p">}</span>
-</span><span id="line-18"><span class="linenos">18</span>        <span class="p">),</span> <span class="mi">400</span>
-</span><span id="line-19"><span class="linenos">19</span>
-</span><span id="line-20"><span class="linenos">20</span>    <span class="c1"># Validate 'time_range' parameter (optional, defaults to 7)</span>
-</span><span id="line-21"><span class="linenos">21</span>    <span class="n">time_range</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"time_range"</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
-</span><span id="line-22"><span class="linenos">22</span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_range</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="line-23"><span class="linenos">23</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'time_range' must be an integer"</span><span class="p">}),</span> <span class="mi">400</span>
-</span><span id="line-24"><span class="linenos">24</span>
-</span><span id="line-25"><span class="linenos">25</span>    <span class="c1"># Simulate retrieving statistics for the given device IDs and time range</span>
-</span><span id="line-26"><span class="linenos">26</span>    <span class="c1"># In a real application, you would query your database or external service here</span>
-</span><span id="line-27"><span class="linenos">27</span>    <span class="n">statistics</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="line-28"><span class="linenos">28</span>    <span class="k">for</span> <span class="n">device_id</span> <span class="ow">in</span> <span class="n">device_ids</span><span class="p">:</span>
-</span><span id="line-29"><span class="linenos">29</span>        <span class="c1"># Placeholder for actual data retrieval</span>
-</span><span id="line-30"><span class="linenos">30</span>        <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-31"><span class="linenos">31</span>            <span class="s2">"device_id"</span><span class="p">:</span> <span class="n">device_id</span><span class="p">,</span>
-</span><span id="line-32"><span class="linenos">32</span>            <span class="s2">"time_range"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days"</span><span class="p">,</span>
-</span><span id="line-33"><span class="linenos">33</span>            <span class="s2">"data"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Statistics data for device </span><span class="si">{</span><span class="n">device_id</span><span class="si">}</span><span class="s2"> over the last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days."</span><span class="p">,</span>
-</span><span id="line-34"><span class="linenos">34</span>        <span class="p">}</span>
-</span><span id="line-35"><span class="linenos">35</span>        <span class="n">statistics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
-</span><span id="line-36"><span class="linenos">36</span>
-</span><span id="line-37"><span class="linenos">37</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"statistics"</span><span class="p">:</span> <span class="n">statistics</span><span class="p">}</span>
-</span><span id="line-38"><span class="linenos">38</span>
-</span><span id="line-39"><span class="linenos">39</span>    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="mi">200</span>
-</span><span id="line-40"><span class="linenos">40</span>
+</span><span id="line-16"><span class="linenos">16</span>        <span class="k">return</span> <span class="p">(</span>
+</span><span id="line-17"><span class="linenos">17</span>            <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'device_ids' parameter is required and must be a list"</span><span class="p">}),</span>
+</span><span id="line-18"><span class="linenos">18</span>            <span class="mi">400</span><span class="p">,</span>
+</span><span id="line-19"><span class="linenos">19</span>        <span class="p">)</span>
+</span><span id="line-20"><span class="linenos">20</span>
+</span><span id="line-21"><span class="linenos">21</span>    <span class="c1"># Validate 'time_range' parameter (optional, defaults to 7)</span>
+</span><span id="line-22"><span class="linenos">22</span>    <span class="n">time_range</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"time_range"</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</span><span id="line-23"><span class="linenos">23</span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_range</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="line-24"><span class="linenos">24</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'time_range' must be an integer"</span><span class="p">}),</span> <span class="mi">400</span>
+</span><span id="line-25"><span class="linenos">25</span>
+</span><span id="line-26"><span class="linenos">26</span>    <span class="c1"># Simulate retrieving statistics for the given device IDs and time range</span>
+</span><span id="line-27"><span class="linenos">27</span>    <span class="c1"># In a real application, you would query your database or external service here</span>
+</span><span id="line-28"><span class="linenos">28</span>    <span class="n">statistics</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="line-29"><span class="linenos">29</span>    <span class="k">for</span> <span class="n">device_id</span> <span class="ow">in</span> <span class="n">device_ids</span><span class="p">:</span>
+</span><span id="line-30"><span class="linenos">30</span>        <span class="c1"># Placeholder for actual data retrieval</span>
+</span><span id="line-31"><span class="linenos">31</span>        <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-32"><span class="linenos">32</span>            <span class="s2">"device_id"</span><span class="p">:</span> <span class="n">device_id</span><span class="p">,</span>
+</span><span id="line-33"><span class="linenos">33</span>            <span class="s2">"time_range"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days"</span><span class="p">,</span>
+</span><span id="line-34"><span class="linenos">34</span>            <span class="s2">"data"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Statistics data for device </span><span class="si">{</span><span class="n">device_id</span><span class="si">}</span><span class="s2"> over the last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days."</span><span class="p">,</span>
+</span><span id="line-35"><span class="linenos">35</span>        <span class="p">}</span>
+</span><span id="line-36"><span class="linenos">36</span>        <span class="n">statistics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
+</span><span id="line-37"><span class="linenos">37</span>
+</span><span id="line-38"><span class="linenos">38</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"statistics"</span><span class="p">:</span> <span class="n">statistics</span><span class="p">}</span>
+</span><span id="line-39"><span class="linenos">39</span>
+</span><span id="line-40"><span class="linenos">40</span>    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="mi">200</span>
 </span><span id="line-41"><span class="linenos">41</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
-</span><span id="line-43"><span class="linenos">43</span>    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="line-42"><span class="linenos">42</span>
+</span><span id="line-43"><span class="linenos">43</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+</span><span id="line-44"><span class="linenos">44</span>    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -272,42 +273,42 @@ active intent, Arch adds the <code class="docutils literal notranslate"><span cl
 </mark></span><span id="line-19"><mark><span class="linenos">19</span>        <span class="n">intent_changed</span> <span class="o">=</span> <span class="kc">True</span>
 </mark></span><span id="line-20"><mark><span class="linenos">20</span>    <span class="k">else</span><span class="p">:</span>
 </mark></span><span id="line-21"><mark><span class="linenos">21</span>        <span class="c1"># Invalid value provided</span>
-</mark></span><span id="line-22"><mark><span class="linenos">22</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
-</mark></span><span id="line-23"><mark><span class="linenos">23</span>            <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Invalid value for x-arch-prompt-intent-change header"</span><span class="p">}</span>
-</mark></span><span id="line-24"><mark><span class="linenos">24</span>        <span class="p">),</span> <span class="mi">400</span>
-</mark></span><span id="line-25"><span class="linenos">25</span>
-</span><span id="line-26"><span class="linenos">26</span>    <span class="c1"># Update user conversation based on intent change</span>
-</span><span id="line-27"><span class="linenos">27</span>    <span class="n">memory</span> <span class="o">=</span> <span class="n">update_user_conversation</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">client_messages</span><span class="p">,</span> <span class="n">intent_changed</span><span class="p">)</span>
-</span><span id="line-28"><span class="linenos">28</span>
-</span><span id="line-29"><span class="linenos">29</span>    <span class="c1"># Retrieve messages since last intent change for LLM</span>
-</span><span id="line-30"><span class="linenos">30</span>    <span class="n">messages_for_llm</span> <span class="o">=</span> <span class="n">get_messages_since_last_intent</span><span class="p">(</span><span class="n">memory</span><span class="o">.</span><span class="n">chat_memory</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span>
-</span><span id="line-31"><span class="linenos">31</span>
-</span><span id="line-32"><span class="linenos">32</span>    <span class="c1"># Forward messages to upstream LLM</span>
-</span><span id="line-33"><span class="linenos">33</span>    <span class="n">llm_response</span> <span class="o">=</span> <span class="n">forward_to_llm</span><span class="p">(</span><span class="n">messages_for_llm</span><span class="p">)</span>
-</span><span id="line-34"><span class="linenos">34</span>
-</span><span id="line-35"><span class="linenos">35</span>    <span class="c1"># Prepare the messages to return</span>
-</span><span id="line-36"><span class="linenos">36</span>    <span class="n">messages_to_return</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="line-37"><span class="linenos">37</span>    <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">memory</span><span class="o">.</span><span class="n">chat_memory</span><span class="o">.</span><span class="n">messages</span><span class="p">:</span>
-</span><span id="line-38"><span class="linenos">38</span>        <span class="n">role</span> <span class="o">=</span> <span class="s2">"user"</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">HumanMessage</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"assistant"</span>
-</span><span id="line-39"><span class="linenos">39</span>        <span class="n">content</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">content</span>
-</span><span id="line-40"><span class="linenos">40</span>        <span class="n">metadata</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">additional_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"metadata"</span><span class="p">,</span> <span class="p">{})</span>
-</span><span id="line-41"><span class="linenos">41</span>        <span class="n">message_entry</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-42"><span class="linenos">42</span>            <span class="s2">"uuid"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"uuid"</span><span class="p">),</span>
-</span><span id="line-43"><span class="linenos">43</span>            <span class="s2">"timestamp"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"timestamp"</span><span class="p">),</span>
-</span><span id="line-44"><span class="linenos">44</span>            <span class="s2">"role"</span><span class="p">:</span> <span class="n">role</span><span class="p">,</span>
-</span><span id="line-45"><span class="linenos">45</span>            <span class="s2">"content"</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
-</span><span id="line-46"><span class="linenos">46</span>            <span class="s2">"intent_changed"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"intent_changed"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-</span><span id="line-47"><span class="linenos">47</span>        <span class="p">}</span>
-</span><span id="line-48"><span class="linenos">48</span>        <span class="n">messages_to_return</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message_entry</span><span class="p">)</span>
-</span><span id="line-49"><span class="linenos">49</span>
-</span><span id="line-50"><span class="linenos">50</span>    <span class="c1"># Prepare the response</span>
-</span><span id="line-51"><span class="linenos">51</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-52"><span class="linenos">52</span>        <span class="s2">"user_id"</span><span class="p">:</span> <span class="n">user_id</span><span class="p">,</span>
-</span><span id="line-53"><span class="linenos">53</span>        <span class="s2">"messages"</span><span class="p">:</span> <span class="n">messages_to_return</span><span class="p">,</span>
-</span><span id="line-54"><span class="linenos">54</span>        <span class="s2">"llm_response"</span><span class="p">:</span> <span class="n">llm_response</span><span class="p">,</span>
-</span><span id="line-55"><span class="linenos">55</span>    <span class="p">}</span>
-</span><span id="line-56"><span class="linenos">56</span>
-</span><span id="line-57"><span class="linenos">57</span>    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="mi">200</span>
+</mark></span><span id="line-22"><mark><span class="linenos">22</span>        <span class="k">return</span> <span class="p">(</span>
+</mark></span><span id="line-23"><mark><span class="linenos">23</span>            <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Invalid value for x-arch-prompt-intent-change header"</span><span class="p">}),</span>
+</mark></span><span id="line-24"><mark><span class="linenos">24</span>            <span class="mi">400</span><span class="p">,</span>
+</mark></span><span id="line-25"><span class="linenos">25</span>        <span class="p">)</span>
+</span><span id="line-26"><span class="linenos">26</span>
+</span><span id="line-27"><span class="linenos">27</span>    <span class="c1"># Update user conversation based on intent change</span>
+</span><span id="line-28"><span class="linenos">28</span>    <span class="n">memory</span> <span class="o">=</span> <span class="n">update_user_conversation</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">client_messages</span><span class="p">,</span> <span class="n">intent_changed</span><span class="p">)</span>
+</span><span id="line-29"><span class="linenos">29</span>
+</span><span id="line-30"><span class="linenos">30</span>    <span class="c1"># Retrieve messages since last intent change for LLM</span>
+</span><span id="line-31"><span class="linenos">31</span>    <span class="n">messages_for_llm</span> <span class="o">=</span> <span class="n">get_messages_since_last_intent</span><span class="p">(</span><span class="n">memory</span><span class="o">.</span><span class="n">chat_memory</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span>
+</span><span id="line-32"><span class="linenos">32</span>
+</span><span id="line-33"><span class="linenos">33</span>    <span class="c1"># Forward messages to upstream LLM</span>
+</span><span id="line-34"><span class="linenos">34</span>    <span class="n">llm_response</span> <span class="o">=</span> <span class="n">forward_to_llm</span><span class="p">(</span><span class="n">messages_for_llm</span><span class="p">)</span>
+</span><span id="line-35"><span class="linenos">35</span>
+</span><span id="line-36"><span class="linenos">36</span>    <span class="c1"># Prepare the messages to return</span>
+</span><span id="line-37"><span class="linenos">37</span>    <span class="n">messages_to_return</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="line-38"><span class="linenos">38</span>    <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">memory</span><span class="o">.</span><span class="n">chat_memory</span><span class="o">.</span><span class="n">messages</span><span class="p">:</span>
+</span><span id="line-39"><span class="linenos">39</span>        <span class="n">role</span> <span class="o">=</span> <span class="s2">"user"</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">HumanMessage</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"assistant"</span>
+</span><span id="line-40"><span class="linenos">40</span>        <span class="n">content</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">content</span>
+</span><span id="line-41"><span class="linenos">41</span>        <span class="n">metadata</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">additional_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"metadata"</span><span class="p">,</span> <span class="p">{})</span>
+</span><span id="line-42"><span class="linenos">42</span>        <span class="n">message_entry</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-43"><span class="linenos">43</span>            <span class="s2">"uuid"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"uuid"</span><span class="p">),</span>
+</span><span id="line-44"><span class="linenos">44</span>            <span class="s2">"timestamp"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"timestamp"</span><span class="p">),</span>
+</span><span id="line-45"><span class="linenos">45</span>            <span class="s2">"role"</span><span class="p">:</span> <span class="n">role</span><span class="p">,</span>
+</span><span id="line-46"><span class="linenos">46</span>            <span class="s2">"content"</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
+</span><span id="line-47"><span class="linenos">47</span>            <span class="s2">"intent_changed"</span><span class="p">:</span> <span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"intent_changed"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+</span><span id="line-48"><span class="linenos">48</span>        <span class="p">}</span>
+</span><span id="line-49"><span class="linenos">49</span>        <span class="n">messages_to_return</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">message_entry</span><span class="p">)</span>
+</span><span id="line-50"><span class="linenos">50</span>
+</span><span id="line-51"><span class="linenos">51</span>    <span class="c1"># Prepare the response</span>
+</span><span id="line-52"><span class="linenos">52</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-53"><span class="linenos">53</span>        <span class="s2">"user_id"</span><span class="p">:</span> <span class="n">user_id</span><span class="p">,</span>
+</span><span id="line-54"><span class="linenos">54</span>        <span class="s2">"messages"</span><span class="p">:</span> <span class="n">messages_to_return</span><span class="p">,</span>
+</span><span id="line-55"><span class="linenos">55</span>        <span class="s2">"llm_response"</span><span class="p">:</span> <span class="n">llm_response</span><span class="p">,</span>
+</span><span id="line-56"><span class="linenos">56</span>    <span class="p">}</span>
+</span><span id="line-57"><span class="linenos">57</span>
 </span></code></pre></div>
 </div>
 </div>
