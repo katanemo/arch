@@ -64,7 +64,6 @@ def load_guard_model(
 
 def load_zero_shot_models(model_name=os.getenv("ZERO_SHOT_MODELS", "katanemo/deberta-base-nli-onnx")):
     zero_shot_model = {}
-    device = get_device()
     zero_shot_model["model"] = ORTModelForSequenceClassification.from_pretrained(
         model_name
     )
@@ -75,7 +74,6 @@ def load_zero_shot_models(model_name=os.getenv("ZERO_SHOT_MODELS", "katanemo/deb
         "zero-shot-classification",
         model=zero_shot_model["model"],
         tokenizer=zero_shot_model["tokenizer"],
-        device=device,
     )
     zero_shot_model["model_name"] = model_name
 
