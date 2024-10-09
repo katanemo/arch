@@ -54,8 +54,6 @@ def load_guard_model(
         import torch
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        if device == "cuda":
-            os.system("pip install eetq")
         guard_model["model"] = AutoModelForSequenceClassification.from_pretrained(
             model_name, device_map=device, low_cpu_mem_usage=True
         )
