@@ -22,7 +22,7 @@ Below is an example of how you can configure ``llm_providers`` with an instance 
 
 .. Note::
     When you start Arch, it creates a listener port for egress traffic based on the presence of ``llm_providers``
-    configuration section in the ``prompt_config.yml`` file. Arch binds itself to a local address such as
+    configuration section in the ``arch_config.yml`` file. Arch binds itself to a local address such as
     ``127.0.0.1:51001/v1``.
 
 Arch also offers vendor-agnostic SDKs and libraries to make LLM calls to API-based LLM providers (like OpenAI,

@@ -107,7 +107,7 @@ traffic, apply rate limits, and utilize a large set of traffic management capabi
 
 .. Attention::
    When you start Arch, it automatically creates a listener port for egress calls to upstream LLMs. This is based on the
-   ``llm_providers`` configuration section in the ``prompt_config.yml`` file. Arch binds itself to a local address such as
+   ``llm_providers`` configuration section in the ``arch_config.yml`` file. Arch binds itself to a local address such as
    127.0.0.1:12000/v1.
 
 

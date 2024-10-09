@@ -88,7 +88,7 @@ def build():
 @click.command()
 @click.argument("file", required=False)  # Optional file argument
 @click.option(
-    "-path", default=".", help="Path to the directory containing arch_config.yml"
+    "--path", default=".", help="Path to the directory containing arch_config.yml"
 )
 def up(file, path):
     """Starts Arch."""
@@ -173,7 +173,7 @@ def down():
 
 @click.command()
 @click.option(
-    "-f",
+    "--f",
     "--file",
     type=click.Path(exists=True),
     required=True,

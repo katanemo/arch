@@ -11,13 +11,13 @@ Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-i
 >Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization – all outside business logic.*
 
 **Core Features**:
-  - **Built on [Envoy](https://envoyproxy.io)**: Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egreess traffic realted to prompts and LLMs
-  - **Build Fast Agentic and RAG apps**. Engineered with purpose-built [(fast) LLMs](https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68) to handle fast, cost-effective, and accurate prompt-based tasks like function/API calling, and parameter extraction from prompts.
-  - **Prompt [Guardrails](https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d)**: Arch centralizes prompt guardrails to prevent jailbreak attempts and ensure safe user interactions without writing a single line of code.
-  - **Traffic Management**: Arch manages LLM calls, offering smart retries, automatic cutover, and resilient upstream connections for continuous availability.
-  - **Standards-based Observability**: Arch uses the W3C Trace Context standard to enable complete request tracing across applications, ensuring compatibility with observability tools, and provides metrics to monitor latency, token usage, and error rates, helping optimize AI application performance.
+  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egreess traffic realted to prompts and LLMs
+  - Build Fast Agentic and RAG apps. Engineered with purpose-built [(fast) LLMs](https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68) to handle fast, cost-effective, and accurate prompt-based tasks like function/API calling, and parameter extraction from prompts.
+  - Prompt [Guardrails](https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d): Arch centralizes prompt guardrails to prevent jailbreak attempts and ensure safe user interactions without writing a single line of code.
+  - Traffic Management: Arch manages LLM calls, offering smart retries, automatic cutover, and resilient upstream connections for continuous availability.
+  - Standards-based Observability: Arch uses the W3C Trace Context standard to enable complete request tracing across applications, ensuring compatibility with observability tools, and provides metrics to monitor latency, token usage, and error rates, helping optimize AI application performance.
 
-**Jump to our [docs](https://docs.archgw.com)** to learn more about how you can use Arch to improve the speed, robustneess and personalization of your GenAI apps
+**Jump to our [docs](https://docs.archgw.com)** to learn how you can use Arch to improve the speed, security and personalization of your GenAI apps.
 
 ## Contact
 To get in touch with us, please join our [discord server](https://discord.gg/rbjqVbpa). We will be monitoring that actively and offering support there.
@@ -37,9 +37,6 @@ Before you begin, ensure you have the following:
 
 - `Docker` & `Python` installed on your system
 - `API Keys` for LLM providers (if using external LLMs)
-
-The fastest way to get started using Arch is to use [katanemo/arch](https://hub.docker.com/r/katanemo/arch) pre-built binaries.
-You can also build it from source.
 
 ### Step 1: Install Arch
 
