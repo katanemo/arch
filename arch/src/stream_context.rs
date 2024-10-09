@@ -94,7 +94,7 @@ pub struct StreamContext {
     metrics: Rc<WasmMetrics>,
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
-    embeddings_store: Rc<Option<EmbeddingsStore>>,
+    embeddings_store: Rc<EmbeddingsStore>,
     overrides: Rc<Option<Overrides>>,
     callouts: RefCell<HashMap<u32, StreamCallContext>>,
     tool_calls: Option<Vec<ToolCall>>,
@@ -124,7 +124,7 @@ impl StreamContext {
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
-        embeddings_store: Rc<Option<EmbeddingsStore>>,
+        embeddings_store: Rc<EmbeddingsStore>,
         mode: Rc<GatewayMode>,
     ) -> Self {
         StreamContext {
@@ -258,13 +258,7 @@ impl StreamContext {
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
-                let pte = match self
-                    .embeddings_store
-                    .as_ref()
-                    .as_ref()
-                    .unwrap()
-                    .get(prompt_name)
-                {
+                let pte = match self.embeddings_store.as_ref().get(prompt_name) {
                     Some(embeddings) => embeddings,
                     None => {
                         warn!(
@@ -1167,7 +1161,9 @@ impl HttpContext for StreamContext {
             for message in deserialized_body.messages.iter_mut() {
                 message.model = None;
             }
-            deserialized_body.model = self.llm_provider.as_ref().unwrap().model.clone();
+            deserialized_body
+                .model
+                .clone_from(&self.llm_provider.as_ref().unwrap().model);
             let chat_completion_request_str = serde_json::to_string(&deserialized_body).unwrap();
             debug!(
                 "arch => {:?}, body: {}",

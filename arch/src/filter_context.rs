@@ -58,7 +58,7 @@ pub struct FilterContext {
     mode: Rc<GatewayMode>,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
-    embeddings_store: Option<Rc<Option<EmbeddingsStore>>>,
+    embeddings_store: Option<Rc<EmbeddingsStore>>,
     temp_embeddings_store: EmbeddingsStore,
 }
 
@@ -73,7 +73,7 @@ impl FilterContext {
             prompt_guards: Rc::new(PromptGuards::default()),
             mode: Rc::new(GatewayMode::PromptGateway),
             llm_providers: None,
-            embeddings_store: Some(Rc::new(None)),
+            embeddings_store: Some(Rc::new(HashMap::new())),
             temp_embeddings_store: HashMap::new(),
         }
     }
@@ -190,9 +190,8 @@ impl FilterContext {
             }
 
             if self.prompt_targets.len() == self.temp_embeddings_store.len() {
-                self.embeddings_store = Some(Rc::new(Some(std::mem::take(
-                    &mut self.temp_embeddings_store,
-                ))))
+                self.embeddings_store =
+                    Some(Rc::new(std::mem::take(&mut self.temp_embeddings_store)))
             }
         }
     }
@@ -280,9 +279,6 @@ impl RootContext for FilterContext {
             context_id
         );
 
-        if self.mode.as_ref() == &GatewayMode::PromptGateway {
-            self.embeddings_store.as_ref()?;
-        }
         // No StreamContext can be created until the Embedding Store is fully initialized.
 
         Some(Box::new(StreamContext::new(
