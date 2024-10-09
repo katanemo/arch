@@ -26,7 +26,7 @@ use public_types::common_types::{
     PromptGuardRequest, PromptGuardResponse, PromptGuardTask, ZeroShotClassificationRequest,
     ZeroShotClassificationResponse,
 };
-use public_types::configuration::LlmProvider;
+use public_types::configuration::{GatewayMode, LlmProvider};
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -110,6 +110,7 @@ pub struct StreamContext {
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
+    mode: Rc<GatewayMode>,
 }
 
 impl StreamContext {
@@ -123,6 +124,7 @@ impl StreamContext {
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
         embeddings_store: Rc<EmbeddingsStore>,
+        mode: Rc<GatewayMode>,
     ) -> Self {
         StreamContext {
             context_id,
@@ -146,6 +148,7 @@ impl StreamContext {
             prompt_guards,
             overrides,
             request_id: None,
+            mode,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -1141,6 +1144,12 @@ impl HttpContext for StreamContext {
                     return Action::Pause;
                 }
             };
+        self.is_chat_completions_request = true;
+
+        if *self.mode == GatewayMode::LlmGateway {
+          debug!("llm gateway mode, skipping over all prompt targets");
+          return Action::Continue;
+        }
 
         self.arch_state = match deserialized_body.metadata {
             Some(ref metadata) => {
@@ -1155,7 +1164,6 @@ impl HttpContext for StreamContext {
             None => None,
         };
 
-        self.is_chat_completions_request = true;
         // Set the model based on the chosen LLM Provider
         deserialized_body.model = String::from(&self.llm_provider().model);
 

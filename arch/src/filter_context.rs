@@ -7,11 +7,13 @@ use crate::llm_providers::LlmProviders;
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, IncrementingMetric};
 use crate::stream_context::StreamContext;
-use log::debug;
+use log::{debug, info};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::EmbeddingType;
-use public_types::configuration::{Configuration, Overrides, PromptGuards, PromptTarget};
+use public_types::configuration::{
+    Configuration, GatewayMode, Overrides, PromptGuards, PromptTarget,
+};
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
@@ -53,6 +55,7 @@ pub struct FilterContext {
     overrides: Rc<Option<Overrides>>,
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
+    mode: Rc<GatewayMode>,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
     embeddings_store: Option<Rc<EmbeddingsStore>>,
@@ -68,6 +71,7 @@ impl FilterContext {
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
+            mode: Rc::new(GatewayMode::PromptGateway),
             llm_providers: None,
             embeddings_store: None,
             temp_embeddings_store: HashMap::new(),
@@ -253,6 +257,7 @@ impl RootContext for FilterContext {
         }
         self.system_prompt = Rc::new(config.system_prompt);
         self.prompt_targets = Rc::new(prompt_targets);
+        self.mode = Rc::new(config.mode.unwrap_or(GatewayMode::PromptGateway));
 
         ratelimit::ratelimits(config.ratelimits);
 
@@ -294,6 +299,7 @@ impl RootContext for FilterContext {
                     .as_ref()
                     .expect("Embeddings Store must exist when StreamContext is being constructed"),
             ),
+            Rc::clone(&self.mode),
         )))
     }
 
@@ -302,7 +308,10 @@ impl RootContext for FilterContext {
     }
 
     fn on_vm_start(&mut self, _: usize) -> bool {
-        self.set_tick_period(Duration::from_secs(1));
+        info!("Starting filter in mode: {:?}", self.mode);
+        if self.mode.as_ref() == &GatewayMode::PromptGateway {
+            self.set_tick_period(Duration::from_secs(1));
+        }
         true
     }
 

@@ -13,6 +13,14 @@ pub struct Tracing {
     pub sampling_rate: Option<f64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum GatewayMode {
+    #[serde(rename = "llm")]
+    LlmGateway,
+    #[serde(rename = "prompt")]
+    PromptGateway,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub version: String,
@@ -26,6 +34,7 @@ pub struct Configuration {
     pub error_target: Option<ErrorTargetDetail>,
     pub ratelimits: Option<Vec<Ratelimit>>,
     pub tracing: Option<Tracing>,
+    pub mode: Option<GatewayMode>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
