@@ -921,7 +921,7 @@ impl StreamContext {
         debug!("arch => openai request body: {}", json_string);
 
         // Tokenize and Ratelimit.
-        if let Err(e) = self.enforce_ratelimits(&chat_completions_request, &json_string) {
+        if let Err(e) = self.enforce_ratelimits(&chat_completions_request.model, &json_string) {
             self.send_server_error(
                 ServerError::ExceededRatelimit(e),
                 Some(StatusCode::TOO_MANY_REQUESTS),
@@ -936,16 +936,14 @@ impl StreamContext {
 
     fn enforce_ratelimits(
         &mut self,
-        chat_completions_request: &ChatCompletionsRequest,
+        model: &str,
         json_string: &str,
     ) -> Result<(), ratelimit::Error> {
         if let Some(selector) = self.ratelimit_selector.take() {
             // Tokenize and Ratelimit.
-            if let Ok(token_count) =
-                tokenizer::token_count(&chat_completions_request.model, &json_string)
-            {
+            if let Ok(token_count) = tokenizer::token_count(model, &json_string) {
                 ratelimit::ratelimits(None).read().unwrap().check_limit(
-                    chat_completions_request.model.clone(),
+                    model.to_owned(),
                     selector,
                     NonZero::new(token_count as u32).unwrap(),
                 )?;
@@ -1185,7 +1183,7 @@ impl HttpContext for StreamContext {
 
             // enforce ratelimits
             if let Err(e) =
-                self.enforce_ratelimits(&deserialized_body, &chat_completion_request_str)
+                self.enforce_ratelimits(&deserialized_body.model, &chat_completion_request_str)
             {
                 self.send_server_error(
                     ServerError::ExceededRatelimit(e),
