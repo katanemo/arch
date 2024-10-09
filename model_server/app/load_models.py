@@ -23,7 +23,7 @@ def load_transformers(model_name=os.getenv("MODELS", "katanemo/bge-large-en-v1.5
     transformers = {}
     device = get_device()
     transformers["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
-    if device != "gpu":
+    if device != "cuda":
         transformers["model"] = ORTModelForFeatureExtraction.from_pretrained(
             model_name, file_name="onnx/model.onnx"
         )
@@ -69,7 +69,7 @@ def load_zero_shot_models(
 ):
     zero_shot_model = {}
     device = get_device()
-    if device != "gpu":
+    if device != "cuda":
         zero_shot_model["model"] = ORTModelForSequenceClassification.from_pretrained(
             model_name, file_name="onnx/model.onnx"
         )
