@@ -19,12 +19,12 @@ def get_device():
     return device
 
 
-def load_transformers(model_name=os.getenv("MODELS", "katanemo/bge-large-en-v1.5-onnx")):
+def load_transformers(model_name=os.getenv("MODELS", "katanemo/bge-large-en-v1.5")):
     print("Loading Embedding Model")
     transformers = {}
     device = get_device()
     transformers["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
-    if device == "cpu":
+    if device != "gpu":
         transformers["model"] = ORTModelForFeatureExtraction.from_pretrained(
             model_name, file_name="onnx/model.onnx"
         )
@@ -67,10 +67,10 @@ def load_guard_model(
     return guard_model
 
 
-def load_zero_shot_models(model_name=os.getenv("ZERO_SHOT_MODELS", "katanemo/deberta-base-nli-onnx")):
+def load_zero_shot_models(model_name=os.getenv("ZERO_SHOT_MODELS", "katanemo/deberta-base-nli")):
     zero_shot_model = {}
     device = get_device()
-    if device == "cpu":
+    if device != "gpu":
         zero_shot_model["model"] = ORTModelForSequenceClassification.from_pretrained(
             model_name, file_name="onnx/model.onnx"
         )
