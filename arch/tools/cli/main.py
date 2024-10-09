@@ -1,12 +1,12 @@
 import click
-import targets
 import os
-import config_generator
 import pkg_resources
 import sys
 import subprocess
-from core import start_arch_modelserver, stop_arch_modelserver, start_arch, stop_arch
-from utils import get_llm_provider_access_keys, load_env_file_to_dict
+from cli import targets
+from cli import config_generator
+from cli.core import start_arch_modelserver, stop_arch_modelserver, start_arch, stop_arch
+from cli.utils import get_llm_provider_access_keys, load_env_file_to_dict
 
 logo = r"""
      _                _
@@ -78,12 +78,12 @@ def up(file, path):
         return
 
     print(f"Validating {arch_config_file}")
-    arch_schema_config = pkg_resources.resource_filename(__name__, "config/arch_config_schema.yaml")
+    arch_schema_config = pkg_resources.resource_filename(__name__, "../config/arch_config_schema.yaml")
 
     try:
         config_generator.validate_prompt_config(arch_config_file=arch_config_file, arch_config_schema_file=arch_schema_config)
     except Exception as e:
-        print("Exiting archgw up")
+        print(f"Exiting archgw up: {e}")
         sys.exit(1)
 
     print("Starting Arch gateway and Arch model server services via docker ")
@@ -115,7 +115,7 @@ def up(file, path):
                 else:
                     env_stage[access_key] = env_file_dict[access_key]
 
-    with open(pkg_resources.resource_filename(__name__, "config/stage.env"), 'w') as file:
+    with open(pkg_resources.resource_filename(__name__, "../config/stage.env"), 'w') as file:
         for key, value in env_stage.items():
             file.write(f"{key}={value}\n")
 

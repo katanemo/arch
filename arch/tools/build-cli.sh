@@ -21,4 +21,4 @@ cp "$source_stage_env" "$destination_dir/stage.env"
 echo "Files copied successfully!"
 
 echo "Building the cli"
-pip install -e .
+poetry install
