@@ -221,6 +221,10 @@ async def hallucination(req: HallucinationRequest, res: Response):
 
     start = time.time()
     classifier = zero_shot_models["pipeline"]
+    # remove arch_messages from parameters
+    if "arch_messages" in req.parameters:
+        del req.parameters["arch_messages"]
+
     candidate_labels = [f"{k} is {v}" for k, v in req.parameters.items()]
     hypothesis_template = "{}"
     result = classifier(
