@@ -14,7 +14,7 @@ def start_arch(arch_config_file, env, log_timeout=120):
         log_timeout (int): Time in seconds to show logs before checking for healthy state.
     """
 
-    compose_file = pkg_resources.resource_filename(__name__, 'config/docker-compose.yaml')
+    compose_file = pkg_resources.resource_filename(__name__, '../docker-compose.yaml')
 
     try:
         # Run the Docker Compose command in detached mode (-d)
@@ -24,8 +24,8 @@ def start_arch(arch_config_file, env, log_timeout=120):
             env=env,                   # Pass the modified environment
             check=True                 # Raise an exception if the command fails
         )
-        print(f"Arch docker-compose started in detached.")
-        print("Monitoring `docker-compose ps` logs...")
+        print(f"Arch docker compose started in detached.")
+        print("Monitoring `docker compose ps` logs...")
 
         start_time = time.time()
         services_status = {}
@@ -82,7 +82,7 @@ def stop_arch():
     Args:
         path (str): The path where the docker-compose.yml file is located.
     """
-    compose_file = pkg_resources.resource_filename(__name__, 'config/docker-compose.yaml')
+    compose_file = pkg_resources.resource_filename(__name__, '../docker-compose.yaml')
 
     try:
         # Run `docker-compose down` to shut down all services

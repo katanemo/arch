@@ -29,48 +29,60 @@ ARCHGW_DOCKERFILE = "./arch/Dockerfile"
 MODEL_SERVER_BUILD_FILE = "./model_server/pyproject.toml"
 
 @click.command()
-def build():
+@click.option('--services', default='all', help='Services to build. Options: all, archgw, modelserver')
+def build(services):
     """Build Arch from source. Must be in root of cloned repo."""
-    # Check if /arch/Dockerfile exists
-    if os.path.exists(ARCHGW_DOCKERFILE):
-        click.echo("Building archgw image...")
-        try:
-            subprocess.run(["docker", "build", "-f", ARCHGW_DOCKERFILE, "-t", "archgw:latest", "."], check=True)
-            click.echo("archgw image built successfully.")
-        except subprocess.CalledProcessError as e:
-            click.echo(f"Error building archgw image: {e}")
-            sys.exit(1)
-    else:
-        click.echo("Error: Dockerfile not found in /arch")
-        sys.exit(1)
+
+    if services not in ['all', 'archgw', 'modelserver']:
+        print("Error: Invalid service. Options: all, archgw, modelserver")
+        return
+
+    if services == 'archgw' or services == 'all':
+      # Check if /arch/Dockerfile exists
+      if os.path.exists(ARCHGW_DOCKERFILE):
+          click.echo("Building archgw image...")
+          try:
+              subprocess.run(["docker", "build", "-f", ARCHGW_DOCKERFILE, "-t", "archgw:latest", "."], check=True)
+              click.echo("archgw image built successfully.")
+          except subprocess.CalledProcessError as e:
+              click.echo(f"Error building archgw image: {e}")
+              sys.exit(1)
+      else:
+          click.echo("Error: Dockerfile not found in /arch")
+          sys.exit(1)
 
     click.echo("All images built successfully.")
 
-    """Install the model server dependencies using Poetry."""
-    # Check if pyproject.toml exists
-    if os.path.exists(MODEL_SERVER_BUILD_FILE):
-        click.echo("Installing model server dependencies with Poetry...")
-        try:
-            subprocess.run(["poetry", "install", "--no-cache"], cwd=os.path.dirname(MODEL_SERVER_BUILD_FILE), check=True)
-            click.echo("Model server dependencies installed successfully.")
-        except subprocess.CalledProcessError as e:
-            click.echo(f"Error installing model server dependencies: {e}")
-            sys.exit(1)
-    else:
-        click.echo(f"Error: pyproject.toml not found in {MODEL_SERVER_BUILD_FILE}")
-        sys.exit(1)
+    if services == 'modelserver' or services == 'all':
+      """Install the model server dependencies using Poetry."""
+      # Check if pyproject.toml exists
+      if os.path.exists(MODEL_SERVER_BUILD_FILE):
+          click.echo("Installing model server dependencies with Poetry...")
+          try:
+              subprocess.run(["poetry", "install", "--no-cache"], cwd=os.path.dirname(MODEL_SERVER_BUILD_FILE), check=True)
+              click.echo("Model server dependencies installed successfully.")
+          except subprocess.CalledProcessError as e:
+              click.echo(f"Error installing model server dependencies: {e}")
+              sys.exit(1)
+      else:
+          click.echo(f"Error: pyproject.toml not found in {MODEL_SERVER_BUILD_FILE}")
+          sys.exit(1)
 
 @click.command()
-@click.argument('file', required=False)  # Optional file argument
-@click.option('-path', default='.', help='Path to the directory containing arch_config.yml')
-def up(file, path):
+@click.option('--path', default='.', help='Path to the directory containing arch_config.yaml')
+@click.option('--services', default='all', help='Services to start. Options: all, archgw, modelserver')
+def up(path, services):
     """Starts Arch."""
-    if file:
-        # If a file is provided, process that file
-        arch_config_file = os.path.abspath(file)
+
+    if services not in ['all', 'archgw', 'modelserver']:
+        print("Error: Invalid service. Options: all, archgw, modelserver")
+        return
+    # if provided path is directory then append arch_config.yaml file to it otherwise assume
+    # the path is the file itself
+    if os.path.isdir(path):
+      arch_config_file = os.path.abspath(os.path.join(path, "arch_config.yaml"))
     else:
-        # If no file is provided, use the path and look for arch_config.yml
-        arch_config_file = os.path.abspath(os.path.join(path, "arch_config.yml"))
+      arch_config_file = path
 
     # Check if the file exists
     if not os.path.exists(arch_config_file):
@@ -78,12 +90,12 @@ def up(file, path):
         return
 
     print(f"Validating {arch_config_file}")
-    arch_schema_config = pkg_resources.resource_filename(__name__, "config/arch_config_schema.yaml")
+    arch_schema_config = pkg_resources.resource_filename(__name__, "..//arch_config_schema.yaml")
 
     try:
         config_generator.validate_prompt_config(arch_config_file=arch_config_file, arch_config_schema_file=arch_schema_config)
     except Exception as e:
-        print("Exiting archgw up")
+        print(f"Validation of schema file failed: {e}")
         sys.exit(1)
 
     print("Starting Arch gateway and Arch model server services via docker ")
@@ -94,10 +106,7 @@ def up(file, path):
     #check if access_keys are preesnt in the config file
     access_keys = get_llm_provider_access_keys(arch_config_file=arch_config_file)
     if access_keys:
-        if file:
-            app_env_file = os.path.join(os.path.dirname(os.path.abspath(file)), ".env") #check the .env file in the path
-        else:
-            app_env_file = os.path.abspath(os.path.join(path, ".env"))
+        app_env_file = os.path.abspath(os.path.join(path, ".env"))
 
         if not os.path.exists(app_env_file): #check to see if the environment variables in the current environment or not
             for access_key in access_keys:
@@ -115,21 +124,38 @@ def up(file, path):
                 else:
                     env_stage[access_key] = env_file_dict[access_key]
 
-    with open(pkg_resources.resource_filename(__name__, "config/stage.env"), 'w') as file:
+    with open(pkg_resources.resource_filename(__name__, "../stage.env"), 'w') as file:
         for key, value in env_stage.items():
             file.write(f"{key}={value}\n")
 
     env.update(env_stage)
     env['ARCH_CONFIG_FILE'] = arch_config_file
 
-    start_arch_modelserver()
-    start_arch(arch_config_file, env)
+    if services == 'archgw':
+      start_arch(arch_config_file, env)
+    elif services == 'modelserver':
+      start_arch_modelserver()
+    else:
+      start_arch_modelserver()
+      start_arch(arch_config_file, env)
+
 
 @click.command()
-def down():
+@click.option('--services', default='all', help='Services to stop. Options: all, archgw, modelserver')
+def down(services):
     """Stops Arch."""
-    stop_arch_modelserver()
-    stop_arch()
+
+    if services not in ['all', 'archgw', 'modelserver']:
+        print("Error: Invalid service. Options: all, archgw, modelserver")
+        return
+
+    if services == 'archgw':
+      stop_arch()
+    elif services == 'modelserver':
+      stop_arch_modelserver()
+    else:
+      stop_arch_modelserver()
+      stop_arch()
 
 @click.command()
 @click.option('-f', '--file', type=click.Path(exists=True), required=True, help="Path to the Python file")

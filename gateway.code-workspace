@@ -9,6 +9,10 @@
       "path": "arch"
     },
     {
+      "name": "arch/tools",
+      "path": "arch/tools"
+    },
+    {
       "name": "model_server",
       "path": "model_server"
     },
