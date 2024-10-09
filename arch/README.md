@@ -32,5 +32,5 @@ $ cargo test
   $ docker compose -f docker-compose.dev.yaml up archgw
   ```
 - dev version of docker-compose file uses following files that are mounted inside the container. That means no docker rebuild is needed if any of these files change. Just restart the container and chagne will be picked up,
-- - envoy.template.yaml
-- - intelligent_prompt_gateway.wasm
+  - envoy.template.yaml
+  - intelligent_prompt_gateway.wasm
