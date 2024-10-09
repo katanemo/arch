@@ -21,7 +21,6 @@ class DeviceSummaryResponse(BaseModel):
     # Request model for device reboot
 class DeviceRebootRequest(BaseModel):
     device_ids: List[int]
-    time_range: Optional[int] = Field(default=7, description="Time range in days, defaults to 7")
 
 # Response model for the device reboot
 class CoverageResponse(BaseModel):
@@ -36,29 +35,22 @@ def reboot_network_device(request_data: DeviceRebootRequest):
 
     # Access data from the Pydantic model
     device_ids = request_data.device_ids
-    time_range = request_data.time_range
 
     # Validate 'device_ids' (This is already validated by Pydantic, but additional logic can be added if needed)
     if not device_ids:
         raise HTTPException(status_code=400, detail="'device_ids' parameter is required")
-
-    # Validate 'time_range' (already validated by Pydantic, but more logic can be added)
-    if not isinstance(time_range, int):
-        raise HTTPException(status_code=400, detail="'time_range' must be an integer")
 
     # Simulate reboot operation and return the response
     statistics = []
     for device_id in device_ids:
         # Placeholder for actual data retrieval or device reboot logic
         stats = {
-            "device_id": device_id,
-            "time_range": f"Last {time_range} days",
             "data": f"Device {device_id} has been successfully rebooted."
         }
         statistics.append(stats)
 
     # Return the response with a summary
-    return CoverageResponse(status="success", summary={"device_ids": device_ids, "time_range": time_range})
+    return CoverageResponse(status="success", summary={"device_ids": device_ids})
 
 # Post method for device summary
 @app.post("/agent/device_summary", response_model=DeviceSummaryResponse)
@@ -73,12 +65,14 @@ def get_device_summary(request: DeviceSummaryRequest):
 
     # Simulate retrieving statistics for the given device IDs and time range
     statistics = []
+    minutes = 1
     for device_id in device_ids:
         stats = {
             "device_id": device_id,
             "time_range": f"Last {time_range} days",
-            "data": f"Statistics data for device {device_id} over the last {time_range} days.",
+            "data": f"Device {device_id} over the last {time_range} days experienced {minutes} minutes of downtime.",
         }
+        minutes += 1
         statistics.append(DeviceStatistics(**stats))
 
     return DeviceSummaryResponse(statistics=statistics)

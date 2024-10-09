@@ -35,10 +35,12 @@ def start_server():
         print("Server is already running. Use 'model_server restart' to restart it.")
         sys.exit(1)
 
-    print(f"Starting Archgw Model Server")
+    print(f"Starting Archgw Model Server - Loading some awesomeness, this may take a little time.)")
     process = subprocess.Popen(
         ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "51000"],
         start_new_session=True,
+        stdout=subprocess.DEVNULL, # Suppress standard output. There is a logger that model_server prints to
+        stderr=subprocess.DEVNULL,  # Suppress standard error. There is a logger that model_server prints to
     )
 
     if wait_for_health_check("http://0.0.0.0:51000/healthz"):

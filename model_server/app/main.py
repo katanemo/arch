@@ -19,7 +19,6 @@ import os.path
 
 logger = get_model_server_logger()
 logger.info(f"Devices Avialble: {get_device()}")
-print(f"Devices Avialble: {get_device()}")
 
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
