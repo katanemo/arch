@@ -33,6 +33,12 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
             Some("x-arch-llm-provider-hint"),
         )
         .returning(Some("default"))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_add_header_map_value(
+            Some(MapType::HttpRequestHeaders),
+            Some("x-arch-upstream"),
+            Some("arch_llm_listener"),
+        )
         .expect_add_header_map_value(
             Some(MapType::HttpRequestHeaders),
             Some("x-arch-llm-provider"),
@@ -266,6 +272,7 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
 
     module
         .call_proxy_on_tick(filter_context)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("arch_internal"),

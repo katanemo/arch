@@ -13,6 +13,20 @@ pub struct Tracing {
     pub sampling_rate: Option<f64>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum GatewayMode {
+    #[serde(rename = "llm")]
+    Llm,
+    #[serde(rename = "prompt")]
+    Prompt,
+}
+
+impl Default for GatewayMode {
+    fn default() -> Self {
+        GatewayMode::Prompt
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub version: String,
@@ -26,6 +40,7 @@ pub struct Configuration {
     pub error_target: Option<ErrorTargetDetail>,
     pub ratelimits: Option<Vec<Ratelimit>>,
     pub tracing: Option<Tracing>,
+    pub mode: Option<GatewayMode>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -283,5 +298,11 @@ mod test {
 
         let tracing = config.tracing.as_ref().unwrap();
         assert_eq!(tracing.sampling_rate.unwrap(), 0.1);
+
+        let mode = config
+            .mode
+            .as_ref()
+            .unwrap_or(&super::GatewayMode::Prompt);
+        assert_eq!(*mode, super::GatewayMode::Prompt);
     }
 }
