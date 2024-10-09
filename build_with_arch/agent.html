@@ -174,49 +174,64 @@ is how you would go about enabling this scenario with Arch:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">Prompt Target Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
-</span><span id="line-2"><span class="linenos"> 2</span>
-</span><span id="line-3"><span class="linenos"> 3</span><span class="nt">listen</span><span class="p">:</span>
-</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
-</span><span id="line-5"><span class="linenos"> 5</span><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
-</span><span id="line-6"><span class="linenos"> 6</span><span class="w">  </span><span class="c1"># Defines how Arch should parse the content from application/json or text/pain Content-type in the http request</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
-</span><span id="line-8"><span class="linenos"> 8</span>
-</span><span id="line-9"><span class="linenos"> 9</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
-</span><span id="line-10"><span class="linenos">10</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
-</span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
-</span><span id="line-15"><span class="linenos">15</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-16"><span class="linenos">16</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-17"><span class="linenos">17</span>
-</span><span id="line-18"><span class="linenos">18</span><span class="c1"># default system prompt used by all prompt targets</span>
-</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
-</span><span id="line-20"><span class="linenos">20</span>
-</span><span id="line-21"><mark><span class="linenos">21</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
-</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot specific devices or device groups</span>
-</mark></span><span id="line-24"><mark><span class="linenos">24</span>
-</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
-</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</mark></span><span id="line-27"><mark><span class="linenos">27</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
-</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
-</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
-</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_group</span>
-</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">str</span>
-</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The name of the device group to reboot</span>
-</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-35"><span class="linenos">35</span>
-</span><span id="line-36"><span class="linenos">36</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
-</span><span id="line-37"><span class="linenos">37</span><span class="nt">endpoints</span><span class="p">:</span>
-</span><span id="line-38"><span class="linenos">38</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
-</span><span id="line-39"><span class="linenos">39</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
-</span><span id="line-40"><span class="linenos">40</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
-</span><span id="line-41"><span class="linenos">41</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:80</span>
-</span><span id="line-43"><span class="linenos">43</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
-</span><span id="line-44"><span class="linenos">44</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-2"><span class="linenos"> 2</span><span class="nt">listener</span><span class="p">:</span>
+</span><span id="line-3"><span class="linenos"> 3</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1</span>
+</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"> </span><span class="c1">#If you configure port 443, you'll need to update the listener with tls_certificates</span>
+</span><span id="line-5"><span class="linenos"> 5</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
+</span><span id="line-6"><span class="linenos"> 6</span>
+</span><span id="line-7"><span class="linenos"> 7</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
+</span><span id="line-8"><span class="linenos"> 8</span><span class="nt">llm_providers</span><span class="p">:</span>
+</span><span id="line-9"><span class="linenos"> 9</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-10"><span class="linenos">10</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-14"><span class="linenos">14</span>
+</span><span id="line-15"><span class="linenos">15</span><span class="c1"># default system prompt used by all prompt targets</span>
+</span><span id="line-16"><span class="linenos">16</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+</span><span id="line-17"><span class="linenos">17</span><span class="w">  </span><span class="no">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+</span><span id="line-18"><span class="linenos">18</span>
+</span><span id="line-19"><span class="linenos">19</span><span class="nt">prompt_targets</span><span class="p">:</span>
+</span><span id="line-20"><span class="linenos">20</span><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">network_qa</span>
+</span><span id="line-21"><mark><span class="linenos">21</span><span class="w">      </span><span class="nt">endpoint</span><span class="p">:</span>
+</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/network_summary</span>
+</mark></span><span id="line-24"><mark><span class="linenos">24</span><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Handle general Q/A related to networking.</span>
+</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">      </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
+</mark></span><span id="line-27"><mark><span class="linenos">27</span><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot specific devices or device groups</span>
+</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">      </span><span class="nt">endpoint</span><span class="p">:</span>
+</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
+</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">      </span><span class="nt">parameters</span><span class="p">:</span>
+</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
+</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
+</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
+</mark></span><span id="line-35"><span class="linenos">35</span><span class="w">          </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-36"><span class="linenos">36</span><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_summary</span>
+</span><span id="line-37"><span class="linenos">37</span><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Retrieve statistics for specific devices within a time range</span>
+</span><span id="line-38"><span class="linenos">38</span><span class="w">      </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-39"><span class="linenos">39</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</span><span id="line-40"><span class="linenos">40</span><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_summary</span>
+</span><span id="line-41"><span class="linenos">41</span><span class="w">      </span><span class="nt">parameters</span><span class="p">:</span>
+</span><span id="line-42"><span class="linenos">42</span><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
+</span><span id="line-43"><span class="linenos">43</span><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
+</span><span id="line-44"><span class="linenos">44</span><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to retrieve statistics for.</span>
+</span><span id="line-45"><span class="linenos">45</span><span class="w">          </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># device_ids are required to get device statistics</span>
+</span><span id="line-46"><span class="linenos">46</span><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">time_range</span>
+</span><span id="line-47"><span class="linenos">47</span><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+</span><span id="line-48"><span class="linenos">48</span><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Time range in days for which to gather device statistics. Defaults to 7.</span>
+</span><span id="line-49"><span class="linenos">49</span><span class="w">          </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">"7"</span>
+</span><span id="line-50"><span class="linenos">50</span>
+</span><span id="line-51"><span class="linenos">51</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
+</span><span id="line-52"><span class="linenos">52</span><span class="nt">endpoints</span><span class="p">:</span>
+</span><span id="line-53"><span class="linenos">53</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
+</span><span id="line-54"><span class="linenos">54</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
+</span><span id="line-55"><span class="linenos">55</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
+</span><span id="line-56"><span class="linenos">56</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
+</span><span id="line-57"><span class="linenos">57</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">host.docker.internal:18083</span>
+</span><span id="line-58"><span class="linenos">58</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
+</span><span id="line-59"><span class="linenos">59</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
 </span></code></pre></div>
 </div>
 </div>
@@ -291,49 +306,64 @@ the user’s intent.</p>
 <div class="literal-block-wrapper docutils container" id="id4">
 <div class="code-block-caption"><span class="caption-text">Prompt Target Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id4"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
-</span><span id="line-2"><span class="linenos"> 2</span>
-</span><span id="line-3"><span class="linenos"> 3</span><span class="nt">listen</span><span class="p">:</span>
-</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span><span class="w"> </span><span class="c1"># or 127.0.0.1</span>
-</span><span id="line-5"><span class="linenos"> 5</span><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
-</span><span id="line-6"><span class="linenos"> 6</span><span class="w">  </span><span class="c1"># Defines how Arch should parse the content from application/json or text/pain Content-type in the http request</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
-</span><span id="line-8"><span class="linenos"> 8</span>
-</span><span id="line-9"><span class="linenos"> 9</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
-</span><span id="line-10"><span class="linenos">10</span><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
-</span><span id="line-14"><span class="linenos">14</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
-</span><span id="line-15"><span class="linenos">15</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-16"><span class="linenos">16</span><span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-17"><span class="linenos">17</span>
-</span><span id="line-18"><span class="linenos">18</span><span class="c1"># default system prompt used by all prompt targets</span>
-</span><span id="line-19"><span class="linenos">19</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
-</span><span id="line-20"><span class="linenos">20</span>
-</span><span id="line-21"><mark><span class="linenos">21</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
-</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot specific devices or device groups</span>
-</mark></span><span id="line-24"><mark><span class="linenos">24</span>
-</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
-</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</mark></span><span id="line-27"><mark><span class="linenos">27</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
-</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
-</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
-</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_group</span>
-</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">str</span>
-</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The name of the device group to reboot</span>
-</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</mark></span><span id="line-35"><span class="linenos">35</span>
-</span><span id="line-36"><span class="linenos">36</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
-</span><span id="line-37"><span class="linenos">37</span><span class="nt">endpoints</span><span class="p">:</span>
-</span><span id="line-38"><span class="linenos">38</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
-</span><span id="line-39"><span class="linenos">39</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
-</span><span id="line-40"><span class="linenos">40</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
-</span><span id="line-41"><span class="linenos">41</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1:80</span>
-</span><span id="line-43"><span class="linenos">43</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
-</span><span id="line-44"><span class="linenos">44</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-2"><span class="linenos"> 2</span><span class="nt">listener</span><span class="p">:</span>
+</span><span id="line-3"><span class="linenos"> 3</span><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1</span>
+</span><span id="line-4"><span class="linenos"> 4</span><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"> </span><span class="c1">#If you configure port 443, you'll need to update the listener with tls_certificates</span>
+</span><span id="line-5"><span class="linenos"> 5</span><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
+</span><span id="line-6"><span class="linenos"> 6</span>
+</span><span id="line-7"><span class="linenos"> 7</span><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
+</span><span id="line-8"><span class="linenos"> 8</span><span class="nt">llm_providers</span><span class="p">:</span>
+</span><span id="line-9"><span class="linenos"> 9</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
+</span><span id="line-10"><span class="linenos">10</span><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-14"><span class="linenos">14</span>
+</span><span id="line-15"><span class="linenos">15</span><span class="c1"># default system prompt used by all prompt targets</span>
+</span><span id="line-16"><span class="linenos">16</span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+</span><span id="line-17"><span class="linenos">17</span><span class="w">  </span><span class="no">You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.</span>
+</span><span id="line-18"><span class="linenos">18</span>
+</span><span id="line-19"><span class="linenos">19</span><span class="nt">prompt_targets</span><span class="p">:</span>
+</span><span id="line-20"><span class="linenos">20</span><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">network_qa</span>
+</span><span id="line-21"><mark><span class="linenos">21</span><span class="w">      </span><span class="nt">endpoint</span><span class="p">:</span>
+</mark></span><span id="line-22"><mark><span class="linenos">22</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</mark></span><span id="line-23"><mark><span class="linenos">23</span><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/network_summary</span>
+</mark></span><span id="line-24"><mark><span class="linenos">24</span><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Handle general Q/A related to networking.</span>
+</mark></span><span id="line-25"><mark><span class="linenos">25</span><span class="w">      </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</mark></span><span id="line-26"><mark><span class="linenos">26</span><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reboot_devices</span>
+</mark></span><span id="line-27"><mark><span class="linenos">27</span><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Reboot specific devices or device groups</span>
+</mark></span><span id="line-28"><mark><span class="linenos">28</span><span class="w">      </span><span class="nt">endpoint</span><span class="p">:</span>
+</mark></span><span id="line-29"><mark><span class="linenos">29</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</mark></span><span id="line-30"><mark><span class="linenos">30</span><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_reboot</span>
+</mark></span><span id="line-31"><mark><span class="linenos">31</span><span class="w">      </span><span class="nt">parameters</span><span class="p">:</span>
+</mark></span><span id="line-32"><mark><span class="linenos">32</span><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
+</mark></span><span id="line-33"><mark><span class="linenos">33</span><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
+</mark></span><span id="line-34"><mark><span class="linenos">34</span><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
+</mark></span><span id="line-35"><span class="linenos">35</span><span class="w">          </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-36"><span class="linenos">36</span><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_summary</span>
+</span><span id="line-37"><span class="linenos">37</span><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Retrieve statistics for specific devices within a time range</span>
+</span><span id="line-38"><span class="linenos">38</span><span class="w">      </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-39"><span class="linenos">39</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
+</span><span id="line-40"><span class="linenos">40</span><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_summary</span>
+</span><span id="line-41"><span class="linenos">41</span><span class="w">      </span><span class="nt">parameters</span><span class="p">:</span>
+</span><span id="line-42"><span class="linenos">42</span><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
+</span><span id="line-43"><span class="linenos">43</span><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
+</span><span id="line-44"><span class="linenos">44</span><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to retrieve statistics for.</span>
+</span><span id="line-45"><span class="linenos">45</span><span class="w">          </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># device_ids are required to get device statistics</span>
+</span><span id="line-46"><span class="linenos">46</span><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">time_range</span>
+</span><span id="line-47"><span class="linenos">47</span><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+</span><span id="line-48"><span class="linenos">48</span><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Time range in days for which to gather device statistics. Defaults to 7.</span>
+</span><span id="line-49"><span class="linenos">49</span><span class="w">          </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">"7"</span>
+</span><span id="line-50"><span class="linenos">50</span>
+</span><span id="line-51"><span class="linenos">51</span><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
+</span><span id="line-52"><span class="linenos">52</span><span class="nt">endpoints</span><span class="p">:</span>
+</span><span id="line-53"><span class="linenos">53</span><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
+</span><span id="line-54"><span class="linenos">54</span><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
+</span><span id="line-55"><span class="linenos">55</span><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
+</span><span id="line-56"><span class="linenos">56</span><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
+</span><span id="line-57"><span class="linenos">57</span><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">host.docker.internal:18083</span>
+</span><span id="line-58"><span class="linenos">58</span><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
+</span><span id="line-59"><span class="linenos">59</span><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
 </span></code></pre></div>
 </div>
 </div>
