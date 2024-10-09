@@ -13,9 +13,10 @@ def get_device_summary():
     # Validate 'device_ids' parameter
     device_ids = data.get("device_ids")
     if not device_ids or not isinstance(device_ids, list):
-        return jsonify(
-            {"error": "'device_ids' parameter is required and must be a list"}
-        ), 400
+        return (
+            jsonify({"error": "'device_ids' parameter is required and must be a list"}),
+            400,
+        )
 
     # Validate 'time_range' parameter (optional, defaults to 7)
     time_range = data.get("time_range", 7)
