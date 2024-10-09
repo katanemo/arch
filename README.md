@@ -6,16 +6,16 @@
 
 Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed for generative AI apps, AI agents, and co-pilots that work with prompts. Engineered with purpose-built LLMs, Arch handles the critical but undifferentiated tasks related to the handling and processing of prompts, including detecting and rejecting [jailbreak](https://github.com/verazuo/jailbreak_llms) attempts, intelligently calling "backend" APIs to fulfill the user's request represented in a prompt, routing to and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
 
- Arch is built on (and by the core contributors of) the wildly popular and robust [Envoy Proxy](https://www.envoyproxy.io/) with the belief that:
+ Arch is built on (and by the core contributors of) [Envoy Proxy](https://www.envoyproxy.io/) with the belief that:
 
 >Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization – all outside business logic.*
 
 **Core Features**:
-  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egreess traffic realted to prompts and LLMs
-  - Build Fast Agentic and RAG apps. Engineered with purpose-built [(fast) LLMs](https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68) to handle fast, cost-effective, and accurate prompt-based tasks like function/API calling.
-  - Prompt [Guardrails](https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d): Arch centralizes prompt guardrails to prevent jailbreak attempts and ensure safe user interactions without writing extra code.
-  - Traffic Management: Arch manages LLM calls, offering smart retries, automatic cutover, and resilient upstream connections for continuous availability.
-  - Standards-based Observability: Arch uses the W3C Trace Context standard to enable complete request tracing across applications, ensuring compatibility with observability tools, and provides metrics to monitor latency, token usage, and error rates, helping optimize AI application performance.
+  - **Built on [Envoy](https://envoyproxy.io)**: Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egreess traffic realted to prompts and LLMs
+  - **Build Fast Agentic and RAG apps**. Engineered with purpose-built [(fast) LLMs](https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68) to handle fast, cost-effective, and accurate prompt-based tasks like function/API calling.
+  - **Prompt [Guardrails](https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d)**: Arch centralizes prompt guardrails to prevent jailbreak attempts and ensure safe user interactions without writing extra code.
+  - **Traffic Management**: Arch manages LLM calls, offering smart retries, automatic cutover, and resilient upstream connections for continuous availability.
+  - **Standards-based Observability**: Arch uses the W3C Trace Context standard to enable complete request tracing across applications, ensuring compatibility with observability tools, and provides metrics to monitor latency, token usage, and error rates, helping optimize AI application performance.
 
 **Jump to our [docs](https://docs.archgw.com)** to learn more about how you can use Arch to improve the speed, robustneess and personalization of your GenAI apps
 
