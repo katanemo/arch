@@ -1,10 +1,8 @@
 # Network Agent Demo
 
-This demo illustrates how = **Arch** can be used to perform function calling with network-related tasks. In this demo, you act as a **network assistant** that provides factual information, without offering advice on manufacturers or purchasing decisions.
+This demo illustrates how **Arch** can be used to perform function calling with network-related tasks. In this demo, you act as a **network assistant** that provides factual information, without offering advice on manufacturers or purchasing decisions.
 
 The assistant can perform several key operations, including rebooting devices, answering general networking questions, and retrieving device statistics. By default, the system prompt ensures that the assistant's responses are factual and neutral.
-
-This demo assumes that **Ollama** is running natively. If you're using Ollama inside Docker, make sure to update the Ollama endpoint in the `docker-compose` file.
 
 ## Available Functions:
 - **Reboot Devices**: Allows rebooting specific devices or device groups, with an optional time range for scheduling the reboot.
