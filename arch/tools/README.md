@@ -51,6 +51,12 @@ source venv/bin/activate
 sh build-cli.sh
 ```
 
+### Step 4: build Arch
+```bash
+archgw build
+```
+
+
 ## Uninstall Instructions: archgw CLI
 ```bash
 pip uninstall archgw
