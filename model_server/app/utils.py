@@ -9,6 +9,7 @@ import logging
 
 logger_instance = None
 
+
 def load_yaml_config(file_name):
     # Load the YAML file from the package
     yaml_path = pkg_resources.resource_filename("app", file_name)
@@ -138,6 +139,7 @@ class GuardHandler:
             }
         return result_dict
 
+
 def get_model_server_logger():
     global logger_instance
 
@@ -164,8 +166,8 @@ def get_model_server_logger():
             level=logging.INFO,
             format="%(asctime)s - %(levelname)s - %(message)s",
             handlers=[
-                logging.FileHandler(log_file_path, mode='w'),  # Overwrite logs in file
-            ]
+                logging.FileHandler(log_file_path, mode="w"),  # Overwrite logs in file
+            ],
         )
     except (PermissionError, OSError) as e:
         # Dont' fallback to console logging if there are issues writing to the log file

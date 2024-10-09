@@ -6,6 +6,7 @@ import shlex
 import yaml
 import json
 
+
 def run_docker_compose_ps(compose_file, env):
     """
     Check if all Docker Compose services are in a healthy state.
@@ -16,20 +17,31 @@ def run_docker_compose_ps(compose_file, env):
     try:
         # Run `docker-compose ps` to get the health status of each service
         ps_process = subprocess.Popen(
-            ["docker", "compose", "-p", "arch", "ps", "--format", "table{{.Service}}\t{{.State}}\t{{.Ports}}"],
+            [
+                "docker",
+                "compose",
+                "-p",
+                "arch",
+                "ps",
+                "--format",
+                "table{{.Service}}\t{{.State}}\t{{.Ports}}",
+            ],
             cwd=os.path.dirname(compose_file),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             start_new_session=True,
-            env=env
+            env=env,
         )
         # Capture the output of `docker-compose ps`
         services_status, error_output = ps_process.communicate()
 
         # Check if there is any error output
         if error_output:
-            print(f"Error while checking service status:\n{error_output}", file=os.sys.stderr)
+            print(
+                f"Error while checking service status:\n{error_output}",
+                file=os.sys.stderr,
+            )
             return {}
 
         services = parse_docker_compose_ps_output(services_status)
@@ -39,26 +51,31 @@ def run_docker_compose_ps(compose_file, env):
         print(f"Failed to check service status. Error:\n{e.stderr}")
         return e
 
-#Helper method to print service status
+
+# Helper method to print service status
 def print_service_status(services):
     print(f"{'Service Name':<25} {'State':<20} {'Ports'}")
-    print("="*72)
+    print("=" * 72)
     for service_name, info in services.items():
-        status = info['STATE']
-        ports = info['PORTS']
+        status = info["STATE"]
+        ports = info["PORTS"]
         print(f"{service_name:<25} {status:<20} {ports}")
 
-#check for states based on the states passed in
+
+# check for states based on the states passed in
 def check_services_state(services, states):
     for service_name, service_info in services.items():
-        status = service_info['STATE'].lower()  # Convert status to lowercase for easier comparison
+        status = service_info[
+            "STATE"
+        ].lower()  # Convert status to lowercase for easier comparison
         if any(state in status for state in states):
             return True
 
     return False
 
+
 def get_llm_provider_access_keys(arch_config_file):
-    with open(arch_config_file, 'r') as file:
+    with open(arch_config_file, "r") as file:
         arch_config = file.read()
         arch_config_yaml = yaml.safe_load(arch_config)
 
@@ -70,22 +87,23 @@ def get_llm_provider_access_keys(arch_config_file):
 
     return access_key_list
 
+
 def load_env_file_to_dict(file_path):
     env_dict = {}
 
     # Open and read the .env file
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
         for line in file:
             # Strip any leading/trailing whitespaces
             line = line.strip()
 
             # Skip empty lines and comments
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
 
             # Split the line into key and value at the first '=' sign
-            if '=' in line:
-                key, value = line.split('=', 1)
+            if "=" in line:
+                key, value = line.split("=", 1)
                 key = key.strip()
                 value = value.strip()
 
@@ -93,6 +111,7 @@ def load_env_file_to_dict(file_path):
                 env_dict[key] = value
 
     return env_dict
+
 
 def parse_docker_compose_ps_output(output):
     # Split the output into lines
@@ -111,10 +130,7 @@ def parse_docker_compose_ps_output(output):
         parts = line.split()
 
         # Create a dictionary entry using the header names
-        service_info = {
-            headers[1]: parts[1],  # State
-            headers[2]: parts[2]   # Ports
-        }
+        service_info = {headers[1]: parts[1], headers[2]: parts[2]}  # State  # Ports
 
         # Add to the result dictionary using the service name as the key
         services[parts[0]] = service_info

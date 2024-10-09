@@ -25,3 +25,8 @@ repos:
         # --lib is to only test the library, since when integration tests are made,
         # they will be in a seperate tests directory
         entry: bash -c "cd arch && cargo test -p intelligent-prompt-gateway --lib"
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+        language_version: python3

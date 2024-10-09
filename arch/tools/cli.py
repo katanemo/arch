@@ -16,17 +16,21 @@ logo = r"""
  /_/   \_\|_|   \___||_| |_|
 
 """
+
+
 @click.group(invoke_without_command=True)
 @click.pass_context
 def main(ctx):
     if ctx.invoked_subcommand is None:
-        click.echo( """Arch (The Intelligent Prompt Gateway) CLI""")
+        click.echo("""Arch (The Intelligent Prompt Gateway) CLI""")
         click.echo(logo)
         click.echo(ctx.get_help())
+
 
 # Command to build archgw and model_server Docker images
 ARCHGW_DOCKERFILE = "./arch/Dockerfile"
 MODEL_SERVER_BUILD_FILE = "./model_server/pyproject.toml"
+
 
 @click.command()
 def build():
@@ -35,7 +39,18 @@ def build():
     if os.path.exists(ARCHGW_DOCKERFILE):
         click.echo("Building archgw image...")
         try:
-            subprocess.run(["docker", "build", "-f", ARCHGW_DOCKERFILE, "-t", "archgw:latest", "."], check=True)
+            subprocess.run(
+                [
+                    "docker",
+                    "build",
+                    "-f",
+                    ARCHGW_DOCKERFILE,
+                    "-t",
+                    "archgw:latest",
+                    ".",
+                ],
+                check=True,
+            )
             click.echo("archgw image built successfully.")
         except subprocess.CalledProcessError as e:
             click.echo(f"Error building archgw image: {e}")
@@ -51,7 +66,11 @@ def build():
     if os.path.exists(MODEL_SERVER_BUILD_FILE):
         click.echo("Installing model server dependencies with Poetry...")
         try:
-            subprocess.run(["poetry", "install", "--no-cache"], cwd=os.path.dirname(MODEL_SERVER_BUILD_FILE), check=True)
+            subprocess.run(
+                ["poetry", "install", "--no-cache"],
+                cwd=os.path.dirname(MODEL_SERVER_BUILD_FILE),
+                check=True,
+            )
             click.echo("Model server dependencies installed successfully.")
         except subprocess.CalledProcessError as e:
             click.echo(f"Error installing model server dependencies: {e}")
@@ -60,9 +79,12 @@ def build():
         click.echo(f"Error: pyproject.toml not found in {MODEL_SERVER_BUILD_FILE}")
         sys.exit(1)
 
+
 @click.command()
-@click.argument('file', required=False)  # Optional file argument
-@click.option('-path', default='.', help='Path to the directory containing arch_config.yml')
+@click.argument("file", required=False)  # Optional file argument
+@click.option(
+    "-path", default=".", help="Path to the directory containing arch_config.yml"
+)
 def up(file, path):
     """Starts Arch."""
     if file:
@@ -78,10 +100,15 @@ def up(file, path):
         return
 
     print(f"Validating {arch_config_file}")
-    arch_schema_config = pkg_resources.resource_filename(__name__, "config/arch_config_schema.yaml")
+    arch_schema_config = pkg_resources.resource_filename(
+        __name__, "config/arch_config_schema.yaml"
+    )
 
     try:
-        config_generator.validate_prompt_config(arch_config_file=arch_config_file, arch_config_schema_file=arch_schema_config)
+        config_generator.validate_prompt_config(
+            arch_config_file=arch_config_file,
+            arch_config_schema_file=arch_schema_config,
+        )
     except Exception as e:
         print("Exiting archgw up")
         sys.exit(1)
@@ -91,39 +118,46 @@ def up(file, path):
     # Set the ARCH_CONFIG_FILE environment variable
     env_stage = {}
     env = os.environ.copy()
-    #check if access_keys are preesnt in the config file
+    # check if access_keys are preesnt in the config file
     access_keys = get_llm_provider_access_keys(arch_config_file=arch_config_file)
     if access_keys:
         if file:
-            app_env_file = os.path.join(os.path.dirname(os.path.abspath(file)), ".env") #check the .env file in the path
+            app_env_file = os.path.join(
+                os.path.dirname(os.path.abspath(file)), ".env"
+            )  # check the .env file in the path
         else:
             app_env_file = os.path.abspath(os.path.join(path, ".env"))
 
-        if not os.path.exists(app_env_file): #check to see if the environment variables in the current environment or not
+        if not os.path.exists(
+            app_env_file
+        ):  # check to see if the environment variables in the current environment or not
             for access_key in access_keys:
                 if env.get(access_key) is None:
-                    print (f"Access Key: {access_key} not found. Exiting Start")
+                    print(f"Access Key: {access_key} not found. Exiting Start")
                     sys.exit(1)
                 else:
                     env_stage[access_key] = env.get(access_key)
-        else: #.env file exists, use that to send parameters to Arch
+        else:  # .env file exists, use that to send parameters to Arch
             env_file_dict = load_env_file_to_dict(app_env_file)
             for access_key in access_keys:
                 if env_file_dict.get(access_key) is None:
-                    print (f"Access Key: {access_key} not found. Exiting Start")
+                    print(f"Access Key: {access_key} not found. Exiting Start")
                     sys.exit(1)
                 else:
                     env_stage[access_key] = env_file_dict[access_key]
 
-    with open(pkg_resources.resource_filename(__name__, "config/stage.env"), 'w') as file:
+    with open(
+        pkg_resources.resource_filename(__name__, "config/stage.env"), "w"
+    ) as file:
         for key, value in env_stage.items():
             file.write(f"{key}={value}\n")
 
     env.update(env_stage)
-    env['ARCH_CONFIG_FILE'] = arch_config_file
+    env["ARCH_CONFIG_FILE"] = arch_config_file
 
     start_arch_modelserver()
     start_arch(arch_config_file, env)
+
 
 @click.command()
 def down():
@@ -131,12 +165,20 @@ def down():
     stop_arch_modelserver()
     stop_arch()
 
+
 @click.command()
-@click.option('-f', '--file', type=click.Path(exists=True), required=True, help="Path to the Python file")
+@click.option(
+    "-f",
+    "--file",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to the Python file",
+)
 def generate_prompt_targets(file):
     """Generats prompt_targets from python methods.
-       Note: This works for simple data types like ['int', 'float', 'bool', 'str', 'list', 'tuple', 'set', 'dict']:
-       If you have a complex pydantic data type, you will have to flatten those manually until we add support for it."""
+    Note: This works for simple data types like ['int', 'float', 'bool', 'str', 'list', 'tuple', 'set', 'dict']:
+    If you have a complex pydantic data type, you will have to flatten those manually until we add support for it.
+    """
 
     print(f"Processing file: {file}")
     if not file.endswith(".py"):
@@ -145,10 +187,11 @@ def generate_prompt_targets(file):
 
     targets.generate_prompt_targets(file)
 
+
 main.add_command(up)
 main.add_command(down)
 main.add_command(build)
 main.add_command(generate_prompt_targets)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
