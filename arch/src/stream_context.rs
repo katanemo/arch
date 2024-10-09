@@ -921,30 +921,37 @@ impl StreamContext {
         debug!("arch => openai request body: {}", json_string);
 
         // Tokenize and Ratelimit.
-        if let Some(selector) = self.ratelimit_selector.take() {
-            if let Ok(token_count) =
-                tokenizer::token_count(&chat_completions_request.model, &json_string)
-            {
-                match ratelimit::ratelimits(None).read().unwrap().check_limit(
-                    chat_completions_request.model,
-                    selector,
-                    NonZero::new(token_count as u32).unwrap(),
-                ) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        self.send_server_error(
-                            ServerError::ExceededRatelimit(err),
-                            Some(StatusCode::TOO_MANY_REQUESTS),
-                        );
-                        self.metrics.ratelimited_rq.increment(1);
-                        return;
-                    }
-                }
-            }
+        if let Err(e) = self.enforce_ratelimits(&chat_completions_request, &json_string) {
+            self.send_server_error(
+                ServerError::ExceededRatelimit(e),
+                Some(StatusCode::TOO_MANY_REQUESTS),
+            );
+            self.metrics.ratelimited_rq.increment(1);
+            return;
         }
 
         self.set_http_request_body(0, self.request_body_size, &json_string.into_bytes());
         self.resume_http_request();
+    }
+
+    fn enforce_ratelimits(
+        &mut self,
+        chat_completions_request: &ChatCompletionsRequest,
+        json_string: &str,
+    ) -> Result<(), ratelimit::Error> {
+        if let Some(selector) = self.ratelimit_selector.take() {
+            // Tokenize and Ratelimit.
+            if let Ok(token_count) =
+                tokenizer::token_count(&chat_completions_request.model, &json_string)
+            {
+                ratelimit::ratelimits(None).read().unwrap().check_limit(
+                    chat_completions_request.model.clone(),
+                    selector,
+                    NonZero::new(token_count as u32).unwrap(),
+                )?;
+            }
+        }
+        Ok(())
     }
 
     fn arch_guard_handler(&mut self, body: Vec<u8>, callout_context: StreamCallContext) {
@@ -1164,6 +1171,7 @@ impl HttpContext for StreamContext {
 
         if self.mode == GatewayMode::Llm {
             debug!("llm gateway mode, skipping over all prompt targets");
+
             // remove metadata from the request body
             deserialized_body.metadata = None;
             // delete model key from message array
@@ -1174,6 +1182,19 @@ impl HttpContext for StreamContext {
                 .model
                 .clone_from(&self.llm_provider.as_ref().unwrap().model);
             let chat_completion_request_str = serde_json::to_string(&deserialized_body).unwrap();
+
+            // enforce ratelimits
+            if let Err(e) =
+                self.enforce_ratelimits(&deserialized_body, &chat_completion_request_str)
+            {
+                self.send_server_error(
+                    ServerError::ExceededRatelimit(e),
+                    Some(StatusCode::TOO_MANY_REQUESTS),
+                );
+                self.metrics.ratelimited_rq.increment(1);
+                return Action::Continue;
+            }
+
             debug!(
                 "arch => {:?}, body: {}",
                 deserialized_body.model, chat_completion_request_str
