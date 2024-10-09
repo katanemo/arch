@@ -70,6 +70,7 @@ Step 3: Start Arch Gateway
 
     $ archgw up [path_to_config]
 
+For detailed usage please refer to the `Support <https://github.com/katanemo/arch/blob/main/arch/tools/README.md#setup-instructionsuser-archgw-cli>`
 
 
 Next Steps

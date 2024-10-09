@@ -111,6 +111,10 @@ def up(file, path, services):
         print(f"Error: Invalid service {services}. Exiting")
         sys.exit(1)
 
+    if services == "model_server":
+        start_arch_modelserver()
+        return
+
     if file:
         # If a file is provided, process that file
         arch_config_file = os.path.abspath(file)
@@ -179,9 +183,7 @@ def up(file, path, services):
     env.update(env_stage)
     env["ARCH_CONFIG_FILE"] = arch_config_file
 
-    if services == "model_server":
-        start_arch_modelserver()
-    elif services == "archgw":
+    if services == "archgw":
         start_arch(arch_config_file, env)
     else:
         start_arch_modelserver()
