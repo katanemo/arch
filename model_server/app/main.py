@@ -73,11 +73,13 @@ async def embedding(req: EmbeddingRequest, res: Response):
     start = time.time()
     encoded_input = transformers["tokenizer"](
         req.input, padding=True, truncation=True, return_tensors="pt"
-    )
+    ).to(get_device())
     embeddings = transformers["model"](**encoded_input)
     embeddings = embeddings[0][:, 0]
     # normalize embeddings
-    embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1).detach().numpy()
+    embeddings = (
+        torch.nn.functional.normalize(embeddings, p=2, dim=1).detach().cpu().numpy()
+    )
     logger.info(f"Embedding Call Complete Time: {time.time()-start}")
     data = []
 
