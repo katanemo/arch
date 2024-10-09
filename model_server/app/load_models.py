@@ -1,6 +1,6 @@
 import os
 import sentence_transformers
-from transformers import AutoTokenizer, pipeline
+from transformers import AutoTokenizer, AutoModel, pipeline
 import sqlite3
 import torch
 from optimum.onnxruntime import ORTModelForFeatureExtraction, ORTModelForSequenceClassification  # type: ignore
@@ -24,9 +24,14 @@ def load_transformers(model_name=os.getenv("MODELS", "katanemo/bge-large-en-v1.5
     transformers = {}
     device = get_device()
     transformers["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
-    transformers["model"] = ORTModelForFeatureExtraction.from_pretrained(
-        model_name, device_map = device
-    )
+    if device == "cpu":
+        transformers["model"] = ORTModelForFeatureExtraction.from_pretrained(
+            model_name, file_name="onnx/model.onnx"
+        )
+    else:
+        transformers["model"] = AutoModel.from_pretrained(
+            model_name, device_map = device
+        )
     transformers["model_name"] = model_name
 
     return transformers
@@ -64,9 +69,15 @@ def load_guard_model(
 
 def load_zero_shot_models(model_name=os.getenv("ZERO_SHOT_MODELS", "katanemo/deberta-base-nli-onnx")):
     zero_shot_model = {}
-    zero_shot_model["model"] = ORTModelForSequenceClassification.from_pretrained(
-        model_name
-    )
+    device = get_device()
+    if device == "cpu":
+        zero_shot_model["model"] = ORTModelForSequenceClassification.from_pretrained(
+            model_name, file_name="onnx/model.onnx"
+        )
+    else:
+        zero_shot_model["model"] = AutoModel.from_pretrained(
+            model_name
+        )
     zero_shot_model["tokenizer"] = AutoTokenizer.from_pretrained(model_name)
 
     # create pipeline
@@ -74,6 +85,7 @@ def load_zero_shot_models(model_name=os.getenv("ZERO_SHOT_MODELS", "katanemo/deb
         "zero-shot-classification",
         model=zero_shot_model["model"],
         tokenizer=zero_shot_model["tokenizer"],
+        device=device
     )
     zero_shot_model["model_name"] = model_name
 
