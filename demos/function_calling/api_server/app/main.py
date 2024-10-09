@@ -43,7 +43,8 @@ async def weather(req: WeatherRequest, res: Response):
               "min": min_temp,
               "max": max_temp
            },
-           "units": req.units
+           "units": req.units,
+           "query_time": str(datetime.now(timezone.utc))
        })
 
     return weather_forecast
