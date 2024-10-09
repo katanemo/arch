@@ -697,10 +697,9 @@ impl StreamContext {
             let tool_params_dict: HashMap<String, String> = match v.as_object() {
                 Some(obj) => obj
                     .iter()
-                    .filter_map(|(key, value)| {
-                        value
-                            .as_str()
-                            .map(|str_value| (key.clone(), str_value.to_string()))
+                    .map(|(key, value)| {
+                        // Convert each value to a string, regardless of its type
+                        (key.clone(), value.to_string())
                     })
                     .collect(),
                 None => HashMap::new(), // Return an empty HashMap if v is not an object
