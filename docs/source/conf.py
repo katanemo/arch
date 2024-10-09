@@ -12,16 +12,16 @@ from sphinx.util.docfields import Field
 from sphinxawesome_theme import ThemeOptions
 from sphinxawesome_theme.postprocess import Icons
 
-project = 'Arch Docs'
-copyright = '2024, Katanemo Labs, Inc'
-author = 'Katanemo Labs, Inc'
-release = ' v0.1'
+project = "Arch Docs"
+copyright = "2024, Katanemo Labs, Inc"
+author = "Katanemo Labs, Inc"
+release = " v0.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 
-root_doc = 'index'
+root_doc = "index"
 
 nitpicky = True
 add_module_names = False
@@ -33,23 +33,23 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx_sitemap",
-    "sphinx_design"
+    "sphinx_design",
 ]
 
 # Paths that contain templates, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and directories
 # to ignore when looking for source files.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = 'sphinxawesome_theme'  # You can change the theme to 'sphinx_rtd_theme' or another of your choice.
+html_theme = "sphinxawesome_theme"  # You can change the theme to 'sphinx_rtd_theme' or another of your choice.
 html_title = project + release
 html_permalinks_icon = Icons.permalinks_icon
-html_favicon = '_static/favicon.ico'
-html_logo = '_static/favicon.ico' # Specify the path to the logo image file (make sure the logo is in the _static directory)
+html_favicon = "_static/favicon.ico"
+html_logo = "_static/favicon.ico"  # Specify the path to the logo image file (make sure the logo is in the _static directory)
 html_last_updated_fmt = ""
 html_use_index = False  # Don't create index
 html_domain_indices = False  # Don't need module indices
@@ -57,10 +57,14 @@ html_copy_source = False  # Don't need sources
 html_show_sphinx = False
 
 
-html_baseurl = './docs'
+html_baseurl = "./docs"
 
 html_sidebars = {
-  "**": ['analytics.html', "sidebar_main_nav_links.html", "sidebar_toc.html", ]
+    "**": [
+        "analytics.html",
+        "sidebar_main_nav_links.html",
+        "sidebar_toc.html",
+    ]
 }
 
 theme_options = ThemeOptions(
@@ -102,7 +106,7 @@ html_theme_options = asdict(theme_options)
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 pygments_style = "lovelace"
 pygments_style_dark = "github-dark"
@@ -111,10 +115,11 @@ sitemap_url_scheme = "{link}"
 # Add this configuration at the bottom of your conf.py
 
 html_context = {
-    'google_analytics_id': 'G-K2LXXSX6HB',  # Replace with your Google Analytics tracking ID
+    "google_analytics_id": "G-K2LXXSX6HB",  # Replace with your Google Analytics tracking ID
 }
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
+
 
 # -- Register a :confval: interpreted text role ----------------------------------
 def setup(app: Sphinx) -> None:
@@ -138,4 +143,4 @@ def setup(app: Sphinx) -> None:
         ],
     )
 
-    app.add_css_file('_static/custom.css')
+    app.add_css_file("_static/custom.css")

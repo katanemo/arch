@@ -190,8 +190,9 @@ impl FilterContext {
             }
 
             if self.prompt_targets.len() == self.temp_embeddings_store.len() {
-                self.embeddings_store =
-                    Some(Rc::new(Some(std::mem::take(&mut self.temp_embeddings_store))))
+                self.embeddings_store = Some(Rc::new(Some(std::mem::take(
+                    &mut self.temp_embeddings_store,
+                ))))
             }
         }
     }
@@ -280,7 +281,7 @@ impl RootContext for FilterContext {
         );
 
         if self.mode.as_ref() == &GatewayMode::PromptGateway {
-          self.embeddings_store.as_ref()?;
+            self.embeddings_store.as_ref()?;
         }
         // No StreamContext can be created until the Embedding Store is fully initialized.
 
@@ -296,9 +297,7 @@ impl RootContext for FilterContext {
                     .as_ref()
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
-            Rc::clone(
-                self.embeddings_store.as_ref().unwrap()
-            ),
+            Rc::clone(self.embeddings_store.as_ref().unwrap()),
             Rc::clone(&self.mode),
         )))
     }
