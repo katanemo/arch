@@ -1,12 +1,17 @@
 import click
-import targets
 import os
-import config_generator
 import pkg_resources
 import sys
 import subprocess
-from core import start_arch_modelserver, stop_arch_modelserver, start_arch, stop_arch
-from utils import get_llm_provider_access_keys, load_env_file_to_dict
+from cli import targets
+from cli import config_generator
+from cli.core import (
+    start_arch_modelserver,
+    stop_arch_modelserver,
+    start_arch,
+    stop_arch,
+)
+from cli.utils import get_llm_provider_access_keys, load_env_file_to_dict
 
 logo = r"""
      _                _
@@ -83,7 +88,7 @@ def build():
 @click.command()
 @click.argument("file", required=False)  # Optional file argument
 @click.option(
-    "-path", default=".", help="Path to the directory containing arch_config.yml"
+    "--path", default=".", help="Path to the directory containing arch_config.yml"
 )
 def up(file, path):
     """Starts Arch."""
@@ -101,7 +106,7 @@ def up(file, path):
 
     print(f"Validating {arch_config_file}")
     arch_schema_config = pkg_resources.resource_filename(
-        __name__, "config/arch_config_schema.yaml"
+        __name__, "../config/arch_config_schema.yaml"
     )
 
     try:
@@ -110,7 +115,7 @@ def up(file, path):
             arch_config_schema_file=arch_schema_config,
         )
     except Exception as e:
-        print("Exiting archgw up")
+        print(f"Exiting archgw up: {e}")
         sys.exit(1)
 
     print("Starting Arch gateway and Arch model server services via docker ")
@@ -147,7 +152,7 @@ def up(file, path):
                     env_stage[access_key] = env_file_dict[access_key]
 
     with open(
-        pkg_resources.resource_filename(__name__, "config/stage.env"), "w"
+        pkg_resources.resource_filename(__name__, "../config/stage.env"), "w"
     ) as file:
         for key, value in env_stage.items():
             file.write(f"{key}={value}\n")
@@ -168,7 +173,7 @@ def down():
 
 @click.command()
 @click.option(
-    "-f",
+    "--f",
     "--file",
     type=click.Path(exists=True),
     required=True,

@@ -29,16 +29,6 @@ might not be available.
 
     $ archgw up --local-cpu
 
-Local Serving (GPU - Fast)
---------------------------
-The following bash commands enable you to configure the model server subsystem in Arch to run locally on the
-machine and utilize the GPU available for fast inference across all model use cases, including function calling
-guardails, etc.
-
-.. code-block:: console
-
-    $ archgw up --local-gpu
-
 Cloud Serving (GPU - Blazing Fast)
 ----------------------------------
 The command below instructs Arch to intelligently use GPUs locally for fast intent detection, but default to

@@ -3,7 +3,7 @@ import os
 import time
 import pkg_resources
 import select
-from utils import run_docker_compose_ps, print_service_status, check_services_state
+from cli.utils import run_docker_compose_ps, print_service_status, check_services_state
 
 
 def start_arch(arch_config_file, env, log_timeout=120):
@@ -16,7 +16,7 @@ def start_arch(arch_config_file, env, log_timeout=120):
     """
 
     compose_file = pkg_resources.resource_filename(
-        __name__, "config/docker-compose.yaml"
+        __name__, "../config/docker-compose.yaml"
     )
 
     try:
@@ -112,7 +112,7 @@ def stop_arch():
         path (str): The path where the docker-compose.yml file is located.
     """
     compose_file = pkg_resources.resource_filename(
-        __name__, "config/docker-compose.yaml"
+        __name__, "../config/docker-compose.yaml"
     )
 
     try:

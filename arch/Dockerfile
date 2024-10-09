@@ -19,7 +19,7 @@ COPY --from=envoy /usr/local/bin/envoy /usr/local/bin/envoy
 WORKDIR /config
 COPY arch/requirements.txt .
 RUN pip install -r requirements.txt
-COPY arch/tools/config_generator.py .
+COPY arch/tools/cli/config_generator.py .
 COPY arch/envoy.template.yaml .
 COPY arch/arch_config_schema.yaml .
 
