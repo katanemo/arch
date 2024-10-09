@@ -4,10 +4,14 @@ from typing import List, Optional
 
 app = FastAPI()
 
+
 # Define the request model
 class DeviceSummaryRequest(BaseModel):
     device_ids: List[int]
-    time_range: Optional[int] = Field(default=7, description="Time range in days, defaults to 7")
+    time_range: Optional[int] = Field(
+        default=7, description="Time range in days, defaults to 7"
+    )
+
 
 # Define the response model
 class DeviceStatistics(BaseModel):
@@ -15,17 +19,22 @@ class DeviceStatistics(BaseModel):
     time_range: str
     data: str
 
+
 class DeviceSummaryResponse(BaseModel):
     statistics: List[DeviceStatistics]
 
     # Request model for device reboot
+
+
 class DeviceRebootRequest(BaseModel):
     device_ids: List[int]
+
 
 # Response model for the device reboot
 class CoverageResponse(BaseModel):
     status: str
     summary: dict
+
 
 @app.post("/agent/device_reboot", response_model=CoverageResponse)
 def reboot_network_device(request_data: DeviceRebootRequest):
@@ -38,19 +47,20 @@ def reboot_network_device(request_data: DeviceRebootRequest):
 
     # Validate 'device_ids' (This is already validated by Pydantic, but additional logic can be added if needed)
     if not device_ids:
-        raise HTTPException(status_code=400, detail="'device_ids' parameter is required")
+        raise HTTPException(
+            status_code=400, detail="'device_ids' parameter is required"
+        )
 
     # Simulate reboot operation and return the response
     statistics = []
     for device_id in device_ids:
         # Placeholder for actual data retrieval or device reboot logic
-        stats = {
-            "data": f"Device {device_id} has been successfully rebooted."
-        }
+        stats = {"data": f"Device {device_id} has been successfully rebooted."}
         statistics.append(stats)
 
     # Return the response with a summary
     return CoverageResponse(status="success", summary={"device_ids": device_ids})
+
 
 # Post method for device summary
 @app.post("/agent/device_summary", response_model=DeviceSummaryResponse)
@@ -77,6 +87,7 @@ def get_device_summary(request: DeviceSummaryRequest):
 
     return DeviceSummaryResponse(statistics=statistics)
 
+
 @app.post("/agent/network_summary")
 async def policy_qa():
     """
@@ -84,21 +95,20 @@ async def policy_qa():
     It forwards the conversation to the OpenAI client via a local proxy and returns the response.
     """
     return {
-            "choices": [
-              {
+        "choices": [
+            {
                 "message": {
-                  "role": "assistant",
-                  "content": "I am a helpful networking agent, and I can help you get status for network devices or reboot them"
+                    "role": "assistant",
+                    "content": "I am a helpful networking agent, and I can help you get status for network devices or reboot them",
                 },
                 "finish_reason": "completed",
-                "index": 0
-              }
-            ],
-            "model": "network_agent",
-            "usage": {
-              "completion_tokens": 0
+                "index": 0,
             }
-          }
+        ],
+        "model": "network_agent",
+        "usage": {"completion_tokens": 0},
+    }
+
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -11,6 +11,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 def load_sql():
     # Example Usage
     conn = sqlite3.connect(":memory:")
@@ -25,6 +26,7 @@ def load_sql():
     generate_flow_data(conn, device_data)
 
     return conn
+
 
 # Function to convert natural language time expressions to "X {time} ago" format
 def convert_to_ago_format(expression):

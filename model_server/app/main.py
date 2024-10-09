@@ -7,7 +7,12 @@ from app.load_models import (
     get_device,
 )
 import os
-from app.utils import GuardHandler, split_text_into_chunks, load_yaml_config, get_model_server_logger
+from app.utils import (
+    GuardHandler,
+    split_text_into_chunks,
+    load_yaml_config,
+    get_model_server_logger,
+)
 import torch
 import yaml
 import string
@@ -38,6 +43,7 @@ jailbreak_model = load_guard_model(guard_model_config["jailbreak"][hardware], ha
 guard_handler = GuardHandler(toxic_model=None, jailbreak_model=jailbreak_model)
 
 app = FastAPI()
+
 
 class EmbeddingRequest(BaseModel):
     input: str
@@ -83,6 +89,7 @@ async def embedding(req: EmbeddingRequest, res: Response):
         "total_tokens": 0,
     }
     return {"data": data, "model": req.model, "object": "list", "usage": usage}
+
 
 class GuardRequest(BaseModel):
     input: str

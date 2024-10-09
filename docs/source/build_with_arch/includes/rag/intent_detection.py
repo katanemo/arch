@@ -119,9 +119,10 @@ def process_rag():
         intent_changed = True
     else:
         # Invalid value provided
-        return jsonify(
-            {"error": "Invalid value for x-arch-prompt-intent-change header"}
-        ), 400
+        return (
+            jsonify({"error": "Invalid value for x-arch-prompt-intent-change header"}),
+            400,
+        )
 
     # Update user conversation based on intent change
     memory = update_user_conversation(user_id, client_messages, intent_changed)
