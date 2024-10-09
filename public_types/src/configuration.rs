@@ -16,9 +16,15 @@ pub struct Tracing {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum GatewayMode {
     #[serde(rename = "llm")]
-    LlmGateway,
+    Llm,
     #[serde(rename = "prompt")]
-    PromptGateway,
+    Prompt,
+}
+
+impl Default for GatewayMode {
+    fn default() -> Self {
+        GatewayMode::Prompt
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -296,7 +302,7 @@ mod test {
         let mode = config
             .mode
             .as_ref()
-            .unwrap_or(&super::GatewayMode::PromptGateway);
-        assert_eq!(*mode, super::GatewayMode::PromptGateway);
+            .unwrap_or(&super::GatewayMode::Prompt);
+        assert_eq!(*mode, super::GatewayMode::Prompt);
     }
 }

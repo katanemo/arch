@@ -55,7 +55,7 @@ pub struct FilterContext {
     overrides: Rc<Option<Overrides>>,
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
-    mode: Rc<GatewayMode>,
+    mode: GatewayMode,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
     embeddings_store: Option<Rc<EmbeddingsStore>>,
@@ -71,7 +71,7 @@ impl FilterContext {
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
-            mode: Rc::new(GatewayMode::PromptGateway),
+            mode: GatewayMode::Prompt,
             llm_providers: None,
             embeddings_store: Some(Rc::new(HashMap::new())),
             temp_embeddings_store: HashMap::new(),
@@ -257,7 +257,7 @@ impl RootContext for FilterContext {
         }
         self.system_prompt = Rc::new(config.system_prompt);
         self.prompt_targets = Rc::new(prompt_targets);
-        self.mode = Rc::new(config.mode.unwrap_or(GatewayMode::PromptGateway));
+        self.mode = config.mode.unwrap_or_default();
 
         ratelimit::ratelimits(config.ratelimits);
 
@@ -294,7 +294,7 @@ impl RootContext for FilterContext {
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
             Rc::clone(self.embeddings_store.as_ref().unwrap()),
-            Rc::clone(&self.mode),
+            self.mode.clone(),
         )))
     }
 
@@ -309,7 +309,7 @@ impl RootContext for FilterContext {
 
     fn on_tick(&mut self) {
         debug!("starting up arch filter in mode: {:?}", self.mode);
-        if *self.mode.as_ref() == GatewayMode::PromptGateway {
+        if self.mode == GatewayMode::Prompt {
             self.process_prompt_targets();
         }
 

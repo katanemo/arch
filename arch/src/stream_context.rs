@@ -111,7 +111,7 @@ pub struct StreamContext {
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
-    mode: Rc<GatewayMode>,
+    mode: GatewayMode,
 }
 
 impl StreamContext {
@@ -125,7 +125,7 @@ impl StreamContext {
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
         embeddings_store: Rc<EmbeddingsStore>,
-        mode: Rc<GatewayMode>,
+        mode: GatewayMode,
     ) -> Self {
         StreamContext {
             context_id,
@@ -172,11 +172,14 @@ impl StreamContext {
     }
 
     fn add_routing_header(&mut self) {
-        if *self.mode == GatewayMode::PromptGateway {
-            // in prompt gateway mode, we need to route to llm upstream listener
-            self.add_http_request_header(ARCH_UPSTREAM_HOST_HEADER, ARCH_LLM_UPSTREAM_LISTENER);
-        } else {
-            self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
+        match self.mode {
+            GatewayMode::Prompt => {
+                // in prompt gateway mode, we need to route to llm upstream listener
+                self.add_http_request_header(ARCH_UPSTREAM_HOST_HEADER, ARCH_LLM_UPSTREAM_LISTENER);
+            }
+            _ => {
+                self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
+            }
         }
     }
 
@@ -1153,7 +1156,7 @@ impl HttpContext for StreamContext {
             };
         self.is_chat_completions_request = true;
 
-        if *self.mode == GatewayMode::LlmGateway {
+        if self.mode == GatewayMode::Llm {
             debug!("llm gateway mode, skipping over all prompt targets");
             // remove metadata from the request body
             deserialized_body.metadata = None;
