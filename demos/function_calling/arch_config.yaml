@@ -16,12 +16,12 @@ overrides:
   prompt_target_intent_matching_threshold: 0.6
 
 llm_providers:
-  - name: openai
+  - name: gpt-4o
     access_key: OPENAI_API_KEY
     provider: openai
     model: gpt-4o
     default: true
-  - name: mistral
+  - name: mistral-large-latest
     access_key: MISTRAL_API_KEY
     provider: mistral
     model: mistral-large-latest
