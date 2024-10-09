@@ -19,6 +19,7 @@ import os.path
 
 logger = get_model_server_logger()
 logger.info(f"Devices Avialble: {get_device()}")
+print(f"Devices Avialble: {get_device()}")
 
 transformers = load_transformers()
 zero_shot_models = load_zero_shot_models()
@@ -26,6 +27,7 @@ guard_model_config = load_yaml_config("guard_model_config.yaml")
 
 mode = os.getenv("MODE", "cloud")
 logger.info(f"Serving model mode: {mode}")
+print(f"Serving model mode: {mode}")
 if mode not in ["cloud", "local-gpu", "local-cpu"]:
     raise ValueError(f"Invalid mode: {mode}")
 if mode == "local-cpu":
