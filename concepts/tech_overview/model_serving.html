@@ -174,15 +174,6 @@ might not be available.</p>
 </span></code></pre></div>
 </div>
 </section>
-<section id="local-serving-gpu-fast">
-<h2>Local Serving (GPU - Fast)<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#local-serving-gpu-fast" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#local-serving-gpu-fast'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>The following bash commands enable you to configure the model server subsystem in Arch to run locally on the
-machine and utilize the GPU available for fast inference across all model use cases, including function calling
-guardails, etc.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">$ </span>archgw<span class="w"> </span>up<span class="w"> </span>--local-gpu
-</span></code></pre></div>
-</div>
-</section>
 <section id="cloud-serving-gpu-blazing-fast">
 <h2>Cloud Serving (GPU - Blazing Fast)<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#cloud-serving-gpu-blazing-fast" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#cloud-serving-gpu-blazing-fast'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <p>The command below instructs Arch to intelligently use GPUs locally for fast intent detection, but default to
@@ -220,7 +211,6 @@ how to generate API keys for model serving</p>
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
 <li><a :data-current="activeSection === '#local-serving-cpu-moderate'" class="reference internal" href="#local-serving-cpu-moderate">Local Serving (CPU - Moderate)</a></li>
-<li><a :data-current="activeSection === '#local-serving-gpu-fast'" class="reference internal" href="#local-serving-gpu-fast">Local Serving (GPU - Fast)</a></li>
 <li><a :data-current="activeSection === '#cloud-serving-gpu-blazing-fast'" class="reference internal" href="#cloud-serving-gpu-blazing-fast">Cloud Serving (GPU - Blazing Fast)</a></li>
 </ul>
 </div>
