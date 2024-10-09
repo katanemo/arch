@@ -184,7 +184,7 @@ static_resources:
             - name: envoy.filters.network.http_connection_manager
               typed_config:
                 "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-                {% if arch_tracing.random_sampling > 0 %}
+                {% if "random_sampling" in arch_tracing and arch_tracing["random_sampling"] > 0 %}
                 generate_request_id: true
                 tracing:
                   provider:
