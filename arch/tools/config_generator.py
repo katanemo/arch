@@ -76,8 +76,6 @@ def validate_and_render_schema():
     arch_llm_providers = config_yaml["llm_providers"]
     arch_tracing = config_yaml.get("tracing", {})
     arch_config_string = yaml.dump(config_yaml)
-    config_yaml["mode"] = "llm"
-    arch_llm_config_string = yaml.dump(config_yaml)
 
     data = {
         "arch_config": arch_config_string,
