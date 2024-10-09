@@ -280,7 +280,15 @@ impl RootContext for FilterContext {
         );
 
         // No StreamContext can be created until the Embedding Store is fully initialized.
-
+        let embedding_store;
+        match self.mode {
+            GatewayMode::Llm => {
+                embedding_store = None;
+            }
+            GatewayMode::Prompt => {
+                embedding_store = Some(Rc::clone(self.embeddings_store.as_ref().unwrap()))
+            }
+        }
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
@@ -293,7 +301,7 @@ impl RootContext for FilterContext {
                     .as_ref()
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
-            Rc::clone(self.embeddings_store.as_ref().unwrap()),
+            embedding_store,
             self.mode.clone(),
         )))
     }

@@ -94,7 +94,7 @@ pub struct StreamContext {
     metrics: Rc<WasmMetrics>,
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
-    embeddings_store: Rc<EmbeddingsStore>,
+    embeddings_store: Option<Rc<EmbeddingsStore>>,
     overrides: Rc<Option<Overrides>>,
     callouts: RefCell<HashMap<u32, StreamCallContext>>,
     tool_calls: Option<Vec<ToolCall>>,
@@ -124,7 +124,7 @@ impl StreamContext {
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
-        embeddings_store: Rc<EmbeddingsStore>,
+        embeddings_store: Option<Rc<EmbeddingsStore>>,
         mode: GatewayMode,
     ) -> Self {
         StreamContext {
@@ -156,6 +156,12 @@ impl StreamContext {
         self.llm_provider
             .as_ref()
             .expect("the provider should be set when asked for it")
+    }
+
+    fn embeddings_store(&self) -> &EmbeddingsStore {
+        self.embeddings_store
+            .as_ref()
+            .expect("embeddings store is not set")
     }
 
     fn select_llm_provider(&mut self) {
@@ -261,7 +267,7 @@ impl StreamContext {
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
-                let pte = match self.embeddings_store.as_ref().get(prompt_name) {
+                let pte = match self.embeddings_store().get(prompt_name) {
                     Some(embeddings) => embeddings,
                     None => {
                         warn!(
