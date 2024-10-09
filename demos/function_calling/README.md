@@ -7,7 +7,7 @@ This demo shows how you can use Arch's core function calling capabilites.
    ```sh
    sh run_demo.sh
    ```
-3. Navigate to http://localhost:18090/
+3. Navigate to http://localhost:18080/
 4. You can type in queries like "how is the weather?"
 
 # Observability
