@@ -33,7 +33,7 @@ The system can perform a variety of tasks, such as answering insurance-related q
     - `policy_id` (required): The ID of the policy.
     - `deductible` (required): The deductible amount to be set for the policy.
 
-The **Intelligent Prompt Gateway** intelligently routes prompts to the appropriate functions based on the target, allowing for seamless interaction with various insurance-related services.
+**Arch** is designed to intelligently routes prompts to the appropriate functions based on the target, allowing for seamless interaction with various insurance-related services.
 
 # Starting the demo
 1. Create `.env` file and set OpenAI key using env var `OPENAI_API_KEY`
