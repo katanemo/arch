@@ -155,17 +155,102 @@
 <span id="arch-rag-guide"></span><h1>RAG Application<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#rag-application"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
 <p>The following section describes how Arch can help you build faster, smarter and more accurate
 Retrieval-Augmented Generation (RAG) applications.</p>
-<section id="intent-drift-detection">
-<h2>Intent-drift Detection<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#intent-drift-detection" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#intent-drift-detection'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>Developers struggle to handle <code class="docutils literal notranslate"><span class="pre">follow-up</span></code> or <code class="docutils literal notranslate"><span class="pre">clarification</span></code> questions.
-Specifically, when users ask for changes or additions to previous responses their AI applications often generate entirely new responses instead of adjusting previous ones.
-Arch offers <strong>intent-drift</strong> tracking as a feature so that developers can know when the user has shifted away from a previous intent so that they can dramatically improve retrieval accuracy, lower overall token cost and  improve the speed of their responses back to users.</p>
+<section id="parameter-extraction-for-rag">
+<h2>Parameter Extraction for RAG<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#parameter-extraction-for-rag" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#parameter-extraction-for-rag'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<p>To build RAG (Retrieval-Augmented Generation) applications, you can configure prompt targets with parameters,
+enabling Arch to retrieve critical information in a structured way for processing. This approach improves the
+retrieval quality and speed of your application. By extracting parameters from the conversation, you can pull
+the appropriate chunks from a vector database or SQL-like data store to enhance accuracy. With Arch, you can
+streamline data retrieval and processing to build more efficient and precise RAG applications.</p>
+<section id="step-1-define-prompt-targets">
+<h3>Step 1: Define Prompt Targets<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-1-define-prompt-targets" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-1-define-prompt-targets'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Prompt Targets</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">prompt_targets</span><span class="p">:</span>
+</span><span id="line-2"><span class="linenos"> 2</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">get_device_statistics</span>
+</span><span id="line-3"><span class="linenos"> 3</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Retrieve and present the relevant data based on the specified devices and time range</span>
+</span><span id="line-4"><span class="linenos"> 4</span>
+</span><span id="line-5"><span class="linenos"> 5</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_summary</span>
+</span><span id="line-6"><span class="linenos"> 6</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+</span><span id="line-7"><span class="linenos"> 7</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
+</span><span id="line-8"><span class="linenos"> 8</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
+</span><span id="line-9"><span class="linenos"> 9</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
+</span><span id="line-10"><span class="linenos">10</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-11"><span class="linenos">11</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">time_range</span>
+</span><span id="line-12"><span class="linenos">12</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+</span><span id="line-13"><span class="linenos">13</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The number of days in the past over which to retrieve device statistics</span>
+</span><span id="line-14"><span class="linenos">14</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="line-15"><span class="linenos">15</span><span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
+</span></code></pre></div>
+</div>
+</div>
+</section>
+<section id="step-2-process-request-parameters-in-flask">
+<h3>Step 2: Process Request Parameters in Flask<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-2-process-request-parameters-in-flask" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-2-process-request-parameters-in-flask'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<p>Once the prompt targets are configured as above, handling those parameters is</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Parameter handling with Flask</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
+</span><span id="line-2"><span class="linenos"> 2</span>
+</span><span id="line-3"><span class="linenos"> 3</span><span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="line-4"><span class="linenos"> 4</span>
+</span><span id="line-5"><span class="linenos"> 5</span>
+</span><span id="line-6"><span class="linenos"> 6</span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">"/agent/device_summary"</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">"POST"</span><span class="p">])</span>
+</span><span id="line-7"><span class="linenos"> 7</span><span class="k">def</span> <span class="nf">get_device_summary</span><span class="p">():</span>
+</span><span id="line-8"><span class="linenos"> 8</span><span class="w">    </span><span class="sd">"""</span>
+</span><span id="line-9"><span class="linenos"> 9</span><span class="sd">    Endpoint to retrieve device statistics based on device IDs and an optional time range.</span>
+</span><span id="line-10"><span class="linenos">10</span><span class="sd">    """</span>
+</span><span id="line-11"><span class="linenos">11</span>    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+</span><span id="line-12"><span class="linenos">12</span>
+</span><span id="line-13"><span class="linenos">13</span>    <span class="c1"># Validate 'device_ids' parameter</span>
+</span><span id="line-14"><span class="linenos">14</span>    <span class="n">device_ids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"device_ids"</span><span class="p">)</span>
+</span><span id="line-15"><span class="linenos">15</span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">device_ids</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+</span><span id="line-16"><span class="linenos">16</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
+</span><span id="line-17"><span class="linenos">17</span>            <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'device_ids' parameter is required and must be a list"</span><span class="p">}</span>
+</span><span id="line-18"><span class="linenos">18</span>        <span class="p">),</span> <span class="mi">400</span>
+</span><span id="line-19"><span class="linenos">19</span>
+</span><span id="line-20"><span class="linenos">20</span>    <span class="c1"># Validate 'time_range' parameter (optional, defaults to 7)</span>
+</span><span id="line-21"><span class="linenos">21</span>    <span class="n">time_range</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"time_range"</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+</span><span id="line-22"><span class="linenos">22</span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_range</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="line-23"><span class="linenos">23</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'time_range' must be an integer"</span><span class="p">}),</span> <span class="mi">400</span>
+</span><span id="line-24"><span class="linenos">24</span>
+</span><span id="line-25"><span class="linenos">25</span>    <span class="c1"># Simulate retrieving statistics for the given device IDs and time range</span>
+</span><span id="line-26"><span class="linenos">26</span>    <span class="c1"># In a real application, you would query your database or external service here</span>
+</span><span id="line-27"><span class="linenos">27</span>    <span class="n">statistics</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="line-28"><span class="linenos">28</span>    <span class="k">for</span> <span class="n">device_id</span> <span class="ow">in</span> <span class="n">device_ids</span><span class="p">:</span>
+</span><span id="line-29"><span class="linenos">29</span>        <span class="c1"># Placeholder for actual data retrieval</span>
+</span><span id="line-30"><span class="linenos">30</span>        <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-31"><span class="linenos">31</span>            <span class="s2">"device_id"</span><span class="p">:</span> <span class="n">device_id</span><span class="p">,</span>
+</span><span id="line-32"><span class="linenos">32</span>            <span class="s2">"time_range"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days"</span><span class="p">,</span>
+</span><span id="line-33"><span class="linenos">33</span>            <span class="s2">"data"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Statistics data for device </span><span class="si">{</span><span class="n">device_id</span><span class="si">}</span><span class="s2"> over the last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days."</span><span class="p">,</span>
+</span><span id="line-34"><span class="linenos">34</span>        <span class="p">}</span>
+</span><span id="line-35"><span class="linenos">35</span>        <span class="n">statistics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
+</span><span id="line-36"><span class="linenos">36</span>
+</span><span id="line-37"><span class="linenos">37</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"statistics"</span><span class="p">:</span> <span class="n">statistics</span><span class="p">}</span>
+</span><span id="line-38"><span class="linenos">38</span>
+</span><span id="line-39"><span class="linenos">39</span>    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="mi">200</span>
+</span><span id="line-40"><span class="linenos">40</span>
+</span><span id="line-41"><span class="linenos">41</span>
+</span><span id="line-42"><span class="linenos">42</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+</span><span id="line-43"><span class="linenos">43</span>    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="coming-soon-drift-detection-via-arch-intent-markers">
+<h2>[Coming Soon] <a class="reference external" href="https://github.com/orgs/katanemo/projects/1/views/1?pane=issue&amp;itemId=82697909" rel="nofollow noopener">Drift Detection via Arch Intent-Markers<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#coming-soon-drift-detection-via-arch-intent-markers" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#coming-soon-drift-detection-via-arch-intent-markers'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<p>Developers struggle to efficiently handle <code class="docutils literal notranslate"><span class="pre">follow-up</span></code> or <code class="docutils literal notranslate"><span class="pre">clarification</span></code> questions. Specifically, when users ask for
+changes or additions to previous responses their AI applications often generate entirely new responses instead of adjusting
+previous ones.Arch offers <strong>intent</strong> tracking as a feature so that developers can know when the user has shifted away from a
+previous intent so that they can dramatically improve retrieval accuracy, lower overall token cost and  improve the speed of
+their responses back to users.</p>
 <p>Arch uses its built-in lightweight NLI and embedding models to know if the user has steered away from an active intent.
 Arch’s intent-drift detection mechanism is based on its’ <a class="reference internal" href="../concepts/prompt_target.html#prompt-target"><span class="std std-ref">prompt_targets</span></a> primtive. Arch tries to match an incoming
 prompt to one of the prompt_targets configured in the gateway. Once it detects that the user has moved away from an active
-active intent, Arch adds the <code class="docutils literal notranslate"><span class="pre">x-arch-intent-drift</span></code> headers to the request before sending it your application servers.</p>
-<div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">Intent Detection Example</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
+active intent, Arch adds the <code class="docutils literal notranslate"><span class="pre">x-arch-intent-marker</span></code> headers to the request before sending it your application servers.</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Intent Detection Example</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id3"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">"/process_rag"</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">"POST"</span><span class="p">])</span>
 </span><span id="line-2"><span class="linenos"> 2</span><span class="k">def</span> <span class="nf">process_rag</span><span class="p">():</span>
 </span><span id="line-3"><span class="linenos"> 3</span>    <span class="c1"># Extract JSON data from the request</span>
@@ -328,89 +413,6 @@ improved retrieval, etc. With Arch and a few lines of code, you can improve the 
 token cost and dramatically improve the speed of their responses back to users.</p>
 </section>
 </section>
-<section id="parameter-extraction-for-rag">
-<h2>Parameter Extraction for RAG<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#parameter-extraction-for-rag" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#parameter-extraction-for-rag'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>To build RAG (Retrieval-Augmented Generation) applications, you can configure prompt targets with parameters,
-enabling Arch to retrieve critical information in a structured way for processing. This approach improves the
-retrieval quality and speed of your application. By extracting parameters from the conversation, you can pull
-the appropriate chunks from a vector database or SQL-like data store to enhance accuracy. With Arch, you can
-streamline data retrieval and processing to build more efficient and precise RAG applications.</p>
-<section id="step-1-define-prompt-targets">
-<h3>Step 1: Define Prompt Targets<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-1-define-prompt-targets" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-1-define-prompt-targets'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
-<div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">Prompt Targets</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="nt">prompt_targets</span><span class="p">:</span>
-</span><span id="line-2"><span class="linenos"> 2</span><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">get_device_statistics</span>
-</span><span id="line-3"><span class="linenos"> 3</span><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Retrieve and present the relevant data based on the specified devices and time range</span>
-</span><span id="line-4"><span class="linenos"> 4</span>
-</span><span id="line-5"><span class="linenos"> 5</span><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_summary</span>
-</span><span id="line-6"><span class="linenos"> 6</span><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
-</span><span id="line-8"><span class="linenos"> 8</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
-</span><span id="line-9"><span class="linenos"> 9</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to reboot.</span>
-</span><span id="line-10"><span class="linenos">10</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-</span><span id="line-11"><span class="linenos">11</span><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">time_range</span>
-</span><span id="line-12"><span class="linenos">12</span><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
-</span><span id="line-13"><span class="linenos">13</span><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The number of days in the past over which to retrieve device statistics</span>
-</span><span id="line-14"><span class="linenos">14</span><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-</span><span id="line-15"><span class="linenos">15</span><span class="w">        </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
-</span></code></pre></div>
-</div>
-</div>
-</section>
-<section id="step-2-process-request-parameters-in-flask">
-<h3>Step 2: Process Request Parameters in Flask<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-2-process-request-parameters-in-flask" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-2-process-request-parameters-in-flask'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
-<p>Once the prompt targets are configured as above, handling those parameters is</p>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">Parameter handling with Flask</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id3"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos"> 1</span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">jsonify</span>
-</span><span id="line-2"><span class="linenos"> 2</span>
-</span><span id="line-3"><span class="linenos"> 3</span><span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="line-4"><span class="linenos"> 4</span>
-</span><span id="line-5"><span class="linenos"> 5</span>
-</span><span id="line-6"><span class="linenos"> 6</span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">"/agent/device_summary"</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s2">"POST"</span><span class="p">])</span>
-</span><span id="line-7"><span class="linenos"> 7</span><span class="k">def</span> <span class="nf">get_device_summary</span><span class="p">():</span>
-</span><span id="line-8"><span class="linenos"> 8</span><span class="w">    </span><span class="sd">"""</span>
-</span><span id="line-9"><span class="linenos"> 9</span><span class="sd">    Endpoint to retrieve device statistics based on device IDs and an optional time range.</span>
-</span><span id="line-10"><span class="linenos">10</span><span class="sd">    """</span>
-</span><span id="line-11"><span class="linenos">11</span>    <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
-</span><span id="line-12"><span class="linenos">12</span>
-</span><span id="line-13"><span class="linenos">13</span>    <span class="c1"># Validate 'device_ids' parameter</span>
-</span><span id="line-14"><span class="linenos">14</span>    <span class="n">device_ids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"device_ids"</span><span class="p">)</span>
-</span><span id="line-15"><span class="linenos">15</span>    <span class="k">if</span> <span class="ow">not</span> <span class="n">device_ids</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-</span><span id="line-16"><span class="linenos">16</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
-</span><span id="line-17"><span class="linenos">17</span>            <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'device_ids' parameter is required and must be a list"</span><span class="p">}</span>
-</span><span id="line-18"><span class="linenos">18</span>        <span class="p">),</span> <span class="mi">400</span>
-</span><span id="line-19"><span class="linenos">19</span>
-</span><span id="line-20"><span class="linenos">20</span>    <span class="c1"># Validate 'time_range' parameter (optional, defaults to 7)</span>
-</span><span id="line-21"><span class="linenos">21</span>    <span class="n">time_range</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"time_range"</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
-</span><span id="line-22"><span class="linenos">22</span>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_range</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="line-23"><span class="linenos">23</span>        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"'time_range' must be an integer"</span><span class="p">}),</span> <span class="mi">400</span>
-</span><span id="line-24"><span class="linenos">24</span>
-</span><span id="line-25"><span class="linenos">25</span>    <span class="c1"># Simulate retrieving statistics for the given device IDs and time range</span>
-</span><span id="line-26"><span class="linenos">26</span>    <span class="c1"># In a real application, you would query your database or external service here</span>
-</span><span id="line-27"><span class="linenos">27</span>    <span class="n">statistics</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="line-28"><span class="linenos">28</span>    <span class="k">for</span> <span class="n">device_id</span> <span class="ow">in</span> <span class="n">device_ids</span><span class="p">:</span>
-</span><span id="line-29"><span class="linenos">29</span>        <span class="c1"># Placeholder for actual data retrieval</span>
-</span><span id="line-30"><span class="linenos">30</span>        <span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-31"><span class="linenos">31</span>            <span class="s2">"device_id"</span><span class="p">:</span> <span class="n">device_id</span><span class="p">,</span>
-</span><span id="line-32"><span class="linenos">32</span>            <span class="s2">"time_range"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days"</span><span class="p">,</span>
-</span><span id="line-33"><span class="linenos">33</span>            <span class="s2">"data"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Statistics data for device </span><span class="si">{</span><span class="n">device_id</span><span class="si">}</span><span class="s2"> over the last </span><span class="si">{</span><span class="n">time_range</span><span class="si">}</span><span class="s2"> days."</span><span class="p">,</span>
-</span><span id="line-34"><span class="linenos">34</span>        <span class="p">}</span>
-</span><span id="line-35"><span class="linenos">35</span>        <span class="n">statistics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stats</span><span class="p">)</span>
-</span><span id="line-36"><span class="linenos">36</span>
-</span><span id="line-37"><span class="linenos">37</span>    <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"statistics"</span><span class="p">:</span> <span class="n">statistics</span><span class="p">}</span>
-</span><span id="line-38"><span class="linenos">38</span>
-</span><span id="line-39"><span class="linenos">39</span>    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">response</span><span class="p">),</span> <span class="mi">200</span>
-</span><span id="line-40"><span class="linenos">40</span>
-</span><span id="line-41"><span class="linenos">41</span>
-</span><span id="line-42"><span class="linenos">42</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
-</span><span id="line-43"><span class="linenos">43</span>    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span></code></pre></div>
-</div>
-</div>
-</section>
-</section>
 </section>
 </div><div class="flex justify-between items-center pt-6 mt-12 border-t border-border gap-4">
 <div class="mr-auto">
@@ -432,15 +434,15 @@ streamline data retrieval and processing to build more efficient and precise RAG
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
-<li><a :data-current="activeSection === '#intent-drift-detection'" class="reference internal" href="#intent-drift-detection">Intent-drift Detection</a><ul>
-<li><a :data-current="activeSection === '#step-1-define-conversationbuffermemory'" class="reference internal" href="#step-1-define-conversationbuffermemory">Step 1: Define ConversationBufferMemory</a></li>
-<li><a :data-current="activeSection === '#step-2-update-conversationbuffermemory-with-intents'" class="reference internal" href="#step-2-update-conversationbuffermemory-with-intents">Step 2: Update ConversationBufferMemory with Intents</a></li>
-<li><a :data-current="activeSection === '#step-3-get-messages-based-on-latest-drift'" class="reference internal" href="#step-3-get-messages-based-on-latest-drift">Step 3: Get Messages based on latest drift</a></li>
-</ul>
-</li>
 <li><a :data-current="activeSection === '#parameter-extraction-for-rag'" class="reference internal" href="#parameter-extraction-for-rag">Parameter Extraction for RAG</a><ul>
 <li><a :data-current="activeSection === '#step-1-define-prompt-targets'" class="reference internal" href="#step-1-define-prompt-targets">Step 1: Define Prompt Targets</a></li>
 <li><a :data-current="activeSection === '#step-2-process-request-parameters-in-flask'" class="reference internal" href="#step-2-process-request-parameters-in-flask">Step 2: Process Request Parameters in Flask</a></li>
+</ul>
+</li>
+<li><a :data-current="activeSection === '#coming-soon-drift-detection-via-arch-intent-markers'" class="reference internal" href="#coming-soon-drift-detection-via-arch-intent-markers">[Coming Soon] Drift Detection via Arch Intent-Markers</a><ul>
+<li><a :data-current="activeSection === '#step-1-define-conversationbuffermemory'" class="reference internal" href="#step-1-define-conversationbuffermemory">Step 1: Define ConversationBufferMemory</a></li>
+<li><a :data-current="activeSection === '#step-2-update-conversationbuffermemory-with-intents'" class="reference internal" href="#step-2-update-conversationbuffermemory-with-intents">Step 2: Update ConversationBufferMemory with Intents</a></li>
+<li><a :data-current="activeSection === '#step-3-get-messages-based-on-latest-drift'" class="reference internal" href="#step-3-get-messages-based-on-latest-drift">Step 3: Get Messages based on latest drift</a></li>
 </ul>
 </li>
 </ul>

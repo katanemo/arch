@@ -343,14 +343,14 @@ traffic, apply rate limits, and utilize a large set of traffic management capabi
 <p class="admonition-title">Attention</p>
 <p>When you start Arch, it automatically creates a listener port for egress calls to upstream LLMs. This is based on the
 <code class="docutils literal notranslate"><span class="pre">llm_providers</span></code> configuration section in the <code class="docutils literal notranslate"><span class="pre">prompt_config.yml</span></code> file. Arch binds itself to a local address such as
-127.0.0.1:51001/v1.</p>
+127.0.0.1:12000/v1.</p>
 </div>
 <section id="example-using-openai-client-with-arch-as-an-egress-gateway">
 <h3>Example: Using OpenAI Client with Arch as an Egress Gateway<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#example-using-openai-client-with-arch-as-an-egress-gateway" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#example-using-openai-client-with-arch-as-an-egress-gateway'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">import</span> <span class="nn">openai</span>
 </span><span id="line-2">
 </span><span id="line-3"><span class="c1"># Set the OpenAI API base URL to the Arch gateway endpoint</span>
-</span><span id="line-4"><span class="n">openai</span><span class="o">.</span><span class="n">api_base</span> <span class="o">=</span> <span class="s2">"http://127.0.0.1:51001/v1"</span>
+</span><span id="line-4"><span class="n">openai</span><span class="o">.</span><span class="n">api_base</span> <span class="o">=</span> <span class="s2">"http://127.0.0.1:12000/v1"</span>
 </span><span id="line-5">
 </span><span id="line-6"><span class="c1"># No need to set openai.api_key since it's configured in Arch's gateway</span>
 </span><span id="line-7">
