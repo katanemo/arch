@@ -108,7 +108,7 @@ traffic, apply rate limits, and utilize a large set of traffic management capabi
 .. Attention::
    When you start Arch, it automatically creates a listener port for egress calls to upstream LLMs. This is based on the
    ``llm_providers`` configuration section in the ``prompt_config.yml`` file. Arch binds itself to a local address such as
-   127.0.0.1:51001/v1.
+   127.0.0.1:12000/v1.
 
 
 Example: Using OpenAI Client with Arch as an Egress Gateway
@@ -119,7 +119,7 @@ Example: Using OpenAI Client with Arch as an Egress Gateway
    import openai
 
    # Set the OpenAI API base URL to the Arch gateway endpoint
-   openai.api_base = "http://127.0.0.1:51001/v1"
+   openai.api_base = "http://127.0.0.1:12000/v1"
 
    # No need to set openai.api_key since it's configured in Arch's gateway
 
