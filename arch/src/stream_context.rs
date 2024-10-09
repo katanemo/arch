@@ -719,6 +719,7 @@ impl StreamContext {
                         return self.send_server_error(ServerError::Serialization(error), None);
                     }
                 };
+            debug!("hallucination request body: {}", json_data);
 
             let mut headers = vec![
                 (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
@@ -743,6 +744,11 @@ impl StreamContext {
                 Duration::from_secs(5),
             );
             callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
+
+            debug!(
+                "hallucination call args body: {}",
+                serde_json::to_string(&call_args).unwrap()
+            );
 
             if let Err(e) = self.http_call(call_args, callout_context) {
                 self.send_server_error(ServerError::HttpDispatch(e), None);
