@@ -7,7 +7,7 @@ use crate::llm_providers::LlmProviders;
 use crate::ratelimit;
 use crate::stats::{Counter, Gauge, IncrementingMetric};
 use crate::stream_context::StreamContext;
-use log::{debug, info};
+use log::debug;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use public_types::common_types::EmbeddingType;
@@ -58,7 +58,7 @@ pub struct FilterContext {
     mode: Rc<GatewayMode>,
     prompt_guards: Rc<PromptGuards>,
     llm_providers: Option<Rc<LlmProviders>>,
-    embeddings_store: Option<Rc<EmbeddingsStore>>,
+    embeddings_store: Option<Rc<Option<EmbeddingsStore>>>,
     temp_embeddings_store: EmbeddingsStore,
 }
 
@@ -73,7 +73,7 @@ impl FilterContext {
             prompt_guards: Rc::new(PromptGuards::default()),
             mode: Rc::new(GatewayMode::PromptGateway),
             llm_providers: None,
-            embeddings_store: None,
+            embeddings_store: Some(Rc::new(None)),
             temp_embeddings_store: HashMap::new(),
         }
     }
@@ -191,7 +191,7 @@ impl FilterContext {
 
             if self.prompt_targets.len() == self.temp_embeddings_store.len() {
                 self.embeddings_store =
-                    Some(Rc::new(std::mem::take(&mut self.temp_embeddings_store)))
+                    Some(Rc::new(Some(std::mem::take(&mut self.temp_embeddings_store))))
             }
         }
     }
@@ -279,8 +279,10 @@ impl RootContext for FilterContext {
             context_id
         );
 
+        if self.mode.as_ref() == &GatewayMode::PromptGateway {
+          self.embeddings_store.as_ref()?;
+        }
         // No StreamContext can be created until the Embedding Store is fully initialized.
-        self.embeddings_store.as_ref()?;
 
         Some(Box::new(StreamContext::new(
             context_id,
@@ -295,9 +297,7 @@ impl RootContext for FilterContext {
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
             Rc::clone(
-                self.embeddings_store
-                    .as_ref()
-                    .expect("Embeddings Store must exist when StreamContext is being constructed"),
+                self.embeddings_store.as_ref().unwrap()
             ),
             Rc::clone(&self.mode),
         )))
@@ -308,15 +308,16 @@ impl RootContext for FilterContext {
     }
 
     fn on_vm_start(&mut self, _: usize) -> bool {
-        info!("Starting filter in mode: {:?}", self.mode);
-        if self.mode.as_ref() == &GatewayMode::PromptGateway {
-            self.set_tick_period(Duration::from_secs(1));
-        }
+        self.set_tick_period(Duration::from_secs(1));
         true
     }
 
     fn on_tick(&mut self) {
-        self.process_prompt_targets();
+        debug!("starting up arch filter in mode: {:?}", self.mode);
+        if *self.mode.as_ref() == GatewayMode::PromptGateway {
+            self.process_prompt_targets();
+        }
+
         self.set_tick_period(Duration::from_secs(0));
     }
 }

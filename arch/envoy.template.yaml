@@ -37,7 +37,7 @@ static_resources:
                 - name: envoy.access_loggers.file
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
-                    path: "/var/log/arch_access.log"
+                    path: "/var/log/access_ingress.log"
                 route_config:
                   name: local_routes
                   virtual_hosts:
@@ -59,10 +59,20 @@ static_resources:
                       {% endfor %}
                         - match:
                             prefix: "/"
+                            headers:
+                              - name: "x-arch-upstream"
+                                string_match:
+                                  exact: arch_llm_listener
+                          route:
+                            auto_host_rewrite: true
+                            cluster: arch_llm_listener
+                            timeout: 60s
+                        - match:
+                            prefix: "/"
                           direct_response:
                             status: 400
                             body:
-                              inline_string: "x-arch-llm-provider header not set, cannot perform routing\n"
+                              inline_string: "x-arch-llm-provider or x-arch-upstream header not set, cannot perform routing\n"
                 http_filters:
                   - name: envoy.filters.http.wasm
                     typed_config:
@@ -71,6 +81,7 @@ static_resources:
                       value:
                         config:
                           name: "http_config"
+                          root_id: prompt_gateway
                           configuration:
                             "@type": "type.googleapis.com/google.protobuf.StringValue"
                             value: |
@@ -118,7 +129,7 @@ static_resources:
                 - name: envoy.access_loggers.file
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
-                    path: "/var/log/arch_access_internal.log"
+                    path: "/var/log/access_internal.log"
                 route_config:
                   name: local_routes
                   virtual_hosts:
@@ -196,7 +207,7 @@ static_resources:
                 - name: envoy.access_loggers.file
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
-                    path: "/var/log/arch_access.log"
+                    path: "/var/log/access_llm.log"
                 route_config:
                   name: local_routes
                   virtual_hosts:
@@ -230,6 +241,7 @@ static_resources:
                       value:
                         config:
                           name: "http_config"
+                          root_id: llm_gateway
                           configuration:
                             "@type": "type.googleapis.com/google.protobuf.StringValue"
                             value: |
@@ -369,6 +381,22 @@ static_resources:
                       address: 0.0.0.0
                       port_value: 11000
                   hostname: arch_internal
+
+    - name: arch_llm_listener
+      connect_timeout: 5s
+      type: LOGICAL_DNS
+      dns_lookup_family: V4_ONLY
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: arch_llm_listener
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 0.0.0.0
+                      port_value: 12000
+                  hostname: arch_llm_listener
 
 {% if "random_sampling" in arch_tracing and arch_tracing["random_sampling"] > 0 %}
     - name: opentelemetry_collector

@@ -1,8 +1,9 @@
 use crate::consts::{
-    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY,
-    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER,
-    ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME,
+    ARCH_LLM_UPSTREAM_LISTENER, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
+    ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH,
+    DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
@@ -93,7 +94,7 @@ pub struct StreamContext {
     metrics: Rc<WasmMetrics>,
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
-    embeddings_store: Rc<EmbeddingsStore>,
+    embeddings_store: Rc<Option<EmbeddingsStore>>,
     overrides: Rc<Option<Overrides>>,
     callouts: RefCell<HashMap<u32, StreamCallContext>>,
     tool_calls: Option<Vec<ToolCall>>,
@@ -123,7 +124,7 @@ impl StreamContext {
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         llm_providers: Rc<LlmProviders>,
-        embeddings_store: Rc<EmbeddingsStore>,
+        embeddings_store: Rc<Option<EmbeddingsStore>>,
         mode: Rc<GatewayMode>,
     ) -> Self {
         StreamContext {
@@ -162,14 +163,21 @@ impl StreamContext {
             .get_http_request_header(ARCH_PROVIDER_HINT_HEADER)
             .map(|provider_name| provider_name.into());
 
+        debug!("llm provider hint: {:?}", provider_hint);
         self.llm_provider = Some(routing::get_llm_provider(
             &self.llm_providers,
             provider_hint,
         ));
+        debug!("selected llm: {}", self.llm_provider.as_ref().unwrap().name);
     }
 
     fn add_routing_header(&mut self) {
-        self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
+        if *self.mode == GatewayMode::PromptGateway {
+            // in prompt gateway mode, we need to route to llm upstream listener
+            self.add_http_request_header(ARCH_UPSTREAM_HOST_HEADER, ARCH_LLM_UPSTREAM_LISTENER);
+        } else {
+            self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
+        }
     }
 
     fn modify_auth_headers(&mut self) -> Result<(), ServerError> {
@@ -250,7 +258,13 @@ impl StreamContext {
             // exclude default prompt target
             .filter(|(_, prompt_target)| !prompt_target.default.unwrap_or(false))
             .map(|(prompt_name, _)| {
-                let pte = match self.embeddings_store.get(prompt_name) {
+                let pte = match self
+                    .embeddings_store
+                    .as_ref()
+                    .as_ref()
+                    .unwrap()
+                    .get(prompt_name)
+                {
                     Some(embeddings) => embeddings,
                     None => {
                         warn!(
@@ -1146,8 +1160,21 @@ impl HttpContext for StreamContext {
         self.is_chat_completions_request = true;
 
         if *self.mode == GatewayMode::LlmGateway {
-          debug!("llm gateway mode, skipping over all prompt targets");
-          return Action::Continue;
+            debug!("llm gateway mode, skipping over all prompt targets");
+            // remove metadata from the request body
+            deserialized_body.metadata = None;
+            // delete model key from message array
+            for message in deserialized_body.messages.iter_mut() {
+                message.model = None;
+            }
+            deserialized_body.model = self.llm_provider.as_ref().unwrap().model.clone();
+            let chat_completion_request_str = serde_json::to_string(&deserialized_body).unwrap();
+            debug!(
+                "arch => {:?}, body: {}",
+                deserialized_body.model, chat_completion_request_str
+            );
+            self.set_http_request_body(0, body_size, chat_completion_request_str.as_bytes());
+            return Action::Continue;
         }
 
         self.arch_state = match deserialized_body.metadata {

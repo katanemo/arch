@@ -7,15 +7,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
 ARCH_STATE_HEADER = 'x-arch-state'
 
 log.info("CHAT_COMPLETION_ENDPOINT: ", CHAT_COMPLETION_ENDPOINT)
 
-client = OpenAI(api_key=OPENAI_API_KEY, base_url=CHAT_COMPLETION_ENDPOINT, http_client=DefaultHttpxClient(headers={"accept-encoding": "*"}))
+client = OpenAI(api_key='--', base_url=CHAT_COMPLETION_ENDPOINT, http_client=DefaultHttpxClient(headers={"accept-encoding": "*"}))
 
 def predict(message, state):
     if 'history' not in state:
@@ -26,9 +23,7 @@ def predict(message, state):
 
     # Custom headers
     custom_headers = {
-        'x-arch-openai-api-key': f"{OPENAI_API_KEY}",
-        'x-arch-mistral-api-key': f"{MISTRAL_API_KEY}",
-        'x-arch-deterministic-provider': 'openai',
+        # 'x-arch-llm-provider-hint': 'mistral',
     }
 
     metadata = None
@@ -36,7 +31,7 @@ def predict(message, state):
        metadata = {ARCH_STATE_HEADER: state['arch_state']}
 
     try:
-      raw_response = client.chat.completions.with_raw_response.create(model=MODEL_NAME,
+      raw_response = client.chat.completions.with_raw_response.create(model='--',
         messages = history,
         temperature=1.0,
         metadata=metadata,

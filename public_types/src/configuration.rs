@@ -292,5 +292,8 @@ mod test {
 
         let tracing = config.tracing.as_ref().unwrap();
         assert_eq!(tracing.sampling_rate.unwrap(), 0.1);
+
+        let mode = config.mode.as_ref().unwrap_or(&super::GatewayMode::PromptGateway);
+        assert_eq!(*mode, super::GatewayMode::PromptGateway);
     }
 }

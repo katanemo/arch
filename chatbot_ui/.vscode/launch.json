@@ -11,6 +11,22 @@
       "request": "launch",
       "program": "run.py",
       "console": "integratedTerminal",
+      "env": {
+        "LLM": "1",
+        "CHAT_COMPLETION_ENDPOINT": "http://localhost:10000/v1"
+      }
+    },
+    {
+      "name": "chatbot-ui llm",
+      "cwd": "${workspaceFolder}/app",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "run.py",
+      "console": "integratedTerminal",
+      "env": {
+        "LLM": "1",
+        "CHAT_COMPLETION_ENDPOINT": "http://localhost:12000/v1"
+      }
     },
     {
       "name": "chatbot-ui streaming",
@@ -19,6 +35,10 @@
       "request": "launch",
       "program": "run_stream.py",
       "console": "integratedTerminal",
+      "env": {
+        "LLM": "1",
+        "CHAT_COMPLETION_ENDPOINT": "http://localhost:10000/v1"
+      }
     }
   ]
 }

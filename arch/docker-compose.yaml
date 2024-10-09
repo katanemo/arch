@@ -3,9 +3,12 @@ services:
     image: archgw:latest
     ports:
       - "10000:10000"
+      - "11000:11000"
+      - "12000:12000"
       - "19901:9901"
     volumes:
       - ${ARCH_CONFIG_FILE:-./demos/function_calling/arch_confg.yaml}:/config/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+      - ./arch_logs:/var/log/
     env_file:
       - stage.env
