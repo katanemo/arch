@@ -7,7 +7,7 @@ license = "Apache 2.0"
 readme = "README.md"
 packages = [
     { include = "app" }, # Include the 'app' package
-    { include = "app/arch_fc" }, # Include the 'app' package
+    { include = "app/function_calling" }, # Include the 'app' package
 ]
 include = ["app/*.yaml"]
 

@@ -1,4 +1,6 @@
 import json
+import random
+
 from typing import Any, Dict, List
 
 
@@ -27,7 +29,7 @@ For each function call, return a json object with function name and arguments wi
 """.strip()
 
 
-class ArchHandler:
+class ArchFunctionHandler:
     def __init__(self) -> None:
         super().__init__()
 
@@ -61,11 +63,11 @@ class ArchHandler:
 
         return messages
 
-    def extract_tools(self, result: str):
-        lines = result.split("\n")
+    def extract_tool_calls(self, content: str):
+        tool_calls = []
+
         flag = False
-        func_call = []
-        for line in lines:
+        for line in content.split("\n"):
             if "<tool_call>" == line:
                 flag = True
             elif "</tool_call>" == line:
@@ -73,16 +75,28 @@ class ArchHandler:
             else:
                 if flag:
                     try:
-                        tool_result = json.loads(line)
+                        tool_content = json.loads(line)
                     except Exception:
                         fixed_content = self.fix_json_string(line)
                         try:
-                            tool_result = json.loads(fixed_content)
+                            tool_content = json.loads(fixed_content)
                         except json.JSONDecodeError:
-                            return result
-                    func_call.append({tool_result["name"]: tool_result["arguments"]})
+                            return content
+
+                    tool_calls.append(
+                        {
+                            "id": f"call_{random.randint(1000, 10000)}",
+                            "type": "function",
+                            "function": {
+                                "name": tool_content["name"],
+                                "arguments": tool_content["arguments"],
+                            },
+                        }
+                    )
+
                 flag = False
-        return func_call
+
+        return tool_calls
 
     def fix_json_string(self, json_str: str):
         # Remove any leading or trailing whitespace or newline characters
