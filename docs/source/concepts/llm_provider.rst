@@ -23,7 +23,7 @@ Below is an example of how you can configure ``llm_providers`` with an instance 
 .. Note::
     When you start Arch, it creates a listener port for egress traffic based on the presence of ``llm_providers``
     configuration section in the ``arch_config.yml`` file. Arch binds itself to a local address such as
-    ``127.0.0.1:51001/v1``.
+    ``127.0.0.1:12000``.
 
 Arch also offers vendor-agnostic SDKs and libraries to make LLM calls to API-based LLM providers (like OpenAI,
 Anthropic, Mistral, Cohere, etc.) and supports calls to OSS LLMs that are hosted on your infrastructure. Arch
@@ -40,7 +40,7 @@ Example: Using the OpenAI Python SDK
    from openai import OpenAI
 
    # Initialize the Arch client
-   client = OpenAI(base_url="http://127.0.0.1:51001/v1")
+   client = OpenAI(base_url="http://127.0.0.12000/")
 
    # Define your LLM provider and prompt
    llm_provider = "openai"

@@ -99,7 +99,7 @@ By sending traffic through Arch, you can propagate traces, manage and monitor tr
 .. Attention::
    When you start Arch, it automatically creates a listener port for egress calls to upstream LLMs. This is based on the
    ``llm_providers`` configuration section in the ``arch_config.yml`` file. Arch binds itself to a local address such as
-   127.0.0.1:12000/v1.
+   ``127.0.0.1:12000``.
 
 
 Example: Using OpenAI Client with Arch as an Egress Gateway
@@ -110,7 +110,7 @@ Example: Using OpenAI Client with Arch as an Egress Gateway
    import openai
 
    # Set the OpenAI API base URL to the Arch gateway endpoint
-   openai.api_base = "http://127.0.0.1:12000/v1"
+   openai.api_base = "http://127.0.0.1:12000"
 
    # No need to set openai.api_key since it's configured in Arch's gateway
 
@@ -123,5 +123,5 @@ Example: Using OpenAI Client with Arch as an Egress Gateway
    print("OpenAI Response:", response.choices[0].text.strip())
 
 In these examples, the OpenAI client is used to send traffic directly through the Arch egress proxy to the LLM of your choice, such as OpenAI.
-The OpenAI client is configured to route traffic via Arch by setting the proxy to ``127.0.0.1:51001``, assuming Arch is running locally and bound to that address and port.
+The OpenAI client is configured to route traffic via Arch by setting the proxy to ``127.0.0.1:12000``, assuming Arch is running locally and bound to that address and port.
 This setup allows you to take advantage of Arch's advanced traffic management features while interacting with LLM APIs like OpenAI.

@@ -30,7 +30,7 @@ This gives Arch several advantages:
 
 * Arch can be deployed and upgraded quickly across your infrastructure transparently without the horrid pain of deploying library upgrades in your applications.
 
-**Engineered with Fast LLMs:** Arch is engineered with specialized (sub-billion) LLMs that are desgined for fast, cost-effective and acurrate handling of prompts.
+**Engineered with Fast LLMs:** Arch is engineered with specialized tiny LLMs that are desgined for fast, cost-effective and acurrate handling of prompts.
 These LLMs are designed to be best-in-class for critcal prompt-related tasks like:
 
 * **Function Calling:** Arch helps you easily personalize your applications by enabling calls to application-specific (API) operations via user prompts.
