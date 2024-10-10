@@ -76,14 +76,5 @@ prompt_targets:
     # if true arch will forward the response to the default LLM
     auto_llm_dispatch_on_response: true
 
-ratelimits:
-  - model: gpt-4
-    selector:
-      key: selector-key
-      value: selector-value
-    limit:
-      tokens: 1
-      unit: minute
-
 tracing:
   random_sampling: 100

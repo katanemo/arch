@@ -259,7 +259,7 @@ impl RootContext for FilterContext {
         self.prompt_targets = Rc::new(prompt_targets);
         self.mode = config.mode.unwrap_or_default();
 
-        ratelimit::ratelimits(config.ratelimits);
+        ratelimit::ratelimits(Some(config.ratelimits.unwrap_or_default()));
 
         if let Some(prompt_guards) = config.prompt_guards {
             self.prompt_guards = Rc::new(prompt_guards)
@@ -280,15 +280,10 @@ impl RootContext for FilterContext {
         );
 
         // No StreamContext can be created until the Embedding Store is fully initialized.
-        let embedding_store;
-        match self.mode {
-            GatewayMode::Llm => {
-                embedding_store = None;
-            }
-            GatewayMode::Prompt => {
-                embedding_store = Some(Rc::clone(self.embeddings_store.as_ref().unwrap()))
-            }
-        }
+        let embedding_store = match self.mode {
+            GatewayMode::Llm => None,
+            GatewayMode::Prompt => Some(Rc::clone(self.embeddings_store.as_ref().unwrap())),
+        };
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
