@@ -86,7 +86,7 @@ def get_model_server_logger():
             level=logging.INFO,
             format="%(asctime)s - %(levelname)s - %(message)s",
             handlers=[
-                logging.FileHandler(log_file_path, mode="a"),  # Overwrite logs in file
+                logging.FileHandler(log_file_path, mode="w"),  # Overwrite logs in file
             ],
         )
     except (PermissionError, OSError):
