@@ -16,7 +16,7 @@ Before you begin, ensure you have the following:
 - ``Docker`` & ``Python`` installed on your system
 - ``API Keys`` for LLM providers (if using external LLMs)
 
-The fastest way to get started using Arch is to use `katanemo/arch <https://hub.docker.com/r/katanemo/arch>`_ pre-built binaries.
+The fastest way to get started using Arch is to use `katanemo/archgw <https://hub.docker.com/r/katanemo/archgw>`_ pre-built binaries.
 You can also build it from source.
 
 

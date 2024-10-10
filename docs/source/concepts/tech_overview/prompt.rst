@@ -27,7 +27,7 @@ containing two key-value pairs:
 Prompt Guard
 -----------------
 
-Arch is engineered with :ref:`Arch-Guard <prompt_guard>`, an industry leading safety layer, powered by a
+Arch is engineered with `Arch-Guard <https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d>`_, an industry leading safety layer, powered by a
 compact and high-performimg LLM that monitors incoming prompts to detect and reject jailbreak attempts -
 ensuring that unauthorized or harmful behaviors are intercepted early in the process.
 
@@ -50,7 +50,7 @@ Prompt Targets
 --------------
 
 Once a prompt passes any configured guardrail checks, Arch processes the contents of the incoming conversation
-and identifies where to forwad the conversation to via its ``prompt_targets`` primitve. Prompt targets are endpoints
+and identifies where to forwad the conversation to via its ``prompt target`` primitve. Prompt targets are endpoints
 that receive prompts that are processed by Arch. For example, Arch enriches incoming prompts with metadata like knowing
 when a user's intent has changed so that you can build faster, more accurate RAG apps.
 
@@ -67,43 +67,34 @@ Configuring ``prompt_targets`` is simple. See example below:
 
    Check :ref:`Prompt Target <prompt_target>` for more details!
 
-Intent Detection and Prompt Matching:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Intent Matching
+^^^^^^^^^^^^^^^
 
-Arch uses fast Natural Language Inference (NLI) and embedding approaches to first detect the intent of each
-incoming prompt. This intent detection phase analyzes the prompt's content and matches it against predefined
-prompt targets, ensuring that each prompt is forwarded to the most appropriate endpoint. Arch’s intent
-detection framework considers both the name and description of each prompt target, and uses a composite matching
-score between an NLI and cosine similarity to enchance accuracy in forwarding decisions.
+Arch uses fast text embedding and intent recognition approaches to first detect the intent of each incoming prompt.
+This intent matching phase analyzes the prompt's content and matches it against predefined prompt targets, ensuring that each prompt is forwarded to the most appropriate endpoint.
+Arch’s intent matching framework considers both the name and description of each prompt target, and uses a composite matching score between embedding similarity and intent classification scores to enchance accuracy in forwarding decisions.
 
-- **Embeddings**: By embedding the prompt and comparing it to known target vectors, Arch effectively identifies
-  the closest match, ensuring that the prompt is handled by the correct downstream service.
+- **Intent Recognition**: NLI techniques further refine the matching process by evaluating the semantic alignment between the prompt and potential targets.
 
-- **NLI**: NLI techniques further refine the matching process by evaluating the semantic alignment between the
-  prompt and potential targets.
+- **Text Embedding**: By embedding the prompt and comparing it to known target vectors, Arch effectively identifies the closest match, ensuring that the prompt is handled by the correct downstream service.
 
 Agentic Apps via Prompt Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To support agentic apps, like scheduling travel plans or sharing comments on a document - via prompts, Arch uses
-its function calling abilities to extract critical information from the incoming prompt (or a set of prompts)
-needed by a downstream backend API or function call before calling it directly. For more details on how you can
-build agentic applications using Arch, see our full guide :ref:`here <arch_agent_guide>`:
+To support agentic apps, like scheduling travel plans or sharing comments on a document - via prompts, Arch uses its function calling abilities to extract critical information from the incoming prompt (or a set of prompts) needed by a downstream backend API or function call before calling it directly.
+For more details on how you can build agentic applications using Arch, see our full guide :ref:`here <arch_agent_guide>`:
 
 .. Note::
-   Arch :ref:`Arch-Function <function_calling>` is the dedicated agentic model engineered in Arch to extract information from
-   a (set of) prompts and executes necessary backend API calls. This allows for efficient handling of agentic tasks,
-   such as scheduling data retrieval, by dynamically interacting with backend services. Arch-Function is a flagship 1.3
-   billion parameter model that matches performance  with frontier models like Claude Sonnet 3.5 ang GPT-4, while
-   being 100x cheaper ($0.05M/token hosted) and 10x faster (p50 latencies of 200ms).
+   `Arch-Function <https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68>`_ is a collection of dedicated agentic models engineered in Arch to extract information from a (set of) prompts and executes necessary backend API calls.
+   This allows for efficient handling of agentic tasks, such as scheduling data retrieval, by dynamically interacting with backend services.
+   Arch-Function achieves state-of-the-art performance, comparable with frontier models like Claude Sonnet 3.5 ang GPT-4, while being 100x cheaper ($0.05M/token hosted) and 10x faster (p50 latencies of 200ms).
 
 Prompting LLMs
 --------------
-Arch is a single piece of software that is designed to manage both ingress and egress prompt traffic, drawing its
-distributed proxy nature from the robust `Envoy <https://envoyproxy.io>`_. This makes it extremely efficient and capable
-of handling upstream connections to LLMs. If your application is originating code to an API-based LLM, simply use
-the OpenAI client and configure it with Arch. By sending traffic through Arch, you can propagate traces, manage and monitor
-traffic, apply rate limits, and utilize a large set of traffic management capabilities in a centralized way.
+Arch is a single piece of software that is designed to manage both ingress and egress prompt traffic, drawing its distributed proxy nature from the robust `Envoy <https://envoyproxy.io>`_.
+This makes it extremely efficient and capable of handling upstream connections to LLMs.
+If your application is originating code to an API-based LLM, simply use the OpenAI client and configure it with Arch.
+By sending traffic through Arch, you can propagate traces, manage and monitor traffic, apply rate limits, and utilize a large set of traffic management capabilities in a centralized way.
 
 .. Attention::
    When you start Arch, it automatically creates a listener port for egress calls to upstream LLMs. This is based on the

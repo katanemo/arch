@@ -46,7 +46,7 @@ prompt_targets:
         - name: time_range
           type: int
           description: Time range in days for which to gather device statistics. Defaults to 7.
-          default: "7"
+          default: 7
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
 endpoints:

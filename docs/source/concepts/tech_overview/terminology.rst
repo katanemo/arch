@@ -29,7 +29,7 @@ networking operations (auth, tls, observability, etc) and the second process to 
 decisions on how to accept, handle and forward prompts. The second process is optional, as the model serving sevice could be
 hosted on a different network (an API call). But these two processes are considered a single instance of Arch.
 
-**Prompt Target**: Arch offers a primitive called :ref:`prompt_target <prompt_target>` to help separate business logic from undifferentiated
+**Prompt Target**: Arch offers a primitive called :ref:`prompt target <prompt_target>` to help separate business logic from undifferentiated
 work in building generative AI apps. Prompt targets are endpoints that receive prompts that are processed by Arch.
 For example, Arch enriches incoming prompts with metadata like knowing when a request is a follow-up or clarifying prompt
 so that you can build faster, more accurate retrieval (RAG) apps. To support agentic apps, like scheduling travel plans or

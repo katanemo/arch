@@ -9,7 +9,7 @@ Retrieval-Augmented Generation (RAG) applications.
 Parameter Extraction for RAG
 ----------------------------
 
-To build RAG (Retrieval-Augmented Generation) applications, you can configure prompt targets with parameters,
+To build RAG (Retrieval Augmented Generation) applications, you can configure prompt targets with parameters,
 enabling Arch to retrieve critical information in a structured way for processing. This approach improves the
 retrieval quality and speed of your application. By extracting parameters from the conversation, you can pull
 the appropriate chunks from a vector database or SQL-like data store to enhance accuracy. With Arch, you can
@@ -37,12 +37,12 @@ Once the prompt targets are configured as above, handling those parameters is
 -----------------------------------------------------------------------------------------------------------------------------------------
 Developers struggle to efficiently handle ``follow-up`` or ``clarification`` questions. Specifically, when users ask for
 changes or additions to previous responses their AI applications often generate entirely new responses instead of adjusting
-previous ones.Arch offers **intent** tracking as a feature so that developers can know when the user has shifted away from a
+previous ones. Arch offers ``intent tracking`` as a feature so that developers can know when the user has shifted away from a
 previous intent so that they can dramatically improve retrieval accuracy, lower overall token cost and  improve the speed of
 their responses back to users.
 
 Arch uses its built-in lightweight NLI and embedding models to know if the user has steered away from an active intent.
-Arch's intent-drift detection mechanism is based on its' :ref:`prompt_targets <prompt_target>` primtive. Arch tries to match an incoming
+Arch's intent-drift detection mechanism is based on its :ref:`prompt target <prompt_target>` primtive. Arch tries to match an incoming
 prompt to one of the prompt_targets configured in the gateway. Once it detects that the user has moved away from an active
 active intent, Arch adds the ``x-arch-intent-marker`` headers to the request before sending it your application servers.
 
@@ -50,15 +50,15 @@ active intent, Arch adds the ``x-arch-intent-marker`` headers to the request bef
     :language: python
     :linenos:
     :lines: 101-157
-    :emphasize-lines: 14-24
+    :emphasize-lines: 14-25
     :caption: Intent Detection Example
 
 
 .. Note::
 
    Arch is (mostly) stateless so that it can scale in an embarrassingly parrallel fashion. So, while Arch offers
-   intent-drift detetction, you still have to maintain converational state with intent drift as meta-data. The
-   following code snippets show how easily you can build and enrich conversational history with Langchain (in python),
+   intent-drift detetction, you still have to maintain converational state with intent drift as metadata. The
+   following code snippets show how easily you can build and enrich conversational history with Langchain (in Python),
    so that you can use the most relevant prompts for your retrieval and for prompting upstream LLMs.
 
 
