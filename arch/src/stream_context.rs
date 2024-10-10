@@ -756,7 +756,8 @@ impl StreamContext {
                         }
                     }
                 }
-            } else {
+            }
+            else {
                 user_messages = callout_context.user_message.as_ref().unwrap().clone();
             }
             info!("user messages: {}", user_messages);

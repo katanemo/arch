@@ -179,7 +179,7 @@ async def hallucination(req: HallucinationRequest, res: Response):
     """
     Take input as text and return the prediction of hallucination for each parameter
     """
-
+    logger.info(f"hallucination request: {req}")
     if req.model != zero_shot_model["model_name"]:
         raise HTTPException(status_code=400, detail="unknown model: " + req.model)
 
