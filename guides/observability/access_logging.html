@@ -167,11 +167,45 @@ path, response status code, request duration, upstream host, and more.</p></li>
 Access logs can be exported to centralized logging systems (e.g., ELK stack or Fluentd) or used to feed monitoring and alerting systems.</p></li>
 <li><p><strong>Structured Logging</strong>: where each request is logged as a object, making it easier to parse and analyze using tools like Elasticsearch and Kibana.</p></li>
 </ul>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">$ </span><span class="o">[</span><span class="m">2024</span>-09-27T14:52:01.123Z<span class="o">]</span><span class="w"> </span><span class="s2">"ARCH REQUEST"</span><span class="w"> </span>GET<span class="w"> </span>/path/to/resource<span class="w"> </span>HTTP/1.1<span class="w"> </span><span class="m">200</span><span class="w"> </span><span class="m">512</span><span class="w"> </span><span class="m">1024</span><span class="w"> </span><span class="m">56</span><span class="w"> </span>upstream_service.com<span class="w"> </span>D
-</span><span id="line-2"><span class="go">X-Arch-Upstream-Service-Time: 25</span>
-</span><span id="line-3"><span class="go">X-Arch-Attempt-Count: 1</span>
+</section>
+<section id="how-it-works">
+<h2>How It Works<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#how-it-works" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#how-it-works'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<p>Arch gateway exposes access logs for every call it manages on your behalf. By default these access logs can be found under <code class="docutils literal notranslate"><span class="pre">~/archgw_logs</span></code>. For example:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">$ </span>tail<span class="w"> </span>-F<span class="w"> </span>~/archgw_logs/access_*.log
+</span><span id="line-2">
+</span><span id="line-3"><span class="go">==&gt; /Users/adilhafeez/archgw_logs/access_llm.log &lt;==</span>
+</span><span id="line-4"><span class="go">[2024-10-10T03:55:49.537Z] "POST /v1/chat/completions HTTP/1.1" 0 DC 0 0 770 - "-" "OpenAI/Python 1.51.0" "469793af-b25f-9b57-b265-f376e8d8c586" "api.openai.com" "162.159.140.245:443"</span>
+</span><span id="line-5">
+</span><span id="line-6"><span class="go">==&gt; /Users/adilhafeez/archgw_logs/access_internal.log &lt;==</span>
+</span><span id="line-7"><span class="go">[2024-10-10T03:56:03.906Z] "POST /embeddings HTTP/1.1" 200 - 52 21797 54 53 "-" "-" "604197fe-2a5b-95a2-9367-1d6b30cfc845" "model_server" "192.168.65.254:51000"</span>
+</span><span id="line-8"><span class="go">[2024-10-10T03:56:03.961Z] "POST /zeroshot HTTP/1.1" 200 - 106 218 87 87 "-" "-" "604197fe-2a5b-95a2-9367-1d6b30cfc845" "model_server" "192.168.65.254:51000"</span>
+</span><span id="line-9"><span class="go">[2024-10-10T03:56:04.050Z] "POST /v1/chat/completions HTTP/1.1" 200 - 1301 614 441 441 "-" "-" "604197fe-2a5b-95a2-9367-1d6b30cfc845" "model_server" "192.168.65.254:51000"</span>
+</span><span id="line-10"><span class="go">[2024-10-10T03:56:04.492Z] "POST /hallucination HTTP/1.1" 200 - 556 127 104 104 "-" "-" "604197fe-2a5b-95a2-9367-1d6b30cfc845" "model_server" "192.168.65.254:51000"</span>
+</span><span id="line-11"><span class="go">[2024-10-10T03:56:04.598Z] "POST /insurance_claim_details HTTP/1.1" 200 - 447 125 17 17 "-" "-" "604197fe-2a5b-95a2-9367-1d6b30cfc845" "api_server" "192.168.65.254:18083"</span>
+</span><span id="line-12">
+</span><span id="line-13"><span class="go">==&gt; /Users/adilhafeez/archgw_logs/access_ingress.log &lt;==</span>
+</span><span id="line-14"><span class="go">[2024-10-10T03:56:03.905Z] "POST /v1/chat/completions HTTP/1.1" 200 - 463 1022 1695 984 "-" "OpenAI/Python 1.51.0" "604197fe-2a5b-95a2-9367-1d6b30cfc845" "arch_llm_listener" "0.0.0.0:12000"</span>
 </span></code></pre></div>
 </div>
+</section>
+<section id="log-format">
+<h2>Log Format<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#log-format" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#log-format'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<p>What do these logs mean? Let’s break down the log format:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="go">START_TIME METHOD ORIGINAL-PATH PROTOCOL RESPONSE_CODE RESPONSE_FLAGS</span>
+</span><span id="line-2"><span class="go">BYTES_RECEIVED BYTES_SENT DURATION UPSTREAM-SERVICE-TIME X-FORWARDED-FOR</span>
+</span><span id="line-3"><span class="go">USER-AGENT X-REQUEST-ID  AUTHORITY UPSTREAM_HOST</span>
+</span></code></pre></div>
+</div>
+<p>Most of these fields are self-explanatory, but here are a few key fields to note:</p>
+<ul class="simple">
+<li><p>UPSTREAM-SERVICE-TIME: The time taken by the upstream service to process the request.</p></li>
+<li><p>DURATION: The total time taken to process the request.</p></li>
+</ul>
+<p>For example for following request:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="go">[2024-10-10T03:56:03.905Z] "POST /v1/chat/completions HTTP/1.1" 200 - 463 1022 1695 984 "-" "OpenAI/Python 1.51.0" "604197fe-2a5b-95a2-9367-1d6b30cfc845" "arch_llm_listener" "0.0.0.0:12000"</span>
+</span></code></pre></div>
+</div>
+<p>Total duration was 1695ms, and the upstream service took 984ms to process the request. Bytes received and sent were 463 and 1022 respectively.</p>
 </section>
 </section>
 </div><div class="flex justify-between items-center pt-6 mt-12 border-t border-border gap-4">
@@ -195,6 +229,8 @@ Access logs can be exported to centralized logging systems (e.g., ELK stack or F
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
 <li><a :data-current="activeSection === '#key-features'" class="reference internal" href="#key-features">Key Features</a></li>
+<li><a :data-current="activeSection === '#how-it-works'" class="reference internal" href="#how-it-works">How It Works</a></li>
+<li><a :data-current="activeSection === '#log-format'" class="reference internal" href="#log-format">Log Format</a></li>
 </ul>
 </div>
 </aside>
