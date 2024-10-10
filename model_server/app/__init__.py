@@ -1,11 +1,11 @@
 import sys
-import subprocess
 import os
-import signal
 import time
 import requests
 import psutil
 import tempfile
+import subprocess
+
 
 # Path to the file where the server process ID will be stored
 PID_FILE = os.path.join(tempfile.gettempdir(), "model_server.pid")
@@ -36,7 +36,7 @@ def start_server():
         sys.exit(1)
 
     print(
-        f"Starting Archgw Model Server - Loading some awesomeness, this may take a little time.)"
+        "Starting Archgw Model Server - Loading some awesomeness, this may take a little time.)"
     )
     process = subprocess.Popen(
         ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "51000"],
@@ -49,10 +49,10 @@ def start_server():
         # Write the process ID to the PID file
         with open(PID_FILE, "w") as f:
             f.write(str(process.pid))
-        print(f"ARCH GW Model Server started with PID {process.pid}")
+        print(f"Archgw Model Server started with PID {process.pid}")
     else:
         # Add model_server boot-up logs
-        print(f"ARCH GW Model Server - Didn't Sart In Time. Shutting Down")
+        print("Archgw Model Server - Didn't Sart In Time. Shutting Down")
         process.terminate()
 
 
@@ -66,7 +66,7 @@ def wait_for_health_check(url, timeout=180):
                 return True
         except requests.ConnectionError:
             time.sleep(1)
-    print("Timed out waiting for ARCH GW Model Server to respond.")
+    print("Timed out waiting for Archgw Model Server to respond.")
     return False
 
 
