@@ -746,7 +746,7 @@ impl StreamContext {
             if arch_assistant {
                 for message in messages.iter() {
                     if let Some(model) = message.model.as_ref() {
-                        if model.contains("gpt") {
+                        if !model.contains("Arch") {
                             break;
                         }
                     }
