@@ -19,3 +19,6 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
       - CHAT_COMPLETION_ENDPOINT=http://host.docker.internal:10000/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
