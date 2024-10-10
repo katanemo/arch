@@ -944,7 +944,7 @@ impl StreamContext {
     ) -> Result<(), ratelimit::Error> {
         if let Some(selector) = self.ratelimit_selector.take() {
             // Tokenize and Ratelimit.
-            if let Ok(token_count) = tokenizer::token_count(model, &json_string) {
+            if let Ok(token_count) = tokenizer::token_count(model, json_string) {
                 ratelimit::ratelimits(None).read().unwrap().check_limit(
                     model.to_owned(),
                     selector,

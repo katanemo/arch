@@ -405,6 +405,14 @@ mod test {
     use std::thread;
 
     #[test]
+    fn make_ratelimits_optional() {
+        let ratelimits_config = Vec::new();
+
+        // Initialize in the main thread.
+        ratelimits(Some(ratelimits_config));
+    }
+
+    #[test]
     fn different_threads_have_same_ratelimit_data_structure() {
         let ratelimits_config = Some(vec![Ratelimit {
             model: String::from("provider"),
