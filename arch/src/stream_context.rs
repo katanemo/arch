@@ -1,9 +1,9 @@
 use crate::consts::{
     ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME,
-    ARCH_LLM_UPSTREAM_LISTENER, ARCH_MESSAGES_KEY, ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER,
-    ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER, CHAT_COMPLETIONS_PATH,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
-    DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    ARCH_LLM_UPSTREAM_LISTENER, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_PROVIDER_HINT_HEADER,
+    ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER,
+    CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
+    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
 };
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
@@ -453,7 +453,7 @@ impl StreamContext {
         if messages.len() >= 2 {
             let latest_assistant_message = &messages[messages.len() - 2];
             if let Some(model) = latest_assistant_message.model.as_ref() {
-                if model.contains("Arch") {
+                if model.contains(ARCH_MODEL_PREFIX) {
                     arch_assistant = true;
                 }
             }
@@ -735,7 +735,7 @@ impl StreamContext {
             if messages.len() >= 2 {
                 let latest_assistant_message = &messages[messages.len() - 2];
                 if let Some(model) = latest_assistant_message.model.as_ref() {
-                    if model.contains("Arch") {
+                    if model.contains(ARCH_MODEL_PREFIX) {
                         arch_assistant = true;
                     }
                 }
@@ -746,7 +746,7 @@ impl StreamContext {
             if arch_assistant {
                 for message in messages.iter() {
                     if let Some(model) = message.model.as_ref() {
-                        if !model.contains("Arch") {
+                        if !model.contains(ARCH_MODEL_PREFIX) {
                             break;
                         }
                     }
@@ -756,8 +756,7 @@ impl StreamContext {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 user_messages = callout_context.user_message.as_ref().unwrap().clone();
             }
             info!("user messages: {}", user_messages);
