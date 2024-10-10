@@ -554,6 +554,9 @@ impl StreamContext {
         info!("prompt_target name: {:?}", prompt_target_name);
         let mut chat_completion_tools: Vec<ChatCompletionTool> = Vec::new();
         for pt in self.prompt_targets.values() {
+            if pt.default.unwrap_or_default() {
+                continue;
+            }
             // only extract entity names
             let properties: HashMap<String, FunctionParameter> = match pt.parameters {
                 // Clone is unavoidable here because we don't want to move the values out of the prompt target struct.
