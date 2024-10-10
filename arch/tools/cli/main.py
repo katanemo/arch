@@ -12,6 +12,10 @@ from cli.core import (
     stop_arch,
 )
 from cli.utils import get_llm_provider_access_keys, load_env_file_to_dict
+from cli.consts import KATANEMO_DOCKERHUB_REPO
+from cli.utils import getLogger
+
+log = getLogger(__name__)
 
 logo = r"""
      _                _
@@ -39,17 +43,17 @@ MODEL_SERVER_BUILD_FILE = "./model_server/pyproject.toml"
 
 @click.command()
 @click.option(
-    "--services",
+    "--service",
     default="all",
-    help="Services to build. Options are all, model_server, archgw. Default is all",
+    help="Optioanl parameter to specify which service to build. Options are model_server, archgw",
 )
-def build(services):
+def build(service):
     """Build Arch from source. Must be in root of cloned repo."""
-    if services not in ["all", "model_server", "archgw"]:
-        print(f"Error: Invalid service {services}. Exiting")
+    if service not in ["model_server", "archgw", "all"]:
+        print(f"Error: Invalid service {service}. Exiting")
         sys.exit(1)
     # Check if /arch/Dockerfile exists
-    if services == "archgw" or services == "all":
+    if service == "archgw" or service == "all":
         if os.path.exists(ARCHGW_DOCKERFILE):
             click.echo("Building archgw image...")
             try:
@@ -60,7 +64,7 @@ def build(services):
                         "-f",
                         ARCHGW_DOCKERFILE,
                         "-t",
-                        "archgw:latest",
+                        f"{KATANEMO_DOCKERHUB_REPO}:latest",
                         ".",
                     ],
                     check=True,
@@ -76,7 +80,7 @@ def build(services):
     click.echo("archgw image built successfully.")
 
     """Install the model server dependencies using Poetry."""
-    if services == "model_server" or services == "all":
+    if service == "model_server" or service == "all":
         # Check if pyproject.toml exists
         if os.path.exists(MODEL_SERVER_BUILD_FILE):
             click.echo("Installing model server dependencies with Poetry...")
@@ -101,17 +105,17 @@ def build(services):
     "--path", default=".", help="Path to the directory containing arch_config.yaml"
 )
 @click.option(
-    "--services",
+    "--service",
     default="all",
-    help="Services to start. Options are all, model_server, archgw. Default is all",
+    help="Service to start. Options are model_server, archgw.",
 )
-def up(file, path, services):
+def up(file, path, service):
     """Starts Arch."""
-    if services not in ["all", "model_server", "archgw"]:
-        print(f"Error: Invalid service {services}. Exiting")
+    if service not in ["all", "model_server", "archgw"]:
+        print(f"Error: Invalid service {service}. Exiting")
         sys.exit(1)
 
-    if services == "model_server":
+    if service == "model_server":
         start_arch_modelserver()
         return
 
@@ -141,7 +145,7 @@ def up(file, path, services):
         print(f"Exiting archgw up: {e}")
         sys.exit(1)
 
-    print("Starting Arch gateway and Arch model server services via docker ")
+    log.info("Starging arch model server and arch gateway")
 
     # Set the ARCH_CONFIG_FILE environment variable
     env_stage = {}
@@ -183,7 +187,7 @@ def up(file, path, services):
     env.update(env_stage)
     env["ARCH_CONFIG_FILE"] = arch_config_file
 
-    if services == "archgw":
+    if service == "archgw":
         start_arch(arch_config_file, env)
     else:
         start_arch_modelserver()
@@ -192,19 +196,19 @@ def up(file, path, services):
 
 @click.command()
 @click.option(
-    "--services",
+    "--service",
     default="all",
-    help="Services to down. Options are all, model_server, archgw. Default is all",
+    help="Service to down. Options are all, model_server, archgw. Default is all",
 )
-def down(services):
+def down(service):
     """Stops Arch."""
 
-    if services not in ["all", "model_server", "archgw"]:
-        print(f"Error: Invalid service {services}. Exiting")
+    if service not in ["all", "model_server", "archgw"]:
+        print(f"Error: Invalid service {service}. Exiting")
         sys.exit(1)
-    if services == "model_server":
+    if service == "model_server":
         stop_arch_modelserver()
-    elif services == "archgw":
+    elif service == "archgw":
         stop_arch()
     else:
         stop_arch_modelserver()
