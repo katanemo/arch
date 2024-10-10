@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "archgw"
-version = "0.1"
+version = "0.0.1"
 description = "Python-based CLI tool to manage Arch Gateway."
 authors = ["Katanemo Labs, Inc."]
 packages = [
@@ -22,6 +22,7 @@ click = "^8.1.7"
 jinja2 = "^3.1.4"
 jsonschema = "^4.23.0"
 setuptools = "75.1.0"
+archgw_modelserver= "0.0.2"
 
 [tool.poetry.scripts]
 archgw = "cli.main:main"

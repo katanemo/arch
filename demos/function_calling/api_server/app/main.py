@@ -30,7 +30,7 @@ async def weather(req: WeatherRequest, res: Response):
         "temperature": [],
         "units": req.units,
     }
-    for i in range(7):
+    for i in range(req.days):
         min_temp = random.randrange(50, 90)
         max_temp = random.randrange(min_temp + 5, min_temp + 20)
         if req.units.lower() == "celsius" or req.units.lower() == "c":

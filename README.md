@@ -11,7 +11,7 @@ Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-i
 >Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization – all outside business logic.*
 
 **Core Features**:
-  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egreess traffic realted to prompts and LLMs
+  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egress traffic related to prompts and LLMs
   - Function Calling for fast Agentic and RAG apps. Engineered with purpose-built [LLMs](https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68) to handle fast, cost-effective, and accurate prompt-based tasks like function/API calling, and parameter extraction from prompts.
   - Prompt [Guard](https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d): Arch centralizes prompt guardrails to prevent jailbreak attempts and ensure safe user interactions without writing a single line of code.
   - Traffic Management: Arch manages LLM calls, offering smart retries, automatic cutover, and resilient upstream connections for continuous availability.
