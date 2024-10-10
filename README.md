@@ -109,12 +109,15 @@ Make outbound calls via Arch
 import openai
 
 # Set the OpenAI API base URL to the Arch gateway endpoint
-openai.api_base = "http://127.0.0.1:51001/v1"
+openai.api_base = "http://127.0.0.1:12000/"
 
 # No need to set openai.api_key since it's configured in Arch's gateway
 
 # Use the OpenAI client as usual
+# we set api_key to '--' becasue openai client would fail to initiate request without it. Just pass any
+# dummy value here since arch gateway will properly pass access key before making outbound call.
 response = openai.Completion.create(
+   api_key="--",
    model="text-davinci-003",
    prompt="What is the capital of France?"
 )
