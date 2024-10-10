@@ -35,7 +35,7 @@ Follow this guide to learn how to quickly set up Arch and integrate it into your
 
 Before you begin, ensure you have the following:
 
-- `Docker` & `Python` installed on your system
+- `Docker` & `Python` verion 3.10 installed on your system
 - `API Keys` for LLM providers (if using external LLMs)
 
 ### Step 1: Install Arch
