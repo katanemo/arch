@@ -37,7 +37,7 @@ class ArchGuardHanlder:
             f"{self.task}_prob": prob.item(),
             f"{self.task}_verdict": verdict,
             f"{self.task}_sentence": sentence,
-            "time": time.perf_counter - start_time,
+            "time": time.perf_counter() - start_time,
         }
 
         return result_dict
