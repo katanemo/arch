@@ -62,6 +62,7 @@ def build(services):
                         "-t",
                         "archgw:latest",
                         ".",
+                        "--add-host=host.docker.internal:host-gateway",
                     ],
                     check=True,
                 )
