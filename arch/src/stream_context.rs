@@ -728,8 +728,41 @@ impl StreamContext {
                 None => HashMap::new(), // Return an empty HashMap if v is not an object
             };
 
+            let mut user_messages = String::new();
+            let messages = &callout_context.request_body.messages;
+            let mut arch_assistant = false;
+
+            if messages.len() >= 2 {
+                let latest_assistant_message = &messages[messages.len() - 2];
+                if let Some(model) = latest_assistant_message.model.as_ref() {
+                    if model.contains("Arch") {
+                        arch_assistant = true;
+                    }
+                }
+            } else {
+                info!("no assistant message found, probably first interaction");
+            }
+
+            if arch_assistant {
+                for message in messages.iter() {
+                    if let Some(model) = message.model.as_ref() {
+                        if model.contains("gpt") {
+                            break;
+                        }
+                    }
+                    if message.role == "user" {
+                        if let Some(content) = &message.content {
+                            user_messages = format!("{} , {}", user_messages, content);
+                        }
+                    }
+                }
+            } else {
+                user_messages = callout_context.user_message.as_ref().unwrap().clone();
+            }
+            info!("user messages: {}", user_messages);
+
             let hallucination_classification_request = HallucinationClassificationRequest {
-                prompt: callout_context.user_message.as_ref().unwrap().clone(),
+                prompt: user_messages,
                 model: String::from(DEFAULT_INTENT_MODEL),
                 parameters: tool_params_dict,
             };
