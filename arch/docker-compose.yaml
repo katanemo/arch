@@ -1,6 +1,6 @@
 services:
   archgw:
-    image: archgw:latest
+    image: katanemo/archgw:latest
     ports:
       - "10000:10000"
       - "11000:11000"
