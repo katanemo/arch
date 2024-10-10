@@ -189,17 +189,18 @@ async def hallucination(req: HallucinationRequest, res: Response):
     if "arch_messages" in req.parameters:
         req.parameters.pop("arch_messages")
 
-    candidate_labels = [f"{k} is {v}" for k, v in req.parameters.items()]
+    candidate_labels = {f"{k} is {v}": k for k, v in req.parameters.items()}
 
     predictions = classifier(
         req.prompt,
-        candidate_labels=candidate_labels,
+        candidate_labels=list(candidate_labels.keys()),
         hypothesis_template="{}",
         multi_label=True,
     )
 
     params_scores = {
-        k[0]: s for k, s in zip(req.parameters.items(), predictions["scores"])
+        candidate_labels[label]: score
+        for label, score in zip(predictions["labels"], predictions["scores"])
     }
 
     logger.info(
