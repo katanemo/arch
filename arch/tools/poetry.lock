@@ -203,13 +203,13 @@ trio = ["trio (>=0.26.1)"]
 
 [[package]]
 name = "archgw-modelserver"
-version = "0.0.1"
+version = "0.0.2"
 description = "A model server for serving models"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "archgw_modelserver-0.0.1-py3-none-any.whl", hash = "sha256:9b907bbc551897ad4f1a8a26d7af7d3c5f86334885cc0bca7068a566aff01abb"},
-    {file = "archgw_modelserver-0.0.1.tar.gz", hash = "sha256:feebe3c6a0dd96dee5e2b67c33b322fd5996acd4dfc4a82c586fbbf828d4b71a"},
+    {file = "archgw_modelserver-0.0.2-py3-none-any.whl", hash = "sha256:5a0b287b1cccb45480c39af89719c4f4e0673e2e608cec3093cf0c76f08ac787"},
+    {file = "archgw_modelserver-0.0.2.tar.gz", hash = "sha256:acaaf3507bb60860298cb2511623b4ca370001a2ff0fb1247271b82c85f09cc4"},
 ]
 
 [package.dependencies]
@@ -3521,4 +3521,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "8c7439b57c604d5111cc48f7981065297bda939aee57be4e53b0ef68180f84b4"
+content-hash = "11509af5007ffed46d1a84a53de8fb2f816eca24247064b2d85560e80d5eaf24"
