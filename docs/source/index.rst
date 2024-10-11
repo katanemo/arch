@@ -23,6 +23,7 @@ Arch (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) was b
     .. toctree::
       :caption: Get Started
       :titlesonly:
+      :maxdepth: 2
 
       get_started/overview
       get_started/intro_to_arch
@@ -33,6 +34,7 @@ Arch (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) was b
     .. toctree::
       :caption: Concepts
       :titlesonly:
+      :maxdepth: 2
 
       concepts/tech_overview/tech_overview
       concepts/llm_provider
@@ -43,6 +45,7 @@ Arch (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) was b
     .. toctree::
       :caption: Guides
       :titlesonly:
+      :maxdepth: 2
 
       guides/prompt_guard
       guides/function_calling
@@ -53,6 +56,7 @@ Arch (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) was b
     .. toctree::
       :caption: Build with Arch
       :titlesonly:
+      :maxdepth: 2
 
       build_with_arch/agent
       build_with_arch/rag
@@ -62,5 +66,6 @@ Arch (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) was b
     .. toctree::
       :caption: Resources
       :titlesonly:
+      :maxdepth: 2
 
       resources/configuration_reference

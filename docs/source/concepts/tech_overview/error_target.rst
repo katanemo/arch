@@ -16,8 +16,6 @@ Key Concepts
 
 - **Error Message**: A clear, human-readable message describing the error. This should provide enough detail to inform users or developers of the root cause or required action.
 
-- **Target Prompt**: The specific prompt or operation where the error occurred. Understanding where the error happened helps with debugging and pinpointing the source of the problem.
-
 - **Parameter-Specific Errors**: Errors that arise due to invalid or missing parameters when invoking a function. These errors are critical for ensuring the correctness of inputs.
 
 

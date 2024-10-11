@@ -35,7 +35,7 @@ Function Calling Workflow
 
 Arch-Function
 -------------------------
-The `Arch-Function <https://huggingface.co/collections/katanemolabs/arch-function-66f209a693ea8df14317ad68>`_ collection of large language models (LLMs) is a collection state-of-the-art (SOTA) LLMs specifically designed for **function calling** tasks.
+The `Arch-Function <https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68>`_ collection of large language models (LLMs) is a collection state-of-the-art (SOTA) LLMs specifically designed for **function calling** tasks.
 The models are designed to understand complex function signatures, identify required parameters, and produce accurate function call outputs based on natural language prompts.
 Achieving performance on par with GPT-4, these models set a new benchmark in the domain of function-oriented tasks, making them suitable for scenarios where automated API interaction and function execution is crucial.
 

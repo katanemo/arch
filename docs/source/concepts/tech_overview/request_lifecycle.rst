@@ -87,8 +87,6 @@ Today, only support a static bootstrap configuration file for simplicity today:
 Request Flow (Ingress)
 ----------------------
 
-Overview
-^^^^^^^^
 A brief outline of the lifecycle of a request and response using the example configuration above:
 
 1. **TCP Connection Establishment**:
@@ -105,7 +103,7 @@ A brief outline of the lifecycle of a request and response using the example con
    intent matching via is **prompt-handler** subsystem using the name and description of the defined prompt targets,
    determining which endpoint should handle the prompt.
 
-4. **Parameter Gathering with Arch-FC**:
+4. **Parameter Gathering with Arch-Function**:
    If a prompt target requires specific parameters, Arch engages Arch-FC to extract the necessary details
    from the incoming prompt(s). This process gathers the critical information needed for downstream API calls.
 
@@ -115,7 +113,7 @@ A brief outline of the lifecycle of a request and response using the example con
 
 6. **Default Summarization by Upstream LLM**:
    By default, if no specific endpoint processing is needed, the prompt is sent to an upstream LLM for summarization.
-   This ensures that responses are concise and relevant, enhancing user experience in RAG (Retrieval-Augmented Generation)
+   This ensures that responses are concise and relevant, enhancing user experience in RAG (Retrieval Augmented Generation)
    and agentic applications.
 
 7. **Error Handling and Forwarding**:
@@ -134,11 +132,7 @@ A brief outline of the lifecycle of a request and response using the example con
 Request Flow (Egress)
 ---------------------
 
-Overview
---------
-
-A brief outline of the lifecycle of a request and response in the context of egress traffic from an application
-to Large Language Models (LLMs) via Arch:
+A brief outline of the lifecycle of a request and response in the context of egress traffic from an application to Large Language Models (LLMs) via Arch:
 
 1. **HTTP Connection Establishment to LLM**:
    Arch initiates an HTTP connection to the upstream LLM service. This connection is handled by Arch’s egress listener
