@@ -56,9 +56,11 @@ sh build_cli.sh
 archgw build
 ```
 
-## Step 5: start model server in the background
-```
-archgw up --service model_server
+### Step 5: download models
+This will help download models so model_server can load faster. This should be done once.
+
+```bash
+archgw download-models
 ```
 
 ## Uninstall Instructions: archgw CLI

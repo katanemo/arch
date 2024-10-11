@@ -16,6 +16,9 @@ from cli.utils import get_llm_provider_access_keys, load_env_file_to_dict
 from cli.consts import KATANEMO_DOCKERHUB_REPO
 from cli.utils import getLogger
 import multiprocessing
+from huggingface_hub import snapshot_download
+import joblib
+
 
 log = getLogger(__name__)
 
@@ -287,10 +290,26 @@ def logs(service, follow):
         model_server_process.join()
 
 
+model_list = [
+    "katanemo/Arch-Guard-cpu",
+    "katanemo/Arch-Guard",
+    "katanemo/bge-large-en-v1.5",
+]
+
+
+@click.command()
+def download_models():
+    """Download required models from Hugging Face Hub in the cache directory"""
+    for model in model_list:
+        log.info(f"Downloading model: {model}")
+        snapshot_download(repo_id=model)
+
+
 main.add_command(up)
 main.add_command(down)
 main.add_command(build)
 main.add_command(logs)
+main.add_command(download_models)
 main.add_command(generate_prompt_targets)
 
 if __name__ == "__main__":
