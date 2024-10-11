@@ -19,7 +19,7 @@ The assistant can perform several key operations, including rebooting devices, a
 
 
 # Starting the demo
-1. Please make sure the [pre-requisites](../../../README.md?tab=readme-ov-file#prerequisites) are installed correctly
+1. Please make sure the [pre-requisites](https://github.com/katanemo/arch/?tab=readme-ov-file#prerequisites) are installed correctly
 2. Start Arch
    ```sh
    sh run_demo.sh

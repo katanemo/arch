@@ -36,7 +36,7 @@ The system can perform a variety of tasks, such as answering insurance-related q
 **Arch** is designed to intelligently routes prompts to the appropriate functions based on the target, allowing for seamless interaction with various insurance-related services.
 
 # Starting the demo
-1. Please make sure the [pre-requisites](../../../README.md?tab=readme-ov-file#prerequisites) are installed correctly
+1. Please make sure the [pre-requisites](https://github.com/katanemo/arch/?tab=readme-ov-file#prerequisites) are installed correctly
 2. Start Arch
    ```sh
    sh run_demo.sh
