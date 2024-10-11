@@ -262,6 +262,8 @@ def stream_model_server_logs(follow):
 )
 @click.option("--follow", help="Follow the logs", is_flag=True)
 def logs(service, follow):
+    """Stream logs from arch services."""
+
     if service not in ["all", "model_server", "archgw"]:
         print(f"Error: Invalid service {service}. Exiting")
         sys.exit(1)
