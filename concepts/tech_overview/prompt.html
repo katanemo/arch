@@ -177,7 +177,7 @@ containing two key-value pairs:</p>
 </section>
 <section id="prompt-guard">
 <h2>Prompt Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt-guard" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#prompt-guard'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>Arch is engineered with <a class="reference internal" href="../../guides/prompt_guard.html#prompt-guard"><span class="std std-ref">Arch-Guard</span></a>, an industry leading safety layer, powered by a
+<p>Arch is engineered with <a class="reference external" href="https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d" rel="nofollow noopener">Arch-Guard<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>, an industry leading safety layer, powered by a
 compact and high-performimg LLM that monitors incoming prompts to detect and reject jailbreak attempts -
 ensuring that unauthorized or harmful behaviors are intercepted early in the process.</p>
 <p>To add jailbreak guardrails, see example below:</p>
@@ -221,7 +221,7 @@ etc. To offer feedback on our roadmap, please visit our <a class="reference exte
 <section id="prompt-targets">
 <h2>Prompt Targets<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt-targets" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#prompt-targets'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <p>Once a prompt passes any configured guardrail checks, Arch processes the contents of the incoming conversation
-and identifies where to forwad the conversation to via its <code class="docutils literal notranslate"><span class="pre">prompt_targets</span></code> primitve. Prompt targets are endpoints
+and identifies where to forwad the conversation to via its <code class="docutils literal notranslate"><span class="pre">prompt</span> <span class="pre">target</span></code> primitve. Prompt targets are endpoints
 that receive prompts that are processed by Arch. For example, Arch enriches incoming prompts with metadata like knowing
 when a user’s intent has changed so that you can build faster, more accurate RAG apps.</p>
 <p>Configuring <code class="docutils literal notranslate"><span class="pre">prompt_targets</span></code> is simple. See example below:</p>
@@ -302,55 +302,46 @@ when a user’s intent has changed so that you can build faster, more accurate R
 <p class="admonition-title">See also</p>
 <p>Check <a class="reference internal" href="../prompt_target.html#prompt-target"><span class="std std-ref">Prompt Target</span></a> for more details!</p>
 </div>
-<section id="intent-detection-and-prompt-matching">
-<h3>Intent Detection and Prompt Matching:<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#intent-detection-and-prompt-matching" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#intent-detection-and-prompt-matching'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
-<p>Arch uses fast Natural Language Inference (NLI) and embedding approaches to first detect the intent of each
-incoming prompt. This intent detection phase analyzes the prompt’s content and matches it against predefined
-prompt targets, ensuring that each prompt is forwarded to the most appropriate endpoint. Arch’s intent
-detection framework considers both the name and description of each prompt target, and uses a composite matching
-score between an NLI and cosine similarity to enchance accuracy in forwarding decisions.</p>
+<section id="intent-matching">
+<h3>Intent Matching<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#intent-matching" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#intent-matching'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<p>Arch uses fast text embedding and intent recognition approaches to first detect the intent of each incoming prompt.
+This intent matching phase analyzes the prompt’s content and matches it against predefined prompt targets, ensuring that each prompt is forwarded to the most appropriate endpoint.
+Arch’s intent matching framework considers both the name and description of each prompt target, and uses a composite matching score between embedding similarity and intent classification scores to enchance accuracy in forwarding decisions.</p>
 <ul class="simple">
-<li><p><strong>Embeddings</strong>: By embedding the prompt and comparing it to known target vectors, Arch effectively identifies
-the closest match, ensuring that the prompt is handled by the correct downstream service.</p></li>
-<li><p><strong>NLI</strong>: NLI techniques further refine the matching process by evaluating the semantic alignment between the
-prompt and potential targets.</p></li>
+<li><p><strong>Intent Recognition</strong>: NLI techniques further refine the matching process by evaluating the semantic alignment between the prompt and potential targets.</p></li>
+<li><p><strong>Text Embedding</strong>: By embedding the prompt and comparing it to known target vectors, Arch effectively identifies the closest match, ensuring that the prompt is handled by the correct downstream service.</p></li>
 </ul>
 </section>
 <section id="agentic-apps-via-prompt-targets">
 <h3>Agentic Apps via Prompt Targets<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#agentic-apps-via-prompt-targets" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#agentic-apps-via-prompt-targets'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
-<p>To support agentic apps, like scheduling travel plans or sharing comments on a document - via prompts, Arch uses
-its function calling abilities to extract critical information from the incoming prompt (or a set of prompts)
-needed by a downstream backend API or function call before calling it directly. For more details on how you can
-build agentic applications using Arch, see our full guide <a class="reference internal" href="../../build_with_arch/agent.html#arch-agent-guide"><span class="std std-ref">here</span></a>:</p>
+<p>To support agentic apps, like scheduling travel plans or sharing comments on a document - via prompts, Arch uses its function calling abilities to extract critical information from the incoming prompt (or a set of prompts) needed by a downstream backend API or function call before calling it directly.
+For more details on how you can build agentic applications using Arch, see our full guide <a class="reference internal" href="../../build_with_arch/agent.html#arch-agent-guide"><span class="std std-ref">here</span></a>:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Arch <a class="reference internal" href="../../guides/function_calling.html#function-calling"><span class="std std-ref">Arch-Function</span></a> is the dedicated agentic model engineered in Arch to extract information from
-a (set of) prompts and executes necessary backend API calls. This allows for efficient handling of agentic tasks,
-such as scheduling data retrieval, by dynamically interacting with backend services. Arch-Function is a flagship 1.3
-billion parameter model that matches performance  with frontier models like Claude Sonnet 3.5 ang GPT-4, while
-being 100x cheaper ($0.05M/token hosted) and 10x faster (p50 latencies of 200ms).</p>
+<p><a class="reference external" href="https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68" rel="nofollow noopener">Arch-Function<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a> is a collection of dedicated agentic models engineered in Arch to extract information from a (set of) prompts and executes necessary backend API calls.
+This allows for efficient handling of agentic tasks, such as scheduling data retrieval, by dynamically interacting with backend services.
+Arch-Function achieves state-of-the-art performance, comparable with frontier models like Claude Sonnet 3.5 ang GPT-4, while being 100x cheaper ($0.05M/token hosted) and 10x faster (p50 latencies of 200ms).</p>
 </div>
 </section>
 </section>
 <section id="prompting-llms">
 <h2>Prompting LLMs<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompting-llms" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#prompting-llms'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>Arch is a single piece of software that is designed to manage both ingress and egress prompt traffic, drawing its
-distributed proxy nature from the robust <a class="reference external" href="https://envoyproxy.io" rel="nofollow noopener">Envoy<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>. This makes it extremely efficient and capable
-of handling upstream connections to LLMs. If your application is originating code to an API-based LLM, simply use
-the OpenAI client and configure it with Arch. By sending traffic through Arch, you can propagate traces, manage and monitor
-traffic, apply rate limits, and utilize a large set of traffic management capabilities in a centralized way.</p>
+<p>Arch is a single piece of software that is designed to manage both ingress and egress prompt traffic, drawing its distributed proxy nature from the robust <a class="reference external" href="https://envoyproxy.io" rel="nofollow noopener">Envoy<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>.
+This makes it extremely efficient and capable of handling upstream connections to LLMs.
+If your application is originating code to an API-based LLM, simply use the OpenAI client and configure it with Arch.
+By sending traffic through Arch, you can propagate traces, manage and monitor traffic, apply rate limits, and utilize a large set of traffic management capabilities in a centralized way.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
 <p>When you start Arch, it automatically creates a listener port for egress calls to upstream LLMs. This is based on the
 <code class="docutils literal notranslate"><span class="pre">llm_providers</span></code> configuration section in the <code class="docutils literal notranslate"><span class="pre">arch_config.yml</span></code> file. Arch binds itself to a local address such as
-127.0.0.1:12000/v1.</p>
+<code class="docutils literal notranslate"><span class="pre">127.0.0.1:12000</span></code>.</p>
 </div>
 <section id="example-using-openai-client-with-arch-as-an-egress-gateway">
 <h3>Example: Using OpenAI Client with Arch as an Egress Gateway<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#example-using-openai-client-with-arch-as-an-egress-gateway" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#example-using-openai-client-with-arch-as-an-egress-gateway'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">import</span> <span class="nn">openai</span>
 </span><span id="line-2">
 </span><span id="line-3"><span class="c1"># Set the OpenAI API base URL to the Arch gateway endpoint</span>
-</span><span id="line-4"><span class="n">openai</span><span class="o">.</span><span class="n">api_base</span> <span class="o">=</span> <span class="s2">"http://127.0.0.1:12000/v1"</span>
+</span><span id="line-4"><span class="n">openai</span><span class="o">.</span><span class="n">api_base</span> <span class="o">=</span> <span class="s2">"http://127.0.0.1:12000"</span>
 </span><span id="line-5">
 </span><span id="line-6"><span class="c1"># No need to set openai.api_key since it's configured in Arch's gateway</span>
 </span><span id="line-7">
@@ -364,7 +355,7 @@ traffic, apply rate limits, and utilize a large set of traffic management capabi
 </span></code></pre></div>
 </div>
 <p>In these examples, the OpenAI client is used to send traffic directly through the Arch egress proxy to the LLM of your choice, such as OpenAI.
-The OpenAI client is configured to route traffic via Arch by setting the proxy to <code class="docutils literal notranslate"><span class="pre">127.0.0.1:51001</span></code>, assuming Arch is running locally and bound to that address and port.
+The OpenAI client is configured to route traffic via Arch by setting the proxy to <code class="docutils literal notranslate"><span class="pre">127.0.0.1:12000</span></code>, assuming Arch is running locally and bound to that address and port.
 This setup allows you to take advantage of Arch’s advanced traffic management features while interacting with LLM APIs like OpenAI.</p>
 </section>
 </section>
@@ -392,7 +383,7 @@ This setup allows you to take advantage of Arch’s advanced traffic management 
 <li><a :data-current="activeSection === '#messages'" class="reference internal" href="#messages">Messages</a></li>
 <li><a :data-current="activeSection === '#prompt-guard'" class="reference internal" href="#prompt-guard">Prompt Guard</a></li>
 <li><a :data-current="activeSection === '#prompt-targets'" class="reference internal" href="#prompt-targets">Prompt Targets</a><ul>
-<li><a :data-current="activeSection === '#intent-detection-and-prompt-matching'" class="reference internal" href="#intent-detection-and-prompt-matching">Intent Detection and Prompt Matching:</a></li>
+<li><a :data-current="activeSection === '#intent-matching'" class="reference internal" href="#intent-matching">Intent Matching</a></li>
 <li><a :data-current="activeSection === '#agentic-apps-via-prompt-targets'" class="reference internal" href="#agentic-apps-via-prompt-targets">Agentic Apps via Prompt Targets</a></li>
 </ul>
 </li>

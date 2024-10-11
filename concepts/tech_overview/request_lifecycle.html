@@ -287,8 +287,6 @@ enables scaling to very high core count CPUs.</p>
 </section>
 <section id="request-flow-ingress">
 <h2>Request Flow (Ingress)<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#request-flow-ingress" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#request-flow-ingress'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<section id="overview">
-<h3>Overview<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#overview" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#overview'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
 <p>A brief outline of the lifecycle of a request and response using the example configuration above:</p>
 <ol class="arabic simple">
 <li><p><strong>TCP Connection Establishment</strong>:
@@ -302,7 +300,7 @@ that harmful or unwanted behaviors are detected early in the request processing 
 The decrypted data stream is deframed by the HTTP/2 codec in Arch’s HTTP connection manager. Arch performs
 intent matching via is <strong>prompt-handler</strong> subsystem using the name and description of the defined prompt targets,
 determining which endpoint should handle the prompt.</p></li>
-<li><p><strong>Parameter Gathering with Arch-FC</strong>:
+<li><p><strong>Parameter Gathering with Arch-Function</strong>:
 If a prompt target requires specific parameters, Arch engages Arch-FC to extract the necessary details
 from the incoming prompt(s). This process gathers the critical information needed for downstream API calls.</p></li>
 <li><p><strong>API Call Execution</strong>:
@@ -310,7 +308,7 @@ Arch routes the prompt to the appropriate backend API or function call. If an en
 load balancing is performed, circuit breakers are checked, and the request is proxied to the upstream endpoint.</p></li>
 <li><p><strong>Default Summarization by Upstream LLM</strong>:
 By default, if no specific endpoint processing is needed, the prompt is sent to an upstream LLM for summarization.
-This ensures that responses are concise and relevant, enhancing user experience in RAG (Retrieval-Augmented Generation)
+This ensures that responses are concise and relevant, enhancing user experience in RAG (Retrieval Augmented Generation)
 and agentic applications.</p></li>
 <li><p><strong>Error Handling and Forwarding</strong>:
 Errors encountered during processing, such as failed function calls or guardrail detections, are forwarded to
@@ -326,14 +324,9 @@ The upstream endpoint’s TLS transport socket encrypts the response, which is t
 Responses pass through HTTP filters in reverse order, ensuring any necessary processing or modification before final delivery.</p></li>
 </ol>
 </section>
-</section>
 <section id="request-flow-egress">
 <h2>Request Flow (Egress)<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#request-flow-egress" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#request-flow-egress'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-</section>
-<section id="id1">
-<h2>Overview<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#id1'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>A brief outline of the lifecycle of a request and response in the context of egress traffic from an application
-to Large Language Models (LLMs) via Arch:</p>
+<p>A brief outline of the lifecycle of a request and response in the context of egress traffic from an application to Large Language Models (LLMs) via Arch:</p>
 <ol class="arabic simple">
 <li><p><strong>HTTP Connection Establishment to LLM</strong>:
 Arch initiates an HTTP connection to the upstream LLM service. This connection is handled by Arch’s egress listener
@@ -393,12 +386,8 @@ processing request headers and then finalized by the HCM during post-request pro
 <li><a :data-current="activeSection === '#network-topology'" class="reference internal" href="#network-topology">Network topology</a></li>
 <li><a :data-current="activeSection === '#high-level-architecture'" class="reference internal" href="#high-level-architecture">High level architecture</a></li>
 <li><a :data-current="activeSection === '#configuration'" class="reference internal" href="#configuration">Configuration</a></li>
-<li><a :data-current="activeSection === '#request-flow-ingress'" class="reference internal" href="#request-flow-ingress">Request Flow (Ingress)</a><ul>
-<li><a :data-current="activeSection === '#overview'" class="reference internal" href="#overview">Overview</a></li>
-</ul>
-</li>
-<li><a :data-current="activeSection === '#request-flow-egress'" class="reference internal" href="#request-flow-egress">Request Flow (Egress)</a></li>
-<li><a :data-current="activeSection === '#id1'" class="reference internal" href="#id1">Overview</a><ul>
+<li><a :data-current="activeSection === '#request-flow-ingress'" class="reference internal" href="#request-flow-ingress">Request Flow (Ingress)</a></li>
+<li><a :data-current="activeSection === '#request-flow-egress'" class="reference internal" href="#request-flow-egress">Request Flow (Egress)</a><ul>
 <li><a :data-current="activeSection === '#post-request-processing'" class="reference internal" href="#post-request-processing">Post-request processing</a></li>
 </ul>
 </li>

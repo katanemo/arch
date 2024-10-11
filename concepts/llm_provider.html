@@ -188,7 +188,7 @@ across applications.</p>
 <p class="admonition-title">Note</p>
 <p>When you start Arch, it creates a listener port for egress traffic based on the presence of <code class="docutils literal notranslate"><span class="pre">llm_providers</span></code>
 configuration section in the <code class="docutils literal notranslate"><span class="pre">arch_config.yml</span></code> file. Arch binds itself to a local address such as
-<code class="docutils literal notranslate"><span class="pre">127.0.0.1:51001/v1</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">127.0.0.1:12000</span></code>.</p>
 </div>
 <p>Arch also offers vendor-agnostic SDKs and libraries to make LLM calls to API-based LLM providers (like OpenAI,
 Anthropic, Mistral, Cohere, etc.) and supports calls to OSS LLMs that are hosted on your infrastructure. Arch
@@ -201,7 +201,7 @@ make outbound LLM calls.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
 </span><span id="line-2">
 </span><span id="line-3"><span class="c1"># Initialize the Arch client</span>
-</span><span id="line-4"><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="s2">"http://127.0.0.1:51001/v1"</span><span class="p">)</span>
+</span><span id="line-4"><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="s2">"http://127.0.0.12000/"</span><span class="p">)</span>
 </span><span id="line-5">
 </span><span id="line-6"><span class="c1"># Define your LLM provider and prompt</span>
 </span><span id="line-7"><span class="n">llm_provider</span> <span class="o">=</span> <span class="s2">"openai"</span>

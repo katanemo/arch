@@ -157,7 +157,7 @@
 Retrieval-Augmented Generation (RAG) applications.</p>
 <section id="parameter-extraction-for-rag">
 <h2>Parameter Extraction for RAG<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#parameter-extraction-for-rag" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#parameter-extraction-for-rag'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>To build RAG (Retrieval-Augmented Generation) applications, you can configure prompt targets with parameters,
+<p>To build RAG (Retrieval Augmented Generation) applications, you can configure prompt targets with parameters,
 enabling Arch to retrieve critical information in a structured way for processing. This approach improves the
 retrieval quality and speed of your application. By extracting parameters from the conversation, you can pull
 the appropriate chunks from a vector database or SQL-like data store to enhance accuracy. With Arch, you can
@@ -243,11 +243,11 @@ streamline data retrieval and processing to build more efficient and precise RAG
 <h2>[Coming Soon] <a class="reference external" href="https://github.com/orgs/katanemo/projects/1/views/1?pane=issue&amp;itemId=82697909" rel="nofollow noopener">Drift Detection via Arch Intent-Markers<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#coming-soon-drift-detection-via-arch-intent-markers" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#coming-soon-drift-detection-via-arch-intent-markers'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <p>Developers struggle to efficiently handle <code class="docutils literal notranslate"><span class="pre">follow-up</span></code> or <code class="docutils literal notranslate"><span class="pre">clarification</span></code> questions. Specifically, when users ask for
 changes or additions to previous responses their AI applications often generate entirely new responses instead of adjusting
-previous ones.Arch offers <strong>intent</strong> tracking as a feature so that developers can know when the user has shifted away from a
+previous ones. Arch offers <code class="docutils literal notranslate"><span class="pre">intent</span> <span class="pre">tracking</span></code> as a feature so that developers can know when the user has shifted away from a
 previous intent so that they can dramatically improve retrieval accuracy, lower overall token cost and  improve the speed of
 their responses back to users.</p>
 <p>Arch uses its built-in lightweight NLI and embedding models to know if the user has steered away from an active intent.
-Arch’s intent-drift detection mechanism is based on its’ <a class="reference internal" href="../concepts/prompt_target.html#prompt-target"><span class="std std-ref">prompt_targets</span></a> primtive. Arch tries to match an incoming
+Arch’s intent-drift detection mechanism is based on its <a class="reference internal" href="../concepts/prompt_target.html#prompt-target"><span class="std std-ref">prompt target</span></a> primtive. Arch tries to match an incoming
 prompt to one of the prompt_targets configured in the gateway. Once it detects that the user has moved away from an active
 active intent, Arch adds the <code class="docutils literal notranslate"><span class="pre">x-arch-intent-marker</span></code> headers to the request before sending it your application servers.</p>
 <div class="literal-block-wrapper docutils container" id="id3">
@@ -276,8 +276,8 @@ active intent, Arch adds the <code class="docutils literal notranslate"><span cl
 </mark></span><span id="line-22"><mark><span class="linenos">22</span>        <span class="k">return</span> <span class="p">(</span>
 </mark></span><span id="line-23"><mark><span class="linenos">23</span>            <span class="n">jsonify</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="s2">"Invalid value for x-arch-prompt-intent-change header"</span><span class="p">}),</span>
 </mark></span><span id="line-24"><mark><span class="linenos">24</span>            <span class="mi">400</span><span class="p">,</span>
-</mark></span><span id="line-25"><span class="linenos">25</span>        <span class="p">)</span>
-</span><span id="line-26"><span class="linenos">26</span>
+</mark></span><span id="line-25"><mark><span class="linenos">25</span>        <span class="p">)</span>
+</mark></span><span id="line-26"><span class="linenos">26</span>
 </span><span id="line-27"><span class="linenos">27</span>    <span class="c1"># Update user conversation based on intent change</span>
 </span><span id="line-28"><span class="linenos">28</span>    <span class="n">memory</span> <span class="o">=</span> <span class="n">update_user_conversation</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">client_messages</span><span class="p">,</span> <span class="n">intent_changed</span><span class="p">)</span>
 </span><span id="line-29"><span class="linenos">29</span>
@@ -315,8 +315,8 @@ active intent, Arch adds the <code class="docutils literal notranslate"><span cl
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Arch is (mostly) stateless so that it can scale in an embarrassingly parrallel fashion. So, while Arch offers
-intent-drift detetction, you still have to maintain converational state with intent drift as meta-data. The
-following code snippets show how easily you can build and enrich conversational history with Langchain (in python),
+intent-drift detetction, you still have to maintain converational state with intent drift as metadata. The
+following code snippets show how easily you can build and enrich conversational history with Langchain (in Python),
 so that you can use the most relevant prompts for your retrieval and for prompting upstream LLMs.</p>
 </div>
 <section id="step-1-define-conversationbuffermemory">
