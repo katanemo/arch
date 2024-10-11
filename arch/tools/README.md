@@ -63,6 +63,13 @@ This will help download models so model_server can load faster. This should be d
 archgw download-models
 ```
 
+### Logs
+`archgw` command can also view logs from gateway and model_server. Use following command to view logs,
+
+```bash
+archgw logs --follow
+```
+
 ## Uninstall Instructions: archgw CLI
 ```bash
 pip uninstall archgw
