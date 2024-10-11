@@ -58,7 +58,7 @@ archgw build
 
 ## Step 5: start model server in the background
 ```
-archgw up --services model_server
+archgw up --service model_server
 ```
 
 ## Uninstall Instructions: archgw CLI
