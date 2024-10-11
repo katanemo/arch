@@ -69,7 +69,7 @@ llm_providers:
   - name: OpenAI
     provider: openai
     access_key: OPENAI_API_KEY
-    model: gpt-4o
+    model: gpt-3.5-turbo
     default: true
     stream: true
 
