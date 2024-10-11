@@ -5,7 +5,7 @@ This demo shows how you can use Arch's core function calling capabilites.
 1. Please make sure the [pre-requisites](https://github.com/katanemo/arch/?tab=readme-ov-file#prerequisites) are installed correctly
 2. Start Arch
 
-3. 
+3.
    ```sh
    sh run_demo.sh
    ```
