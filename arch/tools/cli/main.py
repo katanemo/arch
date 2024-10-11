@@ -10,10 +10,12 @@ from cli.core import (
     stop_arch_modelserver,
     start_arch,
     stop_arch,
+    stream_gateway_logs,
 )
 from cli.utils import get_llm_provider_access_keys, load_env_file_to_dict
 from cli.consts import KATANEMO_DOCKERHUB_REPO
 from cli.utils import getLogger
+import multiprocessing
 
 log = getLogger(__name__)
 
@@ -237,9 +239,56 @@ def generate_prompt_targets(file):
     targets.generate_prompt_targets(file)
 
 
+def stream_model_server_logs(follow):
+    log_file = "~/archgw_logs/modelserver.log"
+    log_file_expanded = os.path.expanduser(log_file)
+    stream_command = ["tail"]
+    if follow:
+        stream_command.append("-f")
+    stream_command.append(log_file_expanded)
+    subprocess.run(
+        stream_command,
+        check=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
+
+
+@click.command()
+@click.option(
+    "--service",
+    default="all",
+    help="Service to monitor. By default it will monitor both gateway and model_serve",
+)
+@click.option("--follow", help="Follow the logs", is_flag=True)
+def logs(service, follow):
+    if service not in ["all", "model_server", "archgw"]:
+        print(f"Error: Invalid service {service}. Exiting")
+        sys.exit(1)
+    archgw_process = None
+    if service == "archgw" or service == "all":
+        archgw_process = multiprocessing.Process(
+            target=stream_gateway_logs, args=(follow,)
+        )
+        archgw_process.start()
+
+    model_server_process = None
+    if service == "model_server" or service == "all":
+        model_server_process = multiprocessing.Process(
+            target=stream_model_server_logs, args=(follow,)
+        )
+        model_server_process.start()
+
+    if archgw_process:
+        archgw_process.join()
+    if model_server_process:
+        model_server_process.join()
+
+
 main.add_command(up)
 main.add_command(down)
 main.add_command(build)
+main.add_command(logs)
 main.add_command(generate_prompt_targets)
 
 if __name__ == "__main__":

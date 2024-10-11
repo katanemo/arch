@@ -10,6 +10,33 @@ import sys
 log = getLogger(__name__)
 
 
+def stream_gateway_logs(follow):
+    """
+    Stream logs from the arch gateway service.
+    """
+    compose_file = pkg_resources.resource_filename(
+        __name__, "../config/docker-compose.yaml"
+    )
+
+    log.info("Logs from arch gateway service.")
+
+    options = ["docker", "compose", "-p", "arch", "logs"]
+    if follow:
+        options.append("-f")
+    try:
+        # Run `docker-compose logs` to stream logs from the gateway service
+        subprocess.run(
+            options,
+            cwd=os.path.dirname(compose_file),
+            check=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+    except subprocess.CalledProcessError as e:
+        log.info(f"Failed to stream logs: {str(e)}")
+
+
 def start_arch(arch_config_file, env, log_timeout=120):
     """
     Start Docker Compose in detached mode and stream logs until services are healthy.
