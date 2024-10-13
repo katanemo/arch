@@ -36,7 +36,7 @@ def start_server():
         sys.exit(1)
 
     print(
-        "Starting Archgw Model Server - Loading some awesomeness, this may take a little time.)"
+        "Starting Archgw Model Server - Loading some awesomeness, this may take a little time."
     )
     process = subprocess.Popen(
         ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "51000"],
