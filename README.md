@@ -4,14 +4,16 @@
 
 ## Build fast, robust, and personalized GenAI apps (agents, assistants, etc.)
 
-Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed for generative AI apps, AI agents, and co-pilots that work with prompts. Engineered with purpose-built LLMs, Arch handles the critical but undifferentiated tasks related to the handling and processing of prompts, including detecting and rejecting [jailbreak](https://github.com/verazuo/jailbreak_llms) attempts, intelligently calling "backend" APIs to fulfill the user's request represented in a prompt, routing to and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
+Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed to protect, observe, and personalize LLM apps with your APIs.
+
+Engineered with purpose-built LLMs, Arch handles the critical but undifferentiated tasks related to the handling and processing of prompts, including detecting and rejecting [jailbreak](https://github.com/verazuo/jailbreak_llms) attempts, intelligently calling "backend" APIs to fulfill the user's request represented in a prompt, routing to and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
 
  Arch is built on (and by the core contributors of) [Envoy Proxy](https://www.envoyproxy.io/) with the belief that:
 
 >Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization – all outside business logic.*
 
 **Core Features**:
-  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egress traffic related to prompts and LLMs
+  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egress traffic related to prompts and LLMs.
   - Function Calling for fast Agentic and RAG apps. Engineered with purpose-built [LLMs](https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68) to handle fast, cost-effective, and accurate prompt-based tasks like function/API calling, and parameter extraction from prompts.
   - Prompt [Guard](https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d): Arch centralizes prompt guardrails to prevent jailbreak attempts and ensure safe user interactions without writing a single line of code.
   - Traffic Management: Arch manages LLM calls, offering smart retries, automatic cutover, and resilient upstream connections for continuous availability.
@@ -35,7 +37,7 @@ Follow this guide to learn how to quickly set up Arch and integrate it into your
 
 Before you begin, ensure you have the following:
 
-- `Docker` & `Python` verion 3.10 installed on your system
+- `Docker` & `Python` installed on your system
 - `API Keys` for LLM providers (if using external LLMs)
 
 ### Step 1: Install Arch
@@ -69,7 +71,7 @@ llm_providers:
   - name: OpenAI
     provider: openai
     access_key: OPENAI_API_KEY
-    model: gpt-3.5-turbo
+    model: gpt-4o
     default: true
     stream: true
 
@@ -109,15 +111,12 @@ Make outbound calls via Arch
 import openai
 
 # Set the OpenAI API base URL to the Arch gateway endpoint
-openai.api_base = "http://127.0.0.1:12000/"
+openai.api_base = "http://127.0.0.1:51001/v1"
 
 # No need to set openai.api_key since it's configured in Arch's gateway
 
 # Use the OpenAI client as usual
-# we set api_key to '--' becasue openai client would fail to initiate request without it. Just pass any
-# dummy value here since arch gateway will properly pass access key before making outbound call.
 response = openai.Completion.create(
-   api_key="--",
    model="text-davinci-003",
    prompt="What is the capital of France?"
 )
