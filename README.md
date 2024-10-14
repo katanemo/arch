@@ -22,7 +22,7 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 **Jump to our [docs](https://docs.archgw.com)** to learn how you can use Arch to improve the speed, security and personalization of your GenAI apps.
 
 ## Contact
-To get in touch with us, please join our [discord server](https://discord.gg/rbjqVbpa). We will be monitoring that actively and offering support there.
+To get in touch with us, please join our [discord server](https://discord.gg/rSRQ9fv7). We will be monitoring that actively and offering support there.
 
 ## Demos
 * [Function Calling](demos/function_calling/README.md) - Walk through of critical function calling capabilities
