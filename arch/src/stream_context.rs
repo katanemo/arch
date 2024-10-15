@@ -728,7 +728,6 @@ impl StreamContext {
                 None => HashMap::new(), // Return an empty HashMap if v is not an object
             };
 
-            
             let messages = &callout_context.request_body.messages;
             let mut arch_assistant = false;
             let mut user_messages = Vec::new();
@@ -740,8 +739,8 @@ impl StreamContext {
                         arch_assistant = true;
                     }
                 }
-            } 
-            if arch_assistant {      
+            }
+            if arch_assistant {
                 for message in messages.iter() {
                     if let Some(model) = message.model.as_ref() {
                         if !model.starts_with(ARCH_MODEL_PREFIX) {
