@@ -728,9 +728,10 @@ impl StreamContext {
                 None => HashMap::new(), // Return an empty HashMap if v is not an object
             };
 
-            let mut user_messages = Vec::new();
+            
             let messages = &callout_context.request_body.messages;
             let mut arch_assistant = false;
+            let mut user_messages = Vec::new();
 
             if messages.len() >= 2 {
                 let latest_assistant_message = &messages[messages.len() - 2];
@@ -739,11 +740,8 @@ impl StreamContext {
                         arch_assistant = true;
                     }
                 }
-            } else {
-                info!("no assistant message found, probably first interaction");
-            }
-
-            if arch_assistant {
+            } 
+            if arch_assistant {      
                 for message in messages.iter() {
                     if let Some(model) = message.model.as_ref() {
                         if !model.starts_with(ARCH_MODEL_PREFIX) {
