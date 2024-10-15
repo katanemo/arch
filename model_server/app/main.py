@@ -4,7 +4,6 @@ import app.commons.utilities as utils
 import app.commons.globals as glb
 import app.prompt_guard.model_utils as guard_utils
 
-
 from typing import List, Dict
 from pydantic import BaseModel
 from fastapi import FastAPI, Response, HTTPException
@@ -17,8 +16,7 @@ from app.function_calling.model_utils import (
 
 logger = utils.get_model_server_logger()
 
-logger.info(f"Devices Avialble: {glb.DEVICE}")
-
+logger.info(f"Ready to serve traffic. available device: {glb.DEVICE}")
 
 app = FastAPI()
 

@@ -12,3 +12,5 @@ services:
       - ~/archgw_logs:/var/log/
     env_file:
       - stage.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

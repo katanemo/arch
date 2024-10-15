@@ -5,6 +5,23 @@ import select
 import shlex
 import yaml
 import json
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+
+def getLogger(name="cli"):
+    import logging
+
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+    return logger
+
+
+log = getLogger(__name__)
 
 
 def run_docker_compose_ps(compose_file, env):
@@ -15,7 +32,7 @@ def run_docker_compose_ps(compose_file, env):
         path (str): The path where the docker-compose.yml file is located.
     """
     try:
-        # Run `docker-compose ps` to get the health status of each service
+        # Run `docker compose ps` to get the health status of each service
         ps_process = subprocess.Popen(
             [
                 "docker",
@@ -38,7 +55,7 @@ def run_docker_compose_ps(compose_file, env):
 
         # Check if there is any error output
         if error_output:
-            print(
+            log.info(
                 f"Error while checking service status:\n{error_output}",
                 file=os.sys.stderr,
             )
@@ -48,18 +65,18 @@ def run_docker_compose_ps(compose_file, env):
         return services
 
     except subprocess.CalledProcessError as e:
-        print(f"Failed to check service status. Error:\n{e.stderr}")
+        log.info(f"Failed to check service status. Error:\n{e.stderr}")
         return e
 
 
 # Helper method to print service status
 def print_service_status(services):
-    print(f"{'Service Name':<25} {'State':<20} {'Ports'}")
-    print("=" * 72)
+    log.info(f"{'Service Name':<25} {'State':<20} {'Ports'}")
+    log.info("=" * 72)
     for service_name, info in services.items():
         status = info["STATE"]
         ports = info["PORTS"]
-        print(f"{service_name:<25} {status:<20} {ports}")
+        log.info(f"{service_name:<25} {status:<20} {ports}")
 
 
 # check for states based on the states passed in

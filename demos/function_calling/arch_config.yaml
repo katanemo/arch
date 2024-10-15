@@ -16,10 +16,10 @@ overrides:
   prompt_target_intent_matching_threshold: 0.6
 
 llm_providers:
-  - name: gpt-4o
+  - name: gpt
     access_key: OPENAI_API_KEY
     provider: openai
-    model: gpt-4o
+    model: gpt-3.5-turbo
     default: true
 
 system_prompt: |

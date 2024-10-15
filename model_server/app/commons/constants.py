@@ -5,6 +5,7 @@ import app.loader as loader
 from app.function_calling.model_handler import ArchFunctionHandler
 from app.prompt_guard.model_handler import ArchGuardHanlder
 
+logger = utils.get_model_server_logger()
 
 arch_function_hanlder = ArchFunctionHandler()
 arch_function_endpoint = "https://api.fc.archgw.com/v1"
@@ -18,7 +19,6 @@ arch_function_generation_params = {
 }
 
 arch_guard_model_type = {"cpu": "katanemo/Arch-Guard-cpu", "gpu": "katanemo/Arch-Guard"}
-
 
 # Model definition
 embedding_model = loader.get_embedding_model()

@@ -2,13 +2,15 @@
 This demo shows how you can use Arch's core function calling capabilites.
 
 # Starting the demo
-1. Please make sure the [pre-requisites](../../../README.md?tab=readme-ov-file#prerequisites) are installed correctly
+1. Please make sure the [pre-requisites](https://github.com/katanemo/arch/?tab=readme-ov-file#prerequisites) are installed correctly
 2. Start Arch
+
+3.
    ```sh
    sh run_demo.sh
    ```
-3. Navigate to http://localhost:18080/
-4. You can type in queries like "how is the weather?"
+4. Navigate to http://localhost:18080/
+5. You can type in queries like "how is the weather?"
 
 # Observability
 Arch gateway publishes stats endpoint at http://localhost:19901/stats. In this demo we are using prometheus to pull stats from arch and we are using grafana to visalize the stats in dashboard. To see grafana dashboard follow instructions below,
