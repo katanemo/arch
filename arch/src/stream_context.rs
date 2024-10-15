@@ -759,7 +759,7 @@ impl StreamContext {
                 }
             }
             let user_messages_str = user_messages.join(", ");
-            info!("user messages: {}", user_messages_str);
+            debug!("user messages: {}", user_messages_str);
 
             let hallucination_classification_request = HallucinationClassificationRequest {
                 prompt: user_messages_str,
