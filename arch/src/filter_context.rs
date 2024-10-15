@@ -282,7 +282,10 @@ impl RootContext for FilterContext {
         // No StreamContext can be created until the Embedding Store is fully initialized.
         let embedding_store = match self.mode {
             GatewayMode::Llm => None,
-            GatewayMode::Prompt => Some(Rc::clone(self.embeddings_store.as_ref().unwrap())),
+            GatewayMode::Prompt => match self.embeddings_store.as_ref() {
+                None => return None,
+                Some(store) => Some(Rc::clone(store)),
+            },
         };
         Some(Box::new(StreamContext::new(
             context_id,
