@@ -33,7 +33,7 @@ repos:
         language: system
         entry: bash -c "cd model_server && pytest --maxfail=5 --disable-warnings"
         types: [python]
-        
+
 
   - repo: https://github.com/psf/black
     rev: 23.1.0
