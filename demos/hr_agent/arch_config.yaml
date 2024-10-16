@@ -30,7 +30,7 @@ prompt_targets:
         - name: region
           type: str
           required: true
-          description: the geographical region for which you want head count data. 
+          description: the geographical region for which you want headcount data. 
     - name: hr_qa
       endpoint:
         name: app_server

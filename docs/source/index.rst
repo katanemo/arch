@@ -2,7 +2,7 @@ Welcome to Arch!
 ================
 
 .. image:: /_static/img/arch-logo.png
-   :width: 80%
+   :width: 100%
    :align: center
 
 .. raw:: html

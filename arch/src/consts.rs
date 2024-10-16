@@ -1,7 +1,7 @@
 pub const DEFAULT_EMBEDDING_MODEL: &str = "katanemo/bge-large-en-v1.5";
 pub const DEFAULT_INTENT_MODEL: &str = "katanemo/bart-large-mnli";
 pub const DEFAULT_PROMPT_TARGET_THRESHOLD: f64 = 0.8;
-pub const DEFAULT_HALLUCINATED_THRESHOLD: f64 = 0.1;
+pub const DEFAULT_HALLUCINATED_THRESHOLD: f64 = 0.25;
 pub const RATELIMIT_SELECTOR_HEADER_KEY: &str = "x-arch-ratelimit-selector";
 pub const SYSTEM_ROLE: &str = "system";
 pub const USER_ROLE: &str = "user";
@@ -19,3 +19,4 @@ pub const REQUEST_ID_HEADER: &str = "x-request-id";
 pub const ARCH_INTERNAL_CLUSTER_NAME: &str = "arch_internal";
 pub const ARCH_UPSTREAM_HOST_HEADER: &str = "x-arch-upstream";
 pub const ARCH_LLM_UPSTREAM_LISTENER: &str = "arch_llm_listener";
+pub const ARCH_MODEL_PREFIX: &str = "Arch";
