@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 fn wasm_module() -> String {
-    let wasm_file = Path::new("target/wasm32-wasi/release/intelligent_prompt_gateway.wasm");
+    let wasm_file = Path::new("target/wasm32-wasi/release/prompt_gateway.wasm");
     assert!(
         wasm_file.exists(),
         "Run `cargo build --release --target=wasm32-wasi` first"
