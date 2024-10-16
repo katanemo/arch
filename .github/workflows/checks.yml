@@ -22,8 +22,8 @@ jobs:
       - name: Build wasm module for prompt_gateway
         run: cd crates/prompt_gateway && cargo build --release --target=wasm32-wasi
 
-      - name: Run Tests on public_types crate
-        run: cd crates/public_types && cargo test
+      - name: Run Tests on common crate
+        run: cd crates/common && cargo test
 
       - name: Run Tests on prompt_gateway crate
         run: cd crates/prompt_gateway && cargo test
