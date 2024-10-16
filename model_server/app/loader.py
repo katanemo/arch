@@ -7,6 +7,10 @@ from optimum.onnxruntime import (
     ORTModelForSequenceClassification,
 )
 import app.commons.utilities as utils
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from optimum.intel import OVModelForSequenceClassification
+
 
 logger = utils.get_model_server_logger()
 
@@ -64,12 +68,9 @@ def get_prompt_guard(model_name):
     logger.info("Loading Guard Model...")
 
     if glb.DEVICE == "cpu":
-        from optimum.intel import OVModelForSequenceClassification
 
         model_class = OVModelForSequenceClassification
-    elif glb.DEVICE == "gpu":
-        import torch
-        from transformers import AutoModelForSequenceClassification
+    else:
 
         model_class = AutoModelForSequenceClassification
 

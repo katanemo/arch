@@ -11,7 +11,6 @@ class ArchGuardHanlder:
         self.model = model_dict["model"]
         self.tokenizer = model_dict["tokenizer"]
         self.device = model_dict["device"]
-        self.hardware_config = model_dict["hardware_config"]
 
         self.threshold = threshold
 

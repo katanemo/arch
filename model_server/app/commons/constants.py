@@ -28,6 +28,6 @@ arch_guard_model_type = {
 embedding_model = loader.get_embedding_model()
 zero_shot_model = loader.get_zero_shot_model()
 
-prompt_guard_dict = loader.get_prompt_guard(arch_guard_model_type[glb.device])
+prompt_guard_dict = loader.get_prompt_guard(arch_guard_model_type[glb.DEVICE])
 
 arch_guard_handler = ArchGuardHanlder(model_dict=prompt_guard_dict)
