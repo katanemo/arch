@@ -1,16 +1,16 @@
+use common::common_types::open_ai::{ChatCompletionsResponse, Choice, Message, Usage};
+use common::common_types::open_ai::{FunctionCallDetail, ToolCall, ToolType};
+use common::common_types::{HallucinationClassificationResponse, PromptGuardResponse};
+use common::embeddings::{
+    create_embedding_response, embedding, CreateEmbeddingResponse, CreateEmbeddingResponseUsage,
+    Embedding,
+};
+use common::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
 use http::StatusCode;
 use proxy_wasm_test_framework::tester::{self, Tester};
 use proxy_wasm_test_framework::types::{
     Action, BufferType, LogLevel, MapType, MetricType, ReturnType,
 };
-use public_types::common_types::open_ai::{ChatCompletionsResponse, Choice, Message, Usage};
-use public_types::common_types::open_ai::{FunctionCallDetail, ToolCall, ToolType};
-use public_types::common_types::{HallucinationClassificationResponse, PromptGuardResponse};
-use public_types::embeddings::{
-    create_embedding_response, embedding, CreateEmbeddingResponse, CreateEmbeddingResponseUsage,
-    Embedding,
-};
-use public_types::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
 use serde_yaml::Value;
 use serial_test::serial;
 use std::collections::HashMap;

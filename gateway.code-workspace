@@ -5,8 +5,8 @@
 			"path": "."
 		},
     {
-      "name": "public_types",
-      "path": "crates/public_types"
+      "name": "common",
+      "path": "crates/common"
     },
     {
       "name": "prompt_gateway",

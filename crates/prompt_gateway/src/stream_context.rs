@@ -1,25 +1,18 @@
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
-use crate::llm_providers::LlmProviders;
-use crate::ratelimit::Header;
-use crate::{ratelimit, routing, tokenizer};
 use acap::cos;
-use http::StatusCode;
-use log::{debug, info, warn};
-use proxy_wasm::traits::*;
-use proxy_wasm::types::*;
-use public_types::common_types::open_ai::{
+use common::common_types::open_ai::{
     ArchState, ChatCompletionChunkResponse, ChatCompletionTool, ChatCompletionsRequest,
     ChatCompletionsResponse, Choice, FunctionDefinition, FunctionParameter, FunctionParameters,
     Message, ParameterType, StreamOptions, ToolCall, ToolCallState, ToolType,
 };
-use public_types::common_types::{
+use common::common_types::{
     EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
     PromptGuardRequest, PromptGuardResponse, PromptGuardTask, ZeroShotClassificationRequest,
     ZeroShotClassificationResponse,
 };
-use public_types::configuration::{GatewayMode, LlmProvider};
-use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
-use public_types::consts::{
+use common::configuration::{GatewayMode, LlmProvider};
+use common::configuration::{Overrides, PromptGuards, PromptTarget};
+use common::consts::{
     ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME,
     ARCH_LLM_UPSTREAM_LISTENER, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_PROVIDER_HINT_HEADER,
     ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER,
@@ -27,11 +20,18 @@ use public_types::consts::{
     DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
     RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
 };
-use public_types::embeddings::{
+use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use public_types::http::{CallArgs, Client, ClientError};
-use public_types::stats::Gauge;
+use common::http::{CallArgs, Client, ClientError};
+use common::llm_providers::LlmProviders;
+use common::ratelimit::Header;
+use common::stats::Gauge;
+use common::{ratelimit, routing, tokenizer};
+use http::StatusCode;
+use log::{debug, info, warn};
+use proxy_wasm::traits::*;
+use proxy_wasm::types::*;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::cell::RefCell;
@@ -40,7 +40,7 @@ use std::num::NonZero;
 use std::rc::Rc;
 use std::time::Duration;
 
-use public_types::stats::IncrementingMetric;
+use common::stats::IncrementingMetric;
 
 #[derive(Debug, Clone)]
 enum ResponseHandlerType {
@@ -1280,7 +1280,7 @@ impl HttpContext for StreamContext {
         let prompt_guard_jailbreak_task = self
             .prompt_guards
             .input_guards
-            .contains_key(&public_types::configuration::GuardType::Jailbreak);
+            .contains_key(&common::configuration::GuardType::Jailbreak);
 
         self.chat_completions_request = Some(deserialized_body);
 

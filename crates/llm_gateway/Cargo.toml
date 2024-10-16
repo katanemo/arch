@@ -14,10 +14,9 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.34"
 serde_json = "1.0"
 md5 = "0.7.0"
-public_types = { path = "../public_types" }
+common = { path = "../common" }
 http = "1.1.0"
 governor = { version = "0.6.3", default-features = false, features = ["no_std"]}
-tiktoken-rs = "0.5.9"
 acap = "0.3.0"
 rand = "0.8.5"
 thiserror = "1.0.64"

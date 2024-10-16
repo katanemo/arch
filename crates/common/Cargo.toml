@@ -1,5 +1,5 @@
 [package]
-name = "public_types"
+name = "common"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,6 +12,8 @@ governor = { version = "0.6.3", default-features = false, features = ["no_std"]}
 log = "0.4"
 derivative = "2.2.0"
 thiserror = "1.0.64"
+tiktoken-rs = "0.5.9"
+rand = "0.8.5"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

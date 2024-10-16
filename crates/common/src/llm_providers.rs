@@ -1,4 +1,4 @@
-use public_types::configuration::LlmProvider;
+use crate::configuration::LlmProvider;
 use std::collections::HashMap;
 use std::rc::Rc;
 
