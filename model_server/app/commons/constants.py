@@ -18,14 +18,16 @@ arch_function_generation_params = {
     "stop_token_ids": [151645],
 }
 
-arch_guard_model_type = {"cpu": "katanemo/Arch-Guard-cpu", "gpu": "katanemo/Arch-Guard"}
+arch_guard_model_type = {
+    "cpu": "katanemo/Arch-Guard-cpu",
+    "cuda": "katanemo/Arch-Guard",
+    "mps": "katanemo/Arch-Guard",
+}
 
 # Model definition
 embedding_model = loader.get_embedding_model()
 zero_shot_model = loader.get_zero_shot_model()
 
-prompt_guard_dict = loader.get_prompt_guard(
-    arch_guard_model_type[glb.HARDWARE], glb.HARDWARE
-)
+prompt_guard_dict = loader.get_prompt_guard(arch_guard_model_type[glb.DEVICE])
 
 arch_guard_handler = ArchGuardHanlder(model_dict=prompt_guard_dict)
