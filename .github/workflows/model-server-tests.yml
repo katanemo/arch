@@ -26,11 +26,10 @@ jobs:
       # Step 3: Install dependencies (from requirements.txt or Pipfile)
       - name: Install dependencies
         run: |
-          python -m venv venv
-          source venv/bin/activate
           cd model_server
           pip install --upgrade pip
           pip install -r requirements.txt  # Or use pipenv install
+          pip install pytest
 
       # Step 4: Set PYTHONPATH and run tests
       - name: Run model server tests with pytest
