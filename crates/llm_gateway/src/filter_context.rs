@@ -1,11 +1,5 @@
-use crate::consts::{
-    ARCH_INTERNAL_CLUSTER_NAME, ARCH_UPSTREAM_HOST_HEADER, DEFAULT_EMBEDDING_MODEL,
-    MODEL_SERVER_NAME,
-};
-use crate::http::{CallArgs, Client};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit;
-use crate::stats::{Counter, Gauge, IncrementingMetric};
 use crate::stream_context::StreamContext;
 use log::debug;
 use proxy_wasm::traits::*;
@@ -14,9 +8,18 @@ use public_types::common_types::EmbeddingType;
 use public_types::configuration::{
     Configuration, GatewayMode, Overrides, PromptGuards, PromptTarget,
 };
+use public_types::consts::ARCH_INTERNAL_CLUSTER_NAME;
+use public_types::consts::ARCH_UPSTREAM_HOST_HEADER;
+use public_types::consts::DEFAULT_EMBEDDING_MODEL;
+use public_types::consts::MODEL_SERVER_NAME;
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
+use public_types::http::CallArgs;
+use public_types::http::Client;
+use public_types::stats::Counter;
+use public_types::stats::Gauge;
+use public_types::stats::IncrementingMetric;
 use std::cell::RefCell;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;

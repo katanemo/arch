@@ -1,5 +1,5 @@
 [package]
-name = "intelligent-prompt-gateway"
+name = "prompt_gateway"
 version = "0.1.0"
 authors = ["Katanemo Inc <info@katanemo.com>"]
 edition = "2021"

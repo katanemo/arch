@@ -1,16 +1,6 @@
-use crate::consts::{
-    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME,
-    ARCH_LLM_UPSTREAM_LISTENER, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_PROVIDER_HINT_HEADER,
-    ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER,
-    CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
-    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
-};
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
-use crate::http::{CallArgs, Client, ClientError};
 use crate::llm_providers::LlmProviders;
 use crate::ratelimit::Header;
-use crate::stats::IncrementingMetric;
 use crate::{ratelimit, routing, tokenizer};
 use acap::cos;
 use http::StatusCode;
@@ -29,9 +19,19 @@ use public_types::common_types::{
 };
 use public_types::configuration::{GatewayMode, LlmProvider};
 use public_types::configuration::{Overrides, PromptGuards, PromptTarget};
+use public_types::consts::{
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME,
+    ARCH_LLM_UPSTREAM_LISTENER, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_PROVIDER_HINT_HEADER,
+    ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER,
+    CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
+    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
+    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
+};
 use public_types::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
+use public_types::http::{CallArgs, Client, ClientError};
+use public_types::stats::Gauge;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::cell::RefCell;
@@ -39,6 +39,8 @@ use std::collections::HashMap;
 use std::num::NonZero;
 use std::rc::Rc;
 use std::time::Duration;
+
+use public_types::stats::IncrementingMetric;
 
 #[derive(Debug, Clone)]
 enum ResponseHandlerType {
@@ -753,10 +755,8 @@ impl StreamContext {
                         }
                     }
                 }
-            } else {
-                if let Some(user_message) = callout_context.user_message.as_ref() {
-                    user_messages.push(user_message.clone());
-                }
+            } else if let Some(user_message) = callout_context.user_message.as_ref() {
+                user_messages.push(user_message.clone());
             }
             let user_messages_str = user_messages.join(", ");
             debug!("user messages: {}", user_messages_str);
@@ -1570,7 +1570,7 @@ impl Client for StreamContext {
         &self.callouts
     }
 
-    fn active_http_calls(&self) -> &crate::stats::Gauge {
+    fn active_http_calls(&self) -> &Gauge {
         &self.metrics.active_http_calls
     }
 }

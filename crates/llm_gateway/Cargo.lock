@@ -754,29 +754,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "intelligent-prompt-gateway"
-version = "0.1.0"
-dependencies = [
- "acap",
- "derivative",
- "governor",
- "http",
- "log",
- "md5",
- "proxy-wasm",
- "proxy-wasm-test-framework",
- "public_types",
- "rand",
- "serde",
- "serde_json",
- "serde_yaml",
- "serial_test",
- "sha2",
- "thiserror",
- "tiktoken-rs",
-]
-
-[[package]]
 name = "itertools"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -859,6 +836,29 @@ name = "linux-raw-sys"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
+
+[[package]]
+name = "llm_gateway"
+version = "0.1.0"
+dependencies = [
+ "acap",
+ "derivative",
+ "governor",
+ "http",
+ "log",
+ "md5",
+ "proxy-wasm",
+ "proxy-wasm-test-framework",
+ "public_types",
+ "rand",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "serial_test",
+ "sha2",
+ "thiserror",
+ "tiktoken-rs",
+]
 
 [[package]]
 name = "lock_api"
@@ -1098,9 +1098,14 @@ dependencies = [
 name = "public_types"
 version = "0.1.0"
 dependencies = [
+ "derivative",
  "duration-string",
+ "governor",
+ "log",
+ "proxy-wasm",
  "serde",
  "serde_yaml",
+ "thiserror",
 ]
 
 [[package]]
