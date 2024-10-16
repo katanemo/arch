@@ -1,0 +1,39 @@
+name: Run Python Tests
+
+on:
+  push:
+    branches:
+      - main  # Run tests on pushes to the main branch
+  pull_request:
+    branches:
+      - main  # Run tests on pull requests to the main branch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the code from your repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python (specify the version)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"  # Adjust to your Python version
+
+      # Step 3: Install dependencies (from requirements.txt or Pipfile)
+      - name: Install dependencies
+        run: 
+          python -m venv venv
+          source venv/bin/activate
+          cd model_server
+          pip install --upgrade pip
+          pip install -r requirements.txt  # Or use pipenv install
+
+      # Step 4: Set PYTHONPATH and run tests
+      - name: Run tests with pytest
+        run: |
+          export PYTHONPATH=.
+          pytest --maxfail=5 --disable-warnings

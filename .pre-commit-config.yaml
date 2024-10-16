@@ -28,11 +28,6 @@ repos:
         # --lib is to only test the library, since when integration tests are made,
         # they will be in a seperate tests directory
         entry: bash -c "cd crates/llm_gateway && cargo test --lib"
-      - id: python-tests
-        name: Run Python Tests with pytest
-        language: system
-        entry: bash -c "cd model_server && PYTHONPATH=. pytest --maxfail=5 --disable-warnings"
-        types: [python]
 
 
   - repo: https://github.com/psf/black

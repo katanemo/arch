@@ -13,13 +13,5 @@ jobs:
     - uses: actions/setup-python@v3
       with:
           python-version: "3.10"
-    # Step 3: Install dependencies (from requirements.txt or Pipfile)
-    - name: Install dependencies
-      run: |
-        python -m venv venv
-        source venv/bin/activate
-        cd model_server
-        pip install --upgrade pip
-        pip install -r requirements.txt  # Or use pipenv install
     - uses: pre-commit/action@v3.0.1
       
