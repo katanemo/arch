@@ -31,7 +31,7 @@ repos:
       - id: python-tests
         name: Run Python Tests with pytest
         language: system
-        entry: bash -c "python -m venv venv && source venv/bin/activate && cd model_server && pip install -r requirements.txt && PYTHONPATH=. pytest --maxfail=5 --disable-warnings"
+        entry: bash -c "PYTHONPATH=. pytest --maxfail=5 --disable-warnings"
         types: [python]
 
 
