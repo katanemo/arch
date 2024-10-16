@@ -68,10 +68,8 @@ def get_prompt_guard(model_name):
     logger.info("Loading Guard Model...")
 
     if glb.DEVICE == "cpu":
-
         model_class = OVModelForSequenceClassification
     else:
-
         model_class = AutoModelForSequenceClassification
 
     prompt_guard = {
