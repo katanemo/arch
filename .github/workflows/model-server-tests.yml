@@ -1,4 +1,4 @@
-name: Run Python Tests
+name: Run Model Server tests
 
 on:
   push:
@@ -33,7 +33,6 @@ jobs:
           pip install -r requirements.txt  # Or use pipenv install
 
       # Step 4: Set PYTHONPATH and run tests
-      - name: Run tests with pytest
-        run: |
-          export PYTHONPATH=.
-          pytest --maxfail=5 --disable-warnings
+      - name: Run model server tests with pytest
+        run:
+          PYTHONPATH=. pytest --maxfail=5 --disable-warnings
