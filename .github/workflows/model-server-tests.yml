@@ -33,5 +33,6 @@ jobs:
 
       # Step 4: Set PYTHONPATH and run tests
       - name: Run model server tests with pytest
-        run:
+        run: |
+          cd model_server
           PYTHONPATH=. pytest --maxfail=5 --disable-warnings
