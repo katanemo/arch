@@ -25,7 +25,7 @@ jobs:
 
       # Step 3: Install dependencies (from requirements.txt or Pipfile)
       - name: Install dependencies
-        run: 
+        run: |
           python -m venv venv
           source venv/bin/activate
           cd model_server

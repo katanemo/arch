@@ -29,7 +29,6 @@ repos:
         # they will be in a seperate tests directory
         entry: bash -c "cd crates/llm_gateway && cargo test --lib"
 
-
   - repo: https://github.com/psf/black
     rev: 23.1.0
     hooks:
