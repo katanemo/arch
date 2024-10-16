@@ -5,8 +5,16 @@
 			"path": "."
 		},
     {
-      "name": "arch",
-      "path": "arch"
+      "name": "common",
+      "path": "crates/common"
+    },
+    {
+      "name": "prompt_gateway",
+      "path": "crates/prompt_gateway"
+    },
+    {
+      "name": "llm_gateway",
+      "path": "crates/prompt_gateway"
     },
     {
       "name": "arch/tools",
