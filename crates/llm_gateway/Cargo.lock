@@ -218,6 +218,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67ba02a97a2bd10f4b59b25c7973101c79642302776489e030cd13cdab09ed15"
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "derivative",
+ "duration-string",
+ "governor",
+ "log",
+ "proxy-wasm",
+ "rand",
+ "serde",
+ "serde_yaml",
+ "thiserror",
+ "tiktoken-rs",
+]
+
+[[package]]
 name = "cpp_demangle"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -754,29 +770,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "intelligent-prompt-gateway"
-version = "0.1.0"
-dependencies = [
- "acap",
- "derivative",
- "governor",
- "http",
- "log",
- "md5",
- "proxy-wasm",
- "proxy-wasm-test-framework",
- "public_types",
- "rand",
- "serde",
- "serde_json",
- "serde_yaml",
- "serial_test",
- "sha2",
- "thiserror",
- "tiktoken-rs",
-]
-
-[[package]]
 name = "itertools"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -859,6 +852,28 @@ name = "linux-raw-sys"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
+
+[[package]]
+name = "llm_gateway"
+version = "0.1.0"
+dependencies = [
+ "acap",
+ "common",
+ "derivative",
+ "governor",
+ "http",
+ "log",
+ "md5",
+ "proxy-wasm",
+ "proxy-wasm-test-framework",
+ "rand",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "serial_test",
+ "sha2",
+ "thiserror",
+]
 
 [[package]]
 name = "lock_api"
@@ -1095,15 +1110,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "public_types"
-version = "0.1.0"
-dependencies = [
- "duration-string",
- "serde",
- "serde_yaml",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1197,9 +1203,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.10.6"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4219d74c6b67a3654a9fbebc4b419e22126d13d2f3c4a07ee0cb61ff79a79619"
+checksum = "38200e5ee88914975b69f657f0801b6f6dccafd44fd9326302a4aaeecfacb1d8"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1209,9 +1215,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.7"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38caf58cc5ef2fed281f89292ef23f6365465ed9a41b7a7754eb4e26496c92df"
+checksum = "368758f23274712b504848e9d5a6f010445cc8b87a7cdb4d7cbee666c1288da3"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1220,9 +1226,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.8.4"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a66a03ae7c801facd77a29370b4faec201768915ac14a721ba36f20bc9c209b"
+checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "rustc-demangle"

@@ -2,15 +2,8 @@ use filter_context::FilterContext;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
-mod consts;
 mod filter_context;
-mod http;
-mod llm_providers;
-mod ratelimit;
-mod routing;
-mod stats;
 mod stream_context;
-mod tokenizer;
 
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);

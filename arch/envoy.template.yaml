@@ -90,7 +90,7 @@ static_resources:
                             runtime: "envoy.wasm.runtime.v8"
                             code:
                               local:
-                                filename: "/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm"
+                                filename: "/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm"
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -250,7 +250,7 @@ static_resources:
                             runtime: "envoy.wasm.runtime.v8"
                             code:
                               local:
-                                filename: "/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm"
+                                filename: "/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm"
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

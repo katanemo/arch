@@ -1,5 +1,6 @@
 use duration_string::DurationString;
 use serde::{Deserialize, Deserializer, Serialize};
+use std::default;
 use std::fmt::Display;
 use std::{collections::HashMap, time::Duration};
 
@@ -13,18 +14,13 @@ pub struct Tracing {
     pub sampling_rate: Option<f64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub enum GatewayMode {
     #[serde(rename = "llm")]
     Llm,
+    #[default]
     #[serde(rename = "prompt")]
     Prompt,
-}
-
-impl Default for GatewayMode {
-    fn default() -> Self {
-        GatewayMode::Prompt
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -225,9 +221,10 @@ mod test {
 
     #[test]
     fn test_deserialize_configuration() {
-        let ref_config =
-            fs::read_to_string("../docs/source/resources/includes/arch_config_full_reference.yaml")
-                .expect("reference config file not found");
+        let ref_config = fs::read_to_string(
+            "../../docs/source/resources/includes/arch_config_full_reference.yaml",
+        )
+        .expect("reference config file not found");
 
         let config: super::Configuration = serde_yaml::from_str(&ref_config).unwrap();
         assert_eq!(config.version, "v0.1");
@@ -299,10 +296,7 @@ mod test {
         let tracing = config.tracing.as_ref().unwrap();
         assert_eq!(tracing.sampling_rate.unwrap(), 0.1);
 
-        let mode = config
-            .mode
-            .as_ref()
-            .unwrap_or(&super::GatewayMode::Prompt);
+        let mode = config.mode.as_ref().unwrap_or(&super::GatewayMode::Prompt);
         assert_eq!(*mode, super::GatewayMode::Prompt);
     }
 }

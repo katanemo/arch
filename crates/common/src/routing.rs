@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
-use crate::llm_providers::LlmProviders;
+use crate::{configuration, llm_providers::LlmProviders};
+use configuration::LlmProvider;
 use log::debug;
-use public_types::configuration::LlmProvider;
 use rand::{seq::IteratorRandom, thread_rng};
 
 #[derive(Debug)]
