@@ -5,7 +5,13 @@ import app.commons.globals as glb
 from app.loader import get_embedding_model, get_zero_shot_model, get_prompt_guard
 
 # Mock constants
-glb.DEVICE = "cuda"  # Adjust as needed for your test case
+if torch.cuda.is_available():
+    DEVICE = "cuda"
+elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    DEVICE = "mps"
+else:
+    DEVICE = "cpu"
+glb.DEVICE = DEVICE  # Adjust as needed for your test case
 arch_guard_model_type = {
     "cpu": "katanemo/Arch-Guard-cpu",
     "cuda": "katanemo/Arch-Guard",
