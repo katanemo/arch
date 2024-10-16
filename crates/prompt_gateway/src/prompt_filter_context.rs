@@ -1,4 +1,4 @@
-use crate::stream_context::StreamContext;
+use crate::prompt_stream_context::PromptStreamContext;
 use common::common_types::EmbeddingType;
 use common::configuration::{Configuration, GatewayMode, Overrides, PromptGuards, PromptTarget};
 use common::consts::ARCH_INTERNAL_CLUSTER_NAME;
@@ -11,8 +11,6 @@ use common::embeddings::{
 use common::http::CallArgs;
 use common::http::Client;
 use common::llm_providers::LlmProviders;
-use common::ratelimit;
-use common::stats::Counter;
 use common::stats::Gauge;
 use common::stats::IncrementingMetric;
 use log::debug;
@@ -27,14 +25,12 @@ use std::time::Duration;
 #[derive(Copy, Clone, Debug)]
 pub struct WasmMetrics {
     pub active_http_calls: Gauge,
-    pub ratelimited_rq: Counter,
 }
 
 impl WasmMetrics {
     fn new() -> WasmMetrics {
         WasmMetrics {
             active_http_calls: Gauge::new(String::from("active_http_calls")),
-            ratelimited_rq: Counter::new(String::from("ratelimited_rq")),
         }
     }
 }
@@ -49,7 +45,7 @@ pub struct FilterCallContext {
 }
 
 #[derive(Debug)]
-pub struct FilterContext {
+pub struct PromptGatewayFilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, FilterCallContext>>,
@@ -63,9 +59,9 @@ pub struct FilterContext {
     temp_embeddings_store: EmbeddingsStore,
 }
 
-impl FilterContext {
-    pub fn new() -> FilterContext {
-        FilterContext {
+impl PromptGatewayFilterContext {
+    pub fn new() -> PromptGatewayFilterContext {
+        PromptGatewayFilterContext {
             callouts: RefCell::new(HashMap::new()),
             metrics: Rc::new(WasmMetrics::new()),
             system_prompt: Rc::new(None),
@@ -121,7 +117,7 @@ impl FilterContext {
             Duration::from_secs(60),
         );
 
-        let call_context = crate::filter_context::FilterCallContext {
+        let call_context = crate::prompt_filter_context::FilterCallContext {
             prompt_target_name: String::from(prompt_target_name),
             embedding_type,
         };
@@ -198,7 +194,7 @@ impl FilterContext {
     }
 }
 
-impl Client for FilterContext {
+impl Client for PromptGatewayFilterContext {
     type CallContext = FilterCallContext;
 
     fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {
@@ -210,7 +206,7 @@ impl Client for FilterContext {
     }
 }
 
-impl Context for FilterContext {
+impl Context for PromptGatewayFilterContext {
     fn on_http_call_response(
         &mut self,
         token_id: u32,
@@ -239,7 +235,7 @@ impl Context for FilterContext {
 }
 
 // RootContext allows the Rust code to reach into the Envoy Config
-impl RootContext for FilterContext {
+impl RootContext for PromptGatewayFilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         let config_bytes = self
             .get_plugin_configuration()
@@ -259,8 +255,6 @@ impl RootContext for FilterContext {
         self.system_prompt = Rc::new(config.system_prompt);
         self.prompt_targets = Rc::new(prompt_targets);
         self.mode = config.mode.unwrap_or_default();
-
-        ratelimit::ratelimits(Some(config.ratelimits.unwrap_or_default()));
 
         if let Some(prompt_guards) = config.prompt_guards {
             self.prompt_guards = Rc::new(prompt_guards)
@@ -285,20 +279,14 @@ impl RootContext for FilterContext {
             GatewayMode::Llm => None,
             GatewayMode::Prompt => Some(Rc::clone(self.embeddings_store.as_ref().unwrap())),
         };
-        Some(Box::new(StreamContext::new(
+        Some(Box::new(PromptStreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
             Rc::clone(&self.system_prompt),
             Rc::clone(&self.prompt_targets),
             Rc::clone(&self.prompt_guards),
             Rc::clone(&self.overrides),
-            Rc::clone(
-                self.llm_providers
-                    .as_ref()
-                    .expect("LLM Providers must exist when Streams are being created"),
-            ),
             embedding_store,
-            self.mode.clone(),
         )))
     }
 
