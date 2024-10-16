@@ -22,9 +22,11 @@ def get_device():
     available_device = {
         "cpu": True,
         "cuda": torch.cuda.is_available(),
-        "mps": torch.backends.mps.is_available()
-        if hasattr(torch.backends, "mps")
-        else False,
+        "mps": (
+            torch.backends.mps.is_available()
+            if hasattr(torch.backends, "mps")
+            else False
+        ),
     }
 
     if available_device["cuda"]:
@@ -35,24 +37,6 @@ def get_device():
         device = "cpu"
 
     return device
-
-
-def get_serving_mode():
-    mode = os.getenv("MODE", "cloud")
-
-    if mode not in ["cloud", "local-gpu", "local-cpu"]:
-        raise ValueError(f"Invalid serving mode: {mode}")
-
-    return mode
-
-
-def get_hardware(mode):
-    if mode == "local-cpu":
-        hardware = "cpu"
-    else:
-        hardware = "gpu" if torch.cuda.is_available() else "cpu"
-
-    return hardware
 
 
 def get_client(endpoint):

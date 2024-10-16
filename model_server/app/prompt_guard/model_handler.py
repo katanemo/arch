@@ -15,11 +15,11 @@ class ArchGuardHanlder:
 
         self.threshold = threshold
 
-    def guard_predict(self, input_text):
+    def guard_predict(self, input_text, max_length=512):
         start_time = time.perf_counter()
 
         inputs = self.tokenizer(
-            input_text, truncation=True, max_length=512, return_tensors="pt"
+            input_text, truncation=True, max_length=max_length, return_tensors="pt"
         ).to(self.device)
 
         with torch.no_grad():
