@@ -1321,6 +1321,9 @@ impl HttpContext for PromptStreamContext {
                         let metadata = map
                             .entry("metadata")
                             .or_insert(Value::Object(serde_json::Map::new()));
+                        if metadata == &Value::Null {
+                            *metadata = Value::Object(serde_json::Map::new());
+                        }
                         metadata.as_object_mut().unwrap().insert(
                             ARCH_STATE_HEADER.to_string(),
                             serde_json::Value::String(arch_state_str),

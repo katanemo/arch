@@ -635,4 +635,41 @@ fn request_to_llm_gateway() {
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .execute_and_expect(ReturnType::None)
         .unwrap();
+
+    let chat_completion_response = ChatCompletionsResponse {
+        usage: Some(Usage {
+            completion_tokens: 0,
+        }),
+        choices: vec![Choice {
+            finish_reason: "test".to_string(),
+            index: 0,
+            message: Message {
+                role: "assistant".to_string(),
+                content: Some("hello from fake llm gateway".to_string()),
+                model: None,
+                tool_calls: None,
+            },
+        }],
+        model: String::from("test"),
+        metadata: None,
+    };
+
+    let chat_completion_response_str = serde_json::to_string(&chat_completion_response).unwrap();
+    module
+        .call_proxy_on_response_body(
+            http_context,
+            chat_completion_response_str.len() as i32,
+            true,
+        )
+        .expect_get_buffer_bytes(Some(BufferType::HttpResponseBody))
+        .returning(Some(chat_completion_response_str.as_str()))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_set_buffer_bytes(Some(BufferType::HttpResponseBody), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .execute_and_expect(ReturnType::Action(Action::Continue))
+        .unwrap();
 }
