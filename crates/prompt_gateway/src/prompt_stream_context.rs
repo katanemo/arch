@@ -876,7 +876,7 @@ impl PromptStreamContext {
                 return self.send_server_error(ServerError::Serialization(e), None);
             }
         };
-        debug!("arch => openai request body: {}", json_string);
+        debug!("arch => upstream llm request body: {}", json_string);
 
         self.set_http_request_body(0, self.request_body_size, &json_string.into_bytes());
         self.resume_http_request();
@@ -1064,7 +1064,10 @@ impl HttpContext for PromptStreamContext {
 
         self.request_body_size = body_size;
 
-        debug!("on_http_request_body S[{}] body_size={}", self.context_id, body_size);
+        debug!(
+            "on_http_request_body S[{}] body_size={}",
+            self.context_id, body_size
+        );
 
         // Deserialize body into spec.
         // Currently OpenAI API.
