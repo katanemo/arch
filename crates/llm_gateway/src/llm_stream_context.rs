@@ -164,16 +164,12 @@ impl HttpContext for LlmGatewayStreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        debug!("on_http_request_headers 1");
         self.select_llm_provider();
-        debug!("on_http_request_headers 2");
         self.add_http_request_header(ARCH_ROUTING_HEADER, &self.llm_provider().name);
-        debug!("on_http_request_headers 3");
 
         if let Err(error) = self.modify_auth_headers() {
             self.send_server_error(error, Some(StatusCode::BAD_REQUEST));
         }
-        debug!("on_http_request_headers 4");
         self.delete_content_length_header();
         self.save_ratelimit_header();
 
@@ -230,8 +226,6 @@ impl HttpContext for LlmGatewayStreamContext {
                 }
             };
         self.is_chat_completions_request = true;
-
-        debug!("llm gateway mode, skipping over all prompt targets");
 
         // remove metadata from the request body
         deserialized_body.metadata = None;
