@@ -603,6 +603,7 @@ impl PromptStreamContext {
         }
 
         let tool_calls = model_resp.message.tool_calls.as_ref().unwrap();
+        self.tool_calls = Some(tool_calls.clone());
 
         // TODO CO:  pass nli check
         // If hallucination, pass chat template to check parameters
@@ -1210,6 +1211,18 @@ impl HttpContext for PromptStreamContext {
         }
 
         Action::Pause
+    }
+
+    fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
+        debug!(
+            "on_http_response_headers recv [S={}] headers={:?}",
+            self.context_id,
+            self.get_http_response_headers()
+        );
+        // delete content-lenght header let envoy calculate it, because we modify the response body
+        // that would result in a different content-length
+        self.set_http_response_header("content-length", None);
+        Action::Continue
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
