@@ -28,39 +28,11 @@ fn wasm_module() -> String {
 fn request_headers_expectations(module: &mut Tester, http_context: i32) {
     module
         .call_proxy_on_request_headers(http_context, 0, false)
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-arch-llm-provider-hint"),
-        )
-        .returning(Some("default"))
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_add_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-arch-upstream"),
-            Some("arch_llm_listener"),
-        )
-        .expect_add_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-arch-llm-provider"),
-            Some("open-ai-gpt-4"),
-        )
-        .expect_replace_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("Authorization"),
-            Some("Bearer secret_key"),
-        )
         .expect_remove_header_map_value(Some(MapType::HttpRequestHeaders), Some("content-length"))
-        .expect_get_header_map_value(
-            Some(MapType::HttpRequestHeaders),
-            Some("x-arch-ratelimit-selector"),
-        )
-        .returning(Some("selector-key"))
-        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("selector-key"))
-        .returning(Some("selector-value"))
-        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
-        .returning(None)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some(":path"))
         .returning(Some("/v1/chat/completions"))
+        .expect_get_header_map_pairs(Some(MapType::HttpRequestHeaders))
+        .returning(None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("x-request-id"))
         .returning(None)
@@ -102,6 +74,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         // The actual call is not important in this test, we just need to grab the token_id
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(
             Some("arch_internal"),
             Some(vec![
@@ -259,7 +232,6 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
     module
         .call_proxy_on_context_create(filter_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
-        .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -455,6 +427,7 @@ fn successful_request_to_open_ai_chat_completions() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_http_call(Some("arch_internal"), None, None, None, None)
         .returning(Some(4))
         .expect_metric_increment("active_http_calls", 1)
@@ -514,6 +487,7 @@ fn bad_request_to_open_ai_chat_completions() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(incomplete_chat_completions_request_body))
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
             Some(StatusCode::BAD_REQUEST.as_u16().into()),
             None,
@@ -526,146 +500,7 @@ fn bad_request_to_open_ai_chat_completions() {
 
 #[test]
 #[serial]
-fn request_ratelimited() {
-    let args = tester::MockSettings {
-        wasm_path: wasm_module(),
-        quiet: false,
-        allow_unexpected: false,
-    };
-    let mut module = tester::mock(args).unwrap();
-
-    module
-        .call_start()
-        .execute_and_expect(ReturnType::None)
-        .unwrap();
-
-    // Setup Filter
-    let filter_context = setup_filter(&mut module, default_config());
-
-    // Setup HTTP Stream
-    let http_context = 2;
-
-    normal_flow(&mut module, filter_context, http_context);
-
-    let arch_fc_resp = ChatCompletionsResponse {
-        usage: Some(Usage {
-            completion_tokens: 0,
-        }),
-        choices: vec![Choice {
-            finish_reason: "test".to_string(),
-            index: 0,
-            message: Message {
-                role: "system".to_string(),
-                content: None,
-                tool_calls: Some(vec![ToolCall {
-                    id: String::from("test"),
-                    tool_type: ToolType::Function,
-                    function: FunctionCallDetail {
-                        name: String::from("weather_forecast"),
-                        arguments: HashMap::from([(
-                            String::from("city"),
-                            Value::String(String::from("seattle")),
-                        )]),
-                    },
-                }]),
-                model: None,
-            },
-        }],
-        model: String::from("test"),
-        metadata: None,
-    };
-
-    let arch_fc_resp_str = serde_json::to_string(&arch_fc_resp).unwrap();
-    module
-        .call_proxy_on_http_call_response(http_context, 4, 0, arch_fc_resp_str.len() as i32, 0)
-        .expect_metric_increment("active_http_calls", -1)
-        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(&arch_fc_resp_str))
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(
-            Some("arch_internal"),
-            Some(vec![
-                ("x-arch-upstream", "model_server"),
-                (":method", "POST"),
-                (":path", "/hallucination"),
-                (":authority", "model_server"),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-                ("x-envoy-upstream-rq-timeout-ms", "60000"),
-            ]),
-            None,
-            None,
-            None,
-        )
-        .returning(Some(5))
-        .expect_metric_increment("active_http_calls", 1)
-        .execute_and_expect(ReturnType::None)
-        .unwrap();
-
-    let hallucatination_body = HallucinationClassificationResponse {
-        params_scores: HashMap::from([("city".to_string(), 0.99)]),
-        model: "nli-model".to_string(),
-    };
-
-    let body_text = serde_json::to_string(&hallucatination_body).unwrap();
-
-    module
-        .call_proxy_on_http_call_response(http_context, 5, 0, body_text.len() as i32, 0)
-        .expect_metric_increment("active_http_calls", -1)
-        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(&body_text))
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_http_call(
-            Some("arch_internal"),
-            Some(vec![
-                ("x-arch-upstream", "api_server"),
-                (":method", "POST"),
-                (":path", "/weather"),
-                (":authority", "api_server"),
-                ("content-type", "application/json"),
-                ("x-envoy-max-retries", "3"),
-            ]),
-            None,
-            None,
-            None,
-        )
-        .returning(Some(6))
-        .expect_metric_increment("active_http_calls", 1)
-        .execute_and_expect(ReturnType::None)
-        .unwrap();
-
-    let body_text = String::from("test body");
-    module
-        .call_proxy_on_http_call_response(http_context, 6, 0, body_text.len() as i32, 0)
-        .expect_metric_increment("active_http_calls", -1)
-        .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
-        .returning(Some(&body_text))
-        .expect_get_header_map_value(Some(MapType::HttpCallResponseHeaders), Some(":status"))
-        .returning(Some("200"))
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_send_local_response(
-            Some(StatusCode::TOO_MANY_REQUESTS.as_u16().into()),
-            None,
-            None,
-            None,
-        )
-        .expect_metric_increment("ratelimited_rq", 1)
-        .execute_and_expect(ReturnType::None)
-        .unwrap();
-}
-
-#[test]
-#[serial]
-fn request_not_ratelimited() {
+fn request_to_llm_gateway() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -797,9 +632,44 @@ fn request_not_ratelimited() {
         .returning(Some("200"))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .execute_and_expect(ReturnType::None)
+        .unwrap();
+
+    let chat_completion_response = ChatCompletionsResponse {
+        usage: Some(Usage {
+            completion_tokens: 0,
+        }),
+        choices: vec![Choice {
+            finish_reason: "test".to_string(),
+            index: 0,
+            message: Message {
+                role: "assistant".to_string(),
+                content: Some("hello from fake llm gateway".to_string()),
+                model: None,
+                tool_calls: None,
+            },
+        }],
+        model: String::from("test"),
+        metadata: None,
+    };
+
+    let chat_completion_response_str = serde_json::to_string(&chat_completion_response).unwrap();
+    module
+        .call_proxy_on_response_body(
+            http_context,
+            chat_completion_response_str.len() as i32,
+            true,
+        )
+        .expect_get_buffer_bytes(Some(BufferType::HttpResponseBody))
+        .returning(Some(chat_completion_response_str.as_str()))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_set_buffer_bytes(Some(BufferType::HttpResponseBody), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 }

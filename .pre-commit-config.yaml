@@ -13,7 +13,7 @@ repos:
         name: cargo-fmt
         language: system
         types: [file, rust]
-        entry: bash -c "cd crates/llm_gateway && cargo fmt -- --check"
+        entry: bash -c "cd crates/llm_gateway && cargo fmt"
 
       - id: cargo-clippy
         name: cargo-clippy
