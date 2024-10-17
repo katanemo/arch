@@ -1,3 +1,0 @@
-include config/docker-compose.yaml
-include config/arch_config_schema.yaml
-include config/stage.env
