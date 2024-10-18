@@ -47,7 +47,7 @@ def get_version():
         version = importlib.metadata.version("archgw")
         return version
     except importlib.metadata.PackageNotFoundError:
-        return None
+        return "Not Found"
 
 
 @click.group(invoke_without_command=True)
@@ -270,7 +270,7 @@ def generate_prompt_targets(file):
 @click.option(
     "--service",
     default=SERVICE_ALL,
-    help="Service to monitor. By default it will monitor both gateway and model_serve",
+    help="Service to monitor. By default it will monitor both core gateway and model_server logs.",
 )
 @click.option(
     "--debug",

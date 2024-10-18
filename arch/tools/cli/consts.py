@@ -7,3 +7,5 @@ KATANEMO_LOCAL_MODEL_LIST = [
 SERVICE_NAME_ARCHGW = "archgw"
 SERVICE_NAME_MODEL_SERVER = "model_server"
 SERVICE_ALL = "all"
+MODEL_SERVER_LOG_FILE = "~/archgw_logs/modelserver.log"
+ACCESS_LOG_FILES = "~/archgw_logs/access*"
