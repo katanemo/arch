@@ -1,4 +1,4 @@
-use crate::llm_filter_context::WasmMetrics;
+use crate::filter_context::WasmMetrics;
 use common::common_types::open_ai::{
     ArchState, ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse,
     Message, ToolCall, ToolCallState,
@@ -34,7 +34,7 @@ pub enum ServerError {
     BadRequest { why: String },
 }
 
-pub struct LlmGatewayStreamContext {
+pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
     tool_calls: Option<Vec<ToolCall>>,
@@ -52,10 +52,10 @@ pub struct LlmGatewayStreamContext {
     request_id: Option<String>,
 }
 
-impl LlmGatewayStreamContext {
+impl StreamContext {
     #[allow(clippy::too_many_arguments)]
     pub fn new(context_id: u32, metrics: Rc<WasmMetrics>, llm_providers: Rc<LlmProviders>) -> Self {
-        LlmGatewayStreamContext {
+        StreamContext {
             context_id,
             metrics,
             chat_completions_request: None,
@@ -160,7 +160,7 @@ impl LlmGatewayStreamContext {
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
-impl HttpContext for LlmGatewayStreamContext {
+impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
@@ -418,4 +418,4 @@ impl HttpContext for LlmGatewayStreamContext {
     }
 }
 
-impl Context for LlmGatewayStreamContext {}
+impl Context for StreamContext {}

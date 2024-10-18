@@ -1,4 +1,4 @@
-use crate::prompt_filter_context::{EmbeddingsStore, WasmMetrics};
+use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use acap::cos;
 use common::common_types::open_ai::{
     ArchState, ChatCompletionTool, ChatCompletionsRequest, ChatCompletionsResponse, Choice,
@@ -81,7 +81,7 @@ pub enum ServerError {
     NoMessagesFound { why: String },
 }
 
-pub struct PromptStreamContext {
+pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
     system_prompt: Rc<Option<String>>,
@@ -102,7 +102,7 @@ pub struct PromptStreamContext {
     request_id: Option<String>,
 }
 
-impl PromptStreamContext {
+impl StreamContext {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         context_id: u32,
@@ -113,7 +113,7 @@ impl PromptStreamContext {
         overrides: Rc<Option<Overrides>>,
         embeddings_store: Option<Rc<EmbeddingsStore>>,
     ) -> Self {
-        PromptStreamContext {
+        StreamContext {
             context_id,
             metrics,
             system_prompt,
@@ -1031,7 +1031,7 @@ impl PromptStreamContext {
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
-impl HttpContext for PromptStreamContext {
+impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
@@ -1346,7 +1346,7 @@ impl HttpContext for PromptStreamContext {
     }
 }
 
-impl Context for PromptStreamContext {
+impl Context for StreamContext {
     fn on_http_call_response(
         &mut self,
         token_id: u32,
@@ -1392,7 +1392,7 @@ impl Context for PromptStreamContext {
     }
 }
 
-impl Client for PromptStreamContext {
+impl Client for StreamContext {
     type CallContext = StreamCallContext;
 
     fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {
