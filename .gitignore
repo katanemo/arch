@@ -1,6 +1,4 @@
-arch/target
 arch/qdrant_data/
-public_types/target
 /venv/
 __pycache__
 grafana-data
@@ -31,3 +29,5 @@ model_server/build
 model_server/dist
 arch_logs/
 dist/
+crates/*/target/
+crates/target/

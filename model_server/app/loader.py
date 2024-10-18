@@ -7,6 +7,10 @@ from optimum.onnxruntime import (
     ORTModelForSequenceClassification,
 )
 import app.commons.utilities as utils
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from optimum.intel import OVModelForSequenceClassification
+
 
 logger = utils.get_model_server_logger()
 
@@ -60,28 +64,20 @@ def get_zero_shot_model(
     return zero_shot_model
 
 
-def get_prompt_guard(model_name, hardware_config="cpu"):
+def get_prompt_guard(model_name):
     logger.info("Loading Guard Model...")
 
-    if hardware_config == "cpu":
-        from optimum.intel import OVModelForSequenceClassification
-
-        device = "cpu"
+    if glb.DEVICE == "cpu":
         model_class = OVModelForSequenceClassification
-    elif hardware_config == "gpu":
-        import torch
-        from transformers import AutoModelForSequenceClassification
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+    else:
         model_class = AutoModelForSequenceClassification
 
     prompt_guard = {
-        "hardware_config": hardware_config,
-        "device": device,
+        "device": glb.DEVICE,
         "model_name": model_name,
         "tokenizer": AutoTokenizer.from_pretrained(model_name, trust_remote_code=True),
         "model": model_class.from_pretrained(
-            model_name, device_map=device, low_cpu_mem_usage=True
+            model_name, device_map=glb.DEVICE, low_cpu_mem_usage=True
         ),
     }
 

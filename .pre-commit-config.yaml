@@ -8,23 +8,27 @@ repos:
       - id: trailing-whitespace
   - repo: local
     hooks:
+
       - id: cargo-fmt
         name: cargo-fmt
         language: system
         types: [file, rust]
-        entry: bash -c "cd arch && cargo fmt -p intelligent-prompt-gateway -- --check"
+        entry: bash -c "cd crates/llm_gateway && cargo fmt"
+
       - id: cargo-clippy
         name: cargo-clippy
         language: system
         types: [file, rust]
-        entry: bash -c "cd arch && cargo clippy -p intelligent-prompt-gateway --all"
+        entry: bash -c "cd crates/llm_gateway && cargo clippy --all"
+
       - id: cargo-test
         name: cargo-test
         language: system
         types: [file, rust]
         # --lib is to only test the library, since when integration tests are made,
         # they will be in a seperate tests directory
-        entry: bash -c "cd arch && cargo test -p intelligent-prompt-gateway --lib"
+        entry: bash -c "cd crates/llm_gateway && cargo test --lib"
+
   - repo: https://github.com/psf/black
     rev: 23.1.0
     hooks:

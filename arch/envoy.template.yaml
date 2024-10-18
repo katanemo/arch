@@ -45,34 +45,12 @@ static_resources:
                       domains:
                         - "*"
                       routes:
-                      {% for provider in arch_llm_providers %}
                         - match:
                             prefix: "/"
-                            headers:
-                              - name: "x-arch-llm-provider"
-                                string_match:
-                                  exact: {{ provider.name }}
-                          route:
-                            auto_host_rewrite: true
-                            cluster: {{ provider.provider }}
-                            timeout: 60s
-                      {% endfor %}
-                        - match:
-                            prefix: "/"
-                            headers:
-                              - name: "x-arch-upstream"
-                                string_match:
-                                  exact: arch_llm_listener
                           route:
                             auto_host_rewrite: true
                             cluster: arch_llm_listener
                             timeout: 60s
-                        - match:
-                            prefix: "/"
-                          direct_response:
-                            status: 400
-                            body:
-                              inline_string: "x-arch-llm-provider or x-arch-upstream header not set, cannot perform routing\n"
                 http_filters:
                   - name: envoy.filters.http.wasm
                     typed_config:
@@ -90,7 +68,7 @@ static_resources:
                             runtime: "envoy.wasm.runtime.v8"
                             code:
                               local:
-                                filename: "/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm"
+                                filename: "/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm"
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -232,7 +210,7 @@ static_resources:
                           direct_response:
                             status: 400
                             body:
-                              inline_string: "x-arch-llm-provider header not set, cannot perform routing\n"
+                              inline_string: "x-arch-llm-provider header not set, llm gateway cannot perform routing\n"
                 http_filters:
                   - name: envoy.filters.http.wasm
                     typed_config:
@@ -250,7 +228,7 @@ static_resources:
                             runtime: "envoy.wasm.runtime.v8"
                             code:
                               local:
-                                filename: "/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm"
+                                filename: "/etc/envoy/proxy-wasm-plugins/llm_gateway.wasm"
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

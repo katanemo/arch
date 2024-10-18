@@ -1,0 +1,42 @@
+{
+	"folders": [
+		{
+      "name": "root",
+			"path": "."
+		},
+    {
+      "name": "crates",
+      "path": "crates"
+    },
+    {
+      "name": "archgw_cli",
+      "path": "arch/tools"
+    },
+    {
+      "name": "model_server",
+      "path": "model_server"
+    },
+    {
+      "name": "chatbot_ui",
+      "path": "chatbot_ui"
+    },
+    {
+      "name": "demos/function_calling",
+      "path": "./demos/function_calling",
+    },
+    {
+      "name": "demos/insurance_agent",
+      "path": "./demos/insurance_agent",
+    },
+  ],
+  "settings": {
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.debugpy",
+      "rust-lang.rust-analyzer",
+      "humao.rest-client"
+      ]
+  }
+}
