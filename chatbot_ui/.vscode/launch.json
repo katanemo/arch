@@ -5,6 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "python": "${workspaceFolder}/venv/bin/python",
       "name": "chatbot-ui",
       "cwd": "${workspaceFolder}/app",
       "type": "debugpy",

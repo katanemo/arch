@@ -14,9 +14,9 @@ use common::configuration::{Overrides, PromptGuards, PromptTarget};
 use common::consts::{
     ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY,
     ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER,
-    CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
+    ASSISTANT_ROLE, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
     DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
-    REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
+    REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE,
 };
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -24,6 +24,7 @@ use common::embeddings::{
 use common::errors::ClientError;
 use common::http::{CallArgs, Client};
 use common::stats::Gauge;
+use derivative::Derivative;
 use http::StatusCode;
 use log::{debug, info, warn};
 use proxy_wasm::traits::*;
@@ -49,11 +50,13 @@ enum ResponseHandlerType {
     DefaultTarget,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Derivative)]
+#[derivative(Debug)]
 pub struct StreamCallContext {
     response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
     prompt_target_name: Option<String>,
+    #[derivative(Debug = "ignore")]
     request_body: ChatCompletionsRequest,
     tool_calls: Option<Vec<ToolCall>>,
     similarity_scores: Option<Vec<(String, f64)>>,
@@ -309,6 +312,7 @@ impl StreamContext {
                 content: Some(response),
                 model: Some(ARCH_FC_MODEL_NAME.to_string()),
                 tool_calls: None,
+                tool_call_id: None,
             };
 
             let chat_completion_response = ChatCompletionsResponse {
@@ -806,7 +810,7 @@ impl StreamContext {
     fn function_call_response_handler(
         &mut self,
         body: Vec<u8>,
-        mut callout_context: StreamCallContext,
+        callout_context: StreamCallContext,
     ) {
         if let Some(http_status) = self.get_http_call_response_header(":status") {
             if http_status != StatusCode::OK.as_str() {
@@ -850,11 +854,18 @@ impl StreamContext {
                 content: system_prompt,
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             };
             messages.push(system_prompt_message);
         }
 
-        messages.append(callout_context.request_body.messages.as_mut());
+        // don't send tools message and api response to chat gpt
+        for m in callout_context.request_body.messages.iter() {
+            if m.role == TOOL_ROLE || m.content.is_none() {
+                continue;
+            }
+            messages.push(m.clone());
+        }
 
         let user_message = match messages.pop() {
             Some(user_message) => user_message,
@@ -881,6 +892,7 @@ impl StreamContext {
                 content: Some(final_prompt),
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             }
         });
 
@@ -1031,6 +1043,7 @@ impl StreamContext {
                     content: Some(system_prompt.clone()),
                     model: None,
                     tool_calls: None,
+                    tool_call_id: None,
                 };
                 messages.push(system_prompt_message);
             }
@@ -1041,6 +1054,7 @@ impl StreamContext {
             content: Some(api_resp.clone()),
             model: None,
             tool_calls: None,
+            tool_call_id: None,
         });
         let chat_completion_request = ChatCompletionsRequest {
             model: GPT_35_TURBO.to_string(),
@@ -1320,10 +1334,47 @@ impl HttpContext for StreamContext {
                         serde_json::Value::String(arch_state_str),
                     );
 
-                    let data_serialized = serde_json::to_string(&data).unwrap();
-                    debug!("arch => user: {}", data_serialized);
-                    self.set_http_response_body(0, body_size, data_serialized.as_bytes());
-                };
+                    let mut data: Value = serde_json::from_slice(&body).unwrap();
+                    // use serde::Value to manipulate the json object and ensure that we don't lose any data
+                    if let Value::Object(ref mut map) = data {
+                        // serialize arch state and add to metadata
+                        let metadata = map
+                            .entry("metadata")
+                            .or_insert(Value::Object(serde_json::Map::new()));
+                        if metadata == &Value::Null {
+                            *metadata = Value::Object(serde_json::Map::new());
+                        }
+
+                        // since arch gateway generates tool calls (using arch-fc) and calls upstream api to
+                        // get response, we will send these back to developer so they can see the api response
+                        // and tool call arch-fc generated
+                        let mut fc_messages = Vec::new();
+                        fc_messages.push(Message {
+                            role: ASSISTANT_ROLE.to_string(),
+                            content: None,
+                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                            tool_calls: self.tool_calls.clone(),
+                            tool_call_id: None,
+                        });
+                        fc_messages.push(Message {
+                            role: TOOL_ROLE.to_string(),
+                            content: self.tool_call_response.clone(),
+                            model: None,
+                            tool_calls: None,
+                            tool_call_id: Some(self.tool_calls.as_ref().unwrap()[0].id.clone()),
+                        });
+                        let fc_messages_str = serde_json::to_string(&fc_messages).unwrap();
+                        let arch_state = HashMap::from([("messages".to_string(), fc_messages_str)]);
+                        let arch_state_str = serde_json::to_string(&arch_state).unwrap();
+                        metadata.as_object_mut().unwrap().insert(
+                            ARCH_STATE_HEADER.to_string(),
+                            serde_json::Value::String(arch_state_str),
+                        );
+                        let data_serialized = serde_json::to_string(&data).unwrap();
+                        debug!("arch => user: {}", data_serialized);
+                        self.set_http_response_body(0, body_size, data_serialized.as_bytes());
+                    };
+                }
             }
         }
 

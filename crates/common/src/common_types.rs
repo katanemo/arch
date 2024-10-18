@@ -188,6 +188,8 @@ pub mod open_ai {
         pub model: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tool_calls: Option<Vec<ToolCall>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tool_call_id: Option<String>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -381,6 +383,7 @@ mod test {
                 content: Some("What city do you want to know the weather for?".to_string()),
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             }],
             tools: Some(vec![super::open_ai::ChatCompletionTool {
                 tool_type: ToolType::Function,
