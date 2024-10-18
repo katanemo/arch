@@ -2,8 +2,8 @@ use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use acap::cos;
 use common::common_types::open_ai::{
     ArchState, ChatCompletionTool, ChatCompletionsRequest, ChatCompletionsResponse, Choice,
-    FunctionDefinition, FunctionParameter, FunctionParameters, Message, ParameterType,
-    StreamOptions, ToolCall, ToolType,
+    FunctionDefinition, FunctionParameter, FunctionParameters, Message, ParameterType, ToolCall,
+    ToolCallState, ToolType,
 };
 use common::common_types::{
     EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
@@ -20,17 +20,18 @@ use common::embeddings::{
 use common::errors::ClientError;
 use common::http::{CallArgs, Client};
 use common::stats::Gauge;
+use derivative::Derivative;
 use http::StatusCode;
 use log::{debug, info, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::time::Duration;
-use derivative::Derivative;
 
 use common::stats::IncrementingMetric;
 
@@ -234,7 +235,10 @@ impl StreamContext {
         let json_data: String = match serde_json::to_string(&zero_shot_classification_request) {
             Ok(json_data) => json_data,
             Err(error) => {
-                debug!("error serializing zero shot classification request: {}", error);
+                debug!(
+                    "error serializing zero shot classification request: {}",
+                    error
+                );
                 return self.send_server_error(ServerError::Serialization(error), None);
             }
         };
@@ -343,7 +347,10 @@ impl StreamContext {
             match serde_json::from_slice(&body) {
                 Ok(zeroshot_response) => zeroshot_response,
                 Err(e) => {
-                    debug!("error deserializing zero shot classification response: {}", e);
+                    debug!(
+                        "error deserializing zero shot classification response: {}",
+                        e
+                    );
                     return self.send_server_error(ServerError::Deserialization(e), None);
                 }
             };
@@ -703,7 +710,10 @@ impl StreamContext {
                 match serde_json::to_string(&hallucination_classification_request) {
                     Ok(json_data) => json_data,
                     Err(error) => {
-                        debug!("error serializing hallucination classification request: {}", error);
+                        debug!(
+                            "error serializing hallucination classification request: {}",
+                            error
+                        );
                         return self.send_server_error(ServerError::Serialization(error), None);
                     }
                 };
@@ -848,7 +858,7 @@ impl StreamContext {
         // don't send tools message and api response to chat gpt
         for m in callout_context.request_body.messages.iter() {
             if m.role == TOOL_ROLE || m.content.is_none() {
-              continue;
+                continue;
             }
             messages.push(m.clone());
         }
@@ -1098,7 +1108,7 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let mut deserialized_body: ChatCompletionsRequest =
+        let deserialized_body: ChatCompletionsRequest =
             match self.get_http_request_body(0, body_size) {
                 Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
                     Ok(deserialized) => deserialized,
@@ -1134,13 +1144,6 @@ impl HttpContext for StreamContext {
             }
             None => None,
         };
-
-        self.streaming_response = deserialized_body.stream;
-        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
-            deserialized_body.stream_options = Some(StreamOptions {
-                include_usage: true,
-            });
-        }
 
         let last_user_prompt = match deserialized_body
             .messages
@@ -1260,13 +1263,7 @@ impl HttpContext for StreamContext {
             self.context_id, body_size, end_of_stream
         );
 
-        if !self.is_chat_completions_request {
-            if let Some(body_str) = self
-                .get_http_response_body(0, body_size)
-                .and_then(|bytes| String::from_utf8(bytes).ok())
-            {
-                debug!("recv [S={}] body_str={}", self.context_id, body_str);
-            }
+        if !self.is_chat_completions_request || self.streaming_response {
             return Action::Continue;
         }
 
@@ -1278,32 +1275,60 @@ impl HttpContext for StreamContext {
             .get_http_response_body(0, body_size)
             .expect("cant get response body");
 
-        if self.streaming_response {
-            debug!("streaming response");
-        } else {
-            debug!("non streaming response");
-            let chat_completions_response: ChatCompletionsResponse =
-                match serde_json::from_slice(&body) {
-                    Ok(de) => de,
-                    Err(e) => {
-                        debug!("invalid response: {}, {}", String::from_utf8_lossy(&body), e);
-                        return Action::Continue;
-                    }
-                };
+        if let Some(tool_calls) = self.tool_calls.as_ref() {
+            if !tool_calls.is_empty() {
+                if self.arch_state.is_none() {
+                    self.arch_state = Some(Vec::new());
+                }
 
-            if chat_completions_response.usage.is_some() {
-                self.response_tokens += chat_completions_response
-                    .usage
+                // compute sha hash from message history
+                let mut hasher = Sha256::new();
+                let prompts: Vec<String> = self
+                    .chat_completions_request
                     .as_ref()
                     .unwrap()
-                    .completion_tokens;
-            }
+                    .messages
+                    .iter()
+                    .filter(|msg| msg.role == USER_ROLE)
+                    .map(|msg| msg.content.clone().unwrap())
+                    .collect();
+                let prompts_merged = prompts.join("#.#");
+                hasher.update(prompts_merged.clone());
+                let hash_key = hasher.finalize();
+                // conver hash to hex string
+                let hash_key_str = format!("{:x}", hash_key);
+                debug!("hash key: {}, prompts: {}", hash_key_str, prompts_merged);
 
-            if let Some(tool_calls) = self.tool_calls.as_ref() {
-                if !tool_calls.is_empty() {
-                    if self.arch_state.is_none() {
-                        self.arch_state = Some(Vec::new());
+                // create new tool call state
+                let tool_call_state = ToolCallState {
+                    key: hash_key_str,
+                    message: self.user_prompt.clone(),
+                    tool_call: tool_calls[0].function.clone(),
+                    tool_response: self.tool_call_response.clone().unwrap(),
+                };
+
+                // push tool call state to arch state
+                self.arch_state
+                    .as_mut()
+                    .unwrap()
+                    .push(ArchState::ToolCall(vec![tool_call_state]));
+
+                let mut data: Value = serde_json::from_slice(&body).unwrap();
+                // use serde::Value to manipulate the json object and ensure that we don't lose any data
+                if let Value::Object(ref mut map) = data {
+                    // serialize arch state and add to metadata
+                    let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
+                    debug!("arch_state: {}", arch_state_str);
+                    let metadata = map
+                        .entry("metadata")
+                        .or_insert(Value::Object(serde_json::Map::new()));
+                    if metadata == &Value::Null {
+                        *metadata = Value::Object(serde_json::Map::new());
                     }
+                    metadata.as_object_mut().unwrap().insert(
+                        ARCH_STATE_HEADER.to_string(),
+                        serde_json::Value::String(arch_state_str),
+                    );
 
                     let mut data: Value = serde_json::from_slice(&body).unwrap();
                     // use serde::Value to manipulate the json object and ensure that we don't lose any data

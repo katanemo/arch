@@ -1,12 +1,11 @@
 use crate::filter_context::WasmMetrics;
 use common::common_types::open_ai::{
-    ArchState, ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse,
-    Message, ToolCall, ToolCallState,
+    ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse, StreamOptions,
 };
 use common::configuration::LlmProvider;
 use common::consts::{
-    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, CHAT_COMPLETIONS_PATH,
-    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, USER_ROLE,
+    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, CHAT_COMPLETIONS_PATH,
+    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER,
 };
 use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
@@ -16,8 +15,6 @@ use http::StatusCode;
 use log::debug;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::num::NonZero;
 use std::rc::Rc;
 
@@ -26,18 +23,23 @@ use common::stats::IncrementingMetric;
 pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
-    tool_calls: Option<Vec<ToolCall>>,
-    tool_call_response: Option<String>,
-    arch_state: Option<Vec<ArchState>>,
     ratelimit_selector: Option<Header>,
-    streaming_response: bool,
-    user_prompt: Option<Message>,
+    streaming_response: Option<StreamingResponse>,
     response_tokens: usize,
     is_chat_completions_request: bool,
-    chat_completions_request: Option<ChatCompletionsRequest>,
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
+}
+
+struct StreamingResponse {
+    bytes_read: usize,
+}
+
+impl StreamingResponse {
+    fn new() -> Self {
+        StreamingResponse { bytes_read: 0 }
+    }
 }
 
 impl StreamContext {
@@ -45,13 +47,8 @@ impl StreamContext {
         StreamContext {
             context_id,
             metrics,
-            chat_completions_request: None,
-            tool_calls: None,
-            tool_call_response: None,
-            arch_state: None,
             ratelimit_selector: None,
-            streaming_response: false,
-            user_prompt: None,
+            streaming_response: None,
             response_tokens: 0,
             is_chat_completions_request: false,
             llm_providers,
@@ -223,6 +220,15 @@ impl HttpContext for StreamContext {
             .clone_from(&self.llm_provider.as_ref().unwrap().model);
         let chat_completion_request_str = serde_json::to_string(&deserialized_body).unwrap();
 
+        if deserialized_body.stream {
+            self.streaming_response = Some(StreamingResponse::new());
+        }
+        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
+            deserialized_body.stream_options = Some(StreamOptions {
+                include_usage: true,
+            });
+        }
+
         // enforce ratelimits on ingress
         if let Err(e) =
             self.enforce_ratelimits(&deserialized_body.model, &chat_completion_request_str)
@@ -260,15 +266,28 @@ impl HttpContext for StreamContext {
             return Action::Continue;
         }
 
-        if !end_of_stream {
+        if !end_of_stream && self.streaming_response.is_none() {
             return Action::Pause;
         }
 
-        let body = self
-            .get_http_response_body(0, body_size)
-            .expect("cant get response body");
+        let body = match self.streaming_response.take() {
+            Some(mut streaming_response) => {
+                let streaming_chunk = self
+                    .get_http_response_body(streaming_response.bytes_read, body_size)
+                    .expect("cant get response body");
+                streaming_response.bytes_read += body_size;
+                // n.b: this funky take and replace of the streaming_response struct is done to appease the borrow
+                // checker which wouldn't let us take a mut ref of streaming_response, and then a ref for
+                // `get_http_response_body`
+                self.streaming_response = Some(streaming_response);
+                streaming_chunk
+            }
+            None => self
+                .get_http_response_body(0, body_size)
+                .expect("cant get response body"),
+        };
 
-        if self.streaming_response {
+        if self.streaming_response.is_some() {
             let body_str = String::from_utf8(body).expect("body is not utf-8");
             debug!("streaming response");
             let chat_completions_data = match body_str.split_once("data: ") {
@@ -287,6 +306,7 @@ impl HttpContext for StreamContext {
                     Ok(de) => de,
                     Err(_) => {
                         if chat_completions_data != "[NONE]" {
+                            debug!("received incorrect streaming data={chat_completions_data}");
                             self.send_server_error(
                                 ServerError::LogicError(String::from(
                                     "error in streaming response",
@@ -328,65 +348,6 @@ impl HttpContext for StreamContext {
                     .as_ref()
                     .unwrap()
                     .completion_tokens;
-            }
-
-            if let Some(tool_calls) = self.tool_calls.as_ref() {
-                if !tool_calls.is_empty() {
-                    if self.arch_state.is_none() {
-                        self.arch_state = Some(Vec::new());
-                    }
-
-                    // compute sha hash from message history
-                    let mut hasher = Sha256::new();
-                    let prompts: Vec<String> = self
-                        .chat_completions_request
-                        .as_ref()
-                        .unwrap()
-                        .messages
-                        .iter()
-                        .filter(|msg| msg.role == USER_ROLE)
-                        .map(|msg| msg.content.clone().unwrap())
-                        .collect();
-                    let prompts_merged = prompts.join("#.#");
-                    hasher.update(prompts_merged.clone());
-                    let hash_key = hasher.finalize();
-                    // conver hash to hex string
-                    let hash_key_str = format!("{:x}", hash_key);
-                    debug!("hash key: {}, prompts: {}", hash_key_str, prompts_merged);
-
-                    // create new tool call state
-                    let tool_call_state = ToolCallState {
-                        key: hash_key_str,
-                        message: self.user_prompt.clone(),
-                        tool_call: tool_calls[0].function.clone(),
-                        tool_response: self.tool_call_response.clone().unwrap(),
-                    };
-
-                    // push tool call state to arch state
-                    self.arch_state
-                        .as_mut()
-                        .unwrap()
-                        .push(ArchState::ToolCall(vec![tool_call_state]));
-
-                    let mut data: Value = serde_json::from_slice(&body).unwrap();
-                    // use serde::Value to manipulate the json object and ensure that we don't lose any data
-                    if let Value::Object(ref mut map) = data {
-                        // serialize arch state and add to metadata
-                        let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
-                        debug!("arch_state: {}", arch_state_str);
-                        let metadata = map
-                            .entry("metadata")
-                            .or_insert(Value::Object(serde_json::Map::new()));
-                        metadata.as_object_mut().unwrap().insert(
-                            ARCH_STATE_HEADER.to_string(),
-                            serde_json::Value::String(arch_state_str),
-                        );
-
-                        let data_serialized = serde_json::to_string(&data).unwrap();
-                        debug!("arch => user: {}", data_serialized);
-                        self.set_http_response_body(0, body_size, data_serialized.as_bytes());
-                    };
-                }
             }
         }
 

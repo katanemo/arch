@@ -9,7 +9,7 @@ CHAT_COMPLETION_ENDPOINT = os.getenv(
     "CHAT_COMPLETION_ENDPOINT", "https://api.openai.com/v1"
 )
 
-client = OpenAI(api_key=api_key, base_url=CHAT_COMPLETION_ENDPOINT)
+client = OpenAI(api_key="--", base_url=CHAT_COMPLETION_ENDPOINT)
 
 
 def predict(message, history):
@@ -33,4 +33,4 @@ def predict(message, history):
             yield partial_message
 
 
-gr.ChatInterface(predict).launch(server_name="0.0.0.0", server_port=8081)
+gr.ChatInterface(predict).launch(server_name="0.0.0.0", server_port=8080)
