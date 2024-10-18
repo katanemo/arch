@@ -1,7 +1,7 @@
 use crate::llm_filter_context::WasmMetrics;
 use common::common_types::open_ai::{
     ArchState, ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse,
-    Message, ToolCall, ToolCallState,
+    Message, StreamOptions, ToolCall, ToolCallState,
 };
 use common::configuration::LlmProvider;
 use common::consts::{
@@ -42,7 +42,7 @@ pub struct LlmGatewayStreamContext {
     arch_state: Option<Vec<ArchState>>,
     request_body_size: usize,
     ratelimit_selector: Option<Header>,
-    streaming_response: bool,
+    streaming_response: Option<StreamingResponse>,
     user_prompt: Option<Message>,
     response_tokens: usize,
     is_chat_completions_request: bool,
@@ -50,6 +50,16 @@ pub struct LlmGatewayStreamContext {
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
+}
+
+struct StreamingResponse {
+    bytes_read: usize,
+}
+
+impl StreamingResponse {
+    fn new() -> Self {
+        StreamingResponse { bytes_read: 0 }
+    }
 }
 
 impl LlmGatewayStreamContext {
@@ -64,7 +74,7 @@ impl LlmGatewayStreamContext {
             arch_state: None,
             request_body_size: 0,
             ratelimit_selector: None,
-            streaming_response: false,
+            streaming_response: None,
             user_prompt: None,
             response_tokens: 0,
             is_chat_completions_request: false,
@@ -240,6 +250,15 @@ impl HttpContext for LlmGatewayStreamContext {
             .clone_from(&self.llm_provider.as_ref().unwrap().model);
         let chat_completion_request_str = serde_json::to_string(&deserialized_body).unwrap();
 
+        if deserialized_body.stream {
+            self.streaming_response = Some(StreamingResponse::new());
+        }
+        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
+            deserialized_body.stream_options = Some(StreamOptions {
+                include_usage: true,
+            });
+        }
+
         // enforce ratelimits on ingress
         if let Err(e) =
             self.enforce_ratelimits(&deserialized_body.model, &chat_completion_request_str)
@@ -277,15 +296,28 @@ impl HttpContext for LlmGatewayStreamContext {
             return Action::Continue;
         }
 
-        if !end_of_stream {
+        if !end_of_stream && self.streaming_response.is_none() {
             return Action::Pause;
         }
 
-        let body = self
-            .get_http_response_body(0, body_size)
-            .expect("cant get response body");
+        let body = match self.streaming_response.take() {
+            Some(mut streaming_response) => {
+                let streaming_chunk = self
+                    .get_http_response_body(streaming_response.bytes_read, body_size)
+                    .expect("cant get response body");
+                streaming_response.bytes_read += body_size;
+                // n.b: this funky take and replace of the streaming_response struct is done to appease the borrow
+                // checker which wouldn't let us take a mut ref of streaming_response, and then a ref for
+                // `get_http_response_body`
+                self.streaming_response = Some(streaming_response);
+                streaming_chunk
+            }
+            None => self
+                .get_http_response_body(0, body_size)
+                .expect("cant get response body"),
+        };
 
-        if self.streaming_response {
+        if self.streaming_response.is_some() {
             let body_str = String::from_utf8(body).expect("body is not utf-8");
             debug!("streaming response");
             let chat_completions_data = match body_str.split_once("data: ") {
@@ -304,6 +336,7 @@ impl HttpContext for LlmGatewayStreamContext {
                     Ok(de) => de,
                     Err(_) => {
                         if chat_completions_data != "[NONE]" {
+                            debug!("received incorrect streaming data={chat_completions_data}");
                             self.send_server_error(
                                 ServerError::LogicError(String::from(
                                     "error in streaming response",
@@ -346,65 +379,6 @@ impl HttpContext for LlmGatewayStreamContext {
                     .as_ref()
                     .unwrap()
                     .completion_tokens;
-            }
-
-            if let Some(tool_calls) = self.tool_calls.as_ref() {
-                if !tool_calls.is_empty() {
-                    if self.arch_state.is_none() {
-                        self.arch_state = Some(Vec::new());
-                    }
-
-                    // compute sha hash from message history
-                    let mut hasher = Sha256::new();
-                    let prompts: Vec<String> = self
-                        .chat_completions_request
-                        .as_ref()
-                        .unwrap()
-                        .messages
-                        .iter()
-                        .filter(|msg| msg.role == USER_ROLE)
-                        .map(|msg| msg.content.clone().unwrap())
-                        .collect();
-                    let prompts_merged = prompts.join("#.#");
-                    hasher.update(prompts_merged.clone());
-                    let hash_key = hasher.finalize();
-                    // conver hash to hex string
-                    let hash_key_str = format!("{:x}", hash_key);
-                    debug!("hash key: {}, prompts: {}", hash_key_str, prompts_merged);
-
-                    // create new tool call state
-                    let tool_call_state = ToolCallState {
-                        key: hash_key_str,
-                        message: self.user_prompt.clone(),
-                        tool_call: tool_calls[0].function.clone(),
-                        tool_response: self.tool_call_response.clone().unwrap(),
-                    };
-
-                    // push tool call state to arch state
-                    self.arch_state
-                        .as_mut()
-                        .unwrap()
-                        .push(ArchState::ToolCall(vec![tool_call_state]));
-
-                    let mut data: Value = serde_json::from_slice(&body).unwrap();
-                    // use serde::Value to manipulate the json object and ensure that we don't lose any data
-                    if let Value::Object(ref mut map) = data {
-                        // serialize arch state and add to metadata
-                        let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
-                        debug!("arch_state: {}", arch_state_str);
-                        let metadata = map
-                            .entry("metadata")
-                            .or_insert(Value::Object(serde_json::Map::new()));
-                        metadata.as_object_mut().unwrap().insert(
-                            ARCH_STATE_HEADER.to_string(),
-                            serde_json::Value::String(arch_state_str),
-                        );
-
-                        let data_serialized = serde_json::to_string(&data).unwrap();
-                        debug!("arch => user: {}", data_serialized);
-                        self.set_http_response_body(0, body_size, data_serialized.as_bytes());
-                    };
-                }
             }
         }
 

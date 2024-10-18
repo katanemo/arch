@@ -12,7 +12,7 @@ services:
       - ./envoy.template.yaml:/config/envoy.template.yaml
       - ./target/wasm32-wasi/release/intelligent_prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm
       - ./arch_config_schema.yaml:/config/arch_config_schema.yaml
-      - ./tools/config_generator.py:/config/config_generator.py
+      - ./tools/cli/config_generator.py:/config/config_generator.py
       - ./arch_logs:/var/log/
     env_file:
       - stage.env

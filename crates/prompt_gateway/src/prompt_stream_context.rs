@@ -1109,13 +1109,6 @@ impl HttpContext for PromptStreamContext {
             None => None,
         };
 
-        self.streaming_response = deserialized_body.stream;
-        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
-            deserialized_body.stream_options = Some(StreamOptions {
-                include_usage: true,
-            });
-        }
-
         let last_user_prompt = match deserialized_body
             .messages
             .iter()
@@ -1234,13 +1227,7 @@ impl HttpContext for PromptStreamContext {
             self.context_id, body_size, end_of_stream
         );
 
-        if !self.is_chat_completions_request {
-            if let Some(body_str) = self
-                .get_http_response_body(0, body_size)
-                .and_then(|bytes| String::from_utf8(bytes).ok())
-            {
-                debug!("recv [S={}] body_str={}", self.context_id, body_str);
-            }
+        if !self.is_chat_completions_request || self.streaming_response {
             return Action::Continue;
         }
 
@@ -1252,88 +1239,65 @@ impl HttpContext for PromptStreamContext {
             .get_http_response_body(0, body_size)
             .expect("cant get response body");
 
-        if self.streaming_response {
-            debug!("streaming response");
-        } else {
-            debug!("non streaming response");
-            let chat_completions_response: ChatCompletionsResponse =
-                match serde_json::from_slice(&body) {
-                    Ok(de) => de,
-                    Err(e) => {
-                        debug!("invalid response: {}", String::from_utf8_lossy(&body));
-                        self.send_server_error(ServerError::Deserialization(e), None);
-                        return Action::Pause;
-                    }
-                };
+        if let Some(tool_calls) = self.tool_calls.as_ref() {
+            if !tool_calls.is_empty() {
+                if self.arch_state.is_none() {
+                    self.arch_state = Some(Vec::new());
+                }
 
-            if chat_completions_response.usage.is_some() {
-                self.response_tokens += chat_completions_response
-                    .usage
+                // compute sha hash from message history
+                let mut hasher = Sha256::new();
+                let prompts: Vec<String> = self
+                    .chat_completions_request
                     .as_ref()
                     .unwrap()
-                    .completion_tokens;
-            }
+                    .messages
+                    .iter()
+                    .filter(|msg| msg.role == USER_ROLE)
+                    .map(|msg| msg.content.clone().unwrap())
+                    .collect();
+                let prompts_merged = prompts.join("#.#");
+                hasher.update(prompts_merged.clone());
+                let hash_key = hasher.finalize();
+                // conver hash to hex string
+                let hash_key_str = format!("{:x}", hash_key);
+                debug!("hash key: {}, prompts: {}", hash_key_str, prompts_merged);
 
-            if let Some(tool_calls) = self.tool_calls.as_ref() {
-                if !tool_calls.is_empty() {
-                    if self.arch_state.is_none() {
-                        self.arch_state = Some(Vec::new());
+                // create new tool call state
+                let tool_call_state = ToolCallState {
+                    key: hash_key_str,
+                    message: self.user_prompt.clone(),
+                    tool_call: tool_calls[0].function.clone(),
+                    tool_response: self.tool_call_response.clone().unwrap(),
+                };
+
+                // push tool call state to arch state
+                self.arch_state
+                    .as_mut()
+                    .unwrap()
+                    .push(ArchState::ToolCall(vec![tool_call_state]));
+
+                let mut data: Value = serde_json::from_slice(&body).unwrap();
+                // use serde::Value to manipulate the json object and ensure that we don't lose any data
+                if let Value::Object(ref mut map) = data {
+                    // serialize arch state and add to metadata
+                    let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
+                    debug!("arch_state: {}", arch_state_str);
+                    let metadata = map
+                        .entry("metadata")
+                        .or_insert(Value::Object(serde_json::Map::new()));
+                    if metadata == &Value::Null {
+                        *metadata = Value::Object(serde_json::Map::new());
                     }
+                    metadata.as_object_mut().unwrap().insert(
+                        ARCH_STATE_HEADER.to_string(),
+                        serde_json::Value::String(arch_state_str),
+                    );
 
-                    // compute sha hash from message history
-                    let mut hasher = Sha256::new();
-                    let prompts: Vec<String> = self
-                        .chat_completions_request
-                        .as_ref()
-                        .unwrap()
-                        .messages
-                        .iter()
-                        .filter(|msg| msg.role == USER_ROLE)
-                        .map(|msg| msg.content.clone().unwrap())
-                        .collect();
-                    let prompts_merged = prompts.join("#.#");
-                    hasher.update(prompts_merged.clone());
-                    let hash_key = hasher.finalize();
-                    // conver hash to hex string
-                    let hash_key_str = format!("{:x}", hash_key);
-                    debug!("hash key: {}, prompts: {}", hash_key_str, prompts_merged);
-
-                    // create new tool call state
-                    let tool_call_state = ToolCallState {
-                        key: hash_key_str,
-                        message: self.user_prompt.clone(),
-                        tool_call: tool_calls[0].function.clone(),
-                        tool_response: self.tool_call_response.clone().unwrap(),
-                    };
-
-                    // push tool call state to arch state
-                    self.arch_state
-                        .as_mut()
-                        .unwrap()
-                        .push(ArchState::ToolCall(vec![tool_call_state]));
-
-                    let mut data: Value = serde_json::from_slice(&body).unwrap();
-                    // use serde::Value to manipulate the json object and ensure that we don't lose any data
-                    if let Value::Object(ref mut map) = data {
-                        // serialize arch state and add to metadata
-                        let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
-                        debug!("arch_state: {}", arch_state_str);
-                        let metadata = map
-                            .entry("metadata")
-                            .or_insert(Value::Object(serde_json::Map::new()));
-                        if metadata == &Value::Null {
-                            *metadata = Value::Object(serde_json::Map::new());
-                        }
-                        metadata.as_object_mut().unwrap().insert(
-                            ARCH_STATE_HEADER.to_string(),
-                            serde_json::Value::String(arch_state_str),
-                        );
-
-                        let data_serialized = serde_json::to_string(&data).unwrap();
-                        debug!("arch => user: {}", data_serialized);
-                        self.set_http_response_body(0, body_size, data_serialized.as_bytes());
-                    };
-                }
+                    let data_serialized = serde_json::to_string(&data).unwrap();
+                    debug!("arch => user: {}", data_serialized);
+                    self.set_http_response_body(0, body_size, data_serialized.as_bytes());
+                };
             }
         }
 

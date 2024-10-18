@@ -1,4 +1,4 @@
-gradio==4.43.0
+gradio==4.44.1
 async_timeout==4.0.3
 loguru==0.7.2
 asyncio==3.4.3
