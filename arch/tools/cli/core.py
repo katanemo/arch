@@ -7,7 +7,11 @@ import sys
 import glob
 from cli.utils import run_docker_compose_ps, print_service_status, check_services_state
 from cli.utils import getLogger
-from cli.consts import KATANEMO_LOCAL_MODEL_LIST, MODEL_SERVER_LOG_FILE, ACCESS_LOG_FILES
+from cli.consts import (
+    KATANEMO_LOCAL_MODEL_LIST,
+    MODEL_SERVER_LOG_FILE,
+    ACCESS_LOG_FILES,
+)
 from huggingface_hub import snapshot_download
 
 log = getLogger(__name__)
