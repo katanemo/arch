@@ -39,8 +39,8 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 54,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -58,7 +58,7 @@
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -79,32 +79,7 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "api_server"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -112,7 +87,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 3,
+      "id": 1,
       "options": {
         "legend": {
           "calcs": [],
@@ -133,34 +108,18 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "avg(rate(envoy_cluster_internal_upstream_rq_completed{envoy_cluster_name=~\"api_server|openai\"}[1m])) by (envoy_cluster_name)",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "disableTextWrap": false,
-          "editorMode": "code",
-          "expr": "avg(rate(envoy_cluster_external_upstream_rq_completed{envoy_cluster_name=~\"api_server|openai\"}[1m])) by (envoy_cluster_name)",
+          "expr": "avg(rate(envoy_cluster_external_upstream_rq_time_sum{envoy_cluster_name!=\"openai\",envoy_cluster_name!=\"arch_llm_listener\"}[1m]) / rate(envoy_cluster_external_upstream_rq_time_count[1m])) by (envoy_cluster_name)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "B",
+          "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Upstream request rate",
+      "title": "request latency - internal (ms)",
       "type": "timeseries"
     },
     {
@@ -230,7 +189,7 @@
         "x": 12,
         "y": 0
       },
-      "id": 1,
+      "id": 4,
       "options": {
         "legend": {
           "calcs": [],
@@ -251,7 +210,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "avg(rate (envoy_cluster_external_upstream_rq_time_sum{envoy_cluster_name=~\"api_server|openai\"}[1m])/ rate(envoy_cluster_external_upstream_rq_time_count{envoy_cluster_name=~\"api_server|openai\"}[1m])) by (envoy_cluster_name)",
+          "expr": "avg(rate(envoy_cluster_external_upstream_rq_time_sum{envoy_cluster_name!=\"hallucination\", envoy_cluster_name!=\"zeroshot\", envoy_cluster_name!=\"embeddings\", envoy_cluster_name!=\"arch_fc\", envoy_cluster_name!=\"api_server\"}[1m]) / rate(envoy_cluster_external_upstream_rq_time_count[1m])) by (envoy_cluster_name)",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
@@ -274,7 +233,40 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -299,25 +291,19 @@
         "x": 0,
         "y": 8
       },
-      "id": 4,
+      "id": 3,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
       },
-      "pluginVersion": "11.2.0",
       "targets": [
         {
           "datasource": {
@@ -325,98 +311,38 @@
             "uid": "PBFA97CFB590B2093"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "envoy_cluster_upstream_rq_completed{envoy_cluster_name=~\"openai|api_server\"}",
+          "editorMode": "code",
+          "expr": "avg(rate(envoy_cluster_internal_upstream_rq_completed{envoy_cluster_name !=\"opentelemetry_collector\"}[1m])) by (envoy_cluster_name)",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": true,
-          "legendFormat": "{{envoy_cluster_name}}",
-          "range": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
           "refId": "A",
           "useBackend": false
-        }
-      ],
-      "title": "# of Completd Requests",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "default": true,
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
-      },
-      "id": 5,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.2.0",
-      "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "exemplar": false,
-          "expr": "envoy_cluster_upstream_rq_cancelled{envoy_cluster_name=~\"api_server|openai\"} + envoy_cluster_upstream_rq_pending_failure_eject{envoy_cluster_name=~\"api_server|openai\"} + envoy_cluster_upstream_rq_pending_overflow{envoy_cluster_name=~\"api_server|openai\"}",
+          "editorMode": "code",
+          "expr": "avg(rate(envoy_cluster_external_upstream_rq_completed{envoy_cluster_name !=\"opentelemetry_collector\"}[1m])) by (envoy_cluster_name)",
           "fullMetaSearch": false,
+          "hide": false,
           "includeNullMetadata": true,
-          "instant": true,
-          "legendFormat": "{{envoy_cluster_name}}",
-          "range": false,
-          "refId": "A",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B",
           "useBackend": false
         }
       ],
-      "title": "# of Failed or Cancelled Requests",
-      "type": "stat"
+      "title": "Upstream request count",
+      "type": "timeseries"
     }
   ],
-  "refresh": "",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
@@ -428,8 +354,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Arch Gateway Dashboard",
+  "title": "Intelligent Gateway Overview",
   "uid": "adt6uhx5lk8aob",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

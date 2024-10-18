@@ -12,11 +12,7 @@ use common::common_types::{
 };
 use common::configuration::{Overrides, PromptGuards, PromptTarget};
 use common::consts::{
-    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY,
-    ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER,
-    CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, GPT_35_TURBO, MODEL_SERVER_NAME,
-    REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE,
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARCH_FC_INTERNAL_HOST, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, GPT_35_TURBO, GUARD_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE, ZEROSHOT_INTERNAL_HOST
 };
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -239,10 +235,10 @@ impl PromptStreamContext {
         };
 
         let mut headers = vec![
-            (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+            (ARCH_UPSTREAM_HOST_HEADER, ZEROSHOT_INTERNAL_HOST),
             (":method", "POST"),
             (":path", "/zeroshot"),
-            (":authority", MODEL_SERVER_NAME),
+            (":authority", ZEROSHOT_INTERNAL_HOST),
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -545,9 +541,9 @@ impl PromptStreamContext {
 
         let mut headers = vec![
             (":method", "POST"),
-            (ARCH_UPSTREAM_HOST_HEADER, ARC_FC_CLUSTER),
+            (ARCH_UPSTREAM_HOST_HEADER, ARCH_FC_INTERNAL_HOST),
             (":path", "/v1/chat/completions"),
-            (":authority", ARC_FC_CLUSTER),
+            (":authority", ARCH_FC_INTERNAL_HOST),
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
@@ -698,10 +694,10 @@ impl PromptStreamContext {
                 };
 
             let mut headers = vec![
-                (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+                (ARCH_UPSTREAM_HOST_HEADER, HALLUCINATION_INTERNAL_HOST),
                 (":method", "POST"),
                 (":path", "/hallucination"),
-                (":authority", MODEL_SERVER_NAME),
+                (":authority", HALLUCINATION_INTERNAL_HOST),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -921,10 +917,10 @@ impl PromptStreamContext {
         };
 
         let mut headers = vec![
-            (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+            (ARCH_UPSTREAM_HOST_HEADER, EMBEDDINGS_INTERNAL_HOST),
             (":method", "POST"),
             (":path", "/embeddings"),
-            (":authority", MODEL_SERVER_NAME),
+            (":authority", EMBEDDINGS_INTERNAL_HOST),
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -1177,10 +1173,10 @@ impl HttpContext for PromptStreamContext {
         };
 
         let mut headers = vec![
-            (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+            (ARCH_UPSTREAM_HOST_HEADER, GUARD_INTERNAL_HOST),
             (":method", "POST"),
             (":path", "/guard"),
-            (":authority", MODEL_SERVER_NAME),
+            (":authority", GUARD_INTERNAL_HOST),
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", "60000"),
