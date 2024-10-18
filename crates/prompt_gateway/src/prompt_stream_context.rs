@@ -1304,6 +1304,9 @@ impl HttpContext for PromptStreamContext {
                             *metadata = Value::Object(serde_json::Map::new());
                         }
 
+                        // since arch gateway generates tool calls (using arch-fc) and calls upstream api to
+                        // get response, we will send these back to developer so they can see the api response
+                        // and tool call arch-fc generated
                         let mut fc_messages = Vec::new();
                         fc_messages.push(Message {
                             role: ASSISTANT_ROLE.to_string(),
