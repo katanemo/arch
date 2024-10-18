@@ -25,7 +25,7 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 To get in touch with us, please join our [discord server](https://discord.gg/rSRQ9fv7). We will be monitoring that actively and offering support there.
 
 ## Demos
-* [Function Calling](demos/function_calling/README.md) - Walk through of the critical function calling capabilities Arch offers
+* [Function Calling](demos/function_calling/README.md) - Walk through of the core function calling capabilities Arch offers
 * [Insurance Agent](demos/insurance_agent/README.md) - Build a full insurance agent with Arch
 * [Network Agent](demos/network_agent/README.md) - Build a networking co-pilot/agent agent with Arch
 
@@ -112,7 +112,8 @@ import openai
 
 # Set the OpenAI API base URL to the Arch gateway endpoint
 openai.api_base = "http://127.0.0.1:12000/v1"
-openai.api_key = "null" # No need to set a specific openai.api_key since it's configured in Arch's gateway
+# No need to set a specific openai.api_key since it's configured in Arch's gateway
+openai.api_key = "null"
 
 # Use the OpenAI client as usual
 response = openai.Completion.create(

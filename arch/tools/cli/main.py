@@ -216,7 +216,8 @@ def up(file, path, service):
     if service == SERVICE_NAME_ARCHGW:
         start_arch(arch_config_file, env)
     else:
-        download_models_from_hf()  # this will used the cached versions of the models, so its safe to use everytime.
+        # this will used the cached versions of the models, so its safe to use everytime.
+        download_models_from_hf()
         start_arch_modelserver()
         start_arch(arch_config_file, env)
 
