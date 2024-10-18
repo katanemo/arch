@@ -1,7 +1,7 @@
-use crate::prompt_stream_context::PromptStreamContext;
+use crate::stream_context::StreamContext;
 use common::common_types::EmbeddingType;
-use common::configuration::{Configuration, GatewayMode, Overrides, PromptGuards, PromptTarget};
 use common::consts::{ARCH_INTERNAL_CLUSTER_NAME, EMBEDDINGS_INTERNAL_HOST};
+use common::configuration::{Configuration, Overrides, PromptGuards, PromptTarget};
 use common::consts::ARCH_UPSTREAM_HOST_HEADER;
 use common::consts::DEFAULT_EMBEDDING_MODEL;
 use common::embeddings::{
@@ -9,7 +9,6 @@ use common::embeddings::{
 };
 use common::http::CallArgs;
 use common::http::Client;
-use common::llm_providers::LlmProviders;
 use common::stats::Gauge;
 use common::stats::IncrementingMetric;
 use log::debug;
@@ -44,31 +43,27 @@ pub struct FilterCallContext {
 }
 
 #[derive(Debug)]
-pub struct PromptGatewayFilterContext {
+pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, FilterCallContext>>,
     overrides: Rc<Option<Overrides>>,
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
-    mode: GatewayMode,
     prompt_guards: Rc<PromptGuards>,
-    llm_providers: Option<Rc<LlmProviders>>,
     embeddings_store: Option<Rc<EmbeddingsStore>>,
     temp_embeddings_store: EmbeddingsStore,
 }
 
-impl PromptGatewayFilterContext {
-    pub fn new() -> PromptGatewayFilterContext {
-        PromptGatewayFilterContext {
+impl FilterContext {
+    pub fn new() -> FilterContext {
+        FilterContext {
             callouts: RefCell::new(HashMap::new()),
             metrics: Rc::new(WasmMetrics::new()),
             system_prompt: Rc::new(None),
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
-            mode: GatewayMode::Prompt,
-            llm_providers: None,
             embeddings_store: Some(Rc::new(HashMap::new())),
             temp_embeddings_store: HashMap::new(),
         }
@@ -116,7 +111,7 @@ impl PromptGatewayFilterContext {
             Duration::from_secs(60),
         );
 
-        let call_context = crate::prompt_filter_context::FilterCallContext {
+        let call_context = crate::filter_context::FilterCallContext {
             prompt_target_name: String::from(prompt_target_name),
             embedding_type,
         };
@@ -193,7 +188,7 @@ impl PromptGatewayFilterContext {
     }
 }
 
-impl Client for PromptGatewayFilterContext {
+impl Client for FilterContext {
     type CallContext = FilterCallContext;
 
     fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {
@@ -205,7 +200,7 @@ impl Client for PromptGatewayFilterContext {
     }
 }
 
-impl Context for PromptGatewayFilterContext {
+impl Context for FilterContext {
     fn on_http_call_response(
         &mut self,
         token_id: u32,
@@ -234,7 +229,7 @@ impl Context for PromptGatewayFilterContext {
 }
 
 // RootContext allows the Rust code to reach into the Envoy Config
-impl RootContext for PromptGatewayFilterContext {
+impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         let config_bytes = self
             .get_plugin_configuration()
@@ -253,15 +248,9 @@ impl RootContext for PromptGatewayFilterContext {
         }
         self.system_prompt = Rc::new(config.system_prompt);
         self.prompt_targets = Rc::new(prompt_targets);
-        self.mode = config.mode.unwrap_or_default();
 
         if let Some(prompt_guards) = config.prompt_guards {
             self.prompt_guards = Rc::new(prompt_guards)
-        }
-
-        match config.llm_providers.try_into() {
-            Ok(llm_providers) => self.llm_providers = Some(Rc::new(llm_providers)),
-            Err(err) => panic!("{err}"),
         }
 
         true
@@ -273,12 +262,11 @@ impl RootContext for PromptGatewayFilterContext {
             context_id
         );
 
-        // No StreamContext can be created until the Embedding Store is fully initialized.
-        let embedding_store = match self.mode {
-            GatewayMode::Llm => None,
-            GatewayMode::Prompt => Some(Rc::clone(self.embeddings_store.as_ref().unwrap())),
+        let embedding_store = match self.embeddings_store.as_ref() {
+            None => return None,
+            Some(store) => Some(Rc::clone(store)),
         };
-        Some(Box::new(PromptStreamContext::new(
+        Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
             Rc::clone(&self.system_prompt),
@@ -299,11 +287,8 @@ impl RootContext for PromptGatewayFilterContext {
     }
 
     fn on_tick(&mut self) {
-        debug!("starting up arch filter in mode: {:?}", self.mode);
-        if self.mode == GatewayMode::Prompt {
-            self.process_prompt_targets();
-        }
-
+        debug!("starting up arch filter in mode: prompt gateway mode");
+        self.process_prompt_targets();
         self.set_tick_period(Duration::from_secs(0));
     }
 }

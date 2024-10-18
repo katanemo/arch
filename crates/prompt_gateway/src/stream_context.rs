@@ -1,9 +1,9 @@
-use crate::prompt_filter_context::{EmbeddingsStore, WasmMetrics};
+use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use acap::cos;
 use common::common_types::open_ai::{
     ArchState, ChatCompletionTool, ChatCompletionsRequest, ChatCompletionsResponse, Choice,
     FunctionDefinition, FunctionParameter, FunctionParameters, Message, ParameterType,
-    StreamOptions, ToolCall, ToolCallState, ToolType,
+    StreamOptions, ToolCall, ToolType,
 };
 use common::common_types::{
     EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
@@ -12,23 +12,25 @@ use common::common_types::{
 };
 use common::configuration::{Overrides, PromptGuards, PromptTarget};
 use common::consts::{
-    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ARCH_FC_INTERNAL_HOST, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, GPT_35_TURBO, GUARD_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, USER_ROLE, ZEROSHOT_INTERNAL_HOST
+    ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, CHAT_COMPLETIONS_PATH, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, GPT_35_TURBO, GUARD_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE, ZEROSHOT_INTERNAL_HOST
 };
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use common::http::{CallArgs, Client, ClientError};
+use common::errors::ClientError;
+use common::http::{CallArgs, Client};
 use common::stats::Gauge;
 use http::StatusCode;
 use log::{debug, info, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::str::FromStr;
 use std::time::Duration;
+use derivative::Derivative;
 
 use common::stats::IncrementingMetric;
 
@@ -43,11 +45,13 @@ enum ResponseHandlerType {
     DefaultTarget,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Derivative)]
+#[derivative(Debug)]
 pub struct StreamCallContext {
     response_handler_type: ResponseHandlerType,
     user_message: Option<String>,
     prompt_target_name: Option<String>,
+    #[derivative(Debug = "ignore")]
     request_body: ChatCompletionsRequest,
     tool_calls: Option<Vec<ToolCall>>,
     similarity_scores: Option<Vec<(String, f64)>>,
@@ -65,11 +69,12 @@ pub enum ServerError {
     Serialization(serde_json::Error),
     #[error("{0}")]
     LogicError(String),
-    #[error("upstream error response authority={authority}, path={path}, status={status}")]
+    #[error("upstream application error host={host}, path={path}, status={status}, body={body}")]
     Upstream {
-        authority: String,
+        host: String,
         path: String,
         status: String,
+        body: String,
     },
     #[error("jailbreak detected: {0}")]
     Jailbreak(String),
@@ -77,7 +82,7 @@ pub enum ServerError {
     NoMessagesFound { why: String },
 }
 
-pub struct PromptStreamContext {
+pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
     system_prompt: Rc<Option<String>>,
@@ -98,8 +103,7 @@ pub struct PromptStreamContext {
     request_id: Option<String>,
 }
 
-impl PromptStreamContext {
-    #[allow(clippy::too_many_arguments)]
+impl StreamContext {
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
@@ -109,7 +113,7 @@ impl PromptStreamContext {
         overrides: Rc<Option<Overrides>>,
         embeddings_store: Option<Rc<EmbeddingsStore>>,
     ) -> Self {
-        PromptStreamContext {
+        StreamContext {
             context_id,
             metrics,
             system_prompt,
@@ -145,7 +149,6 @@ impl PromptStreamContext {
     }
 
     fn send_server_error(&self, error: ServerError, override_status_code: Option<StatusCode>) {
-        debug!("server error occurred: {}", error);
         self.send_http_response(
             override_status_code
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR)
@@ -160,6 +163,7 @@ impl PromptStreamContext {
         let embedding_response: CreateEmbeddingResponse = match serde_json::from_slice(&body) {
             Ok(embedding_response) => embedding_response,
             Err(e) => {
+                debug!("error deserializing embedding response: {}", e);
                 return self.send_server_error(ServerError::Deserialization(e), None);
             }
         };
@@ -230,6 +234,7 @@ impl PromptStreamContext {
         let json_data: String = match serde_json::to_string(&zero_shot_classification_request) {
             Ok(json_data) => json_data,
             Err(error) => {
+                debug!("error serializing zero shot classification request: {}", error);
                 return self.send_server_error(ServerError::Serialization(error), None);
             }
         };
@@ -259,6 +264,7 @@ impl PromptStreamContext {
         callout_context.response_handler_type = ResponseHandlerType::ZeroShotIntent;
 
         if let Err(e) = self.http_call(call_args, callout_context) {
+            debug!("error dispatching zero shot classification request: {}", e);
             self.send_server_error(ServerError::HttpDispatch(e), None);
         }
     }
@@ -272,6 +278,7 @@ impl PromptStreamContext {
             match serde_json::from_slice(&body) {
                 Ok(hallucination_response) => hallucination_response,
                 Err(e) => {
+                    debug!("error deserializing hallucination response: {}", e);
                     return self.send_server_error(ServerError::Deserialization(e), None);
                 }
             };
@@ -297,6 +304,7 @@ impl PromptStreamContext {
                 content: Some(response),
                 model: Some(ARCH_FC_MODEL_NAME.to_string()),
                 tool_calls: None,
+                tool_call_id: None,
             };
 
             let chat_completion_response = ChatCompletionsResponse {
@@ -335,6 +343,7 @@ impl PromptStreamContext {
             match serde_json::from_slice(&body) {
                 Ok(zeroshot_response) => zeroshot_response,
                 Err(e) => {
+                    debug!("error deserializing zero shot classification response: {}", e);
                     return self.send_server_error(ServerError::Deserialization(e), None);
                 }
             };
@@ -446,6 +455,7 @@ impl PromptStreamContext {
                     callout_context.prompt_target_name = Some(default_prompt_target.name.clone());
 
                     if let Err(e) = self.http_call(call_args, callout_context) {
+                        debug!("error dispatching default prompt target request: {}", e);
                         return self.send_server_error(
                             ServerError::HttpDispatch(e),
                             Some(StatusCode::BAD_REQUEST),
@@ -461,6 +471,7 @@ impl PromptStreamContext {
         let prompt_target = match self.prompt_targets.get(&prompt_target_name) {
             Some(prompt_target) => prompt_target.clone(),
             None => {
+                debug!("prompt target not found: {}", prompt_target_name);
                 return self.send_server_error(
                     ServerError::LogicError(format!(
                         "Prompt target not found: {prompt_target_name}"
@@ -533,6 +544,7 @@ impl PromptStreamContext {
                 msg_body
             }
             Err(e) => {
+                debug!("error serializing arch_fc request body: {}", e);
                 return self.send_server_error(ServerError::Serialization(e), None);
             }
         };
@@ -565,6 +577,7 @@ impl PromptStreamContext {
         callout_context.prompt_target_name = Some(prompt_target.name);
 
         if let Err(e) = self.http_call(call_args, callout_context) {
+            debug!("error dispatching arch_fc request: {}", e);
             self.send_server_error(ServerError::HttpDispatch(e), Some(StatusCode::BAD_REQUEST));
         }
     }
@@ -576,6 +589,7 @@ impl PromptStreamContext {
         let arch_fc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
             Ok(arch_fc_response) => arch_fc_response,
             Err(e) => {
+                debug!("error deserializing arch_fc response: {}", e);
                 return self.send_server_error(ServerError::Deserialization(e), None);
             }
         };
@@ -689,6 +703,7 @@ impl PromptStreamContext {
                 match serde_json::to_string(&hallucination_classification_request) {
                     Ok(json_data) => json_data,
                     Err(error) => {
+                        debug!("error serializing hallucination classification request: {}", error);
                         return self.send_server_error(ServerError::Serialization(error), None);
                     }
                 };
@@ -781,17 +796,19 @@ impl PromptStreamContext {
     fn function_call_response_handler(
         &mut self,
         body: Vec<u8>,
-        mut callout_context: StreamCallContext,
+        callout_context: StreamCallContext,
     ) {
         if let Some(http_status) = self.get_http_call_response_header(":status") {
             if http_status != StatusCode::OK.as_str() {
+                debug!("upstream error response: {}", http_status);
                 return self.send_server_error(
                     ServerError::Upstream {
-                        authority: callout_context.upstream_cluster.unwrap(),
+                        host: callout_context.upstream_cluster.unwrap(),
                         path: callout_context.upstream_cluster_path.unwrap(),
-                        status: http_status,
+                        status: http_status.clone(),
+                        body: String::from_utf8(body).unwrap(),
                     },
-                    None,
+                    Some(StatusCode::from_str(http_status.as_str()).unwrap()),
                 );
             }
         } else {
@@ -823,11 +840,18 @@ impl PromptStreamContext {
                 content: system_prompt,
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             };
             messages.push(system_prompt_message);
         }
 
-        messages.append(callout_context.request_body.messages.as_mut());
+        // don't send tools message and api response to chat gpt
+        for m in callout_context.request_body.messages.iter() {
+            if m.role == TOOL_ROLE || m.content.is_none() {
+              continue;
+            }
+            messages.push(m.clone());
+        }
 
         let user_message = match messages.pop() {
             Some(user_message) => user_message,
@@ -854,6 +878,7 @@ impl PromptStreamContext {
                 content: Some(final_prompt),
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             }
         });
 
@@ -889,6 +914,7 @@ impl PromptStreamContext {
                 .prompt_guards
                 .jailbreak_on_exception_message()
                 .unwrap_or("refrain from discussing jailbreaking.");
+            debug!("jailbreak detected: {}", msg);
             return self.send_server_error(
                 ServerError::Jailbreak(String::from(msg)),
                 Some(StatusCode::BAD_REQUEST),
@@ -912,6 +938,7 @@ impl PromptStreamContext {
         let json_data: String = match serde_json::to_string(&get_embeddings_input) {
             Ok(json_data) => json_data,
             Err(error) => {
+                debug!("error serializing get embeddings request: {}", error);
                 return self.send_server_error(ServerError::Deserialization(error), None);
             }
         };
@@ -948,6 +975,7 @@ impl PromptStreamContext {
         };
 
         if let Err(e) = self.http_call(call_args, call_context) {
+            debug!("error dispatching get embeddings request: {}", e);
             self.send_server_error(ServerError::HttpDispatch(e), None);
         }
     }
@@ -981,6 +1009,7 @@ impl PromptStreamContext {
         let chat_completions_resp: ChatCompletionsResponse = match serde_json::from_slice(&body) {
             Ok(chat_completions_resp) => chat_completions_resp,
             Err(e) => {
+                debug!("error deserializing default target response: {}", e);
                 return self.send_server_error(ServerError::Deserialization(e), None);
             }
         };
@@ -1000,6 +1029,7 @@ impl PromptStreamContext {
                     content: Some(system_prompt.clone()),
                     model: None,
                     tool_calls: None,
+                    tool_call_id: None,
                 };
                 messages.push(system_prompt_message);
             }
@@ -1010,6 +1040,7 @@ impl PromptStreamContext {
             content: Some(api_resp.clone()),
             model: None,
             tool_calls: None,
+            tool_call_id: None,
         });
         let chat_completion_request = ChatCompletionsRequest {
             model: GPT_35_TURBO.to_string(),
@@ -1027,7 +1058,7 @@ impl PromptStreamContext {
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
-impl HttpContext for PromptStreamContext {
+impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
@@ -1090,7 +1121,6 @@ impl HttpContext for PromptStreamContext {
                     return Action::Pause;
                 }
             };
-        self.is_chat_completions_request = true;
 
         self.arch_state = match deserialized_body.metadata {
             Some(ref metadata) => {
@@ -1256,9 +1286,8 @@ impl HttpContext for PromptStreamContext {
                 match serde_json::from_slice(&body) {
                     Ok(de) => de,
                     Err(e) => {
-                        debug!("invalid response: {}", String::from_utf8_lossy(&body));
-                        self.send_server_error(ServerError::Deserialization(e), None);
-                        return Action::Pause;
+                        debug!("invalid response: {}, {}", String::from_utf8_lossy(&body), e);
+                        return Action::Continue;
                     }
                 };
 
@@ -1276,55 +1305,42 @@ impl HttpContext for PromptStreamContext {
                         self.arch_state = Some(Vec::new());
                     }
 
-                    // compute sha hash from message history
-                    let mut hasher = Sha256::new();
-                    let prompts: Vec<String> = self
-                        .chat_completions_request
-                        .as_ref()
-                        .unwrap()
-                        .messages
-                        .iter()
-                        .filter(|msg| msg.role == USER_ROLE)
-                        .map(|msg| msg.content.clone().unwrap())
-                        .collect();
-                    let prompts_merged = prompts.join("#.#");
-                    hasher.update(prompts_merged.clone());
-                    let hash_key = hasher.finalize();
-                    // conver hash to hex string
-                    let hash_key_str = format!("{:x}", hash_key);
-                    debug!("hash key: {}, prompts: {}", hash_key_str, prompts_merged);
-
-                    // create new tool call state
-                    let tool_call_state = ToolCallState {
-                        key: hash_key_str,
-                        message: self.user_prompt.clone(),
-                        tool_call: tool_calls[0].function.clone(),
-                        tool_response: self.tool_call_response.clone().unwrap(),
-                    };
-
-                    // push tool call state to arch state
-                    self.arch_state
-                        .as_mut()
-                        .unwrap()
-                        .push(ArchState::ToolCall(vec![tool_call_state]));
-
                     let mut data: Value = serde_json::from_slice(&body).unwrap();
                     // use serde::Value to manipulate the json object and ensure that we don't lose any data
                     if let Value::Object(ref mut map) = data {
                         // serialize arch state and add to metadata
-                        let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
-                        debug!("arch_state: {}", arch_state_str);
                         let metadata = map
                             .entry("metadata")
                             .or_insert(Value::Object(serde_json::Map::new()));
                         if metadata == &Value::Null {
                             *metadata = Value::Object(serde_json::Map::new());
                         }
+
+                        // since arch gateway generates tool calls (using arch-fc) and calls upstream api to
+                        // get response, we will send these back to developer so they can see the api response
+                        // and tool call arch-fc generated
+                        let mut fc_messages = Vec::new();
+                        fc_messages.push(Message {
+                            role: ASSISTANT_ROLE.to_string(),
+                            content: None,
+                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                            tool_calls: self.tool_calls.clone(),
+                            tool_call_id: None,
+                        });
+                        fc_messages.push(Message {
+                            role: TOOL_ROLE.to_string(),
+                            content: self.tool_call_response.clone(),
+                            model: None,
+                            tool_calls: None,
+                            tool_call_id: Some(self.tool_calls.as_ref().unwrap()[0].id.clone()),
+                        });
+                        let fc_messages_str = serde_json::to_string(&fc_messages).unwrap();
+                        let arch_state = HashMap::from([("messages".to_string(), fc_messages_str)]);
+                        let arch_state_str = serde_json::to_string(&arch_state).unwrap();
                         metadata.as_object_mut().unwrap().insert(
                             ARCH_STATE_HEADER.to_string(),
                             serde_json::Value::String(arch_state_str),
                         );
-
                         let data_serialized = serde_json::to_string(&data).unwrap();
                         debug!("arch => user: {}", data_serialized);
                         self.set_http_response_body(0, body_size, data_serialized.as_bytes());
@@ -1342,7 +1358,7 @@ impl HttpContext for PromptStreamContext {
     }
 }
 
-impl Context for PromptStreamContext {
+impl Context for StreamContext {
     fn on_http_call_response(
         &mut self,
         token_id: u32,
@@ -1388,7 +1404,7 @@ impl Context for PromptStreamContext {
     }
 }
 
-impl Client for PromptStreamContext {
+impl Client for StreamContext {
     type CallContext = StreamCallContext;
 
     fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {

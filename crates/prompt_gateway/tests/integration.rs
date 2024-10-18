@@ -487,7 +487,6 @@ fn bad_request_to_open_ai_chat_completions() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(incomplete_chat_completions_request_body))
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
             Some(StatusCode::BAD_REQUEST.as_u16().into()),
             None,
@@ -547,6 +546,7 @@ fn request_to_llm_gateway() {
                     },
                 }]),
                 model: None,
+                tool_call_id: None,
             },
         }],
         model: String::from("test"),
@@ -648,6 +648,7 @@ fn request_to_llm_gateway() {
                 content: Some("hello from fake llm gateway".to_string()),
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             },
         }],
         model: String::from("test"),
@@ -663,8 +664,6 @@ fn request_to_llm_gateway() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpResponseBody))
         .returning(Some(chat_completion_response_str.as_str()))
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
