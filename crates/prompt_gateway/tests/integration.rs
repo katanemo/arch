@@ -78,10 +78,10 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_http_call(
             Some("arch_internal"),
             Some(vec![
-                ("x-arch-upstream", "model_server"),
+                ("x-arch-upstream", "guard"),
                 (":method", "POST"),
                 (":path", "/guard"),
-                (":authority", "model_server"),
+                (":authority", "guard"),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -119,10 +119,10 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_http_call(
             Some("arch_internal"),
             Some(vec![
-                ("x-arch-upstream", "model_server"),
+                ("x-arch-upstream", "embeddings"),
                 (":method", "POST"),
                 (":path", "/embeddings"),
-                (":authority", "model_server"),
+                (":authority", "embeddings"),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -164,10 +164,10 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_http_call(
             Some("arch_internal"),
             Some(vec![
-                ("x-arch-upstream", "model_server"),
+                ("x-arch-upstream", "zeroshot"),
                 (":method", "POST"),
                 (":path", "/zeroshot"),
-                (":authority", "model_server"),
+                (":authority", "zeroshot"),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
@@ -249,10 +249,10 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
         .expect_http_call(
             Some("arch_internal"),
             Some(vec![
-                ("x-arch-upstream", "model_server"),
+                ("x-arch-upstream", "embeddings"),
                 (":method", "POST"),
                 (":path", "/embeddings"),
-                (":authority", "model_server"),
+                (":authority", "embeddings"),
                 ("content-type", "application/json"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
             ]),
@@ -568,10 +568,10 @@ fn request_to_llm_gateway() {
         .expect_http_call(
             Some("arch_internal"),
             Some(vec![
-                ("x-arch-upstream", "model_server"),
+                ("x-arch-upstream", "hallucination"),
                 (":method", "POST"),
                 (":path", "/hallucination"),
-                (":authority", "model_server"),
+                (":authority", "hallucination"),
                 ("content-type", "application/json"),
                 ("x-envoy-max-retries", "3"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
