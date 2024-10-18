@@ -333,7 +333,7 @@ impl HttpContext for LlmGatewayStreamContext {
             let chat_completions_response: ChatCompletionsResponse =
                 match serde_json::from_slice(&body) {
                     Ok(de) => de,
-                    Err(e) => {
+                    Err(_e) => {
                         debug!("invalid response: {}", String::from_utf8_lossy(&body));
                         return Action::Continue;
                     }
