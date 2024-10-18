@@ -1279,7 +1279,6 @@ impl HttpContext for PromptStreamContext {
                     Ok(de) => de,
                     Err(e) => {
                         debug!("invalid response: {}, {}", String::from_utf8_lossy(&body), e);
-                        // self.send_server_error(ServerError::Deserialization(e), None);
                         return Action::Continue;
                     }
                 };

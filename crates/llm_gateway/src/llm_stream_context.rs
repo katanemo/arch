@@ -335,7 +335,6 @@ impl HttpContext for LlmGatewayStreamContext {
                     Ok(de) => de,
                     Err(e) => {
                         debug!("invalid response: {}", String::from_utf8_lossy(&body));
-                        // self.send_server_error(ServerError::Deserialization(e), None);
                         return Action::Continue;
                     }
                 };
