@@ -74,6 +74,9 @@ def predict(message, state):
     content = response.choices[0].message.content
 
     history.append({"role": "assistant", "content": content, "model": response.model})
+
+    # for gradio UI we don't want to show raw tool calls and messages from developer application
+    # so we're filtering those out
     history_view = [h for h in history if h["role"] != "tool" and "content" in h]
     messages = [
         (history_view[i]["content"], history_view[i + 1]["content"])
