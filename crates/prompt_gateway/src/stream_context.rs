@@ -1,4 +1,4 @@
-use crate::prompt_filter_context::{EmbeddingsStore, WasmMetrics};
+use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use acap::cos;
 use common::common_types::open_ai::{
     ArchState, ChatCompletionTool, ChatCompletionsRequest, ChatCompletionsResponse, Choice,
@@ -21,7 +21,8 @@ use common::consts::{
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use common::http::{CallArgs, Client, ClientError};
+use common::errors::ClientError;
+use common::http::{CallArgs, Client};
 use common::stats::Gauge;
 use http::StatusCode;
 use log::{debug, info, warn};
@@ -81,7 +82,7 @@ pub enum ServerError {
     NoMessagesFound { why: String },
 }
 
-pub struct PromptStreamContext {
+pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
     system_prompt: Rc<Option<String>>,
@@ -102,8 +103,7 @@ pub struct PromptStreamContext {
     request_id: Option<String>,
 }
 
-impl PromptStreamContext {
-    #[allow(clippy::too_many_arguments)]
+impl StreamContext {
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
@@ -113,7 +113,7 @@ impl PromptStreamContext {
         overrides: Rc<Option<Overrides>>,
         embeddings_store: Option<Rc<EmbeddingsStore>>,
     ) -> Self {
-        PromptStreamContext {
+        StreamContext {
             context_id,
             metrics,
             system_prompt,
@@ -1031,7 +1031,7 @@ impl PromptStreamContext {
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
-impl HttpContext for PromptStreamContext {
+impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
@@ -1094,7 +1094,6 @@ impl HttpContext for PromptStreamContext {
                     return Action::Pause;
                 }
             };
-        self.is_chat_completions_request = true;
 
         self.arch_state = match deserialized_body.metadata {
             Some(ref metadata) => {
@@ -1346,7 +1345,7 @@ impl HttpContext for PromptStreamContext {
     }
 }
 
-impl Context for PromptStreamContext {
+impl Context for StreamContext {
     fn on_http_call_response(
         &mut self,
         token_id: u32,
@@ -1392,7 +1391,7 @@ impl Context for PromptStreamContext {
     }
 }
 
-impl Client for PromptStreamContext {
+impl Client for StreamContext {
     type CallContext = StreamCallContext;
 
     fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {
