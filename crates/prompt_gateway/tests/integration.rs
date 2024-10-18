@@ -547,6 +547,7 @@ fn request_to_llm_gateway() {
                     },
                 }]),
                 model: None,
+                tool_call_id: None,
             },
         }],
         model: String::from("test"),
@@ -648,6 +649,7 @@ fn request_to_llm_gateway() {
                 content: Some("hello from fake llm gateway".to_string()),
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             },
         }],
         model: String::from("test"),
@@ -663,8 +665,6 @@ fn request_to_llm_gateway() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpResponseBody))
         .returning(Some(chat_completion_response_str.as_str()))
-        .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
