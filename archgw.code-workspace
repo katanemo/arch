@@ -5,19 +5,11 @@
 			"path": "."
 		},
     {
-      "name": "common",
-      "path": "crates/common"
+      "name": "crates",
+      "path": "crates"
     },
     {
-      "name": "prompt_gateway",
-      "path": "crates/prompt_gateway"
-    },
-    {
-      "name": "llm_gateway",
-      "path": "crates/llm_gateway"
-    },
-    {
-      "name": "arch/tools",
+      "name": "archgw_cli",
       "path": "arch/tools"
     },
     {
@@ -36,10 +28,15 @@
       "name": "demos/insurance_agent",
       "path": "./demos/insurance_agent",
     },
-    {
-      "name": "demos/function_calling/api_server",
-      "path": "./demos/function_calling/api_server",
-    },
   ],
-  "settings": {}
+  "settings": {
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.debugpy",
+      "rust-lang.rust-analyzer",
+      "humao.rest-client"
+      ]
+  }
 }
