@@ -1,4 +1,4 @@
-use crate::llm_stream_context::LlmGatewayStreamContext;
+use crate::stream_context::StreamContext;
 use common::configuration::Configuration;
 use common::http::Client;
 use common::llm_providers::LlmProviders;
@@ -28,19 +28,19 @@ impl WasmMetrics {
 }
 
 #[derive(Debug)]
-pub struct FilterCallContext {}
+pub struct CallContext {}
 
 #[derive(Debug)]
-pub struct LlmGatewayFilterContext {
+pub struct FilterContext {
     metrics: Rc<WasmMetrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
-    callouts: RefCell<HashMap<u32, FilterCallContext>>,
+    callouts: RefCell<HashMap<u32, CallContext>>,
     llm_providers: Option<Rc<LlmProviders>>,
 }
 
-impl LlmGatewayFilterContext {
-    pub fn new() -> LlmGatewayFilterContext {
-        LlmGatewayFilterContext {
+impl FilterContext {
+    pub fn new() -> FilterContext {
+        FilterContext {
             callouts: RefCell::new(HashMap::new()),
             metrics: Rc::new(WasmMetrics::new()),
             llm_providers: None,
@@ -48,8 +48,8 @@ impl LlmGatewayFilterContext {
     }
 }
 
-impl Client for LlmGatewayFilterContext {
-    type CallContext = FilterCallContext;
+impl Client for FilterContext {
+    type CallContext = CallContext;
 
     fn callouts(&self) -> &RefCell<HashMap<u32, Self::CallContext>> {
         &self.callouts
@@ -60,10 +60,10 @@ impl Client for LlmGatewayFilterContext {
     }
 }
 
-impl Context for LlmGatewayFilterContext {}
+impl Context for FilterContext {}
 
 // RootContext allows the Rust code to reach into the Envoy Config
-impl RootContext for LlmGatewayFilterContext {
+impl RootContext for FilterContext {
     fn on_configure(&mut self, _: usize) -> bool {
         let config_bytes = self
             .get_plugin_configuration()
@@ -90,8 +90,7 @@ impl RootContext for LlmGatewayFilterContext {
             context_id
         );
 
-        // No StreamContext can be created until the Embedding Store is fully initialized.
-        Some(Box::new(LlmGatewayStreamContext::new(
+        Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
             Rc::clone(

@@ -1,4 +1,4 @@
-use crate::stats::{Gauge, IncrementingMetric};
+use crate::{errors::ClientError, stats::{Gauge, IncrementingMetric}};
 use derivative::Derivative;
 use log::debug;
 use proxy_wasm::{traits::Context, types::Status};
@@ -35,16 +35,6 @@ impl<'a> CallArgs<'a> {
             timeout,
         }
     }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum ClientError {
-    #[error("Error dispatching HTTP call to `{upstream_name}/{path}`, error: {internal_status:?}")]
-    DispatchError {
-        upstream_name: String,
-        path: String,
-        internal_status: Status,
-    },
 }
 
 pub trait Client: Context {

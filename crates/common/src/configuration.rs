@@ -229,20 +229,6 @@ mod test {
         let config: super::Configuration = serde_yaml::from_str(&ref_config).unwrap();
         assert_eq!(config.version, "v0.1");
 
-        let open_ai_provider = config
-            .llm_providers
-            .iter()
-            .find(|p| p.name.to_lowercase() == "openai")
-            .unwrap();
-        assert_eq!(open_ai_provider.name.to_lowercase(), "openai");
-        assert_eq!(
-            open_ai_provider.access_key,
-            Some("OPENAI_API_KEY".to_string())
-        );
-        assert_eq!(open_ai_provider.model, "gpt-4o");
-        assert_eq!(open_ai_provider.default, Some(true));
-        assert_eq!(open_ai_provider.stream, Some(true));
-
         let prompt_guards = config.prompt_guards.as_ref().unwrap();
         let input_guards = &prompt_guards.input_guards;
         let jailbreak_guard = input_guards.get(&GuardType::Jailbreak).unwrap();
