@@ -306,10 +306,10 @@ def logs(service, debug, follow):
                 model_server_process.join()
         except KeyboardInterrupt:
             log.info("KeyboardInterrupt detected. Exiting.")
-            if archgw_process.is_alive():
+            if archgw_process and archgw_process.is_alive():
                 archgw_process.terminate()
 
-            if model_server_process.is_alive():
+            if model_server_process and model_server_process.is_alive():
                 model_server_process.terminate()
     else:
         try:
