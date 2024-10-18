@@ -115,26 +115,20 @@ static_resources:
                       domains:
                         - "*"
                       routes:
+
+                        {% for internal_clustrer in ["embeddings", "zeroshot", "guard", "arch_fc", "hallucination"] %}
                         - match:
                             prefix: "/"
                             headers:
                               - name: "x-arch-upstream"
                                 string_match:
-                                  exact: model_server
+                                  exact: {{ internal_clustrer }}
                           route:
                             auto_host_rewrite: true
-                            cluster: model_server
+                            cluster: {{ internal_clustrer }}
                             timeout: 60s
-                        - match:
-                            prefix: "/"
-                            headers:
-                              - name: "x-arch-upstream"
-                                string_match:
-                                  exact: arch_fc
-                          route:
-                            auto_host_rewrite: true
-                            cluster: model_server
-                            timeout: 60s
+                        {% endfor %}
+
                         {% for _, cluster in arch_clusters.items() %}
                         - match:
                             prefix: "/"
@@ -278,13 +272,14 @@ static_resources:
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
           sni: api.mistral.ai
-    - name: model_server
+    {% for internal_clustrer in ["embeddings", "zeroshot", "guard", "arch_fc", "hallucination"] %}
+    - name: {{ internal_clustrer }}
       connect_timeout: 5s
       type: STRICT_DNS
       dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: model_server
+        cluster_name: {{ internal_clustrer }}
         endpoints:
           - lb_endpoints:
               - endpoint:
@@ -292,7 +287,8 @@ static_resources:
                     socket_address:
                       address: host.docker.internal
                       port_value: 51000
-                  hostname: "model_server"
+                  hostname: {{ internal_clustrer }}
+    {% endfor %}
     - name: mistral_7b_instruct
       connect_timeout: 5s
       type: STRICT_DNS
@@ -308,21 +304,6 @@ static_resources:
                       address: mistral_7b_instruct
                       port_value: 10001
                   hostname: "mistral_7b_instruct"
-    - name: arch_fc
-      connect_timeout: 5s
-      type: STRICT_DNS
-      dns_lookup_family: V4_ONLY
-      lb_policy: ROUND_ROBIN
-      load_assignment:
-        cluster_name: arch_fc
-        endpoints:
-          - lb_endpoints:
-              - endpoint:
-                  address:
-                    socket_address:
-                      address: host.docker.internal
-                      port_value: 51000
-                  hostname: "arch_fc"
 {% for _, cluster in arch_clusters.items() %}
     - name: {{ cluster.name }}
       {% if cluster.connect_timeout -%}
