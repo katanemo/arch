@@ -47,7 +47,7 @@ def get_version():
         version = importlib.metadata.version("archgw")
         return version
     except importlib.metadata.PackageNotFoundError:
-        return "Not Found"
+        return "version not found""
 
 
 @click.group(invoke_without_command=True)
