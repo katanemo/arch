@@ -7,11 +7,7 @@ import multiprocessing
 import importlib.metadata
 from cli import targets
 from cli import config_generator
-from cli.utils import (
-    getLogger, 
-    get_llm_provider_access_keys, 
-    load_env_file_to_dict
-)
+from cli.utils import getLogger, get_llm_provider_access_keys, load_env_file_to_dict
 from cli.core import (
     start_arch_modelserver,
     stop_arch_modelserver,
@@ -20,14 +16,14 @@ from cli.core import (
     stream_gateway_logs,
     stream_model_server_logs,
     stream_access_logs,
-    download_models_from_hf
+    download_models_from_hf,
 )
 from cli.consts import (
-    KATANEMO_DOCKERHUB_REPO, 
-    KATANEMO_LOCAL_MODEL_LIST, 
-    SERVICE_NAME_ARCHGW, 
+    KATANEMO_DOCKERHUB_REPO,
+    KATANEMO_LOCAL_MODEL_LIST,
+    SERVICE_NAME_ARCHGW,
     SERVICE_NAME_MODEL_SERVER,
-    SERVICE_ALL
+    SERVICE_ALL,
 )
 
 log = getLogger(__name__)
@@ -45,12 +41,14 @@ logo = r"""
 ARCHGW_DOCKERFILE = "./arch/Dockerfile"
 MODEL_SERVER_BUILD_FILE = "./model_server/pyproject.toml"
 
+
 def get_version():
     try:
         version = importlib.metadata.version("archgw")
         return version
     except importlib.metadata.PackageNotFoundError:
         return None
+
 
 @click.group(invoke_without_command=True)
 @click.option("--version", is_flag=True, help="Show the archgw cli version and exit.")
@@ -64,6 +62,7 @@ def main(ctx, version):
         click.echo("""Arch (The Intelligent Prompt Gateway) CLI""")
         click.echo(logo)
         click.echo(ctx.get_help())
+
 
 @click.command()
 @click.option(
@@ -84,7 +83,7 @@ def build(service):
                 subprocess.run(
                     [
                         "docker",
-                        "build",    
+                        "build",
                         "-f",
                         ARCHGW_DOCKERFILE,
                         "-t",
@@ -217,9 +216,10 @@ def up(file, path, service):
     if service == SERVICE_NAME_ARCHGW:
         start_arch(arch_config_file, env)
     else:
-        download_models_from_hf() #this will used the cached versions of the models, so its safe to use everytime.
+        download_models_from_hf()  # this will used the cached versions of the models, so its safe to use everytime.
         start_arch_modelserver()
         start_arch(arch_config_file, env)
+
 
 @click.command()
 @click.option(
@@ -229,11 +229,11 @@ def up(file, path, service):
 )
 def down(service):
     """Stops Arch."""
-   
+
     if service not in [SERVICE_NAME_ARCHGW, SERVICE_NAME_MODEL_SERVER, SERVICE_ALL]:
         log.info(f"Error: Invalid service {service}. Exiting")
         sys.exit(1)
-        
+
     if service == SERVICE_NAME_MODEL_SERVER:
         stop_arch_modelserver()
     elif service == SERVICE_NAME_ARCHGW:
@@ -264,13 +264,18 @@ def generate_prompt_targets(file):
 
     targets.generate_prompt_targets(file)
 
+
 @click.command()
 @click.option(
     "--service",
     default=SERVICE_ALL,
     help="Service to monitor. By default it will monitor both gateway and model_serve",
 )
-@click.option("--debug", help="For detailed debug logs to trace calls from archgw <> model_server <> api_server, etc", is_flag=True)
+@click.option(
+    "--debug",
+    help="For detailed debug logs to trace calls from archgw <> model_server <> api_server, etc",
+    is_flag=True,
+)
 @click.option("--follow", help="Follow the logs", is_flag=True)
 def logs(service, debug, follow):
     """Stream logs from access logs services."""
@@ -283,10 +288,10 @@ def logs(service, debug, follow):
         try:
             archgw_process = None
             if service == SERVICE_NAME_ARCHGW or service == SERVICE_ALL:
-                    archgw_process = multiprocessing.Process(
-                        target=stream_gateway_logs, args=(follow,)
-                    )
-                    archgw_process.start()
+                archgw_process = multiprocessing.Process(
+                    target=stream_gateway_logs, args=(follow,)
+                )
+                archgw_process.start()
 
             model_server_process = None
             if service == SERVICE_NAME_MODEL_SERVER or service == SERVICE_ALL:
@@ -303,21 +308,24 @@ def logs(service, debug, follow):
             log.info("KeyboardInterrupt detected. Exiting.")
             if archgw_process.is_alive():
                 archgw_process.terminate()
-            
+
             if model_server_process.is_alive():
                 model_server_process.terminate()
     else:
         try:
             archgw_access_logs_process = None
-            archgw_access_logs_process = multiprocessing.Process(target=stream_access_logs, args=(follow,))
+            archgw_access_logs_process = multiprocessing.Process(
+                target=stream_access_logs, args=(follow,)
+            )
             archgw_access_logs_process.start()
 
-            if archgw_access_logs_process: 
+            if archgw_access_logs_process:
                 archgw_access_logs_process.join()
         except KeyboardInterrupt:
             log.info("KeyboardInterrupt detected. Exiting.")
             if archgw_access_logs_process.is_alive():
                 archgw_access_logs_process.terminate()
+
 
 main.add_command(up)
 main.add_command(down)

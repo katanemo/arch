@@ -12,6 +12,7 @@ from huggingface_hub import snapshot_download
 
 log = getLogger(__name__)
 
+
 def stream_gateway_logs(follow):
     """
     Stream logs from the arch gateway service.
@@ -41,15 +42,15 @@ def stream_gateway_logs(follow):
 
 def stream_model_server_logs(follow):
     """
-    Get the model server logs, check if the user wants to follow/tail them. 
+    Get the model server logs, check if the user wants to follow/tail them.
     """
     log_file = "~/archgw_logs/modelserver.log"
     log_file_expanded = os.path.expanduser(log_file)
-   
+
     stream_command = ["tail"]
     if follow:
         stream_command.append("-f")
-    
+
     stream_command.append(log_file_expanded)
     subprocess.run(
         stream_command,
@@ -57,6 +58,7 @@ def stream_model_server_logs(follow):
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
+
 
 def stream_access_logs(follow):
     """
@@ -69,7 +71,7 @@ def stream_access_logs(follow):
     stream_command = ["tail"]
     if follow:
         stream_command.append("-f")
-    
+
     stream_command.extend(log_files)
     subprocess.run(
         stream_command,
@@ -77,6 +79,7 @@ def stream_access_logs(follow):
         stdout=sys.stdout,
         stderr=sys.stderr,
     )
+
 
 def start_arch(arch_config_file, env, log_timeout=120):
     """
@@ -209,6 +212,7 @@ def download_models_from_hf():
     for model in KATANEMO_LOCAL_MODEL_LIST:
         log.info(f"Downloading model: {model}")
         snapshot_download(repo_id=model)
+
 
 def start_arch_modelserver():
     """
