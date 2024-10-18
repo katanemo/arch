@@ -336,10 +336,9 @@ impl HttpContext for StreamContext {
             let chat_completions_response: ChatCompletionsResponse =
                 match serde_json::from_slice(&body) {
                     Ok(de) => de,
-                    Err(e) => {
+                    Err(_e) => {
                         debug!("invalid response: {}", String::from_utf8_lossy(&body));
-                        self.send_server_error(ServerError::Deserialization(e), None);
-                        return Action::Pause;
+                        return Action::Continue;
                     }
                 };
 
