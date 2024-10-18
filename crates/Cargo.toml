@@ -1,0 +1,2 @@
+[workspace]
+members = ["llm_gateway", "prompt_gateway", "common"]
