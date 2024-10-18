@@ -30,3 +30,4 @@ model_server/dist
 arch_logs/
 dist/
 crates/*/target/
+crates/target/

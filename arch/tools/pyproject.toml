@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "archgw"
-version = "0.0.3"
+version = "0.0.4"
 description = "Python-based CLI tool to manage Arch Gateway."
 authors = ["Katanemo Labs, Inc."]
 packages = [
     { include = "cli" }
 ]
+readme = "README.md"
 
 include = [
 # Include package data (docker-compose.yaml and other files)[
