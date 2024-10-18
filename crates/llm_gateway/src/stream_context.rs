@@ -8,6 +8,7 @@ use common::consts::{
     ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, CHAT_COMPLETIONS_PATH,
     RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, USER_ROLE,
 };
+use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
 use common::ratelimit::Header;
 use common::{ratelimit, routing, tokenizer};
@@ -22,25 +23,12 @@ use std::rc::Rc;
 
 use common::stats::IncrementingMetric;
 
-#[derive(thiserror::Error, Debug)]
-pub enum ServerError {
-    #[error(transparent)]
-    Deserialization(serde_json::Error),
-    #[error("{0}")]
-    LogicError(String),
-    #[error(transparent)]
-    ExceededRatelimit(ratelimit::Error),
-    #[error("{why}")]
-    BadRequest { why: String },
-}
-
 pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
     tool_calls: Option<Vec<ToolCall>>,
     tool_call_response: Option<String>,
     arch_state: Option<Vec<ArchState>>,
-    request_body_size: usize,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     user_prompt: Option<Message>,
@@ -53,7 +41,6 @@ pub struct StreamContext {
 }
 
 impl StreamContext {
-    #[allow(clippy::too_many_arguments)]
     pub fn new(context_id: u32, metrics: Rc<WasmMetrics>, llm_providers: Rc<LlmProviders>) -> Self {
         StreamContext {
             context_id,
@@ -62,7 +49,6 @@ impl StreamContext {
             tool_calls: None,
             tool_call_response: None,
             arch_state: None,
-            request_body_size: 0,
             ratelimit_selector: None,
             streaming_response: false,
             user_prompt: None,
@@ -198,8 +184,6 @@ impl HttpContext for StreamContext {
             return Action::Continue;
         }
 
-        self.request_body_size = body_size;
-
         // Deserialize body into spec.
         // Currently OpenAI API.
         let mut deserialized_body: ChatCompletionsRequest =
@@ -225,7 +209,6 @@ impl HttpContext for StreamContext {
                     return Action::Pause;
                 }
             };
-        self.is_chat_completions_request = true;
 
         // remove metadata from the request body
         deserialized_body.metadata = None;

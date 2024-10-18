@@ -21,7 +21,8 @@ use common::consts::{
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
-use common::http::{CallArgs, Client, ClientError};
+use common::errors::ClientError;
+use common::http::{CallArgs, Client};
 use common::stats::Gauge;
 use http::StatusCode;
 use log::{debug, info, warn};
@@ -103,7 +104,6 @@ pub struct StreamContext {
 }
 
 impl StreamContext {
-    #[allow(clippy::too_many_arguments)]
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
@@ -1094,7 +1094,6 @@ impl HttpContext for StreamContext {
                     return Action::Pause;
                 }
             };
-        self.is_chat_completions_request = true;
 
         self.arch_state = match deserialized_body.metadata {
             Some(ref metadata) => {
