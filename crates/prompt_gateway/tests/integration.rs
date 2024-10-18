@@ -487,7 +487,6 @@ fn bad_request_to_open_ai_chat_completions() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(incomplete_chat_completions_request_body))
         .expect_log(Some(LogLevel::Debug), None)
-        .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
             Some(StatusCode::BAD_REQUEST.as_u16().into()),
             None,
