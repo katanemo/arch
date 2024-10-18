@@ -12,6 +12,16 @@ llm_providers:
     model: gpt-4o
     default: true
 
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+endpoints:
+  app_server:
+    # value could be ip address or a hostname with port
+    # this could also be a list of endpoints for load balancing
+    # for example endpoint: [ ip1:port, ip2:port ]
+    endpoint: host.docker.internal:18083
+    # max time to wait for a connection to be established
+    connect_timeout: 0.005s
+
 # default system prompt used by all prompt targets
 system_prompt: |
   You are a HR agent assistant that helps HR decision makers with reporting and workfoce planning. Nothing else. Please stay on topic of HR.
@@ -25,34 +35,15 @@ prompt_targets:
       parameters:
         - name: staffing_type
           type: str
-          description: The staffing type like contract, fte or agency 
+          description: The staffing type like contract, fte or agency
           required: true
         - name: region
           type: str
           required: true
-          description: the geographical region for which you want headcount data. 
+          description: the geographical region for which you want headcount data.
     - name: hr_qa
       endpoint:
         name: app_server
         path: /agent/hr_qa
       description: Handle general Q/A related to HR.
       default: true
-
-# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
-endpoints:
-  app_server:
-    # value could be ip address or a hostname with port
-    # this could also be a list of endpoints for load balancing
-    # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: host.docker.internal:18083
-    # max time to wait for a connection to be established
-    connect_timeout: 0.005s
-
-ratelimits:
-  - model: gpt-4
-    selector:
-      key: selector-key
-      value: selector-value
-    limit:
-      tokens: 1
-      unit: minute
