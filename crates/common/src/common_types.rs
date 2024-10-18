@@ -383,6 +383,7 @@ mod test {
                 content: Some("What city do you want to know the weather for?".to_string()),
                 model: None,
                 tool_calls: None,
+                tool_call_id: None,
             }],
             tools: Some(vec![super::open_ai::ChatCompletionTool {
                 tool_type: ToolType::Function,
