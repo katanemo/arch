@@ -1,3 +1,4 @@
+from fastapi import FastAPI, HTTPException
 import json
 import random
 from fastapi import FastAPI, Response
@@ -45,7 +46,8 @@ async def weather(req: WeatherRequest, res: Response):
             }
         )
 
-    return weather_forecast
+    raise HTTPException(status_code=404, detail="some error")
+    # return weather_forecast
 
 
 class InsuranceClaimDetailsRequest(BaseModel):
