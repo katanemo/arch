@@ -3,9 +3,16 @@ import os
 import time
 import pkg_resources
 import select
+import sys
+import glob
 from cli.utils import run_docker_compose_ps, print_service_status, check_services_state
 from cli.utils import getLogger
-import sys
+from cli.consts import (
+    KATANEMO_LOCAL_MODEL_LIST,
+    MODEL_SERVER_LOG_FILE,
+    ACCESS_LOG_FILES,
+)
+from huggingface_hub import snapshot_download
 
 log = getLogger(__name__)
 
@@ -35,6 +42,45 @@ def stream_gateway_logs(follow):
 
     except subprocess.CalledProcessError as e:
         log.info(f"Failed to stream logs: {str(e)}")
+
+
+def stream_model_server_logs(follow):
+    """
+    Get the model server logs, check if the user wants to follow/tail them.
+    """
+    log_file_expanded = os.path.expanduser(MODEL_SERVER_LOG_FILE)
+
+    stream_command = ["tail"]
+    if follow:
+        stream_command.append("-f")
+
+    stream_command.append(log_file_expanded)
+    subprocess.run(
+        stream_command,
+        check=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
+
+
+def stream_access_logs(follow):
+    """
+    Get the archgw access logs
+    """
+    log_file_pattern_expanded = os.path.expanduser(ACCESS_LOG_FILES)
+    log_files = glob.glob(log_file_pattern_expanded)
+
+    stream_command = ["tail"]
+    if follow:
+        stream_command.append("-f")
+
+    stream_command.extend(log_files)
+    subprocess.run(
+        stream_command,
+        check=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
 
 
 def start_arch(arch_config_file, env, log_timeout=120):
@@ -162,6 +208,12 @@ def stop_arch():
 
     except subprocess.CalledProcessError as e:
         log.info(f"Failed to shut down services: {str(e)}")
+
+
+def download_models_from_hf():
+    for model in KATANEMO_LOCAL_MODEL_LIST:
+        log.info(f"Downloading model: {model}")
+        snapshot_download(repo_id=model)
 
 
 def start_arch_modelserver():
