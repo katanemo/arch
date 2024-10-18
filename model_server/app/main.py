@@ -13,6 +13,7 @@ from app.commons.constants import embedding_model, zero_shot_model, arch_guard_h
 from app.function_calling.model_utils import (
     chat_completion as arch_function_chat_completion,
 )
+from unittest.mock import patch
 
 logger = utils.get_model_server_logger()
 
@@ -173,6 +174,7 @@ async def zeroshot(req: ZeroShotRequest, res: Response):
 
 
 @app.post("/hallucination")
+@patch("app.loader.glb.DEVICE", "cpu")  # Mock the device to 'cpu'
 async def hallucination(req: HallucinationRequest, res: Response):
     """
     Take input as text and return the prediction of hallucination for each parameter

@@ -13,6 +13,9 @@ openvino==2024.4.0
 psutil
 dateparser
 openai==1.50.2
+httpx
+pytest-asyncio
+pytest
 pandas
 tf-keras
 onnx==1.17.0

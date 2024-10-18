@@ -29,6 +29,9 @@ openai = "1.50.2"
 tf-keras = "*"
 onnx = "1.17.0"
 onnxruntime = "1.19.2"
+httpx = "*"
+pytest-asyncio = "*"
+pytest = "*"
 
 [tool.poetry.scripts]
 archgw_modelserver = "app.cli:run_server"

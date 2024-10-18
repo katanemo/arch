@@ -14,7 +14,7 @@
     },
     {
       "name": "llm_gateway",
-      "path": "crates/prompt_gateway"
+      "path": "crates/llm_gateway"
     },
     {
       "name": "arch/tools",
