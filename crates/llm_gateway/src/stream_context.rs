@@ -1,13 +1,13 @@
-use crate::llm_filter_context::WasmMetrics;
+use crate::filter_context::WasmMetrics;
 use common::common_types::open_ai::{
-    ArchState, ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse,
-    Message, StreamOptions, ToolCall, ToolCallState,
+    ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse, StreamOptions,
 };
 use common::configuration::LlmProvider;
 use common::consts::{
-    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, CHAT_COMPLETIONS_PATH,
-    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, USER_ROLE,
+    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, CHAT_COMPLETIONS_PATH,
+    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER,
 };
+use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
 use common::ratelimit::Header;
 use common::{ratelimit, routing, tokenizer};
@@ -15,38 +15,18 @@ use http::StatusCode;
 use log::debug;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::num::NonZero;
 use std::rc::Rc;
 
 use common::stats::IncrementingMetric;
 
-#[derive(thiserror::Error, Debug)]
-pub enum ServerError {
-    #[error(transparent)]
-    Deserialization(serde_json::Error),
-    #[error("{0}")]
-    LogicError(String),
-    #[error(transparent)]
-    ExceededRatelimit(ratelimit::Error),
-    #[error("{why}")]
-    BadRequest { why: String },
-}
-
-pub struct LlmGatewayStreamContext {
+pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
-    tool_calls: Option<Vec<ToolCall>>,
-    tool_call_response: Option<String>,
-    arch_state: Option<Vec<ArchState>>,
-    request_body_size: usize,
     ratelimit_selector: Option<Header>,
     streaming_response: Option<StreamingResponse>,
-    user_prompt: Option<Message>,
     response_tokens: usize,
     is_chat_completions_request: bool,
-    chat_completions_request: Option<ChatCompletionsRequest>,
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
@@ -62,20 +42,13 @@ impl StreamingResponse {
     }
 }
 
-impl LlmGatewayStreamContext {
-    #[allow(clippy::too_many_arguments)]
+impl StreamContext {
     pub fn new(context_id: u32, metrics: Rc<WasmMetrics>, llm_providers: Rc<LlmProviders>) -> Self {
-        LlmGatewayStreamContext {
+        StreamContext {
             context_id,
             metrics,
-            chat_completions_request: None,
-            tool_calls: None,
-            tool_call_response: None,
-            arch_state: None,
-            request_body_size: 0,
             ratelimit_selector: None,
             streaming_response: None,
-            user_prompt: None,
             response_tokens: 0,
             is_chat_completions_request: false,
             llm_providers,
@@ -170,7 +143,7 @@ impl LlmGatewayStreamContext {
 }
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
-impl HttpContext for LlmGatewayStreamContext {
+impl HttpContext for StreamContext {
     // Envoy's HTTP model is event driven. The WASM ABI has given implementors events to hook onto
     // the lifecycle of the http request and response.
     fn on_http_request_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
@@ -208,8 +181,6 @@ impl HttpContext for LlmGatewayStreamContext {
             return Action::Continue;
         }
 
-        self.request_body_size = body_size;
-
         // Deserialize body into spec.
         // Currently OpenAI API.
         let mut deserialized_body: ChatCompletionsRequest =
@@ -235,7 +206,6 @@ impl HttpContext for LlmGatewayStreamContext {
                     return Action::Pause;
                 }
             };
-        self.is_chat_completions_request = true;
 
         // remove metadata from the request body
         deserialized_body.metadata = None;
@@ -392,4 +362,4 @@ impl HttpContext for LlmGatewayStreamContext {
     }
 }
 
-impl Context for LlmGatewayStreamContext {}
+impl Context for StreamContext {}

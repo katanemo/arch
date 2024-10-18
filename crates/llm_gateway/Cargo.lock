@@ -228,6 +228,7 @@ dependencies = [
  "proxy-wasm",
  "rand",
  "serde",
+ "serde_json",
  "serde_yaml",
  "thiserror",
  "tiktoken-rs",
