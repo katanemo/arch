@@ -6,20 +6,37 @@ import re
 
 app = FastAPI()
 
+
 class StaffingType(Enum):
-    CONTRACT = "contract"
     FTE = "fte"
     AGENCY = "agency"
+    CONTRACT = "contract"
+
+
+class RegionType(Enum):
+    ASIA = "asia"
+    EUROPE = "europe"
+    AMERICAS = "americas"
+
 
 # Define the request model
 class HeadcountRequest(BaseModel):
-    region: str
+    region: RegionType
     staffing_type: str
+
 
 class HeadcountResponseSummary(BaseModel):
     region: str
     headcount: int
     staffing_type: str
+
+
+HEADCOUNT = {
+    ASIA: {CONTRACT: 100, FTE: 150, AGENCY: 2000},
+    EUROPE: {CONTRACT: 80, FTE: 120, AGENCY: 2500},
+    AMERICAS: {CONTRACT: 90, FTE: 200, AGENCY: 3000},
+}
+
 
 # Post method for device summary
 @app.post("/agent/headcount")
@@ -27,26 +44,16 @@ def get_headcount(request: HeadcountRequest):
     """
     Endpoint to headcount data by region, staffing type over time range
     """
-    staffing_type_value = request.staffing_type
-
-    if re.match(r"(?i)contract", staffing_type_value):  # Case-insensitive regex match
-        headcount = 500
-    elif re.match(r"(?i)fte", staffing_type_value):
-        headcount = 1000
-    elif re.match(r"(?i)agency", staffing_type_value):
-        headcount = 4000
-    else:
-        raise HTTPException(
-            status_code=400, detail="staffing_type parameter is invalid."
-        )
+    headcount = HEADCOUNT[request.region][request.staffing_type]
 
     response = {
-            "region": request.region,
-            "staffing_type": f"Staffing agency: {staffing_type_value}",
-            "headcount" : f"Headcount: {headcount}"
-        }
+        "region": request.region.value,
+        "staffing_type": f"Staffing agency: {staffing_type}",
+        "headcount": f"Headcount: {headcount}",
+    }
 
     return response
+
 
 @app.post("/agent/hr_qa")
 async def general_hr_qa():
@@ -68,6 +75,7 @@ async def general_hr_qa():
         "model": "hr_agent",
         "usage": {"completion_tokens": 0},
     }
+
 
 if __name__ == "__main__":
     app.run(debug=True)

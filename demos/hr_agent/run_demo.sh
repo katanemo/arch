@@ -22,14 +22,14 @@ start_demo() {
   archgw up arch_config.yaml
 
   # Step 4: Start Network Agent
-  echo "Starting Network Agent using Docker Compose..."
+  echo "Starting HR Agent using Docker Compose..."
   docker compose up -d  # Run in detached mode
 }
 
 # Function to stop the demo
 stop_demo() {
   # Step 1: Stop Docker Compose services
-  echo "Stopping Network Agent using Docker Compose..."
+  echo "Stopping HR Agent using Docker Compose..."
   docker compose down
 
   # Step 2: Stop Arch
