@@ -1,4 +1,3 @@
-from fastapi import FastAPI
 import json
 import random
 from fastapi import FastAPI, Response
