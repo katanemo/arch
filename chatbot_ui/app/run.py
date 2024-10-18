@@ -73,7 +73,6 @@ def predict(message, state):
     content = response.choices[0].message.content
 
     for message in arch_messages:
-        # arch_msg = {"role": message["role"], "content": message.get("content", None), "model": message.get("model", None), "tool_calls": message.get("tool_calls", None), "tool_call_id": message.get("tool_call_id", None)}
         history.append(message)
     history.append({"role": "assistant", "content": content, "model": response.model})
     history_view = [h for h in history if h["role"] != "tool" and "content" in h]
