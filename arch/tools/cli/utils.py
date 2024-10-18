@@ -12,17 +12,12 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-
 def getLogger(name="cli"):
-    import logging
-
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     return logger
 
-
 log = getLogger(__name__)
-
 
 def run_docker_compose_ps(compose_file, env):
     """
@@ -32,7 +27,8 @@ def run_docker_compose_ps(compose_file, env):
         path (str): The path where the docker-compose.yml file is located.
     """
     try:
-        # Run `docker compose ps` to get the health status of each service
+        # Run `docker compose ps` to get the health status of each service. 
+        # This should be a non-blocking call so using subprocess.Popen(...)
         ps_process = subprocess.Popen(
             [
                 "docker",
