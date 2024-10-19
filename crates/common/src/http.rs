@@ -1,4 +1,7 @@
-use crate::{errors::ClientError, stats::{Gauge, IncrementingMetric}};
+use crate::{
+    errors::ClientError,
+    stats::{Gauge, IncrementingMetric},
+};
 use derivative::Derivative;
 use log::debug;
 use proxy_wasm::{traits::Context, types::Status};
