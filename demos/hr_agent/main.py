@@ -22,7 +22,7 @@ class RegionType(Enum):
 # Define the request model
 class HeadcountRequest(BaseModel):
     region: RegionType
-    staffing_type: str
+    staffing_type: StaffingType
 
 
 class HeadcountResponseSummary(BaseModel):
@@ -32,9 +32,21 @@ class HeadcountResponseSummary(BaseModel):
 
 
 HEADCOUNT = {
-    ASIA: {CONTRACT: 100, FTE: 150, AGENCY: 2000},
-    EUROPE: {CONTRACT: 80, FTE: 120, AGENCY: 2500},
-    AMERICAS: {CONTRACT: 90, FTE: 200, AGENCY: 3000},
+    RegionType.ASIA: {
+        StaffingType.CONTRACT: 100,
+        StaffingType.FTE: 150,
+        StaffingType.AGENCY: 2000,
+    },
+    RegionType.EUROPE: {
+        StaffingType.CONTRACT: 80,
+        StaffingType.FTE: 120,
+        StaffingType.AGENCY: 2500,
+    },
+    RegionType.AMERICAS: {
+        StaffingType.CONTRACT: 90,
+        StaffingType.FTE: 200,
+        StaffingType.AGENCY: 3000,
+    },
 }
 
 
@@ -48,7 +60,7 @@ def get_headcount(request: HeadcountRequest):
 
     response = {
         "region": request.region.value,
-        "staffing_type": f"Staffing agency: {staffing_type}",
+        "staffing_type": f"Staffing agency: {request.staffing_type}",
         "headcount": f"Headcount: {headcount}",
     }
 
