@@ -286,7 +286,7 @@ static_resources:
                   address:
                     socket_address:
                       address: host.docker.internal
-                      port_value: 51000
+                      port_value: 8000
                   hostname: {{ internal_clustrer }}
     {% endfor %}
     - name: mistral_7b_instruct
