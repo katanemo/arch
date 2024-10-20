@@ -47,7 +47,16 @@ def start_server():
         "Starting model server - loading some awesomeness, this may take some time :)"
     )
     process = subprocess.Popen(
-        ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "51000"],
+        [
+            "python",
+            "-m",
+            "uvicorn",
+            "app.main:app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "51000",
+        ],
         start_new_session=True,
         bufsize=1,
         universal_newlines=True,

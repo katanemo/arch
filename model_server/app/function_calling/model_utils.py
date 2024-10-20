@@ -28,7 +28,9 @@ def process_messages(history: list[Message]):
     for hist in history:
         if hist.tool_calls:
             if len(hist.tool_calls) > 1:
-                raise ValueError("Only one tool call is supported")
+                error_msg = f"Only one tool call is supported, tools counts: {len(hist.tool_calls)}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             tool_call_str = json.dumps(hist.tool_calls[0]["function"])
             updated_history.append(
                 {
