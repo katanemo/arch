@@ -2,9 +2,11 @@ use filter_context::FilterContext;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
+mod context;
 mod filter_context;
-mod stream_context;
 mod hallucination;
+mod http_context;
+mod stream_context;
 
 proxy_wasm::main! {{
     proxy_wasm::set_log_level(LogLevel::Trace);

@@ -1,38 +1,41 @@
-use common::{common_types::open_ai::Message, consts::{USER_ROLE, ASSISTANT_ROLE, ARCH_MODEL_PREFIX}};
+use common::{
+    common_types::open_ai::Message,
+    consts::{ARCH_MODEL_PREFIX, ASSISTANT_ROLE, USER_ROLE},
+};
 
 pub fn extract_messages_for_hallucination(messages: &Vec<Message>) -> Vec<String> {
-  let mut arch_assistant = false;
-  let mut user_messages = Vec::new();
-  if messages.len() >= 2 {
-      let latest_assistant_message = &messages[messages.len() - 2];
-      if let Some(model) = latest_assistant_message.model.as_ref() {
-          if model.starts_with(ARCH_MODEL_PREFIX) {
-              arch_assistant = true;
-          }
-      }
-  }
-  if arch_assistant {
-      for message in messages.iter().rev() {
-          if let Some(model) = message.model.as_ref() {
-              if !model.starts_with(ARCH_MODEL_PREFIX) {
-                  if message.role == ASSISTANT_ROLE {
-                    break;
-                  }
-              }
-          }
-          if message.role == USER_ROLE {
-              if let Some(content) = &message.content {
-                  user_messages.push(content.clone());
-              }
-          }
-      }
-  } else if let Some(message) = messages.last() {
-      if let Some(content) = &message.content {
-        user_messages.push(content.clone());
-      }
-  }
-  user_messages.reverse(); // Reverse to maintain the original order
-  return user_messages
+    let mut arch_assistant = false;
+    let mut user_messages = Vec::new();
+    if messages.len() >= 2 {
+        let latest_assistant_message = &messages[messages.len() - 2];
+        if let Some(model) = latest_assistant_message.model.as_ref() {
+            if model.starts_with(ARCH_MODEL_PREFIX) {
+                arch_assistant = true;
+            }
+        }
+    }
+    if arch_assistant {
+        for message in messages.iter().rev() {
+            if let Some(model) = message.model.as_ref() {
+                if !model.starts_with(ARCH_MODEL_PREFIX) {
+                    if message.role == ASSISTANT_ROLE {
+                        break;
+                    }
+                }
+            }
+            if message.role == USER_ROLE {
+                if let Some(content) = &message.content {
+                    user_messages.push(content.clone());
+                }
+            }
+        }
+    } else if let Some(message) = messages.last() {
+        if let Some(content) = &message.content {
+            user_messages.push(content.clone());
+        }
+    }
+    user_messages.reverse(); // Reverse to maintain the original order
+    return user_messages;
 }
 
 #[cfg(test)]
@@ -43,7 +46,7 @@ mod test {
 
     #[test]
     fn test_hallucination_message_simple() {
-      let test_str = r#"
+        let test_str = r#"
       [
         {
           "role": "system",
@@ -60,13 +63,13 @@ mod test {
       ]
       "#;
 
-      let messages: Vec<Message> = serde_json::from_str(test_str).unwrap();
-      let messages_for_halluncination = extract_messages_for_hallucination(&messages);
-      assert_eq!(messages_for_halluncination.len(), 2);
+        let messages: Vec<Message> = serde_json::from_str(test_str).unwrap();
+        let messages_for_halluncination = extract_messages_for_hallucination(&messages);
+        assert_eq!(messages_for_halluncination.len(), 2);
     }
     #[test]
     fn test_hallucination_message_medium() {
-      let test_str = r#"
+        let test_str = r#"
       [
         {
           "role": "system",
@@ -96,9 +99,9 @@ mod test {
       ]
       "#;
 
-      let messages: Vec<Message> = serde_json::from_str(test_str).unwrap();
-      let messages_for_halluncination = extract_messages_for_hallucination(&messages);
-      println!("{:?}", messages_for_halluncination);
-      assert_eq!(messages_for_halluncination.len(), 3);
+        let messages: Vec<Message> = serde_json::from_str(test_str).unwrap();
+        let messages_for_halluncination = extract_messages_for_hallucination(&messages);
+        println!("{:?}", messages_for_halluncination);
+        assert_eq!(messages_for_halluncination.len(), 3);
     }
 }
