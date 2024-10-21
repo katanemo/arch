@@ -87,7 +87,7 @@ impl Context for StreamContext {
                     self.hallucination_classification_resp_handler(body, callout_context)
                 }
                 ResponseHandlerType::FunctionCall => {
-                    self.function_call_response_handler(body, callout_context)
+                    self.api_call_response_handler(body, callout_context)
                 }
                 ResponseHandlerType::DefaultTarget => {
                     self.default_target_handler(body, callout_context)
