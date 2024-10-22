@@ -66,27 +66,31 @@ impl HttpContext for StreamContext {
             body_size
         );
 
+        let body_bytes = match self.get_http_request_body(0, body_size) {
+            Some(body_bytes) => body_bytes,
+            None => {
+                self.send_server_error(
+                    ServerError::LogicError(format!(
+                        "Failed to obtain body bytes even though body_size is {}",
+                        body_size
+                    )),
+                    None,
+                );
+                return Action::Pause;
+            }
+        };
+
+        debug!("developer => archgw: {}", String::from_utf8_lossy(&body_bytes));
+
         // Deserialize body into spec.
         // Currently OpenAI API.
         let mut deserialized_body: ChatCompletionsRequest =
-            match self.get_http_request_body(0, body_size) {
-                Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
-                    Ok(deserialized) => deserialized,
-                    Err(e) => {
-                        self.send_server_error(
-                            ServerError::Deserialization(e),
-                            Some(StatusCode::BAD_REQUEST),
-                        );
-                        return Action::Pause;
-                    }
-                },
-                None => {
+            match serde_json::from_slice(&body_bytes) {
+                Ok(deserialized) => deserialized,
+                Err(e) => {
                     self.send_server_error(
-                        ServerError::LogicError(format!(
-                            "Failed to obtain body bytes even though body_size is {}",
-                            body_size
-                        )),
-                        None,
+                        ServerError::Deserialization(e),
+                        Some(StatusCode::BAD_REQUEST),
                     );
                     return Action::Pause;
                 }
@@ -326,7 +330,9 @@ impl HttpContext for StreamContext {
 
         trace!(
             "recv [S={}] total_tokens={} end_stream={}",
-            self.context_id, self.response_tokens, end_of_stream
+            self.context_id,
+            self.response_tokens,
+            end_of_stream
         );
 
         Action::Continue
