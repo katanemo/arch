@@ -305,8 +305,10 @@ impl StreamContext {
         body: Vec<u8>,
         callout_context: StreamCallContext,
     ) {
+        let boyd_str = String::from_utf8(body).expect("could not convert body to string");
+        debug!("archgw <= hallucination response: {}", boyd_str);
         let hallucination_response: HallucinationClassificationResponse =
-            match serde_json::from_slice(&body) {
+            match serde_json::from_str(boyd_str.as_str()) {
                 Ok(hallucination_response) => hallucination_response,
                 Err(e) => {
                     warn!("error deserializing hallucination response: {}", e);
@@ -624,7 +626,10 @@ impl StreamContext {
             }
         };
 
-        arch_fc_response.choices[0].message.tool_calls.clone_into(&mut self.tool_calls);
+        arch_fc_response.choices[0]
+            .message
+            .tool_calls
+            .clone_into(&mut self.tool_calls);
         if self.tool_calls.as_ref().unwrap().len() > 1 {
             warn!(
                 "multiple tool calls not supported yet, tool_calls count found: {}",

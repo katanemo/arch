@@ -602,6 +602,7 @@ fn request_to_llm_gateway() {
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&body_text))
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Trace), None)
         .expect_http_call(
             Some("arch_internal"),
