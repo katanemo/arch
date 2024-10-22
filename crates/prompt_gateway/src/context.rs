@@ -74,24 +74,15 @@ impl Context for StreamContext {
         */
 
         if let Some(body) = self.get_http_call_response_body(0, body_size) {
+            #[cfg_attr(any(), rustfmt::skip)]
             match callout_context.response_handler_type {
-                ResponseHandlerType::GetEmbeddings => {
-                    self.embeddings_handler(body, callout_context)
-                }
                 ResponseHandlerType::ArchGuard => self.arch_guard_handler(body, callout_context),
-                ResponseHandlerType::ZeroShotIntent => {
-                    self.zero_shot_intent_detection_resp_handler(body, callout_context)
-                }
+                ResponseHandlerType::Embeddings => self.embeddings_handler(body, callout_context),
+                ResponseHandlerType::ZeroShotIntent => self.zero_shot_intent_detection_resp_handler(body, callout_context),
                 ResponseHandlerType::ArchFC => self.arch_fc_response_handler(body, callout_context),
-                ResponseHandlerType::HallucinationDetect => {
-                    self.hallucination_classification_resp_handler(body, callout_context)
-                }
-                ResponseHandlerType::FunctionCall => {
-                    self.function_call_response_handler(body, callout_context)
-                }
-                ResponseHandlerType::DefaultTarget => {
-                    self.default_target_handler(body, callout_context)
-                }
+                ResponseHandlerType::Hallucination => self.hallucination_classification_resp_handler(body, callout_context),
+                ResponseHandlerType::FunctionCall => self.api_call_response_handler(body, callout_context),
+                ResponseHandlerType::DefaultTarget =>self.default_target_handler(body, callout_context),
             }
         } else {
             self.send_server_error(

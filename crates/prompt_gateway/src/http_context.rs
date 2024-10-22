@@ -16,7 +16,7 @@ use common::{
     http::{CallArgs, Client},
 };
 use http::StatusCode;
-use log::{debug, warn};
+use log::{debug, trace, warn};
 use proxy_wasm::{traits::HttpContext, types::Action};
 use serde_json::Value;
 
@@ -36,7 +36,7 @@ impl HttpContext for StreamContext {
         self.is_chat_completions_request =
             self.get_http_request_header(":path").unwrap_or_default() == CHAT_COMPLETIONS_PATH;
 
-        debug!(
+        trace!(
             "on_http_request_headers S[{}] req_headers={:?}",
             self.context_id,
             self.get_http_request_headers()
@@ -60,32 +60,37 @@ impl HttpContext for StreamContext {
 
         self.request_body_size = body_size;
 
-        debug!(
+        trace!(
             "on_http_request_body S[{}] body_size={}",
-            self.context_id, body_size
+            self.context_id,
+            body_size
         );
+
+        let body_bytes = match self.get_http_request_body(0, body_size) {
+            Some(body_bytes) => body_bytes,
+            None => {
+                self.send_server_error(
+                    ServerError::LogicError(format!(
+                        "Failed to obtain body bytes even though body_size is {}",
+                        body_size
+                    )),
+                    None,
+                );
+                return Action::Pause;
+            }
+        };
+
+        debug!("developer => archgw: {}", String::from_utf8_lossy(&body_bytes));
 
         // Deserialize body into spec.
         // Currently OpenAI API.
         let mut deserialized_body: ChatCompletionsRequest =
-            match self.get_http_request_body(0, body_size) {
-                Some(body_bytes) => match serde_json::from_slice(&body_bytes) {
-                    Ok(deserialized) => deserialized,
-                    Err(e) => {
-                        self.send_server_error(
-                            ServerError::Deserialization(e),
-                            Some(StatusCode::BAD_REQUEST),
-                        );
-                        return Action::Pause;
-                    }
-                },
-                None => {
+            match serde_json::from_slice(&body_bytes) {
+                Ok(deserialized) => deserialized,
+                Err(e) => {
                     self.send_server_error(
-                        ServerError::LogicError(format!(
-                            "Failed to obtain body bytes even though body_size is {}",
-                            body_size
-                        )),
-                        None,
+                        ServerError::Deserialization(e),
+                        Some(StatusCode::BAD_REQUEST),
                     );
                     return Action::Pause;
                 }
@@ -145,7 +150,6 @@ impl HttpContext for StreamContext {
                 similarity_scores: None,
                 upstream_cluster: None,
                 upstream_cluster_path: None,
-                tool_calls: None,
             };
             self.get_embeddings(callout_context);
             return Action::Pause;
@@ -201,7 +205,6 @@ impl HttpContext for StreamContext {
             similarity_scores: None,
             upstream_cluster: None,
             upstream_cluster_path: None,
-            tool_calls: None,
         };
 
         if let Err(e) = self.http_call(call_args, call_context) {
@@ -212,7 +215,7 @@ impl HttpContext for StreamContext {
     }
 
     fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
-        debug!(
+        trace!(
             "on_http_response_headers recv [S={}] headers={:?}",
             self.context_id,
             self.get_http_response_headers()
@@ -224,9 +227,11 @@ impl HttpContext for StreamContext {
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
-        debug!(
+        trace!(
             "recv [S={}] bytes={} end_stream={}",
-            self.context_id, body_size, end_of_stream
+            self.context_id,
+            body_size,
+            end_of_stream
         );
 
         if !self.is_chat_completions_request {
@@ -248,14 +253,14 @@ impl HttpContext for StreamContext {
             .expect("cant get response body");
 
         if self.streaming_response {
-            debug!("streaming response");
+            trace!("streaming response");
         } else {
-            debug!("non streaming response");
+            trace!("non streaming response");
             let chat_completions_response: ChatCompletionsResponse =
                 match serde_json::from_slice(&body) {
                     Ok(de) => de,
                     Err(e) => {
-                        debug!(
+                        trace!(
                             "invalid response: {}, {}",
                             String::from_utf8_lossy(&body),
                             e
@@ -316,16 +321,18 @@ impl HttpContext for StreamContext {
                             serde_json::Value::String(arch_state_str),
                         );
                         let data_serialized = serde_json::to_string(&data).unwrap();
-                        debug!("arch => user: {}", data_serialized);
+                        debug!("archgw <= developer: {}", data_serialized);
                         self.set_http_response_body(0, body_size, data_serialized.as_bytes());
                     };
                 }
             }
         }
 
-        debug!(
+        trace!(
             "recv [S={}] total_tokens={} end_stream={}",
-            self.context_id, self.response_tokens, end_of_stream
+            self.context_id,
+            self.response_tokens,
+            end_of_stream
         );
 
         Action::Continue
