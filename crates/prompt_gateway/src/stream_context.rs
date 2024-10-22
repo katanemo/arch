@@ -37,11 +37,11 @@ use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub enum ResponseHandlerType {
-    GetEmbeddings,
+    Embeddings,
     ArchFC,
     FunctionCall,
     ZeroShotIntent,
-    HallucinationDetect,
+    Hallucination,
     ArchGuard,
     DefaultTarget,
 }
@@ -168,7 +168,7 @@ impl StreamContext {
             Duration::from_secs(5),
         );
         let call_context = StreamCallContext {
-            response_handler_type: ResponseHandlerType::GetEmbeddings,
+            response_handler_type: ResponseHandlerType::Embeddings,
             user_message: Some(user_message),
             prompt_target_name: None,
             request_body: callout_context.request_body,
@@ -741,7 +741,7 @@ impl StreamContext {
             vec![],
             Duration::from_secs(5),
         );
-        callout_context.response_handler_type = ResponseHandlerType::HallucinationDetect;
+        callout_context.response_handler_type = ResponseHandlerType::Hallucination;
 
         debug!(
             "archgw => hallucination request: {}",
