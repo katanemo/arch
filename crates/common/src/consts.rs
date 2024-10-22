@@ -7,7 +7,6 @@ pub const SYSTEM_ROLE: &str = "system";
 pub const USER_ROLE: &str = "user";
 pub const TOOL_ROLE: &str = "tool";
 pub const ASSISTANT_ROLE: &str = "assistant";
-pub const DEFAULT_GPT_MODEL: &str = "gpt-3.5-turbo";
 pub const ARCH_FC_REQUEST_TIMEOUT_MS: u64 = 120000; // 2 minutes
 pub const MODEL_SERVER_NAME: &str = "model_server";
 pub const ZEROSHOT_INTERNAL_HOST: &str = "zeroshot";
