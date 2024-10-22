@@ -40,6 +40,7 @@ pub fn extract_messages_for_hallucination(messages: &Vec<Message>) -> Vec<String
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
     use common::common_types::open_ai::Message;
 
     use super::extract_messages_for_hallucination;
@@ -157,5 +158,7 @@ mod test {
         let messages_for_halluncination = extract_messages_for_hallucination(&messages);
         println!("{:?}", messages_for_halluncination);
         assert_eq!(messages_for_halluncination.len(), 3);
+        assert_eq!(["tell me about the weather", "Seattle", "7 days"], messages_for_halluncination.as_slice());
     }
+
 }
