@@ -1,70 +1,80 @@
+import os
+import json
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Optional
 from enum import Enum
-import re
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 app = FastAPI()
+workforce_data_df = None
 
-
-class StaffingType(Enum):
-    FTE = "fte"
-    AGENCY = "agency"
-    CONTRACT = "contract"
-
-
-class RegionType(Enum):
-    ASIA = "asia"
-    EUROPE = "europe"
-    AMERICAS = "americas"
+with open("workforce_data.json") as file:
+    workforce_data = json.load(file)
+    workforce_data_df = pd.json_normalize(
+        workforce_data, record_path=["regions"], meta=["point_in_time", "satisfaction"]
+    )
 
 
 # Define the request model
-class HeadcountRequest(BaseModel):
-    region: RegionType
-    staffing_type: StaffingType
-
-
-class HeadcountResponseSummary(BaseModel):
+class WorkforceRequset(BaseModel):
     region: str
-    headcount: int
     staffing_type: str
+    point_in_time: Optional[int] = None
 
 
-HEADCOUNT = {
-    RegionType.ASIA: {
-        StaffingType.CONTRACT: 100,
-        StaffingType.FTE: 150,
-        StaffingType.AGENCY: 2000,
-    },
-    RegionType.EUROPE: {
-        StaffingType.CONTRACT: 80,
-        StaffingType.FTE: 120,
-        StaffingType.AGENCY: 2500,
-    },
-    RegionType.AMERICAS: {
-        StaffingType.CONTRACT: 90,
-        StaffingType.FTE: 200,
-        StaffingType.AGENCY: 3000,
-    },
-}
+class SlackRequest(BaseModel):
+    slack_message: str
+
+
+class WorkforceResponse(BaseModel):
+    region: str
+    staffing_type: str
+    headcount: int
+    satisfaction: float
 
 
 # Post method for device summary
-@app.post("/agent/headcount")
-def get_headcount(request: HeadcountRequest):
+@app.post("/agent/workforce")
+def get_workforce(request: WorkforceRequset):
     """
-    Endpoint to headcount data by region, staffing type over time range
+    Endpoint to workforce data by region, staffing type at a given point in time.
     """
-    headcount = HEADCOUNT[request.region][request.staffing_type]
+    region = request.region.lower()
+    staffing_type = request.staffing_type.lower()
+    point_in_time = request.point_in_time if request.point_in_time else 0
 
     response = {
-        "region": request.region.value,
-        "staffing_type": f"Staffing agency: {request.staffing_type}",
-        "headcount": f"Headcount: {headcount}",
+        "region": region,
+        "staffing_type": f"Staffing agency: {staffing_type}",
+        "headcount": f"Headcount: {int(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['point_in_time']==point_in_time)][staffing_type].values[0])}",
+        "satisfaction": f"Satisifaction: {float(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['point_in_time']==point_in_time)][satisfaction].values[0])}",
     }
-
     return response
+
+
+@app.post("/agent/slack_message")
+def send_slack_message(request: SlackRequest):
+    """
+    Endpoint that sends slack message
+    """
+    slack_message = request.slack_message
+
+    # Load the bot token from an environment variable or replace it directly
+    slack_token = os.getenv(
+        "SLACK_BOT_TOKEN"
+    )  # Replace with your token if needed: 'xoxb-your-token'
+    client = WebClient(token=slack_token)
+    channel = "hr_agent_demo"
+
+    try:
+        # Send the message
+        response = client.chat_postMessage(channel=channel, text=slack_message)
+        return f"Message sent to {channel}: {response['message']['text']}"
+    except SlackApiError as e:
+        print(f"Error sending message: {e.response['error']}")
 
 
 @app.post("/agent/hr_qa")

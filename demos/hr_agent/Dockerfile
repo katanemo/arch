@@ -5,6 +5,7 @@ FROM base AS builder
 WORKDIR /src
 
 COPY requirements.txt /src/
+COPY workforce_data.json /src/
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 
 COPY . /src

@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:?error}
     ports:
       - "18083:80"
     healthcheck:

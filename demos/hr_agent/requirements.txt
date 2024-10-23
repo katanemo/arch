@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 pydantic
+slack-sdk
 typing
+pandas
