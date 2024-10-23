@@ -34,7 +34,7 @@ pub struct SearchPointResult {
 }
 
 pub mod open_ai {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, VecDeque};
 
     use serde::{ser::SerializeMap, Deserialize, Serialize};
     use serde_yaml::Value;
@@ -244,6 +244,47 @@ pub mod open_ai {
     pub struct ChatCompletionChunkResponse {
         pub model: String,
         pub choices: Vec<ChunkChoice>,
+    }
+
+    #[derive(Debug, thiserror::Error)]
+    pub enum ChatCompletionChunkResponseError {
+        #[error("failed to deserialize")]
+        Deserialization(#[from] serde_json::Error),
+        #[error("empty content in data chunk")]
+        EmptyContent,
+        #[error("no chunks present")]
+        NoChunks,
+    }
+
+    impl TryFrom<&str> for ChatCompletionChunkResponse {
+        type Error = ChatCompletionChunkResponseError;
+
+        fn try_from(value: &str) -> Result<Self, Self::Error> {
+            let mut response_chunks: VecDeque<ChatCompletionChunkResponse> = value
+                .split("data: ")
+                .map(|data_chunk| serde_json::from_str::<ChatCompletionChunkResponse>(data_chunk))
+                .collect::<Result<VecDeque<ChatCompletionChunkResponse>, _>>()?;
+
+            let new_contents: String = response_chunks
+                .iter_mut()
+                .map(|response_chunk| {
+                    response_chunk.choices[0]
+                        .delta
+                        .content
+                        .take()
+                        .ok_or(ChatCompletionChunkResponseError::EmptyContent)
+                })
+                .collect::<Result<Vec<String>, _>>()?
+                .join(" ");
+
+            let mut response_chunk = response_chunks
+                .pop_front()
+                .ok_or(ChatCompletionChunkResponseError::NoChunks)?;
+
+            response_chunk.choices[0].delta.content = Some(new_contents);
+
+            Ok(response_chunk)
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]

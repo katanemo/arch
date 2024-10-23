@@ -290,32 +290,13 @@ impl HttpContext for StreamContext {
         if self.streaming_response.is_some() {
             let body_str = String::from_utf8(body).expect("body is not utf-8");
             debug!("streaming response");
-            let chat_completions_data = match body_str.split_once("data: ") {
-                Some((_, chat_completions_data)) => chat_completions_data,
-                None => {
-                    self.send_server_error(
-                        ServerError::LogicError(String::from("parsing error in streaming data")),
-                        None,
-                    );
-                    return Action::Pause;
-                }
-            };
 
-            let chat_completions_chunk_response: ChatCompletionChunkResponse =
-                match serde_json::from_str(chat_completions_data) {
-                    Ok(de) => de,
-                    Err(_) => {
-                        if chat_completions_data != "[NONE]" {
-                            debug!("received incorrect streaming data={chat_completions_data}");
-                            self.send_server_error(
-                                ServerError::LogicError(String::from(
-                                    "error in streaming response",
-                                )),
-                                None,
-                            );
-                            return Action::Continue;
-                        }
-                        return Action::Continue;
+            let chat_completions_chunk_response =
+                match ChatCompletionChunkResponse::try_from(body_str.as_str()) {
+                    Ok(response) => response,
+                    Err(e) => {
+                        self.send_server_error(e.into(), None);
+                        return Action::Pause;
                     }
                 };
 
