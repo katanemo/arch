@@ -15,9 +15,6 @@ logging.basicConfig(
 log = logging.getLogger("model_server.cli")
 log.setLevel(logging.INFO)
 
-# Path to the file where the server process ID will be stored
-PID_FILE = os.path.join(tempfile.gettempdir(), "model_server.pid")
-
 
 def run_server(port=51000):
     """Start, stop, or restart the Uvicorn server based on command-line arguments."""
@@ -38,11 +35,7 @@ def run_server(port=51000):
 
 
 def start_server(port=51000):
-    """Start the Uvicorn server and save the process ID."""
-    if os.path.exists(PID_FILE):
-        log.info("Server is already running. Use 'model_server restart' to restart it.")
-        sys.exit(1)
-
+    """Start the Uvicorn server"""
     log.info(
         "Starting model server - loading some awesomeness, this may take some time :)"
     )
@@ -65,9 +58,6 @@ def start_server(port=51000):
     )
 
     if wait_for_health_check(f"http://0.0.0.0:{port}/healthz"):
-        # Write the process ID to the PID file
-        with open(PID_FILE, "w") as f:
-            f.write(str(process.pid))
         log.info(f"Model server started with PID {process.pid}")
     else:
         # Add model_server boot-up logs
@@ -89,7 +79,7 @@ def wait_for_health_check(url, timeout=180):
     return False
 
 
-def stop_server(port=51000):
+def stop_server(port=51000, wait=True, timeout=10):
     """Stop the running Uvicorn server."""
     log.info("Stopping model server")
     try:
@@ -112,8 +102,34 @@ def stop_server(port=51000):
 
         # Step 3: Kill each process using its PID
         for pid in process_ids:
-            print(f"Killing process with PID {pid}")
+            print(f"Killing model server process with PID {pid}")
             subprocess.run(f"kill {pid}", shell=True)
+
+            if wait:
+                # Step 4: Wait for the process to be killed by checking if it's still running
+                start_time = time.time()
+
+                while True:
+                    check_process = subprocess.run(
+                        f"ps -p {pid}", shell=True, capture_output=True, text=True
+                    )
+                    if check_process.returncode != 0:
+                        print(f"Process {pid} has been killed.")
+                        break
+
+                    elapsed_time = time.time() - start_time
+                    if elapsed_time > timeout:
+                        print(
+                            f"Process {pid} did not terminate within {timeout} seconds."
+                        )
+                        print(f"Attempting to force kill process {pid}...")
+                        subprocess.run(f"kill -9 {pid}", shell=True)  # SIGKILL
+                        break
+
+                    print(
+                        f"Waiting for process {pid} to be killed... ({elapsed_time:.2f} seconds)"
+                    )
+                    time.sleep(0.5)
 
     except Exception as e:
         print(f"Error occurred: {e}")
