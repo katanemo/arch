@@ -89,7 +89,9 @@ def wait_for_health_check(url, timeout=180):
     return False
 
 
-def kill_process_on_port(port=51000):
+def stop_server(port=51000):
+    """Stop the running Uvicorn server."""
+    log.info("Stopping model server")
     try:
         # Step 1: Run lsof command to get the process using the port
         lsof_command = f"lsof -n | grep {port} | grep -i LISTEN"
@@ -115,48 +117,6 @@ def kill_process_on_port(port=51000):
 
     except Exception as e:
         print(f"Error occurred: {e}")
-
-
-def stop_server(port=51000):
-    """Stop the running Uvicorn server."""
-    log.info("Stopping model server")
-    if not os.path.exists(PID_FILE):
-        log.info("Process id file not found, seems like model server was not running")
-        return
-
-    # Read the process ID from the PID file
-    with open(PID_FILE, "r") as f:
-        pid = int(f.read())
-
-    try:
-        # Get process by PID
-        process = psutil.Process(pid)
-
-        # Gracefully terminate the process
-        for child in process.children(recursive=True):
-            child.terminate()
-        process.terminate()
-
-        process.wait(timeout=20)  # Wait for up to 20 seconds for the process to exit
-
-        if process.is_running():
-            log.info(f"Process with PID {pid} is still running. Forcing shutdown.")
-            process.kill()  # Forcefully kill the process
-
-        log.info(f"Model server with PID {pid} stopped.")
-        os.remove(PID_FILE)
-
-        kill_process_on_port(port)
-
-    except psutil.NoSuchProcess:
-        log.info(f"Model server with PID {pid} not found. Cleaning up PID file.")
-        os.remove(PID_FILE)
-    except psutil.TimeoutExpired:
-        log.info(
-            f"Model server with PID {pid} did not terminate in time. Forcing shutdown."
-        )
-        process.kill()  # Forcefully kill the process
-        os.remove(PID_FILE)
 
 
 def restart_server(port=51000):
