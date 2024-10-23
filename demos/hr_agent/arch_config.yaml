@@ -50,7 +50,7 @@ prompt_targets:
         - name: point_in_time
           type: int
           required: false
-          description: a point in time for which to retrieve data. For e.g 0 days ago, 30 days ago, etc.
+          description: the point in time for which to retrieve data. For e.g 0 days ago, 30 days ago, etc.
     - name: slack_message
       endpoint:
         name: app_server
