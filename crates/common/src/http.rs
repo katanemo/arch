@@ -1,6 +1,9 @@
-use crate::{errors::ClientError, stats::{Gauge, IncrementingMetric}};
+use crate::{
+    errors::ClientError,
+    stats::{Gauge, IncrementingMetric},
+};
 use derivative::Derivative;
-use log::debug;
+use log::{debug, trace};
 use proxy_wasm::{traits::Context, types::Status};
 use serde::Serialize;
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, time::Duration};
@@ -45,9 +48,10 @@ pub trait Client: Context {
         call_args: CallArgs,
         call_context: Self::CallContext,
     ) -> Result<u32, ClientError> {
-        debug!(
+        trace!(
             "dispatching http call with args={:?} context={:?}",
-            call_args, call_context
+            call_args,
+            call_context
         );
 
         match self.dispatch_http_call(
