@@ -22,7 +22,7 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 **Jump to our [docs](https://docs.archgw.com)** to learn how you can use Arch to improve the speed, security and personalization of your GenAI apps.
 
 ## Contact
-To get in touch with us, please join our [discord server](https://discord.gg/rSRQ9fv7). We will be monitoring that actively and offering support there.
+To get in touch with us, please join our [discord server](https://discord.gg/pGZf2gcwEc). We will be monitoring that actively and offering support there.
 
 ## Demos
 * [Function Calling](demos/function_calling/README.md) - Walk through of the core function calling capabilities Arch offers
@@ -131,4 +131,4 @@ Arch is designed to support best-in class observability by supporting open stand
 ### Contribution
 We would love feedback on our [Roadmap](https://github.com/orgs/katanemo/projects/1) and we welcome contributions to **Arch**!
 Whether you're fixing bugs, adding new features, improving documentation, or creating tutorials, your help is much appreciated.
-Please vist our [Contribution Guide](arch/CONTRIBUTING.md) for more details
+Please vist our [Contribution Guide](CONTRIBUTING.md) for more details
