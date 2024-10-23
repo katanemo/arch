@@ -23,16 +23,22 @@ jobs:
         with:
           python-version: "3.10"  # Adjust to your Python version
 
-      # Step 3: Install dependencies (from requirements.txt or Pipfile)
+      # Step 3: Install Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+
+      # Step 4: Install dependencies using Poetry
       - name: Install dependencies
         run: |
           cd model_server
-          pip install --upgrade pip
-          pip install -r requirements.txt  # Or use pipenv install
-          pip install pytest
+          poetry install
 
-      # Step 4: Set PYTHONPATH and run tests
+      # Step 5: Set PYTHONPATH and run tests
       - name: Run model server tests with pytest
+        env:
+          PYTHONPATH: model_server  # Ensure the app's path is available
         run: |
           cd model_server
-          PYTHONPATH=. pytest --maxfail=5 --disable-warnings
+          poetry run pytest --maxfail=5 --disable-warnings
