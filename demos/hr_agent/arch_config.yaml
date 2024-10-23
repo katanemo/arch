@@ -1,0 +1,63 @@
+version: v0.1
+listener:
+  address: 127.0.0.1
+  port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
+  message_format: huggingface
+
+# Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
+llm_providers:
+  - name: OpenAI
+    provider: openai
+    access_key: OPENAI_API_KEY
+    model: gpt-4o
+    default: true
+
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+endpoints:
+  app_server:
+    # value could be ip address or a hostname with port
+    # this could also be a list of endpoints for load balancing
+    # for example endpoint: [ ip1:port, ip2:port ]
+    endpoint: host.docker.internal:18083
+    # max time to wait for a connection to be established
+    connect_timeout: 0.005s
+
+# default system prompt used by all prompt targets
+system_prompt: |
+  You are a Workforce assistant that helps on workforce planning and HR decision makers with reporting and workfoce planning. NOTHING ELSE. When you get data in json format, offer some summary but don't be too verbose.
+
+prompt_targets:
+    - name: hr_qa
+      endpoint:
+        name: app_server
+        path: /agent/hr_qa
+      description: Handle general Q/A related to HR.
+      default: true
+    - name: workforce
+      description: Get workforce data like headcount and satisfacton levels by region and staffing type
+      endpoint:
+        name: app_server
+        path: /agent/workforce
+      parameters:
+        - name: staffing_type
+          type: str
+          description: Staffing type like contract, fte or agency
+          required: true
+        - name: region
+          type: str
+          required: true
+          description: Geographical region for which you want workforce data like asia, europe, americas.
+        - name: point_in_time
+          type: int
+          required: false
+          description: the point in time for which to retrieve data. For e.g 0 days ago, 30 days ago, etc.
+    - name: slack_message
+      endpoint:
+        name: app_server
+        path: /agent/slack_message
+      description: sends a slack message on a channel
+      parameters:
+        - name: slack_message
+          type: string
+          required: true
+          description: the message that should be sent to a slack channel

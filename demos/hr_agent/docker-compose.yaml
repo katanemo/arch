@@ -1,0 +1,23 @@
+services:
+  api_server:
+    build:
+      context: .
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-None}
+    ports:
+      - "18083:80"
+    healthcheck:
+        test: ["CMD", "curl" ,"http://localhost:80/healthz"]
+        interval: 5s
+        retries: 20
+
+  chatbot_ui:
+    build:
+      context: ../../chatbot_ui
+    ports:
+      - "18080:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - CHAT_COMPLETION_ENDPOINT=http://host.docker.internal:10000/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
