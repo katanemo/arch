@@ -23,11 +23,12 @@ pub enum ServerError {
     Serialization(serde_json::Error),
     #[error("{0}")]
     LogicError(String),
-    #[error("upstream error response authority={authority}, path={path}, status={status}")]
+    #[error("upstream application error host={host}, path={path}, status={status}, body={body}")]
     Upstream {
-        authority: String,
+        host: String,
         path: String,
         status: String,
+        body: String,
     },
     #[error("jailbreak detected: {0}")]
     Jailbreak(String),

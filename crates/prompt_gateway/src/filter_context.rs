@@ -1,10 +1,9 @@
 use crate::stream_context::StreamContext;
 use common::common_types::EmbeddingType;
 use common::configuration::{Configuration, Overrides, PromptGuards, PromptTarget};
-use common::consts::ARCH_INTERNAL_CLUSTER_NAME;
 use common::consts::ARCH_UPSTREAM_HOST_HEADER;
 use common::consts::DEFAULT_EMBEDDING_MODEL;
-use common::consts::MODEL_SERVER_NAME;
+use common::consts::{ARCH_INTERNAL_CLUSTER_NAME, EMBEDDINGS_INTERNAL_HOST};
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
 };
@@ -100,10 +99,10 @@ impl FilterContext {
             ARCH_INTERNAL_CLUSTER_NAME,
             "/embeddings",
             vec![
-                (ARCH_UPSTREAM_HOST_HEADER, MODEL_SERVER_NAME),
+                (ARCH_UPSTREAM_HOST_HEADER, EMBEDDINGS_INTERNAL_HOST),
                 (":method", "POST"),
                 (":path", "/embeddings"),
-                (":authority", MODEL_SERVER_NAME),
+                (":authority", EMBEDDINGS_INTERNAL_HOST),
                 ("content-type", "application/json"),
                 ("x-envoy-upstream-rq-timeout-ms", "60000"),
             ],
