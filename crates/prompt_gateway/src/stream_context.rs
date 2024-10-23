@@ -12,12 +12,7 @@ use common::common_types::{
 };
 use common::configuration::{Overrides, PromptGuards, PromptTarget};
 use common::consts::{
-    ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS,
-    ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER,
-    ARCH_UPSTREAM_HOST_HEADER, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST,
-    HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE,
-    ZEROSHOT_INTERNAL_HOST,
+    ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, ARCH_MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE, ZEROSHOT_INTERNAL_HOST
 };
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -340,6 +335,13 @@ impl StreamContext {
                 tool_call_id: None,
             };
 
+            let mut metadata: HashMap<String, String> = HashMap::new();
+            metadata.insert(
+                ARCH_STATE_HEADER.to_string(),
+                serde_json::to_string(&self.arch_state).unwrap(),
+            );
+
+
             let chat_completion_response = ChatCompletionsResponse {
                 choices: vec![Choice {
                     message,
@@ -348,7 +350,7 @@ impl StreamContext {
                 }],
                 usage: None,
                 model: ARCH_FC_MODEL_NAME.to_string(),
-                metadata: None,
+                metadata: Some(metadata),
             };
 
             trace!("hallucination response: {:?}", chat_completion_response);
