@@ -66,15 +66,18 @@ def send_slack_message(request: SlackRequest):
     slack_token = os.getenv(
         "SLACK_BOT_TOKEN"
     )  # Replace with your token if needed: 'xoxb-your-token'
-    client = WebClient(token=slack_token)
-    channel = "hr_agent_demo"
 
-    try:
-        # Send the message
-        response = client.chat_postMessage(channel=channel, text=slack_message)
-        return f"Message sent to {channel}: {response['message']['text']}"
-    except SlackApiError as e:
-        print(f"Error sending message: {e.response['error']}")
+    if slack_token is None:
+        print(f"Message for slack: {slack_message}")
+    else:
+        client = WebClient(token=slack_token)
+        channel = "hr_agent_demo"
+        try:
+            # Send the message
+            response = client.chat_postMessage(channel=channel, text=slack_message)
+            return f"Message sent to {channel}: {response['message']['text']}"
+        except SlackApiError as e:
+            print(f"Error sending message: {e.response['error']}")
 
 
 @app.post("/agent/hr_qa")
