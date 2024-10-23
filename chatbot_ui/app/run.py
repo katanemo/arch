@@ -46,21 +46,22 @@ def convert_prompt_target_to_openai_format(target):
         "parameters": {"type": "object", "properties": {}, "required": []},
     }
 
-    for param_info in target["parameters"]:
-        parameter = {
-            "type": param_info["type"],
-            "description": param_info["description"],
-        }
+    if "parameters" in target:
+        for param_info in target["parameters"]:
+            parameter = {
+                "type": param_info["type"],
+                "description": param_info["description"],
+            }
 
-        for key in ["default", "format", "enum", "items", "minimum", "maximum"]:
-            if key in param_info:
-                parameter[key] = param_info[key]
+            for key in ["default", "format", "enum", "items", "minimum", "maximum"]:
+                if key in param_info:
+                    parameter[key] = param_info[key]
 
-        tool["parameters"]["properties"][param_info["name"]] = parameter
+            tool["parameters"]["properties"][param_info["name"]] = parameter
 
-        required = param_info.get("required", False)
-        if required:
-            tool["parameters"]["required"].append(param_info["name"])
+            required = param_info.get("required", False)
+            if required:
+                tool["parameters"]["required"].append(param_info["name"])
 
     return {"name": target["name"], "info": tool}
 
@@ -72,13 +73,14 @@ def get_prompt_targets():
 
             available_tools = []
             for target in config["prompt_targets"]:
-                if target["name"] != "default_target":
+                if not target.get("default", False):
                     available_tools.append(
                         convert_prompt_target_to_openai_format(target)
                     )
 
             return {tool["name"]: tool["info"] for tool in available_tools}
-    except Exception:
+    except Exception as e:
+        log.info(e)
         return None
 
 
@@ -116,6 +118,7 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
     # extract arch_state from metadata and store it in gradio session state
     # this state must be passed back to the gateway in the next request
     response_json = json.loads(raw_response.text)
+    log.info(response_json)
     if response_json:
         # load arch_state from metadata
         arch_state_str = response_json.get("metadata", {}).get("x-arch-state", "{}")
@@ -180,7 +183,6 @@ def main():
                 )
 
             textbox.submit(chat, [textbox, chatbot, state], [textbox, chatbot, state])
-            log.info(f"xxhxda {state.value}")
 
     demo.launch(server_name="0.0.0.0", server_port=8080, show_error=True, debug=True)
 
