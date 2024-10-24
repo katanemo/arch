@@ -27,6 +27,29 @@ class TestStopServer(unittest.TestCase):
             mock_print.assert_any_call("Killing model server process with PID 1234")
             mock_print.assert_any_call("Process 1234 has been killed.")
 
+    @patch("subprocess.run")
+    def test_stop_server_multiple_pids(self, mock_run):
+        # Simulate lsof returning multiple process ids (e.g., 1234 and 5678)
+        mock_run.side_effect = [
+            MagicMock(
+                returncode=0,
+                stdout="uvicorn 1234 user LISTEN\nuvicorn 5678 user LISTEN\n",
+            ),  # lsof output
+            MagicMock(returncode=0),  # first kill command for PID 1234
+            MagicMock(returncode=1),  # PID 1234 is successfully terminated
+            MagicMock(returncode=0),  # second kill command for PID 5678
+            MagicMock(returncode=1),  # PID 5678 is successfully terminated
+        ]
+
+        with patch("builtins.print") as mock_print:
+            stop_server(port=51000, wait=True, timeout=5)
+
+            # Assert that the function tried to kill both PIDs
+            mock_print.assert_any_call("Killing model server process with PID 1234")
+            mock_print.assert_any_call("Process 1234 has been killed.")
+            mock_print.assert_any_call("Killing model server process with PID 5678")
+            mock_print.assert_any_call("Process 5678 has been killed.")
+
 
 if __name__ == "__main__":
     unittest.main()
