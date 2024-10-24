@@ -1,6 +1,6 @@
 use common::{
     common_types::open_ai::Message,
-    consts::{ARCH_MODEL_PREFIX, ASSISTANT_ROLE, USER_ROLE},
+    consts::{ARCH_MODEL_PREFIX, USER_ROLE, HALLUCINATION_TEMPLATE},
 };
 
 pub fn extract_messages_for_hallucination(messages: &Vec<Message>) -> Vec<String> {
@@ -18,9 +18,11 @@ pub fn extract_messages_for_hallucination(messages: &Vec<Message>) -> Vec<String
         for message in messages.iter().rev() {
             if let Some(model) = message.model.as_ref() {
                 if !model.starts_with(ARCH_MODEL_PREFIX) {
-                    if message.role == ASSISTANT_ROLE {
-                        break;
-                    }
+                  if let Some(content) = &message.content {
+                      if !content.starts_with(HALLUCINATION_TEMPLATE) {
+                          break;
+                      }
+                  }
                 }
             }
             if message.role == USER_ROLE {
