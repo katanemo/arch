@@ -98,12 +98,11 @@ def check_and_install_lsof():
             print(f"Failed to install lsof: {install_error}")
 
 
-def stop_server(port=51000, wait=True, timeout=10):
+def kill_process(port=51000, wait=True, timeout=10):
     """Stop the running Uvicorn server."""
     log.info("Stopping model server")
     try:
         # Run the function to check and install lsof if necessary
-        check_and_install_lsof()
         # Step 1: Run lsof command to get the process using the port
         lsof_command = f"lsof -n | grep {port} | grep -i LISTEN"
         result = subprocess.run(
@@ -154,6 +153,11 @@ def stop_server(port=51000, wait=True, timeout=10):
 
     except Exception as e:
         print(f"Error occurred: {e}")
+
+
+def stop_server(port=51000, wait=True, timeout=10):
+    check_and_install_lsof()
+    kill_process(port, wait, timeout)
 
 
 def restart_server(port=51000):
