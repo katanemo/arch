@@ -131,4 +131,4 @@ Arch is designed to support best-in class observability by supporting open stand
 ### Contribution
 We would love feedback on our [Roadmap](https://github.com/orgs/katanemo/projects/1) and we welcome contributions to **Arch**!
 Whether you're fixing bugs, adding new features, improving documentation, or creating tutorials, your help is much appreciated.
-Please vist our [Contribution Guide](CONTRIBUTING.md) for more details
+Please visit our [Contribution Guide](CONTRIBUTING.md) for more details
