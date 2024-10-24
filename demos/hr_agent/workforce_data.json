@@ -1,0 +1,29 @@
+[
+    {
+        "point_in_time": 0,
+        "regions": [
+            { "region": "asia", "contract": 100, "fte": 150, "agency": 2000 },
+            { "region": "europe", "contract": 80, "fte": 120, "agency": 2500 },
+            { "region": "americas", "contract": 90, "fte": 200, "agency": 3100 }
+        ],
+        "satisfaction": 3.5
+    },
+    {
+        "point_in_time": 30,
+        "regions": [
+            { "region": "asia", "contract": 110, "fte": 155, "agency": 1000 },
+            { "region": "europe", "contract": 85, "fte": 130, "agency": 1600 },
+            { "region": "americas", "contract": 95, "fte": 210, "agency": 3100 }
+        ],
+        "satisfaction": 4.0
+    },
+    {
+        "point_in_time": 60,
+        "regions": [
+            { "region": "asia", "contract": 115, "fte": 160, "agency": 500 },
+            { "region": "europe", "contract": 90, "fte": 140, "agency": 700 },
+            { "region": "americas", "contract": 100, "fte": 220, "agency": 1200 }
+        ],
+        "satisfaction": 4.7
+    }
+]

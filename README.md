@@ -22,7 +22,7 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 **Jump to our [docs](https://docs.archgw.com)** to learn how you can use Arch to improve the speed, security and personalization of your GenAI apps.
 
 ## Contact
-To get in touch with us, please join our [discord server](https://discord.gg/rSRQ9fv7). We will be monitoring that actively and offering support there.
+To get in touch with us, please join our [discord server](https://discord.gg/pGZf2gcwEc). We will be monitoring that actively and offering support there.
 
 ## Demos
 * [Function Calling](demos/function_calling/README.md) - Walk through of the core function calling capabilities Arch offers
@@ -59,11 +59,9 @@ Below is an example configuration to get you started:
 
 ```yaml
 version: v0.1
-
-listen:
-  address: 0.0.0.0 # or 127.0.0.1
-  port: 10000
-  # Defines how Arch should parse the content from application/json or text/pain Content-type in the http request
+listener:
+  address: 127.0.0.1
+  port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
   message_format: huggingface
 
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
@@ -73,10 +71,10 @@ llm_providers:
     access_key: OPENAI_API_KEY
     model: gpt-4o
     default: true
-    stream: true
 
 # default system prompt used by all prompt targets
-system_prompt: You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
+system_prompt: |
+   You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
 prompt_targets:
   - name: reboot_devices
@@ -131,4 +129,4 @@ Arch is designed to support best-in class observability by supporting open stand
 ### Contribution
 We would love feedback on our [Roadmap](https://github.com/orgs/katanemo/projects/1) and we welcome contributions to **Arch**!
 Whether you're fixing bugs, adding new features, improving documentation, or creating tutorials, your help is much appreciated.
-Please vist our [Contribution Guide](arch/CONTRIBUTING.md) for more details
+Please visit our [Contribution Guide](CONTRIBUTING.md) for more details

@@ -2,7 +2,8 @@ services:
   api_server:
     build:
       context: .
-      dockerfile: Dockerfile
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-None}
     ports:
       - "18083:80"
     healthcheck:
@@ -13,7 +14,6 @@ services:
   chatbot_ui:
     build:
       context: ../../chatbot_ui
-      dockerfile: Dockerfile
     ports:
       - "18080:8080"
     environment:
