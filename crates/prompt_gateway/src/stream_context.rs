@@ -12,12 +12,7 @@ use common::common_types::{
 };
 use common::configuration::{Overrides, PromptGuards, PromptTarget};
 use common::consts::{
-    ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS,
-    ARCH_INTERNAL_CLUSTER_NAME, MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER,
-    ARCH_UPSTREAM_HOST_HEADER, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD,
-    DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST,
-    HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE,
-    ZEROSHOT_INTERNAL_HOST,
+    ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, DEFAULT_EMBEDDING_MODEL, HALLUCINATION_TEMPLATE, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE, ZEROSHOT_INTERNAL_HOST
 };
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -328,12 +323,11 @@ impl StreamContext {
 
         if !keys_with_low_score.is_empty() {
             let response =
-                "It seems I’m missing some information. Could you provide the following details: "
-                    .to_string()
+                    HALLUCINATION_TEMPLATE.to_string()
                     + &keys_with_low_score.join(", ")
                     + " ?";
             let message = Message {
-                role: SYSTEM_ROLE.to_string(),
+                role: ASSISTANT_ROLE.to_string(),
                 content: Some(response),
                 model: Some(ARCH_FC_MODEL_NAME.to_string()),
                 tool_calls: None,
