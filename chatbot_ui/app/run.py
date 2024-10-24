@@ -119,7 +119,7 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
     # this state must be passed back to the gateway in the next request
     response_json = json.loads(raw_response.text)
     log.info(response_json)
-    if response_json:
+    if response_json and "metadata" in response_json:
         # load arch_state from metadata
         arch_state_str = response_json.get("metadata", {}).get("x-arch-state", "{}")
         # parse arch_state into json object

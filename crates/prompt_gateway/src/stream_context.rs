@@ -334,13 +334,6 @@ impl StreamContext {
                 tool_call_id: None,
             };
 
-            let mut metadata: HashMap<String, String> = HashMap::new();
-            metadata.insert(
-                ARCH_STATE_HEADER.to_string(),
-                serde_json::to_string(&self.arch_state).unwrap(),
-            );
-
-
             let chat_completion_response = ChatCompletionsResponse {
                 choices: vec![Choice {
                     message,
@@ -349,7 +342,7 @@ impl StreamContext {
                 }],
                 usage: None,
                 model: ARCH_FC_MODEL_NAME.to_string(),
-                metadata: Some(metadata),
+                metadata: None,
             };
 
             trace!("hallucination response: {:?}", chat_completion_response);
