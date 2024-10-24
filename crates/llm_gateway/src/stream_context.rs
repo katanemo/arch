@@ -1,6 +1,7 @@
 use crate::filter_context::WasmMetrics;
 use common::common_types::open_ai::{
-    ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse, StreamOptions,
+    ChatCompletionChunkResponseServerEvents, ChatCompletionsRequest, ChatCompletionsResponse,
+    StreamOptions,
 };
 use common::configuration::LlmProvider;
 use common::consts::{
@@ -258,21 +259,8 @@ impl HttpContext for StreamContext {
         );
 
         if !self.is_chat_completions_request {
-            debug!("non-chatgpt request");
-            if let Some(body_str) = self
-                .get_http_response_body(0, body_size)
-                .and_then(|bytes| String::from_utf8(bytes).ok())
-            {
-                debug!(
-                    "on_http_response_body non-chatgpt request [S={}] body_str={}",
-                    self.context_id, body_str
-                );
-            }
+            debug!("non-chatcompletion request");
             return Action::Continue;
-        }
-
-        if !end_of_stream && self.streaming_response.is_none() {
-            return Action::Pause;
         }
 
         let body = match self.streaming_response.take() {
@@ -320,7 +308,7 @@ impl HttpContext for StreamContext {
             }
         };
 
-        let body_utf8 = match String::from_utf8(body.to_vec()) {
+        let body_utf8 = match String::from_utf8(body) {
             Ok(body_utf8) => body_utf8,
             Err(e) => {
                 debug!("could not convert to utf8: {}", e);
@@ -328,41 +316,51 @@ impl HttpContext for StreamContext {
             }
         };
 
-        debug!("chunk data: body str: {}", body_utf8);
-
         if self.streaming_response.is_some() {
-            let chat_completions_chunk_response =
-                match ChatCompletionChunkResponse::try_from(body_utf8.as_str()) {
+            let chat_completions_chunk_response_events =
+                match ChatCompletionChunkResponseServerEvents::try_from(body_utf8.as_str()) {
                     Ok(response) => response,
                     Err(e) => {
                         debug!(
                             "invalid streaming response: body str: {}, {:?}",
                             body_utf8, e
                         );
-                        self.send_server_error(e.into(), None);
-                        return Action::Pause;
+                        return Action::Continue;
                     }
                 };
 
-            if let Some(content) = chat_completions_chunk_response
-                .choices
+            if chat_completions_chunk_response_events.events.is_empty() {
+                debug!("empty streaming response");
+                return Action::Continue;
+            }
+
+            let mut model = chat_completions_chunk_response_events
+                .events
                 .first()
                 .unwrap()
-                .delta
-                .content
-                .as_ref()
-            {
-                let model = &chat_completions_chunk_response.model;
-                let token_count = tokenizer::token_count(model, content).unwrap_or(0);
-                self.response_tokens += token_count;
+                .model
+                .clone();
+            let tokens_str = chat_completions_chunk_response_events.to_string();
+            //HACK: add support for tokenizing mistral and other models
+            //filed issue https://github.com/katanemo/arch/issues/222
+            if model.starts_with("mistral") || model.starts_with("ministral") {
+                model = "gpt-4".to_string();
             }
+            let token_count = match tokenizer::token_count(model.as_str(), tokens_str.as_str()) {
+                Ok(token_count) => token_count,
+                Err(e) => {
+                    debug!("could not get token count: {:?}", e);
+                    return Action::Continue;
+                }
+            };
+            self.response_tokens += token_count;
         } else {
             debug!("non streaming response");
             let chat_completions_response: ChatCompletionsResponse =
-                match serde_json::from_slice(&body) {
+                match serde_json::from_str(body_utf8.as_str()) {
                     Ok(de) => de,
                     Err(_e) => {
-                        debug!("invalid response: {}", String::from_utf8_lossy(&body));
+                        debug!("invalid response: {}", body_utf8);
                         return Action::Continue;
                     }
                 };
@@ -381,7 +379,6 @@ impl HttpContext for StreamContext {
             self.context_id, self.response_tokens, end_of_stream
         );
 
-        // TODO:: ratelimit based on response tokens.
         Action::Continue
     }
 }

@@ -243,7 +243,7 @@ impl RootContext for FilterContext {
         self.overrides = Rc::new(config.overrides);
 
         let mut prompt_targets = HashMap::new();
-        for pt in config.prompt_targets {
+        for pt in config.prompt_targets.unwrap_or_default() {
             prompt_targets.insert(pt.name.clone(), pt.clone());
         }
         self.system_prompt = Rc::new(config.system_prompt);

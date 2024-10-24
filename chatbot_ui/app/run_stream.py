@@ -19,18 +19,25 @@ def predict(message, history):
         history_openai_format.append({"role": "assistant", "content": assistant})
     history_openai_format.append({"role": "user", "content": message})
 
-    response = client.chat.completions.create(
+    stream = True
+    raw_response = client.chat.completions.with_raw_response.create(
         model="gpt-3.5-turbo",
         messages=history_openai_format,
         temperature=1.0,
-        stream=True,
+        stream=stream,
     )
 
+    response = raw_response.parse()
+
     partial_message = ""
-    for chunk in response:
-        if chunk.choices[0].delta.content is not None:
-            partial_message = partial_message + chunk.choices[0].delta.content
-            yield partial_message
+    if stream:
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                partial_message = partial_message + chunk.choices[0].delta.content
+                yield partial_message
+    else:
+        partial_message = response.choices[0].message.content
+        yield partial_message
 
 
 gr.ChatInterface(predict).launch(server_name="0.0.0.0", server_port=8080)
