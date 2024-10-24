@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
 log.info(f"CHAT_COMPLETION_ENDPOINT: {CHAT_COMPLETION_ENDPOINT}")
 
+ARCH_STATE_HEADER = "x-arch-state"
 
 CSS_STYLE = """
 .json-container {
@@ -121,7 +122,7 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
     log.info(response_json)
     if response_json and "metadata" in response_json:
         # load arch_state from metadata
-        arch_state_str = response_json.get("metadata", {}).get("x-arch-state", "{}")
+        arch_state_str = response_json.get("metadata", {}).get(ARCH_STATE_HEADER, "{}")
         # parse arch_state into json object
         arch_state = json.loads(arch_state_str)
         # load messages from arch_state
