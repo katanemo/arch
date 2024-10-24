@@ -261,7 +261,10 @@ pub mod open_ai {
 
         fn try_from(value: &str) -> Result<Self, Self::Error> {
             let mut response_chunks: VecDeque<ChatCompletionChunkResponse> = value
-                .split("data: ")
+                .lines()
+                .filter(|line| line.starts_with("data: "))
+                .map(|line| line.get(6..).unwrap())
+                .filter(|data_chunk| *data_chunk != "[DONE]")
                 .map(|data_chunk| serde_json::from_str::<ChatCompletionChunkResponse>(data_chunk))
                 .collect::<Result<VecDeque<ChatCompletionChunkResponse>, _>>()?;
 
@@ -272,10 +275,10 @@ pub mod open_ai {
                         .delta
                         .content
                         .take()
-                        .ok_or(ChatCompletionChunkResponseError::EmptyContent)
+                        .unwrap_or("".to_string())
                 })
-                .collect::<Result<Vec<String>, _>>()?
-                .join(" ");
+                .collect::<Vec<String>>()
+                .join("");
 
             let mut response_chunk = response_chunks
                 .pop_front()
@@ -487,6 +490,60 @@ mod test {
                 .unwrap()
                 .parameter_type,
             ParameterType::String
+        );
+    }
+
+    #[test]
+    fn stream_chunk_parse() {
+        use super::open_ai::{ChatCompletionChunkResponse, ChunkChoice, Delta};
+
+        const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"!"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" How"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" can"},"logprobs":null,"finish_reason":null}]}
+
+
+"#;
+
+        let chunk_response: ChatCompletionChunkResponse =
+            ChatCompletionChunkResponse::try_from(CHUNK_RESPONSE).unwrap();
+        assert_eq!(chunk_response.choices.len(), 1);
+        assert_eq!(
+            chunk_response.choices[0].delta.content.as_ref().unwrap(),
+            "Hello! How can"
+        );
+    }
+
+    #[test]
+    fn stream_chunk_parse_done() {
+        use super::open_ai::{ChatCompletionChunkResponse, ChunkChoice, Delta};
+
+        const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" I"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" assist"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" you"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" today"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"?"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}
+
+data: [DONE]
+"#;
+
+        let chunk_response: ChatCompletionChunkResponse =
+            ChatCompletionChunkResponse::try_from(CHUNK_RESPONSE).unwrap();
+        assert_eq!(chunk_response.choices.len(), 1);
+        assert_eq!(
+            chunk_response.choices[0].delta.content.as_ref().unwrap(),
+            " I assist you today?"
         );
     }
 }

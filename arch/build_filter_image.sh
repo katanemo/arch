@@ -1,1 +1,1 @@
-docker build -t archgw .. -f Dockerfile
+docker build  -f Dockerfile .. -t katanemo/archgw

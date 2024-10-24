@@ -80,7 +80,10 @@ impl HttpContext for StreamContext {
             }
         };
 
-        debug!("developer => archgw: {}", String::from_utf8_lossy(&body_bytes));
+        debug!(
+            "developer => archgw: {}",
+            String::from_utf8_lossy(&body_bytes)
+        );
 
         // Deserialize body into spec.
         // Currently OpenAI API.

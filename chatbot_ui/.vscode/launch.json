@@ -30,7 +30,7 @@
       }
     },
     {
-      "name": "chatbot-ui streaming",
+      "name": "chatbot-ui (llm) streaming",
       "cwd": "${workspaceFolder}/app",
       "type": "debugpy",
       "request": "launch",
@@ -38,7 +38,7 @@
       "console": "integratedTerminal",
       "env": {
         "LLM": "1",
-        "CHAT_COMPLETION_ENDPOINT": "http://localhost:10000/v1"
+        "CHAT_COMPLETION_ENDPOINT": "http://localhost:12000/v1"
       }
     }
   ]
