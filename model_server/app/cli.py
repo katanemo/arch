@@ -79,10 +79,31 @@ def wait_for_health_check(url, timeout=180):
     return False
 
 
+def check_and_install_lsof():
+    """Check if lsof is installed, and if not, install it using apt-get."""
+    try:
+        # Check if lsof is installed by running "lsof -v"
+        subprocess.run(
+            ["lsof", "-v"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        print("lsof is already installed.")
+    except subprocess.CalledProcessError:
+        print("lsof not found, installing...")
+        try:
+            # Update package list and install lsof
+            subprocess.run(["sudo", "apt-get", "update"], check=True)
+            subprocess.run(["sudo", "apt-get", "install", "-y", "lsof"], check=True)
+            print("lsof installed successfully.")
+        except subprocess.CalledProcessError as install_error:
+            print(f"Failed to install lsof: {install_error}")
+
+
 def stop_server(port=51000, wait=True, timeout=10):
     """Stop the running Uvicorn server."""
     log.info("Stopping model server")
     try:
+        # Run the function to check and install lsof if necessary
+        check_and_install_lsof()
         # Step 1: Run lsof command to get the process using the port
         lsof_command = f"lsof -n | grep {port} | grep -i LISTEN"
         result = subprocess.run(
