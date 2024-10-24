@@ -59,11 +59,9 @@ Below is an example configuration to get you started:
 
 ```yaml
 version: v0.1
-
-listen:
-  address: 0.0.0.0 # or 127.0.0.1
-  port: 10000
-  # Defines how Arch should parse the content from application/json or text/pain Content-type in the http request
+listener:
+  address: 127.0.0.1
+  port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
   message_format: huggingface
 
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
@@ -73,10 +71,10 @@ llm_providers:
     access_key: OPENAI_API_KEY
     model: gpt-4o
     default: true
-    stream: true
 
 # default system prompt used by all prompt targets
-system_prompt: You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
+system_prompt: |
+   You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
 
 prompt_targets:
   - name: reboot_devices
