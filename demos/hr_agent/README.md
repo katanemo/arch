@@ -27,4 +27,4 @@ This demo showcases how the **Arch** can be used to an HR agent to manage workfo
    sh run_demo.sh
    ```
 3. Navigate to http://localhost:18080/
-4. Tell me what can you do for me?"
+4. "Can you give me workforce data for asia?"
