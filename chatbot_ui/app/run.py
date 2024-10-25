@@ -6,7 +6,7 @@ from arch_util import get_arch_messages
 import gradio as gr
 
 from typing import List, Optional, Tuple
-from openai import OpenAI, DefaultHttpxClient
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -39,7 +39,7 @@ footer {visibility: hidden}
 client = OpenAI(
     api_key="--",
     base_url=CHAT_COMPLETION_ENDPOINT,
-    http_client=DefaultHttpxClient(headers={"accept-encoding": "*"}),
+    # http_client=DefaultHttpxClient(headers={"accept-encoding": "*"}),
 )
 
 
