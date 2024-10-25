@@ -1,6 +1,7 @@
 use proxy_wasm::types::Status;
+use serde_json::error;
 
-use crate::ratelimit;
+use crate::{common_types::open_ai::ChatCompletionChunkResponseError, ratelimit};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {
@@ -37,4 +38,6 @@ pub enum ServerError {
     ExceededRatelimit(ratelimit::Error),
     #[error("{why}")]
     BadRequest { why: String },
+    #[error("error in streaming response")]
+    Streaming(#[from] ChatCompletionChunkResponseError),
 }

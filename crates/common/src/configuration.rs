@@ -27,12 +27,12 @@ pub enum GatewayMode {
 pub struct Configuration {
     pub version: String,
     pub listener: Listener,
-    pub endpoints: HashMap<String, Endpoint>,
+    pub endpoints: Option<HashMap<String, Endpoint>>,
     pub llm_providers: Vec<LlmProvider>,
     pub overrides: Option<Overrides>,
     pub system_prompt: Option<String>,
     pub prompt_guards: Option<PromptGuards>,
-    pub prompt_targets: Vec<PromptTarget>,
+    pub prompt_targets: Option<Vec<PromptTarget>>,
     pub error_target: Option<ErrorTargetDetail>,
     pub ratelimits: Option<Vec<Ratelimit>>,
     pub tracing: Option<Tracing>,
@@ -246,8 +246,10 @@ mod test {
         );
 
         let prompt_targets = &config.prompt_targets;
-        assert_eq!(prompt_targets.len(), 2);
+        assert_eq!(prompt_targets.as_ref().unwrap().len(), 2);
         let prompt_target = prompt_targets
+            .as_ref()
+            .unwrap()
             .iter()
             .find(|p| p.name == "reboot_network_device")
             .unwrap();
@@ -255,6 +257,8 @@ mod test {
         assert_eq!(prompt_target.default, None);
 
         let prompt_target = prompt_targets
+            .as_ref()
+            .unwrap()
             .iter()
             .find(|p| p.name == "information_extraction")
             .unwrap();

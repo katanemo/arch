@@ -25,4 +25,5 @@ pub const ARCH_INTERNAL_CLUSTER_NAME: &str = "arch_internal";
 pub const ARCH_UPSTREAM_HOST_HEADER: &str = "x-arch-upstream";
 pub const ARCH_LLM_UPSTREAM_LISTENER: &str = "arch_llm_listener";
 pub const ARCH_MODEL_PREFIX: &str = "Arch";
-pub const HALLUCINATION_TEMPLATE: &str = "It seems I’m missing some information. Could you provide the following details ";
+pub const HALLUCINATION_TEMPLATE: &str =
+    "It seems I’m missing some information. Could you provide the following details ";

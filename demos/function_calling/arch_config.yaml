@@ -17,7 +17,7 @@ overrides:
 
 llm_providers:
   - name: gpt
-    access_key: OPENAI_API_KEY
+    access_key: $OPENAI_API_KEY
     provider: openai
     model: gpt-3.5-turbo
     default: true

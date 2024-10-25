@@ -160,4 +160,3 @@ required:
   - version
   - listener
   - llm_providers
-  - prompt_targets
