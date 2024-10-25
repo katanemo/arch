@@ -12,7 +12,12 @@ use common::common_types::{
 };
 use common::configuration::{Overrides, PromptGuards, PromptTarget};
 use common::consts::{
-    ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME, MESSAGES_KEY, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, DEFAULT_EMBEDDING_MODEL, HALLUCINATION_TEMPLATE, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL, DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE, ZEROSHOT_INTERNAL_HOST
+    ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS,
+    ARCH_INTERNAL_CLUSTER_NAME, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER,
+    ASSISTANT_ROLE, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
+    DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST,
+    HALLUCINATION_TEMPLATE, MESSAGES_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE,
+    ZEROSHOT_INTERNAL_HOST,
 };
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -66,9 +71,8 @@ pub struct StreamContext {
     pub tool_call_response: Option<String>,
     pub arch_state: Option<Vec<ArchState>>,
     pub request_body_size: usize,
-    pub streaming_response: bool,
     pub user_prompt: Option<Message>,
-    pub response_tokens: usize,
+    pub streaming_response: bool,
     pub is_chat_completions_request: bool,
     pub chat_completions_request: Option<ChatCompletionsRequest>,
     pub prompt_guards: Rc<PromptGuards>,
@@ -99,7 +103,6 @@ impl StreamContext {
             request_body_size: 0,
             streaming_response: false,
             user_prompt: None,
-            response_tokens: 0,
             is_chat_completions_request: false,
             prompt_guards,
             overrides,
@@ -323,9 +326,7 @@ impl StreamContext {
 
         if !keys_with_low_score.is_empty() {
             let response =
-                    HALLUCINATION_TEMPLATE.to_string()
-                    + &keys_with_low_score.join(", ")
-                    + " ?";
+                HALLUCINATION_TEMPLATE.to_string() + &keys_with_low_score.join(", ") + " ?";
             let message = Message {
                 role: ASSISTANT_ROLE.to_string(),
                 content: Some(response),

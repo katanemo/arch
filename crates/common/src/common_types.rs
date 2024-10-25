@@ -269,6 +269,9 @@ pub mod open_ai {
                 .events
                 .iter()
                 .map(|response_chunk| {
+                    if response_chunk.choices.is_empty() {
+                        return "".to_string();
+                    }
                     response_chunk.choices[0]
                         .delta
                         .content

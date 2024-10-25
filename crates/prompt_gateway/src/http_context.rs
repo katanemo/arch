@@ -3,7 +3,7 @@ use std::{collections::HashMap, time::Duration};
 use common::{
     common_types::{
         open_ai::{
-            ArchState, ChatCompletionsRequest, ChatCompletionsResponse, Message, StreamOptions,
+            ArchState, ChatCompletionChunkResponseServerEvents, ChatCompletionsRequest, Message,
         },
         PromptGuardRequest, PromptGuardTask,
     },
@@ -87,17 +87,16 @@ impl HttpContext for StreamContext {
 
         // Deserialize body into spec.
         // Currently OpenAI API.
-        let mut deserialized_body: ChatCompletionsRequest =
-            match serde_json::from_slice(&body_bytes) {
-                Ok(deserialized) => deserialized,
-                Err(e) => {
-                    self.send_server_error(
-                        ServerError::Deserialization(e),
-                        Some(StatusCode::BAD_REQUEST),
-                    );
-                    return Action::Pause;
-                }
-            };
+        let deserialized_body: ChatCompletionsRequest = match serde_json::from_slice(&body_bytes) {
+            Ok(deserialized) => deserialized,
+            Err(e) => {
+                self.send_server_error(
+                    ServerError::Deserialization(e),
+                    Some(StatusCode::BAD_REQUEST),
+                );
+                return Action::Pause;
+            }
+        };
 
         self.arch_state = match deserialized_body.metadata {
             Some(ref metadata) => {
@@ -113,11 +112,6 @@ impl HttpContext for StreamContext {
         };
 
         self.streaming_response = deserialized_body.stream;
-        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
-            deserialized_body.stream_options = Some(StreamOptions {
-                include_usage: true,
-            });
-        }
 
         let last_user_prompt = match deserialized_body
             .messages
@@ -238,105 +232,119 @@ impl HttpContext for StreamContext {
         );
 
         if !self.is_chat_completions_request {
-            if let Some(body_str) = self
-                .get_http_response_body(0, body_size)
-                .and_then(|bytes| String::from_utf8(bytes).ok())
-            {
-                debug!("recv [S={}] body_str={}", self.context_id, body_str);
-            }
+            debug!("non-streaming request");
             return Action::Continue;
         }
 
-        if !end_of_stream {
-            return Action::Pause;
-        }
+        let body = if self.streaming_response {
+            let streaming_chunk = match self.get_http_response_body(0, body_size) {
+                Some(chunk) => chunk,
+                None => {
+                    warn!(
+                        "response body empy, chunk_start: {}, chunk_size: {}",
+                        0, body_size
+                    );
+                    return Action::Continue;
+                }
+            };
 
-        let body = self
-            .get_http_response_body(0, body_size)
-            .expect("cant get response body");
+            if streaming_chunk.len() != body_size {
+                warn!(
+                    "chunk size mismatch: read: {} != requested: {}",
+                    streaming_chunk.len(),
+                    body_size
+                );
+            }
+
+            streaming_chunk
+        } else {
+            debug!("non streaming response bytes read: 0:{}", body_size);
+            match self.get_http_response_body(0, body_size) {
+                Some(body) => body,
+                None => {
+                    warn!("non streaming response body empty");
+                    return Action::Continue;
+                }
+            }
+        };
+
+        let body_utf8 = match String::from_utf8(body) {
+            Ok(body_utf8) => body_utf8,
+            Err(e) => {
+                debug!("could not convert to utf8: {}", e);
+                return Action::Continue;
+            }
+        };
 
         if self.streaming_response {
             trace!("streaming response");
-        } else {
-            trace!("non streaming response");
-            let chat_completions_response: ChatCompletionsResponse =
-                match serde_json::from_slice(&body) {
-                    Ok(de) => de,
+
+            let chat_completions_chunk_response_events =
+                match ChatCompletionChunkResponseServerEvents::try_from(body_utf8.as_str()) {
+                    Ok(response) => response,
                     Err(e) => {
-                        trace!(
-                            "invalid response: {}, {}",
-                            String::from_utf8_lossy(&body),
-                            e
+                        debug!(
+                            "invalid streaming response: body str: {}, {:?}",
+                            body_utf8, e
                         );
                         return Action::Continue;
                     }
                 };
+            debug!(
+                "parsed events: {}",
+                chat_completions_chunk_response_events.to_string()
+            );
+        } else if let Some(tool_calls) = self.tool_calls.as_ref() {
+            if !tool_calls.is_empty() {
+                if self.arch_state.is_none() {
+                    self.arch_state = Some(Vec::new());
+                }
 
-            if chat_completions_response.usage.is_some() {
-                self.response_tokens += chat_completions_response
-                    .usage
-                    .as_ref()
-                    .unwrap()
-                    .completion_tokens;
-            }
-
-            if let Some(tool_calls) = self.tool_calls.as_ref() {
-                if !tool_calls.is_empty() {
-                    if self.arch_state.is_none() {
-                        self.arch_state = Some(Vec::new());
+                let mut data = serde_json::from_str(&body_utf8).unwrap();
+                // use serde::Value to manipulate the json object and ensure that we don't lose any data
+                if let Value::Object(ref mut map) = data {
+                    // serialize arch state and add to metadata
+                    let metadata = map
+                        .entry("metadata")
+                        .or_insert(Value::Object(serde_json::Map::new()));
+                    if metadata == &Value::Null {
+                        *metadata = Value::Object(serde_json::Map::new());
                     }
 
-                    let mut data = serde_json::from_slice(&body).unwrap();
-                    // use serde::Value to manipulate the json object and ensure that we don't lose any data
-                    if let Value::Object(ref mut map) = data {
-                        // serialize arch state and add to metadata
-                        let metadata = map
-                            .entry("metadata")
-                            .or_insert(Value::Object(serde_json::Map::new()));
-                        if metadata == &Value::Null {
-                            *metadata = Value::Object(serde_json::Map::new());
-                        }
-
-                        // since arch gateway generates tool calls (using arch-fc) and calls upstream api to
-                        // get response, we will send these back to developer so they can see the api response
-                        // and tool call arch-fc generated
-                        let fc_messages = vec![
-                            Message {
-                                role: ASSISTANT_ROLE.to_string(),
-                                content: None,
-                                model: Some(ARCH_FC_MODEL_NAME.to_string()),
-                                tool_calls: self.tool_calls.clone(),
-                                tool_call_id: None,
-                            },
-                            Message {
-                                role: TOOL_ROLE.to_string(),
-                                content: self.tool_call_response.clone(),
-                                model: None,
-                                tool_calls: None,
-                                tool_call_id: Some(self.tool_calls.as_ref().unwrap()[0].id.clone()),
-                            },
-                        ];
-                        let fc_messages_str = serde_json::to_string(&fc_messages).unwrap();
-                        let arch_state = HashMap::from([("messages".to_string(), fc_messages_str)]);
-                        let arch_state_str = serde_json::to_string(&arch_state).unwrap();
-                        metadata.as_object_mut().unwrap().insert(
-                            ARCH_STATE_HEADER.to_string(),
-                            serde_json::Value::String(arch_state_str),
-                        );
-                        let data_serialized = serde_json::to_string(&data).unwrap();
-                        debug!("archgw <= developer: {}", data_serialized);
-                        self.set_http_response_body(0, body_size, data_serialized.as_bytes());
-                    };
-                }
+                    // since arch gateway generates tool calls (using arch-fc) and calls upstream api to
+                    // get response, we will send these back to developer so they can see the api response
+                    // and tool call arch-fc generated
+                    let fc_messages = vec![
+                        Message {
+                            role: ASSISTANT_ROLE.to_string(),
+                            content: None,
+                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                            tool_calls: self.tool_calls.clone(),
+                            tool_call_id: None,
+                        },
+                        Message {
+                            role: TOOL_ROLE.to_string(),
+                            content: self.tool_call_response.clone(),
+                            model: None,
+                            tool_calls: None,
+                            tool_call_id: Some(self.tool_calls.as_ref().unwrap()[0].id.clone()),
+                        },
+                    ];
+                    let fc_messages_str = serde_json::to_string(&fc_messages).unwrap();
+                    let arch_state = HashMap::from([("messages".to_string(), fc_messages_str)]);
+                    let arch_state_str = serde_json::to_string(&arch_state).unwrap();
+                    metadata.as_object_mut().unwrap().insert(
+                        ARCH_STATE_HEADER.to_string(),
+                        serde_json::Value::String(arch_state_str),
+                    );
+                    let data_serialized = serde_json::to_string(&data).unwrap();
+                    debug!("archgw <= developer: {}", data_serialized);
+                    self.set_http_response_body(0, body_size, data_serialized.as_bytes());
+                };
             }
         }
 
-        trace!(
-            "recv [S={}] total_tokens={} end_stream={}",
-            self.context_id,
-            self.response_tokens,
-            end_of_stream
-        );
+        trace!("recv [S={}] end_stream={}", self.context_id, end_of_stream);
 
         Action::Continue
     }

@@ -2,6 +2,7 @@ import json
 import os
 import logging
 import yaml
+from arch_util import get_arch_messages
 import gradio as gr
 
 from typing import List, Optional, Tuple
@@ -9,6 +10,8 @@ from openai import OpenAI, DefaultHttpxClient
 from dotenv import load_dotenv
 
 load_dotenv()
+
+STREAM_RESPONSE = bool(os.getenv("STREAM_RESPOSE", True))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,7 +23,6 @@ log = logging.getLogger(__name__)
 CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
 log.info(f"CHAT_COMPLETION_ENDPOINT: {CHAT_COMPLETION_ENDPOINT}")
 
-ARCH_STATE_HEADER = "x-arch-state"
 
 CSS_STYLE = """
 .json-container {
@@ -69,7 +71,7 @@ def convert_prompt_target_to_openai_format(target):
 
 def get_prompt_targets():
     try:
-        with open("arch_config.yaml", "r") as file:
+        with open(os.getenv("ARCH_CONFIG", "arch_config.yaml"), "r") as file:
             config = yaml.safe_load(file)
 
             available_tools = []
@@ -105,48 +107,65 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
             temperature=1.0,
             # metadata=metadata,
             extra_headers=custom_headers,
+            stream=STREAM_RESPONSE,
         )
     except Exception as e:
         log.info(e)
         # remove last user message in case of exception
         history.pop()
-        log.info("Error calling gateway API: {}".format(e.message))
-        raise gr.Error("Error calling gateway API: {}".format(e.message))
+        log.info("Error calling gateway API: {}".format(e))
+        raise gr.Error("Error calling gateway API: {}".format(e))
 
-    log.error(f"raw_response: {raw_response.text}")
-    response = raw_response.parse()
+    if STREAM_RESPONSE:
+        response = raw_response.parse()
+        history.append({"role": "assistant", "content": "", "model": ""})
+        # for gradio UI we don't want to show raw tool calls and messages from developer application
+        # so we're filtering those out
+        history_view = [h for h in history if h["role"] != "tool" and "content" in h]
 
-    # extract arch_state from metadata and store it in gradio session state
-    # this state must be passed back to the gateway in the next request
-    response_json = json.loads(raw_response.text)
-    log.info(response_json)
-    if response_json and "metadata" in response_json:
-        # load arch_state from metadata
-        arch_state_str = response_json.get("metadata", {}).get(ARCH_STATE_HEADER, "{}")
-        # parse arch_state into json object
-        arch_state = json.loads(arch_state_str)
-        # load messages from arch_state
-        arch_messages_str = arch_state.get("messages", "[]")
-        # parse messages into json object
-        arch_messages = json.loads(arch_messages_str)
-        # append messages from arch gateway to history
-        for message in arch_messages:
-            history.append(message)
+        messages = [
+            (history_view[i]["content"], history_view[i + 1]["content"])
+            for i in range(0, len(history_view) - 1, 2)
+        ]
 
-    content = response.choices[0].message.content
+        for chunk in response:
+            if len(chunk.choices) > 0 and chunk.choices[0].delta.content is not None:
+                history[-1]["model"] = chunk.model
+                history[-1]["content"] = chunk.choices[0].delta.content
+                messages[-1] = (
+                    messages[-1][0],
+                    messages[-1][1] + chunk.choices[0].delta.content,
+                )
+                yield "", messages, state
+    else:
+        log.error(f"raw_response: {raw_response.text}")
+        response = raw_response.parse()
 
-    history.append({"role": "assistant", "content": content, "model": response.model})
+        # extract arch_state from metadata and store it in gradio session state
+        # this state must be passed back to the gateway in the next request
+        response_json = json.loads(raw_response.text)
+        log.info(response_json)
 
-    # for gradio UI we don't want to show raw tool calls and messages from developer application
-    # so we're filtering those out
-    history_view = [h for h in history if h["role"] != "tool" and "content" in h]
+        arch_messages = get_arch_messages(response_json)
+        for arch_message in arch_messages:
+            history.append(arch_message)
 
-    messages = [
-        (history_view[i]["content"], history_view[i + 1]["content"])
-        for i in range(0, len(history_view) - 1, 2)
-    ]
+        content = response.choices[0].message.content
 
-    return "", messages, state
+        history.append(
+            {"role": "assistant", "content": content, "model": response.model}
+        )
+
+        # for gradio UI we don't want to show raw tool calls and messages from developer application
+        # so we're filtering those out
+        history_view = [h for h in history if h["role"] != "tool" and "content" in h]
+
+        messages = [
+            (history_view[i]["content"], history_view[i + 1]["content"])
+            for i in range(0, len(history_view) - 1, 2)
+        ]
+
+        yield "", messages, state
 
 
 def main():

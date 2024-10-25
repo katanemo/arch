@@ -17,11 +17,6 @@ llm_providers:
     provider: openai
     model: gpt-4o
 
-  - name: ministral-8b
-    access_key: $MISTRAL_API_KEY
-    provider: mistral
-    model: ministral-8b-latest
-
   - name: ministral-3b
     access_key: $MISTRAL_API_KEY
     provider: mistral

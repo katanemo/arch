@@ -14,7 +14,9 @@
       "console": "integratedTerminal",
       "env": {
         "LLM": "1",
-        "CHAT_COMPLETION_ENDPOINT": "http://localhost:10000/v1"
+        "CHAT_COMPLETION_ENDPOINT": "http://localhost:10000/v1",
+        "STREAMING": "True",
+        "ARCH_CONFIG": "../../demos/function_calling/arch_config.yaml"
       }
     },
     {
@@ -30,6 +32,7 @@
       }
     },
     {
+      "python": "${workspaceFolder}/venv/bin/python",
       "name": "chatbot-ui (llm) streaming",
       "cwd": "${workspaceFolder}/app",
       "type": "debugpy",
