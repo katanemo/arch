@@ -1,12 +1,11 @@
 # HR Agent Demo
 
-This demo showcases how the **Arch** can be used to an HR agent to manage workforce-related inquiries, workforce planning, and communication via Slack. It intelligently routes incoming prompts to the correct endpoints, providing concise and useful responses tailored for HR and workforce decision-making.
+This demo showcases how the **Arch** can be used to build an HR agent to manage workforce-related inquiries, workforce planning, and communication via Slack. It intelligently routes incoming prompts to the correct targets, providing concise and useful responses tailored for HR and workforce decision-making.
 
 ## Available Functions:
 
 - **HR Q/A**: Handles general Q&A related to insurance policies.
   - **Endpoint**: `/agent/hr_qa`
-  - Handles general HR-related inquiries (e.g., HR policy questions, FAQs).
 
 - **Workforce Data Retrieval**: Retrieves data related to workforce metrics like headcount, satisfaction, and staffing.
   - **Endpoint**: `/agent/workforce`
@@ -28,3 +27,5 @@ This demo showcases how the **Arch** can be used to an HR agent to manage workfo
    ```
 3. Navigate to http://localhost:18080/
 4. "Can you give me workforce data for asia?"
+
+![alt text](image.png)
