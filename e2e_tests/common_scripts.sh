@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 
-function log() {
+log() {
   timestamp=$(date +"%Y-%m-%d %H:%M:%S")
   message="$*"
   echo "$timestamp: $message"
 }
 
-function wait_for_healthz() {
+wait_for_healthz() {
   local healthz_url="$1"
   local timeout_seconds="${2:-30}"  # Default timeout of 30 seconds
   local sleep_between="${3:-1}"  # Default sleep of 1 seconds
