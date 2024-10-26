@@ -3,9 +3,7 @@ set -e
 
 pwd
 
-ls common_scripts.sh
-
-source ./common_scripts.sh
+. ./common_scripts.sh
 
 log building function_callling demo
 pushd ../demos/function_calling
