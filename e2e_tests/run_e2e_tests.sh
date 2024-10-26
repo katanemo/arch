@@ -25,9 +25,8 @@ log building llm and prompt gateway rust modules
 cd ../arch
 sh build_filter_image.sh
 log starting the arch gateway service
-ARCH_CONFIG_FILE=../demos/function_calling/arch_config.yaml
-docker compose -f docker-compose.dev.yaml down
-docker compose -f docker-compose.dev.yaml up -d
+docker compose -f docker-compose.yaml down
+docker compose -f docker-compose.yaml up -d
 cd -
 
 wait_for_healthz "http://localhost:10000/healthz" 60
