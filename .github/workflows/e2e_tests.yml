@@ -1,4 +1,4 @@
-name: Run Model Server tests
+name: e2e tests
 
 on:
   push:
