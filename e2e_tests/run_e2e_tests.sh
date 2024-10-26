@@ -38,7 +38,7 @@ poetry run pytest
 
 log shutting down the arch gateway service
 cd ../arch
-docker compose -f docker-compose.dev.yaml stop
+docker compose -f docker-compose.yaml stop
 cd -
 
 log shutting down the function_calling demo
