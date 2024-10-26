@@ -21,6 +21,10 @@
       "path": "chatbot_ui"
     },
     {
+      "name": "e2e_tests",
+      "path": "e2e_tests"
+    },
+    {
       "name": "demos/function_calling",
       "path": "./demos/function_calling",
     },

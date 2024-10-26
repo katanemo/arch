@@ -3,14 +3,14 @@ use std::{collections::HashMap, time::Duration};
 use common::{
     common_types::{
         open_ai::{
-            ArchState, ChatCompletionChunkResponseServerEvents, ChatCompletionsRequest, Message,
+            ArchState, ChatCompletionStreamResponse, ChatCompletionsRequest, ChunkChoice, Delta,
         },
         PromptGuardRequest, PromptGuardTask,
     },
     consts::{
         ARCH_FC_MODEL_NAME, ARCH_INTERNAL_CLUSTER_NAME, ARCH_STATE_HEADER,
         ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, CHAT_COMPLETIONS_PATH, GUARD_INTERNAL_HOST,
-        REQUEST_ID_HEADER, TOOL_ROLE, USER_ROLE,
+        HEALTHZ_PATH, REQUEST_ID_HEADER, TOOL_ROLE, USER_ROLE,
     },
     errors::ServerError,
     http::{CallArgs, Client},
@@ -32,6 +32,15 @@ impl HttpContext for StreamContext {
         // However, a missing Content-Length header is not grounds for bad requests given that intermediary hops could
         // manipulate the body in benign ways e.g., compression.
         self.set_http_request_header("content-length", None);
+
+        if self.get_http_request_header(":path").unwrap_or_default() == HEALTHZ_PATH {
+            if self.embeddings_store.is_none() {
+                self.send_http_response(503, vec![], None);
+            } else {
+                self.send_http_response(200, vec![], None);
+            }
+            return Action::Continue;
+        }
 
         self.is_chat_completions_request =
             self.get_http_request_header(":path").unwrap_or_default() == CHAT_COMPLETIONS_PATH;
@@ -279,21 +288,46 @@ impl HttpContext for StreamContext {
         if self.streaming_response {
             trace!("streaming response");
 
-            let chat_completions_chunk_response_events =
-                match ChatCompletionChunkResponseServerEvents::try_from(body_utf8.as_str()) {
-                    Ok(response) => response,
-                    Err(e) => {
-                        debug!(
-                            "invalid streaming response: body str: {}, {:?}",
-                            body_utf8, e
-                        );
-                        return Action::Continue;
-                    }
+            if self.tool_calls.is_some() {
+                let tool_call_chunk = ChatCompletionStreamResponse {
+                    model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                    choices: vec![ChunkChoice {
+                        delta: Delta {
+                            role: Some(ASSISTANT_ROLE.to_string()),
+                            tool_calls: self.tool_calls.to_owned(),
+                            content: None,
+                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                            tool_call_id: None,
+                        },
+                        finish_reason: None,
+                    }],
                 };
-            debug!(
-                "parsed events: {}",
-                chat_completions_chunk_response_events.to_string()
-            );
+
+                let tool_call_chunk_str = serde_json::to_string(&tool_call_chunk).unwrap();
+
+                let api_call_chunk = ChatCompletionStreamResponse {
+                    model: None,
+                    choices: vec![ChunkChoice {
+                        delta: Delta {
+                            role: Some(TOOL_ROLE.to_string()),
+                            tool_calls: None,
+                            content: self.tool_call_response.clone(),
+                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                            tool_call_id: None,
+                        },
+                        finish_reason: None,
+                    }],
+                };
+
+                let api_call_chunk_str = serde_json::to_string(&api_call_chunk).unwrap();
+                let chunk_str = format!(
+                    "data: {}\n\ndata: {}\n\n{}",
+                    tool_call_chunk_str, api_call_chunk_str, body_utf8
+                );
+
+                self.set_http_response_body(0, body_size, chunk_str.as_bytes());
+                self.tool_calls = None;
+            }
         } else if let Some(tool_calls) = self.tool_calls.as_ref() {
             if !tool_calls.is_empty() {
                 if self.arch_state.is_none() {
@@ -311,24 +345,9 @@ impl HttpContext for StreamContext {
                         *metadata = Value::Object(serde_json::Map::new());
                     }
 
-                    // since arch gateway generates tool calls (using arch-fc) and calls upstream api to
-                    // get response, we will send these back to developer so they can see the api response
-                    // and tool call arch-fc generated
                     let fc_messages = vec![
-                        Message {
-                            role: ASSISTANT_ROLE.to_string(),
-                            content: None,
-                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
-                            tool_calls: self.tool_calls.clone(),
-                            tool_call_id: None,
-                        },
-                        Message {
-                            role: TOOL_ROLE.to_string(),
-                            content: self.tool_call_response.clone(),
-                            model: None,
-                            tool_calls: None,
-                            tool_call_id: Some(self.tool_calls.as_ref().unwrap()[0].id.clone()),
-                        },
+                        self.generate_toll_call_message(),
+                        self.generate_api_response_message(),
                     ];
                     let fc_messages_str = serde_json::to_string(&fc_messages).unwrap();
                     let arch_state = HashMap::from([("messages".to_string(), fc_messages_str)]);

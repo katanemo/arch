@@ -129,13 +129,30 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
         ]
 
         for chunk in response:
-            if len(chunk.choices) > 0 and chunk.choices[0].delta.content is not None:
+            if len(chunk.choices) > 0:
+                if chunk.choices[0].delta.role:
+                    if history[-1]["role"] != chunk.choices[0].delta.role:
+                        history.append(
+                            {
+                                "role": chunk.choices[0].delta.role,
+                                "content": chunk.choices[0].delta.content,
+                                "model": chunk.model,
+                                "tool_calls": chunk.choices[0].delta.tool_calls,
+                            }
+                        )
+
                 history[-1]["model"] = chunk.model
-                history[-1]["content"] = chunk.choices[0].delta.content
-                messages[-1] = (
-                    messages[-1][0],
-                    messages[-1][1] + chunk.choices[0].delta.content,
-                )
+                if chunk.choices[0].delta.content:
+                    history[-1]["content"] = (
+                        history[-1]["content"] + chunk.choices[0].delta.content
+                    )
+                history[-1]["tool_calls"] = chunk.choices[0].delta.tool_calls
+
+                if chunk.model and chunk.choices[0].delta.content:
+                    messages[-1] = (
+                        messages[-1][0],
+                        messages[-1][1] + chunk.choices[0].delta.content,
+                    )
                 yield "", messages, state
     else:
         log.error(f"raw_response: {raw_response.text}")

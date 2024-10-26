@@ -207,6 +207,12 @@ static_resources:
                       domains:
                         - "*"
                       routes:
+                        - match:
+                            prefix: "/healthz"
+                          route:
+                            auto_host_rewrite: true
+                            cluster: openai
+                            timeout: 60s
                       {% for provider in arch_llm_providers %}
                         - match:
                             prefix: "/"

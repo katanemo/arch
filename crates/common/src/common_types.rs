@@ -185,12 +185,16 @@ pub mod open_ai {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Message {
         pub role: String,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub content: Option<String>,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub model: Option<String>,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tool_calls: Option<Vec<ToolCall>>,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tool_call_id: Option<String>,
     }
@@ -244,8 +248,9 @@ pub mod open_ai {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct ChatCompletionChunkResponse {
-        pub model: String,
+    pub struct ChatCompletionStreamResponse {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub model: Option<String>,
         pub choices: Vec<ChunkChoice>,
     }
 
@@ -259,11 +264,11 @@ pub mod open_ai {
         NoChunks,
     }
 
-    pub struct ChatCompletionChunkResponseServerEvents {
-        pub events: Vec<ChatCompletionChunkResponse>,
+    pub struct ChatCompletionStreamResponseServerEvents {
+        pub events: Vec<ChatCompletionStreamResponse>,
     }
 
-    impl Display for ChatCompletionChunkResponseServerEvents {
+    impl Display for ChatCompletionStreamResponseServerEvents {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             let tokens_str = self
                 .events
@@ -285,19 +290,19 @@ pub mod open_ai {
         }
     }
 
-    impl TryFrom<&str> for ChatCompletionChunkResponseServerEvents {
+    impl TryFrom<&str> for ChatCompletionStreamResponseServerEvents {
         type Error = ChatCompletionChunkResponseError;
 
         fn try_from(value: &str) -> Result<Self, Self::Error> {
-            let response_chunks: VecDeque<ChatCompletionChunkResponse> = value
+            let response_chunks: VecDeque<ChatCompletionStreamResponse> = value
                 .lines()
                 .filter(|line| line.starts_with("data: "))
                 .map(|line| line.get(6..).unwrap())
                 .filter(|data_chunk| *data_chunk != "[DONE]")
-                .map(serde_json::from_str::<ChatCompletionChunkResponse>)
-                .collect::<Result<VecDeque<ChatCompletionChunkResponse>, _>>()?;
+                .map(serde_json::from_str::<ChatCompletionStreamResponse>)
+                .collect::<Result<VecDeque<ChatCompletionStreamResponse>, _>>()?;
 
-            Ok(ChatCompletionChunkResponseServerEvents {
+            Ok(ChatCompletionStreamResponseServerEvents {
                 events: response_chunks.into(),
             })
         }
@@ -312,7 +317,20 @@ pub mod open_ai {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Delta {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub role: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub content: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tool_calls: Option<Vec<ToolCall>>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub model: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tool_call_id: Option<String>,
     }
 }
 
@@ -370,7 +388,7 @@ pub struct PromptGuardResponse {
 
 #[cfg(test)]
 mod test {
-    use crate::common_types::open_ai::{ChatCompletionChunkResponseServerEvents, Message};
+    use crate::common_types::open_ai::{ChatCompletionStreamResponseServerEvents, Message};
     use pretty_assertions::{assert_eq, assert_ne};
     use std::collections::HashMap;
 
@@ -508,7 +526,7 @@ mod test {
 
     #[test]
     fn stream_chunk_parse() {
-        use super::open_ai::{ChatCompletionChunkResponse, ChunkChoice, Delta};
+        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
 
         const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
 
@@ -524,7 +542,7 @@ data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.c
 "#;
 
         let sever_events =
-            ChatCompletionChunkResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
+            ChatCompletionStreamResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
         assert_eq!(sever_events.events.len(), 5);
         assert_eq!(
             sever_events.events[0].choices[0]
@@ -571,7 +589,7 @@ data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.c
 
     #[test]
     fn stream_chunk_parse_done() {
-        use super::open_ai::{ChatCompletionChunkResponse, ChunkChoice, Delta};
+        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
 
         const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" I"},"logprobs":null,"finish_reason":null}]}
 
@@ -588,8 +606,8 @@ data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.c
 data: [DONE]
 "#;
 
-        let sever_events: ChatCompletionChunkResponseServerEvents =
-            ChatCompletionChunkResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
+        let sever_events: ChatCompletionStreamResponseServerEvents =
+            ChatCompletionStreamResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
         assert_eq!(sever_events.events.len(), 6);
         assert_eq!(
             sever_events.events[0].choices[0]
@@ -638,7 +656,7 @@ data: [DONE]
 
     #[test]
     fn stream_chunk_parse_mistral() {
-        use super::open_ai::{ChatCompletionChunkResponse, ChunkChoice, Delta};
+        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
 
         const CHUNK_RESPONSE: &str = r#"data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
@@ -665,8 +683,8 @@ data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk",
 data: [DONE]
 "#;
 
-        let sever_events: ChatCompletionChunkResponseServerEvents =
-            ChatCompletionChunkResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
+        let sever_events: ChatCompletionStreamResponseServerEvents =
+            ChatCompletionStreamResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
         assert_eq!(sever_events.events.len(), 11);
 
         assert_eq!(

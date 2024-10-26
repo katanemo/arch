@@ -1,6 +1,6 @@
 use crate::filter_context::WasmMetrics;
 use common::common_types::open_ai::{
-    ChatCompletionChunkResponseServerEvents, ChatCompletionsRequest, ChatCompletionsResponse,
+    ChatCompletionStreamResponseServerEvents, ChatCompletionsRequest, ChatCompletionsResponse,
     StreamOptions,
 };
 use common::configuration::LlmProvider;
@@ -13,7 +13,7 @@ use common::llm_providers::LlmProviders;
 use common::ratelimit::Header;
 use common::{ratelimit, routing, tokenizer};
 use http::StatusCode;
-use log::{debug, warn};
+use log::{debug, trace, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::num::NonZero;
@@ -222,6 +222,12 @@ impl HttpContext for StreamContext {
             .clone_from(&self.llm_provider.as_ref().unwrap().model);
         let chat_completion_request_str = serde_json::to_string(&deserialized_body).unwrap();
 
+        trace!(
+            "arch => {:?}, body: {}",
+            deserialized_body.model,
+            chat_completion_request_str
+        );
+
         if deserialized_body.stream {
             self.streaming_response = Some(StreamingResponse::new());
         }
@@ -243,10 +249,6 @@ impl HttpContext for StreamContext {
             return Action::Continue;
         }
 
-        debug!(
-            "arch => {:?}, body: {}",
-            deserialized_body.model, chat_completion_request_str
-        );
         self.set_http_request_body(0, body_size, chat_completion_request_str.as_bytes());
 
         Action::Continue
@@ -318,7 +320,7 @@ impl HttpContext for StreamContext {
 
         if self.streaming_response.is_some() {
             let chat_completions_chunk_response_events =
-                match ChatCompletionChunkResponseServerEvents::try_from(body_utf8.as_str()) {
+                match ChatCompletionStreamResponseServerEvents::try_from(body_utf8.as_str()) {
                     Ok(response) => response,
                     Err(e) => {
                         debug!(
@@ -343,16 +345,20 @@ impl HttpContext for StreamContext {
             let tokens_str = chat_completions_chunk_response_events.to_string();
             //HACK: add support for tokenizing mistral and other models
             //filed issue https://github.com/katanemo/arch/issues/222
-            if model.starts_with("mistral") || model.starts_with("ministral") {
-                model = "gpt-4".to_string();
+            if model.as_ref().unwrap().starts_with("mistral")
+                || model.as_ref().unwrap().starts_with("ministral")
+            {
+                model = Some("gpt-4".to_string());
             }
-            let token_count = match tokenizer::token_count(model.as_str(), tokens_str.as_str()) {
-                Ok(token_count) => token_count,
-                Err(e) => {
-                    debug!("could not get token count: {:?}", e);
-                    return Action::Continue;
-                }
-            };
+            let token_count =
+                match tokenizer::token_count(model.as_ref().unwrap().as_str(), tokens_str.as_str())
+                {
+                    Ok(token_count) => token_count,
+                    Err(e) => {
+                        debug!("could not get token count: {:?}", e);
+                        return Action::Continue;
+                    }
+                };
             self.response_tokens += token_count;
         } else {
             debug!("non streaming response");

@@ -62,7 +62,7 @@ pub struct StreamCallContext {
 pub struct StreamContext {
     system_prompt: Rc<Option<String>>,
     prompt_targets: Rc<HashMap<String, PromptTarget>>,
-    embeddings_store: Option<Rc<EmbeddingsStore>>,
+    pub embeddings_store: Option<Rc<EmbeddingsStore>>,
     overrides: Rc<Option<Overrides>>,
     pub metrics: Rc<WasmMetrics>,
     pub callouts: RefCell<HashMap<u32, StreamCallContext>>,
@@ -309,7 +309,11 @@ impl StreamContext {
             match serde_json::from_str(boyd_str.as_str()) {
                 Ok(hallucination_response) => hallucination_response,
                 Err(e) => {
-                    warn!("error deserializing hallucination response: {}", e);
+                    warn!(
+                        "error deserializing hallucination response: {}, body: {}",
+                        e,
+                        boyd_str.as_str()
+                    );
                     return self.send_server_error(ServerError::Deserialization(e), None);
                 }
             };
@@ -1014,6 +1018,26 @@ impl StreamContext {
         debug!("archgw => (default target) llm request: {}", json_resp);
         self.set_http_request_body(0, self.request_body_size, json_resp.as_bytes());
         self.resume_http_request();
+    }
+
+    pub fn generate_toll_call_message(&mut self) -> Message {
+        Message {
+            role: ASSISTANT_ROLE.to_string(),
+            content: None,
+            model: Some(ARCH_FC_MODEL_NAME.to_string()),
+            tool_calls: self.tool_calls.clone(),
+            tool_call_id: None,
+        }
+    }
+
+    pub fn generate_api_response_message(&mut self) -> Message {
+        Message {
+            role: TOOL_ROLE.to_string(),
+            content: self.tool_call_response.clone(),
+            model: None,
+            tool_calls: None,
+            tool_call_id: Some(self.tool_calls.as_ref().unwrap()[0].id.clone()),
+        }
     }
 }
 
