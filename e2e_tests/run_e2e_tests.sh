@@ -29,8 +29,8 @@ cd ../arch
 sh build_filter_image.sh
 log starting the arch gateway service
 log =================================
-docker compose -f docker-compose.yaml down
-docker compose -f docker-compose.yaml up -d
+docker compose down
+docker compose up -d
 wait_for_healthz "http://localhost:10000/healthz" 60
 cd -
 
@@ -42,7 +42,7 @@ poetry run pytest
 log shutting down the arch gateway service
 log ======================================
 cd ../arch
-docker compose -f docker-compose.yaml stop
+docker compose stop
 cd -
 
 log shutting down the function_calling demo
