@@ -34,7 +34,7 @@ log starting the arch gateway service
 log =================================
 docker compose down
 log waiting for model service to be healthy
-wait_for_healthz "http://localhost:51000/healthz" 300
+wait_for_healthz "http://localhost:51000/healthz" 600 # wait for 10 mins
 docker compose up -d
 log waiting for arch gateway service to be healthy
 wait_for_healthz "http://localhost:10000/healthz" 60
