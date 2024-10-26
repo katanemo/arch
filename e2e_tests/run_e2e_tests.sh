@@ -9,10 +9,10 @@ pwd
 log building function_callling demo
 log ===============================
 cd ../demos/function_calling
-docker compose build 2>&1 > ../build.log
+docker compose build 2>&1 > ../../build.log
 
 log starting the function_calling demo
-docker compose up -d 2>&1 >> ../build.log
+docker compose up -d 2>&1 >> ../../build.log
 cd -
 
 log building model server
@@ -27,7 +27,7 @@ cd -
 log building llm and prompt gateway rust modules
 log ============================================
 cd ../arch
-sh build_filter_image.sh 2>&1 >> ../build.log
+docker build  -f Dockerfile .. -t katanemo/archgw 2>&1 >> ../build.log
 log starting the arch gateway service
 log =================================
 docker compose down 2>&1 >> ../build.log
