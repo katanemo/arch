@@ -18,7 +18,7 @@ log building model server
 cd ../model_server
 poetry install
 log starting model server
-archgw_modelserver restart
+poetry run archgw_modelserver restart
 cd -
 
 log building llm and prompt gateway rust modules
