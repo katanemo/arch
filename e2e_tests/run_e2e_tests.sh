@@ -30,7 +30,7 @@ sh build_filter_image.sh
 log starting the arch gateway service
 log =================================
 docker compose down
-docker compose up -d
+docker compose up &
 wait_for_healthz "http://localhost:10000/healthz" 60
 cd -
 
