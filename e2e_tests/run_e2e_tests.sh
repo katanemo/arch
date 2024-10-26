@@ -1,7 +1,8 @@
 # if any of the commands fail, the script will exit
 set -e
 
-source common_scripts.sh
+pwd
+source ./common_scripts.sh
 
 log building function_callling demo
 pushd ../demos/function_calling
