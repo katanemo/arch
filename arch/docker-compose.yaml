@@ -12,3 +12,6 @@ services:
       - ~/archgw_logs:/var/log/
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
