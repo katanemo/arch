@@ -20,6 +20,7 @@ log =====================
 cd ../model_server
 poetry install
 log starting model server
+log =====================
 poetry run archgw_modelserver restart &
 cd -
 
@@ -31,7 +32,7 @@ log starting the arch gateway service
 log =================================
 docker compose down
 log waiting for model service to be healthy
-wait_for_healthz "http://localhost:51000/healthz" 60
+wait_for_healthz "http://localhost:51000/healthz" 300
 docker compose up -d
 log waiting for arch gateway service to be healthy
 wait_for_healthz "http://localhost:10000/healthz" 60
