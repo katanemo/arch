@@ -32,4 +32,4 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
-          cd e2e_tests && sh run_e2e_tests.sh
+          cd e2e_tests && bash run_e2e_tests.sh

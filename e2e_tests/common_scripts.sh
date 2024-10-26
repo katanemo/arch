@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 log() {
   timestamp=$(date +"%Y-%m-%d %H:%M:%S")
