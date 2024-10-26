@@ -57,3 +57,9 @@ log =======================================
 cd ../demos/function_calling
 docker compose down 2>&1 >> ../build.log
 cd -
+
+log shutting down the model server
+log ==============================
+cd ../model_server
+poetry run archgw_modelserver stop 2>&1 >> ../build.log
+cd -
