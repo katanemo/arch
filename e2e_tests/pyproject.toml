@@ -12,6 +12,7 @@ python = "^3.10"
 pytest = "^7.3.1"
 requests = "^2.29.0"
 selenium = "^4.11.2"
+pytest-sugar = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest-cov = "^4.1.0"

@@ -3,7 +3,7 @@ use crate::hallucination::extract_messages_for_hallucination;
 use acap::cos;
 use common::common_types::open_ai::{
     ArchState, ChatCompletionStreamResponse, ChatCompletionTool, ChatCompletionsRequest,
-    ChatCompletionsResponse, ChunkChoice, Delta, FunctionDefinition, FunctionParameter,
+    ChatCompletionsResponse, FunctionDefinition, FunctionParameter,
     FunctionParameters, Message, ParameterType, ToolCall, ToolType,
 };
 use common::common_types::{
@@ -334,8 +334,16 @@ impl StreamContext {
 
             let response_str = if self.streaming_response {
                 let chunks = [
-                    ChatCompletionStreamResponse::new(None, Some(ASSISTANT_ROLE.to_string())),
-                    ChatCompletionStreamResponse::new(Some(response), None),
+                    ChatCompletionStreamResponse::new(
+                        None,
+                        Some(ASSISTANT_ROLE.to_string()),
+                        Some(ARCH_FC_MODEL_NAME.to_owned()),
+                    ),
+                    ChatCompletionStreamResponse::new(
+                        Some(response),
+                        None,
+                        Some(ARCH_FC_MODEL_NAME.to_owned()),
+                    ),
                 ];
 
                 let mut response_str = String::new();
@@ -961,37 +969,28 @@ impl StreamContext {
                 let chat_completion_response =
                     serde_json::from_slice::<ChatCompletionsResponse>(&body).unwrap();
 
-                let chunk_role_message = ChatCompletionStreamResponse {
-                    model: Some(chat_completion_response.model.clone()),
-                    choices: vec![ChunkChoice {
-                        delta: Delta {
-                            role: Some(USER_ROLE.to_string()),
-                            content: None,
-                            tool_calls: None,
-                            model: None,
-                            tool_call_id: None,
-                        },
-                        finish_reason: None,
-                    }],
-                };
+                let chunks = [
+                    ChatCompletionStreamResponse::new(
+                        None,
+                        Some(ASSISTANT_ROLE.to_string()),
+                        Some(chat_completion_response.model.clone()),
+                    ),
+                    ChatCompletionStreamResponse::new(
+                        chat_completion_response.choices[0].message.content.clone(),
+                        None,
+                        Some(chat_completion_response.model.clone()),
+                    ),
+                ];
 
-                let chat_completion_stream_response = ChatCompletionStreamResponse {
-                    model: Some(chat_completion_response.model),
-                    choices: vec![ChunkChoice {
-                        delta: Delta {
-                            role: None,
-                            content: chat_completion_response.choices[0].message.content.clone(),
-                            tool_calls: None,
-                            model: None,
-                            tool_call_id: None,
-                        },
-                        finish_reason: None,
-                    }],
-                };
-                let chunk_role = serde_json::to_string(&chunk_role_message).unwrap();
-                let chunk_data = serde_json::to_string(&chat_completion_stream_response).unwrap();
-                format!("data: {}\n\ndata: {}\n\n", chunk_role, chunk_data)
-            } else {
+                let mut response_str = String::new();
+                for chunk in chunks.iter() {
+                    response_str.push_str("data: ");
+                    response_str.push_str(&serde_json::to_string(&chunk).unwrap());
+                    response_str.push_str("\n\n");
+                }
+                response_str
+            }
+            else {
                 String::from_utf8(body).unwrap()
             };
 

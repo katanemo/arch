@@ -279,9 +279,9 @@ pub mod open_ai {
     }
 
     impl ChatCompletionStreamResponse {
-        pub fn new(response: Option<String>, role: Option<String>) -> Self {
+        pub fn new(response: Option<String>, role: Option<String>, model: Option<String>) -> Self {
             ChatCompletionStreamResponse {
-                model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                model,
                 choices: vec![ChunkChoice {
                     delta: Delta {
                         role,
