@@ -82,10 +82,10 @@ prompt_targets:
       name: api_server
       path: /default_target
     system_prompt: |
-      You are a helpful assistant. Use the information that is provided to you.
+      You are a helpful assistant! Summarize the user's request and provide a helpful response.
     # if it is set to false arch will send response that it received from this prompt target to the user
     # if true arch will forward the response to the default LLM
-    auto_llm_dispatch_on_response: true
+    auto_llm_dispatch_on_response: false
 
 tracing:
   random_sampling: 100

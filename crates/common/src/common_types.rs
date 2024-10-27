@@ -42,6 +42,8 @@ pub mod open_ai {
     use serde::{ser::SerializeMap, Deserialize, Serialize};
     use serde_yaml::Value;
 
+    use crate::consts::{ARCH_FC_MODEL_NAME, ASSISTANT_ROLE};
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsRequest {
         #[serde(default)]
@@ -242,6 +244,28 @@ pub mod open_ai {
         pub metadata: Option<HashMap<String, String>>,
     }
 
+    // create constructor for ChatCompletionsResponse
+    impl ChatCompletionsResponse {
+        pub fn new(message: String) -> Self {
+            ChatCompletionsResponse {
+                choices: vec![Choice {
+                    message: Message {
+                        role: ASSISTANT_ROLE.to_string(),
+                        content: Some(message),
+                        model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                        tool_calls: None,
+                        tool_call_id: None,
+                    },
+                    index: 0,
+                    finish_reason: "done".to_string(),
+                }],
+                usage: None,
+                model: ARCH_FC_MODEL_NAME.to_string(),
+                metadata: None,
+            }
+        }
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Usage {
         pub completion_tokens: usize,
@@ -252,6 +276,24 @@ pub mod open_ai {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub model: Option<String>,
         pub choices: Vec<ChunkChoice>,
+    }
+
+    impl ChatCompletionStreamResponse {
+        pub fn new(response: Option<String>, role: Option<String>) -> Self {
+            ChatCompletionStreamResponse {
+                model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                choices: vec![ChunkChoice {
+                    delta: Delta {
+                        role,
+                        content: response,
+                        tool_calls: None,
+                        model: None,
+                        tool_call_id: None,
+                    },
+                    finish_reason: None,
+                }],
+            }
+        }
     }
 
     #[derive(Debug, thiserror::Error)]

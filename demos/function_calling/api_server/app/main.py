@@ -66,18 +66,18 @@ async def insurance_claim_details(req: InsuranceClaimDetailsRequest, res: Respon
 
 
 class DefaultTargetRequest(BaseModel):
-    arch_messages: list
+    messages: list
 
 
 @app.post("/default_target")
 async def default_target(req: DefaultTargetRequest, res: Response):
-    logger.info(f"Received arch_messages: {req.arch_messages}")
+    logger.info(f"Received arch_messages: {req.messages}")
     resp = {
         "choices": [
             {
                 "message": {
-                    "role": "assistant",
-                    "content": "hello world from api server",
+                    "role": "user",
+                    "content": "I can help you with weather forecast or insurance claim details",
                 },
                 "finish_reason": "completed",
                 "index": 0,
