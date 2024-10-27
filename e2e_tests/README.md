@@ -6,9 +6,9 @@ To be able to run e2e tests successfully run_e2e_script prepares environment in 
 
 1. build and start function_calling demo (using docker compose)
 1. build, install and start model server async (using poetry)
-1. build and start arch gateway (using dokcer compose)
+1. build and start arch gateway (using docker compose)
 1. wait for model server to be ready
-1. wait for arch gatewy to be ready
+1. wait for arch gateway to be ready
 1. start e2e tests (using poetry)
    1. runs llm gateway tests for llm routing
    2. runs prompt gateway tests to test function calling, parameter gathering and summarization
