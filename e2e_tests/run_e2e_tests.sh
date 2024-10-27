@@ -2,9 +2,20 @@
 # if any of the commands fail, the script will exit
 set -e
 
-pwd
-
 . ./common_scripts.sh
+
+print_debug() {
+  log "Received signal to stop"
+  log "Printing debug logs for model_server"
+  log "===================================="
+  tail -n 500 ~/archgw_modelserver.log
+  log "Printing debug logs for docker"
+  log "===================================="
+  tail -n 500 ../build.log
+}
+
+trap 'print_debug' INT TERM
+
 
 log starting > ../build.log
 
