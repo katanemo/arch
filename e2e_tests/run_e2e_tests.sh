@@ -8,7 +8,7 @@ print_debug() {
   log "Received signal to stop"
   log "Printing debug logs for model_server"
   log "===================================="
-  tail -n 500 ~/archgw_modelserver.log
+  tail -n 500 ~/archgw_logs/modelserver.log
   log "Printing debug logs for docker"
   log "===================================="
   tail -n 500 ../build.log
