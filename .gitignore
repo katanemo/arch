@@ -23,7 +23,6 @@ arch_log/
 arch/tools/*.egg-info
 arch/tools/config
 arch/tools/build
-arch/stage.env
 model_server/model_server.egg-info
 model_server/venv_model_server
 model_server/build
@@ -32,3 +31,4 @@ arch_logs/
 dist/
 crates/*/target/
 crates/target/
+build.log

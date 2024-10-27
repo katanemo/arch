@@ -32,10 +32,10 @@ cd ../arch
 docker build  -f Dockerfile .. -t katanemo/archgw -q
 log starting the arch gateway service
 log =================================
-docker compose down
+docker compose -f docker-compose.e2e.yaml down
 log waiting for model service to be healthy
 wait_for_healthz "http://localhost:51000/healthz" 600 # wait for 10 mins
-docker compose up -d
+docker compose -f docker-compose.e2e.yaml up -d
 log waiting for arch gateway service to be healthy
 wait_for_healthz "http://localhost:10000/healthz" 60
 log waiting for arch gateway service to be healthy
@@ -49,7 +49,7 @@ poetry run pytest
 log shutting down the arch gateway service
 log ======================================
 cd ../arch
-docker compose stop 2>&1 >> ../build.log
+docker compose -f docker-compose.e2e.yaml stop 2>&1 >> ../build.log
 cd -
 
 log shutting down the function_calling demo
