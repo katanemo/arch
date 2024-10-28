@@ -33,6 +33,7 @@ cd ../model_server
 poetry install 2>&1 >> ../build.log
 log starting model server
 log =====================
+mkdir -p ~/archgw_logs
 touch ~/archgw_logs/modelserver.log
 poetry run archgw_modelserver restart &
 tail -F ~/archgw_logs/modelserver.log &
