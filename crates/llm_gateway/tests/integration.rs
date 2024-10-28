@@ -149,14 +149,14 @@ ratelimits:
       key: selector-key
       value: selector-value
     limit:
-      tokens: 50
+      tokens: 100
       unit: minute
 "#
 }
 
 #[test]
 #[serial]
-fn successful_request_to_open_ai_chat_completions() {
+fn llm_gateway_successful_request_to_open_ai_chat_completions() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -217,7 +217,7 @@ fn successful_request_to_open_ai_chat_completions() {
 
 #[test]
 #[serial]
-fn bad_request_to_open_ai_chat_completions() {
+fn llm_gateway_bad_request_to_open_ai_chat_completions() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -279,7 +279,7 @@ fn bad_request_to_open_ai_chat_completions() {
 
 #[test]
 #[serial]
-fn request_ratelimited() {
+fn llm_gateway_request_ratelimited() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -306,11 +306,11 @@ fn request_ratelimited() {
     \"messages\": [\
     {\
         \"role\": \"system\",\
-        \"content\": \"You are a poetic assistant, skilled in explaining complex programming concepts with creative flair.\"\
+        \"content\": \"You are a helpful poetic assistant!, skilled in explaining complex programming concepts with creative flair. Be sure to be concise and to the point.\"\
     },\
     {\
         \"role\": \"user\",\
-        \"content\": \"Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. \"\
+        \"content\": \"Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. And also summarize it how a 4th graded would understand it.\"\
     }\
     ],\
     \"model\": \"gpt-4\"\
@@ -328,6 +328,7 @@ fn request_ratelimited() {
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         // .expect_metric_increment("active_http_calls", 1)
         .expect_send_local_response(
             Some(StatusCode::TOO_MANY_REQUESTS.as_u16().into()),
@@ -342,7 +343,7 @@ fn request_ratelimited() {
 
 #[test]
 #[serial]
-fn request_not_ratelimited() {
+fn llm_gateway_request_not_ratelimited() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -391,14 +392,7 @@ fn request_not_ratelimited() {
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        // .expect_metric_increment("active_http_calls", 1)
-        .expect_send_local_response(
-            Some(StatusCode::TOO_MANY_REQUESTS.as_u16().into()),
-            None,
-            None,
-            None,
-        )
-        .expect_metric_increment("ratelimited_rq", 1)
+        .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 }

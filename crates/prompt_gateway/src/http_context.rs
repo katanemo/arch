@@ -33,7 +33,8 @@ impl HttpContext for StreamContext {
         // manipulate the body in benign ways e.g., compression.
         self.set_http_request_header("content-length", None);
 
-        if self.get_http_request_header(":path").unwrap_or_default() == HEALTHZ_PATH {
+        let request_path = self.get_http_request_header(":path").unwrap_or_default();
+        if request_path == HEALTHZ_PATH {
             if self.embeddings_store.is_none() {
                 self.send_http_response(503, vec![], None);
             } else {
@@ -42,8 +43,7 @@ impl HttpContext for StreamContext {
             return Action::Continue;
         }
 
-        self.is_chat_completions_request =
-            self.get_http_request_header(":path").unwrap_or_default() == CHAT_COMPLETIONS_PATH;
+        self.is_chat_completions_request = request_path == CHAT_COMPLETIONS_PATH;
 
         trace!(
             "on_http_request_headers S[{}] req_headers={:?}",

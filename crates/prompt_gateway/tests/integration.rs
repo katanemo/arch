@@ -375,7 +375,7 @@ ratelimits:
 
 #[test]
 #[serial]
-fn successful_request_to_open_ai_chat_completions() {
+fn prompt_gateway_successful_request_to_open_ai_chat_completions() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -438,7 +438,7 @@ fn successful_request_to_open_ai_chat_completions() {
 
 #[test]
 #[serial]
-fn bad_request_to_open_ai_chat_completions() {
+fn prompt_gateway_bad_request_to_open_ai_chat_completions() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -501,7 +501,7 @@ fn bad_request_to_open_ai_chat_completions() {
 
 #[test]
 #[serial]
-fn request_to_llm_gateway() {
+fn prompt_gateway_request_to_llm_gateway() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
@@ -669,8 +669,8 @@ fn request_to_llm_gateway() {
         .expect_get_buffer_bytes(Some(BufferType::HttpResponseBody))
         .returning(Some(chat_completion_response_str.as_str()))
         .expect_log(Some(LogLevel::Trace), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpResponseBody), None)
-        .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Trace), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
