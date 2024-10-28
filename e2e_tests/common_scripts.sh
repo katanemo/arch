@@ -9,7 +9,7 @@ log() {
 wait_for_healthz() {
   local healthz_url="$1"
   local timeout_seconds="${2:-30}"  # Default timeout of 30 seconds
-  local sleep_between="${3:-1}"  # Default sleep of 1 seconds
+  local sleep_between="${3:-5}"  # Default sleep of 5 seconds
 
   local start_time=$(date +%s)
 
