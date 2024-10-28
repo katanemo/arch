@@ -31,18 +31,5 @@
         "CHAT_COMPLETION_ENDPOINT": "http://localhost:12000/v1"
       }
     },
-    {
-      "python": "${workspaceFolder}/venv/bin/python",
-      "name": "chatbot-ui (llm) streaming",
-      "cwd": "${workspaceFolder}/app",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "run_stream.py",
-      "console": "integratedTerminal",
-      "env": {
-        "LLM": "1",
-        "CHAT_COMPLETION_ENDPOINT": "http://localhost:12000/v1"
-      }
-    }
   ]
 }

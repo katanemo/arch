@@ -17,4 +17,4 @@ COPY --from=builder /runtime /usr/local
 COPY /app /app
 WORKDIR /app
 
-CMD ["python", "run_stream.py"]
+CMD ["python", "run.py"]

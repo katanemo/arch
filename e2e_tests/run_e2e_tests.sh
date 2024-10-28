@@ -16,7 +16,6 @@ print_debug() {
 
 trap 'print_debug' INT TERM
 
-
 log starting > ../build.log
 
 log building function_callling demo
