@@ -2,9 +2,9 @@ use crate::filter_context::{EmbeddingsStore, WasmMetrics};
 use crate::hallucination::extract_messages_for_hallucination;
 use acap::cos;
 use common::common_types::open_ai::{
-    ArchState, ChatCompletionStreamResponse, ChatCompletionTool, ChatCompletionsRequest,
-    ChatCompletionsResponse, FunctionDefinition, FunctionParameter, FunctionParameters, Message,
-    ParameterType, ToolCall, ToolType,
+    to_server_events, ArchState, ChatCompletionStreamResponse, ChatCompletionTool,
+    ChatCompletionsRequest, ChatCompletionsResponse, FunctionDefinition, FunctionParameter,
+    FunctionParameters, Message, ParameterType, ToolCall, ToolType,
 };
 use common::common_types::{
     EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
@@ -333,26 +333,22 @@ impl StreamContext {
                 HALLUCINATION_TEMPLATE.to_string() + &keys_with_low_score.join(", ") + " ?";
 
             let response_str = if self.streaming_response {
-                let chunks = [
+                let chunks = vec![
                     ChatCompletionStreamResponse::new(
                         None,
                         Some(ASSISTANT_ROLE.to_string()),
                         Some(ARCH_FC_MODEL_NAME.to_owned()),
+                        None,
                     ),
                     ChatCompletionStreamResponse::new(
                         Some(response),
                         None,
                         Some(ARCH_FC_MODEL_NAME.to_owned()),
+                        None,
                     ),
                 ];
 
-                let mut response_str = String::new();
-                for chunk in chunks.iter() {
-                    response_str.push_str("data: ");
-                    response_str.push_str(&serde_json::to_string(&chunk).unwrap());
-                    response_str.push_str("\n\n");
-                }
-                response_str
+                to_server_events(chunks)
             } else {
                 let chat_completion_response = ChatCompletionsResponse::new(response);
                 serde_json::to_string(&chat_completion_response).unwrap()
@@ -636,9 +632,9 @@ impl StreamContext {
         };
 
         arch_fc_response.choices[0]
-        .message
-        .tool_calls
-        .clone_into(&mut self.tool_calls);
+            .message
+            .tool_calls
+            .clone_into(&mut self.tool_calls);
 
         if self.tool_calls.as_ref().unwrap().len() > 1 {
             warn!(
@@ -655,11 +651,12 @@ impl StreamContext {
             //TODO: add resolver name to the response so the client can send the response back to the correct resolver
 
             let direct_response_str = if self.streaming_response {
-                let chunks = [
+                let chunks = vec![
                     ChatCompletionStreamResponse::new(
                         None,
                         Some(ASSISTANT_ROLE.to_string()),
                         Some(ARCH_FC_MODEL_NAME.to_owned()),
+                        None,
                     ),
                     ChatCompletionStreamResponse::new(
                         Some(
@@ -672,21 +669,14 @@ impl StreamContext {
                         ),
                         None,
                         Some(ARCH_FC_MODEL_NAME.to_owned()),
+                        None,
                     ),
                 ];
 
-                let mut response_str = String::new();
-                for chunk in chunks.iter() {
-                    response_str.push_str("data: ");
-                    response_str.push_str(&serde_json::to_string(&chunk).unwrap());
-                    response_str.push_str("\n\n");
-                }
-                response_str
+                to_server_events(chunks)
             } else {
                 body_str
             };
-
-            if self.streaming_response {}
 
             self.tool_calls = None;
             return self.send_http_response(
@@ -1005,26 +995,22 @@ impl StreamContext {
                 let chat_completion_response =
                     serde_json::from_slice::<ChatCompletionsResponse>(&body).unwrap();
 
-                let chunks = [
+                let chunks = vec![
                     ChatCompletionStreamResponse::new(
                         None,
                         Some(ASSISTANT_ROLE.to_string()),
                         Some(chat_completion_response.model.clone()),
+                        None,
                     ),
                     ChatCompletionStreamResponse::new(
                         chat_completion_response.choices[0].message.content.clone(),
                         None,
                         Some(chat_completion_response.model.clone()),
+                        None,
                     ),
                 ];
 
-                let mut response_str = String::new();
-                for chunk in chunks.iter() {
-                    response_str.push_str("data: ");
-                    response_str.push_str(&serde_json::to_string(&chunk).unwrap());
-                    response_str.push_str("\n\n");
-                }
-                response_str
+                to_server_events(chunks)
             } else {
                 String::from_utf8(body).unwrap()
             };

@@ -244,7 +244,6 @@ pub mod open_ai {
         pub metadata: Option<HashMap<String, String>>,
     }
 
-    // create constructor for ChatCompletionsResponse
     impl ChatCompletionsResponse {
         pub fn new(message: String) -> Self {
             ChatCompletionsResponse {
@@ -279,14 +278,19 @@ pub mod open_ai {
     }
 
     impl ChatCompletionStreamResponse {
-        pub fn new(response: Option<String>, role: Option<String>, model: Option<String>) -> Self {
+        pub fn new(
+            response: Option<String>,
+            role: Option<String>,
+            model: Option<String>,
+            tool_calls: Option<Vec<ToolCall>>,
+        ) -> Self {
             ChatCompletionStreamResponse {
                 model,
                 choices: vec![ChunkChoice {
                     delta: Delta {
                         role,
                         content: response,
-                        tool_calls: None,
+                        tool_calls,
                         model: None,
                         tool_call_id: None,
                     },
@@ -373,6 +377,16 @@ pub mod open_ai {
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tool_call_id: Option<String>,
+    }
+
+    pub fn to_server_events(chunks: Vec<ChatCompletionStreamResponse>) -> String {
+        let mut response_str = String::new();
+        for chunk in chunks.iter() {
+            response_str.push_str("data: ");
+            response_str.push_str(&serde_json::to_string(&chunk).unwrap());
+            response_str.push_str("\n\n");
+        }
+        response_str
     }
 }
 

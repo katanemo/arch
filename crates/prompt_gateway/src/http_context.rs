@@ -3,7 +3,7 @@ use std::{collections::HashMap, time::Duration};
 use common::{
     common_types::{
         open_ai::{
-            ArchState, ChatCompletionStreamResponse, ChatCompletionsRequest, ChunkChoice, Delta,
+            to_server_events, ArchState, ChatCompletionStreamResponse, ChatCompletionsRequest,
         },
         PromptGuardRequest, PromptGuardTask,
     },
@@ -250,7 +250,7 @@ impl HttpContext for StreamContext {
                 Some(chunk) => chunk,
                 None => {
                     warn!(
-                        "response body empy, chunk_start: {}, chunk_size: {}",
+                        "response body empty, chunk_start: {}, chunk_size: {}",
                         0, body_size
                     );
                     return Action::Continue;
@@ -288,44 +288,24 @@ impl HttpContext for StreamContext {
         if self.streaming_response {
             trace!("streaming response");
 
-            if self.tool_calls.is_some() {
-                let tool_call_chunk = ChatCompletionStreamResponse {
-                    model: Some(ARCH_FC_MODEL_NAME.to_string()),
-                    choices: vec![ChunkChoice {
-                        delta: Delta {
-                            role: Some(ASSISTANT_ROLE.to_string()),
-                            tool_calls: self.tool_calls.to_owned(),
-                            content: None,
-                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
-                            tool_call_id: None,
-                        },
-                        finish_reason: None,
-                    }],
-                };
+            if self.tool_calls.is_some() && !self.tool_calls.as_ref().unwrap().is_empty() {
+                let chunks = vec![
+                    ChatCompletionStreamResponse::new(
+                        None,
+                        Some(ASSISTANT_ROLE.to_string()),
+                        Some(ARCH_FC_MODEL_NAME.to_string()),
+                        self.tool_calls.to_owned(),
+                    ),
+                    ChatCompletionStreamResponse::new(
+                        self.tool_call_response.clone(),
+                        Some(TOOL_ROLE.to_string()),
+                        Some(ARCH_FC_MODEL_NAME.to_string()),
+                        None,
+                    ),
+                ];
 
-                let tool_call_chunk_str = serde_json::to_string(&tool_call_chunk).unwrap();
-
-                let api_call_chunk = ChatCompletionStreamResponse {
-                    model: None,
-                    choices: vec![ChunkChoice {
-                        delta: Delta {
-                            role: Some(TOOL_ROLE.to_string()),
-                            tool_calls: None,
-                            content: self.tool_call_response.clone(),
-                            model: Some(ARCH_FC_MODEL_NAME.to_string()),
-                            tool_call_id: None,
-                        },
-                        finish_reason: None,
-                    }],
-                };
-
-                let api_call_chunk_str = serde_json::to_string(&api_call_chunk).unwrap();
-                let chunk_str = format!(
-                    "data: {}\n\ndata: {}\n\n{}",
-                    tool_call_chunk_str, api_call_chunk_str, body_utf8
-                );
-
-                self.set_http_response_body(0, body_size, chunk_str.as_bytes());
+                let response_str = to_server_events(chunks);
+                self.set_http_response_body(0, body_size, response_str.as_bytes());
                 self.tool_calls = None;
             }
         } else if let Some(tool_calls) = self.tool_calls.as_ref() {
