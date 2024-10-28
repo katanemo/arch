@@ -34,6 +34,8 @@ poetry install 2>&1 >> ../build.log
 log starting model server
 log =====================
 poetry run archgw_modelserver restart &
+tail -F ~/archgw_logs/modelserver.log &
+model_server_tail_pid=$!
 cd -
 
 log building llm and prompt gateway rust modules
@@ -45,7 +47,7 @@ log =================================
 docker compose -f docker-compose.e2e.yaml down
 log waiting for model service to be healthy
 wait_for_healthz "http://localhost:51000/healthz" 600
-echo return code $?
+kill $model_server_tail_pid
 docker compose -f docker-compose.e2e.yaml up -d
 log waiting for arch gateway service to be healthy
 wait_for_healthz "http://localhost:10000/healthz" 60
