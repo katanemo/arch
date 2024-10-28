@@ -30,6 +30,34 @@ def test_prompt_gateway(stream):
 
 
 @pytest.mark.parametrize("stream", [True, False])
+def test_prompt_gateway_arch_direct_response(stream):
+    body = {
+        "messages": [
+            {
+                "role": "user",
+                "content": "how is the weather",
+            }
+        ],
+        "stream": stream,
+    }
+    response = requests.post(PROMPT_GATEWAY_ENDPOINT, json=body, stream=stream)
+    assert response.status_code == 200
+    if stream:
+        chunks = get_data_chunks(response, n=3)
+        assert len(chunks) > 0
+        response_json = json.loads(chunks[0])
+        # if its streaming we return tool call and api call in first two chunks
+        assert response_json.get("model").startswith("Arch")
+    else:
+        response_json = response.json()
+        assert response_json.get("model").startswith("Arch")
+        choices = response_json.get("choices", [])
+        assert len(choices) > 0
+        message = choices[0]["message"]["content"]
+        assert "Could you provide the following details days" not in message
+
+
+@pytest.mark.parametrize("stream", [True, False])
 def test_prompt_gateway_param_gathering(stream):
     body = {
         "messages": [
