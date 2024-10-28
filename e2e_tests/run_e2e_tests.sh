@@ -46,7 +46,7 @@ log starting the arch gateway service
 log =================================
 docker compose -f docker-compose.e2e.yaml down
 log waiting for model service to be healthy
-wait_for_healthz "http://localhost:51000/healthz" 600
+wait_for_healthz "http://localhost:51000/healthz" 300
 kill $model_server_tail_pid
 docker compose -f docker-compose.e2e.yaml up -d
 log waiting for arch gateway service to be healthy
