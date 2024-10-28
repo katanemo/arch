@@ -207,7 +207,7 @@ fn successful_request_to_open_ai_chat_completions() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
-        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
@@ -325,7 +325,7 @@ fn request_ratelimited() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         // The actual call is not important in this test, we just need to grab the token_id
-        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         // .expect_metric_increment("active_http_calls", 1)
@@ -388,7 +388,7 @@ fn request_not_ratelimited() {
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
         // The actual call is not important in this test, we just need to grab the token_id
-        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         // .expect_metric_increment("active_http_calls", 1)

@@ -76,7 +76,7 @@ async def default_target(req: DefaultTargetRequest, res: Response):
         "choices": [
             {
                 "message": {
-                    "role": "user",
+                    "role": "assistant",
                     "content": "I can help you with weather forecast or insurance claim details",
                 },
                 "finish_reason": "completed",

@@ -304,7 +304,9 @@ impl HttpContext for StreamContext {
                     ),
                 ];
 
-                let response_str = to_server_events(chunks);
+                let mut response_str = to_server_events(chunks);
+                // append the original response from the model to the stream
+                response_str.push_str(&body_utf8);
                 self.set_http_response_body(0, body_size, response_str.as_bytes());
                 self.tool_calls = None;
             }
