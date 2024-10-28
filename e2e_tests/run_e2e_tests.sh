@@ -14,7 +14,7 @@ print_debug() {
   tail -n 500 ../build.log
 }
 
-trap 'print_debug' INT TERM
+trap 'print_debug' INT TERM ERR
 
 log starting > ../build.log
 
@@ -44,7 +44,8 @@ log starting the arch gateway service
 log =================================
 docker compose -f docker-compose.e2e.yaml down
 log waiting for model service to be healthy
-wait_for_healthz "http://localhost:51000/healthz" 600 # wait for 10 mins
+wait_for_healthz "http://localhost:51000/healthz" 600
+echo return code $?
 docker compose -f docker-compose.e2e.yaml up -d
 log waiting for arch gateway service to be healthy
 wait_for_healthz "http://localhost:10000/healthz" 60
