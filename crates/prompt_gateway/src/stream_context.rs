@@ -688,6 +688,7 @@ impl StreamContext {
 
             if self.streaming_response {}
 
+            self.tool_calls = None;
             return self.send_http_response(
                 StatusCode::OK.as_u16().into(),
                 vec![("Powered-By", "Katanemo")],

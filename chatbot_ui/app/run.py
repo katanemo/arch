@@ -143,10 +143,13 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
 
                 history[-1]["model"] = chunk.model
                 if chunk.choices[0].delta.content:
+                    if not history[-1]["content"]:
+                        history[-1]["content"] = ""
                     history[-1]["content"] = (
                         history[-1]["content"] + chunk.choices[0].delta.content
                     )
-                history[-1]["tool_calls"] = chunk.choices[0].delta.tool_calls
+                if chunk.choices[0].delta.tool_calls:
+                    history[-1]["tool_calls"] = chunk.choices[0].delta.tool_calls
 
                 if chunk.model and chunk.choices[0].delta.content:
                     messages[-1] = (
