@@ -85,7 +85,7 @@ def main():
         css=CSS_STYLE,
     ) as demo:
         with gr.Row(equal_height=True):
-            state = gr.State([])
+            history = gr.State([])
 
             with gr.Column(scale=1):
                 with gr.Accordion("See available tools", open=False):
@@ -109,7 +109,9 @@ def main():
                     elem_classes="textbox",
                 )
 
-            textbox.submit(chat, [textbox, chatbot, state], [textbox, chatbot, state])
+            textbox.submit(
+                chat, [textbox, chatbot, history], [textbox, chatbot, history]
+            )
 
     demo.launch(server_name="0.0.0.0", server_port=8080, show_error=True, debug=True)
 
