@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from common import get_prompt_targets
+from common import get_prompt_targets, process_stream_chunk
 
 load_dotenv()
 
@@ -42,11 +42,11 @@ client = OpenAI(
 )
 
 
-def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], state):
-    if "history" not in state:
-        state["history"] = []
-
-    history = state.get("history")
+def chat(
+    query: Optional[str],
+    conversation: Optional[List[Tuple[str, str]]],
+    history: List[dict],
+):
     history.append({"role": "user", "content": query})
 
     try:
@@ -66,31 +66,14 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
     conversation.append((query, ""))
 
     for chunk in response:
-        message = chunk.choices[0].delta
-        if message.role and message.role != history[-1]["role"]:
-            # create new history item if role changes
-            # this is likely due to arch tool call and api response
-            history.append(
-                {
-                    "role": message.role,
-                }
-            )
-
-        history[-1]["model"] = chunk.model
-        if message.tool_calls:
-            history[-1]["tool_calls"] = message.tool_calls
-
-        if message.content:
-            history[-1]["content"] = history[-1].get("content", "") + message.content
-
-        # message.content is none for tool calls
-        # when "role = tool" content would contain api call response
-        if message.content and history[-1]["role"] != "tool":
+        tokens = process_stream_chunk(chunk, history)
+        if tokens:
             conversation[-1] = (
                 conversation[-1][0],
-                conversation[-1][1] + message.content,
+                conversation[-1][1] + tokens,
             )
-        yield "", conversation, state
+
+            yield "", conversation, history
 
 
 def main():
@@ -102,7 +85,7 @@ def main():
         css=CSS_STYLE,
     ) as demo:
         with gr.Row(equal_height=True):
-            state = gr.State({})
+            state = gr.State([])
 
             with gr.Column(scale=1):
                 with gr.Accordion("See available tools", open=False):

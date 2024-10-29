@@ -13,6 +13,28 @@ log = logging.getLogger(__name__)
 ARCH_STATE_HEADER = "x-arch-state"
 
 
+def process_stream_chunk(chunk, history):
+    delta = chunk.choices[0].delta
+    if delta.role and delta.role != history[-1]["role"]:
+        # create new history item if role changes
+        # this is likely due to arch tool call and api response
+        history.append({"role": delta.role})
+
+    history[-1]["model"] = chunk.model
+    # append tool calls to history if there are any in the chunk
+    if delta.tool_calls:
+        history[-1]["tool_calls"] = delta.tool_calls
+
+    if delta.content:
+        # append content to the last history item
+        history[-1]["content"] = history[-1].get("content", "") + delta.content
+        # yield content if it is from assistant
+        if history[-1]["role"] == "assistant":
+            return delta.content
+
+    return None
+
+
 def get_arch_messages(response_json):
     arch_messages = []
     if response_json and "metadata" in response_json:
