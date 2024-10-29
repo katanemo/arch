@@ -8,13 +8,11 @@ COPY requirements.txt /src/
 
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 
-COPY . /src
-
 FROM python:3.10-slim AS output
 
 COPY --from=builder /runtime /usr/local
 
-COPY /app /app
 WORKDIR /app
+COPY /run_stream.py .
 
-CMD ["python", "run.py"]
+CMD ["python", "run_stream.py"]
