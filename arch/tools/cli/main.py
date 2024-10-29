@@ -58,6 +58,8 @@ def main(ctx, version):
         click.echo(f"archgw cli version: {get_version()}")
         ctx.exit()
 
+    log.info(f"Starting archgw cli version: {get_version()}")
+
     if ctx.invoked_subcommand is None:
         click.echo("""Arch (The Intelligent Prompt Gateway) CLI""")
         click.echo(logo)
@@ -68,7 +70,7 @@ def main(ctx, version):
 @click.option(
     "--service",
     default=SERVICE_ALL,
-    help="Optioanl parameter to specify which service to build. Options are model_server, archgw",
+    help="Optional parameter to specify which service to build. Options are model_server, archgw",
 )
 def build(service):
     """Build Arch from source. Must be in root of cloned repo."""
@@ -178,6 +180,12 @@ def up(file, path, service):
     env = os.environ.copy()
     # check if access_keys are preesnt in the config file
     access_keys = get_llm_provider_access_keys(arch_config_file=arch_config_file)
+
+    # remove duplicates
+    access_keys = set(access_keys)
+    # remove the $ from the access_keys
+    access_keys = [item[1:] if item.startswith("$") else item for item in access_keys]
+
     if access_keys:
         if file:
             app_env_file = os.path.join(
@@ -186,6 +194,7 @@ def up(file, path, service):
         else:
             app_env_file = os.path.abspath(os.path.join(path, ".env"))
 
+        print(f"app_env_file: {app_env_file}")
         if not os.path.exists(
             app_env_file
         ):  # check to see if the environment variables in the current environment or not

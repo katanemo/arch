@@ -23,7 +23,7 @@ click = "^8.1.7"
 jinja2 = "^3.1.4"
 jsonschema = "^4.23.0"
 setuptools = "75.2.0"
-archgw_modelserver = "0.0.4"
+archgw_modelserver = "0.0.5"
 huggingface_hub = "^0.26.0"
 
 [tool.poetry.scripts]
