@@ -83,7 +83,9 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
         if message.content:
             history[-1]["content"] = history[-1].get("content", "") + message.content
 
-        if history[-1]["role"] != "tool" and message.content:
+        # message.content is none for tool calls
+        # when "role = tool" content would contain api call response
+        if message.content and history[-1]["role"] != "tool":
             conversation[-1] = (
                 conversation[-1][0],
                 conversation[-1][1] + message.content,
