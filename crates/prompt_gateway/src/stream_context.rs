@@ -900,7 +900,11 @@ impl StreamContext {
 
         // don't send tools message and api response to chat gpt
         for m in callout_context.request_body.messages.iter() {
-            if m.role == TOOL_ROLE || m.content.is_none() {
+            // don't send api response and tool calls to upstream LLMs
+            if m.role == TOOL_ROLE
+                || m.content.is_none()
+                || (m.tool_calls.is_some() && !m.tool_calls.as_ref().unwrap().is_empty())
+            {
                 continue;
             }
             messages.push(m.clone());
