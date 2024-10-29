@@ -1,5 +1,6 @@
 arch/qdrant_data/
 /venv/
+/.venv/
 __pycache__
 grafana-data
 prom_data
