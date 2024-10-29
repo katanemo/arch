@@ -12,7 +12,7 @@ services:
 
   chatbot_ui:
     build:
-      context: ../../chatbot_ui
+      context: ../shared/chatbot_ui
       dockerfile: Dockerfile
     ports:
       - "18080:8080"

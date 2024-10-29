@@ -9,7 +9,7 @@ llm_providers:
   - name: OpenAI
     provider: openai
     access_key: OPENAI_API_KEY
-    model: gpt-4o
+    model: gpt-4o-mini
     default: true
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
