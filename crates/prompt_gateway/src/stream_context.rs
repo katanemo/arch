@@ -16,8 +16,8 @@ use common::consts::{
     ARCH_INTERNAL_CLUSTER_NAME, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER,
     ASSISTANT_ROLE, DEFAULT_EMBEDDING_MODEL, DEFAULT_HALLUCINATED_THRESHOLD, DEFAULT_INTENT_MODEL,
     DEFAULT_PROMPT_TARGET_THRESHOLD, EMBEDDINGS_INTERNAL_HOST, HALLUCINATION_INTERNAL_HOST,
-    HALLUCINATION_TEMPLATE, MESSAGES_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, USER_ROLE,
-    ZEROSHOT_INTERNAL_HOST,
+    HALLUCINATION_TEMPLATE, MESSAGES_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE,
+    TRACE_PARENT_HEADER, USER_ROLE, ZEROSHOT_INTERNAL_HOST,
 };
 use common::embeddings::{
     CreateEmbeddingRequest, CreateEmbeddingRequestInput, CreateEmbeddingResponse,
@@ -77,6 +77,7 @@ pub struct StreamContext {
     pub chat_completions_request: Option<ChatCompletionsRequest>,
     pub prompt_guards: Rc<PromptGuards>,
     pub request_id: Option<String>,
+    pub traceparent: Option<String>,
 }
 
 impl StreamContext {
@@ -107,6 +108,7 @@ impl StreamContext {
             prompt_guards,
             overrides,
             request_id: None,
+            traceparent: None,
         }
     }
     fn embeddings_store(&self) -> &EmbeddingsStore {
@@ -154,9 +156,15 @@ impl StreamContext {
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", "60000"),
         ];
+
         if self.request_id.is_some() {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
+
+        if self.traceparent.is_some() {
+            headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
+        }
+
         let call_args = CallArgs::new(
             ARCH_INTERNAL_CLUSTER_NAME,
             "/embeddings",
@@ -280,6 +288,10 @@ impl StreamContext {
 
         if self.request_id.is_some() {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
+
+        if self.traceparent.is_some() {
+            headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
         let call_args = CallArgs::new(
@@ -481,6 +493,10 @@ impl StreamContext {
                         headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
                     }
 
+                    if self.traceparent.is_some() {
+                        headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
+                    }
+
                     let call_args = CallArgs::new(
                         ARCH_INTERNAL_CLUSTER_NAME,
                         &upstream_path,
@@ -595,6 +611,10 @@ impl StreamContext {
 
         if self.request_id.is_some() {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
+
+        if self.traceparent.is_some() {
+            headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
         let call_args = CallArgs::new(
@@ -773,6 +793,10 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
+        if self.traceparent.is_some() {
+            headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
+        }
+
         let call_args = CallArgs::new(
             ARCH_INTERNAL_CLUSTER_NAME,
             "/hallucination",
@@ -822,6 +846,10 @@ impl StreamContext {
 
         if self.request_id.is_some() {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+        }
+
+        if self.traceparent.is_some() {
+            headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
         let call_args = CallArgs::new(
