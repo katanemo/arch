@@ -2,7 +2,7 @@ import json
 import os
 import logging
 import yaml
-from common import get_arch_messages
+from common import get_arch_messages, get_prompt_targets
 import gradio as gr
 
 from typing import List, Optional, Tuple
