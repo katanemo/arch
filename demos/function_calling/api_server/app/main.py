@@ -71,7 +71,7 @@ class DefaultTargetRequest(BaseModel):
 
 @app.post("/default_target")
 async def default_target(req: DefaultTargetRequest, res: Response):
-    logger.info(f"Received arch_messages: {req.messages}")
+    logger.info(f"Received messages: {req.messages}")
     resp = {
         "choices": [
             {

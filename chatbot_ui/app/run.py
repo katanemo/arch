@@ -87,7 +87,7 @@ def get_prompt_targets():
         return None
 
 
-def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], state):
+def chat(query: Optional[str], messages: Optional[List[Tuple[str, str]]], state):
     if "history" not in state:
         state["history"] = []
 
@@ -119,19 +119,19 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
     if STREAM_RESPONSE:
         response = raw_response.parse()
         history.append({"role": "assistant", "content": "", "model": ""})
+        messages.append((query, ""))
         # for gradio UI we don't want to show raw tool calls and messages from developer application
         # so we're filtering those out
         history_view = [h for h in history if h["role"] != "tool" and "content" in h]
 
-        messages = [
-            (history_view[i]["content"], history_view[i + 1]["content"])
-            for i in range(0, len(history_view) - 1, 2)
-        ]
-
         for chunk in response:
+            print("chunk: " + str(chunk.to_dict()))
             if len(chunk.choices) > 0:
                 if chunk.choices[0].delta.role:
+                    print("role (hist): " + chunk.choices[0].delta.role)
+                    print("role (resp): " + chunk.choices[0].delta.role)
                     if history[-1]["role"] != chunk.choices[0].delta.role:
+                        print("creating new history item: " + str(chunk.choices[0]))
                         history.append(
                             {
                                 "role": chunk.choices[0].delta.role,
@@ -151,11 +151,12 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
                 if chunk.choices[0].delta.tool_calls:
                     history[-1]["tool_calls"] = chunk.choices[0].delta.tool_calls
 
-                if chunk.model and chunk.choices[0].delta.content:
-                    messages[-1] = (
-                        messages[-1][0],
-                        messages[-1][1] + chunk.choices[0].delta.content,
-                    )
+                if history[-1]["role"] != "tool":
+                    if chunk.model and chunk.choices[0].delta.content:
+                        messages[-1] = (
+                            messages[-1][0],
+                            messages[-1][1] + chunk.choices[0].delta.content,
+                        )
                 yield "", messages, state
     else:
         log.error(f"raw_response: {raw_response.text}")
