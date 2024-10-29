@@ -26,9 +26,11 @@ log.info(f"CHAT_COMPLETION_ENDPOINT: {CHAT_COMPLETION_ENDPOINT}")
 
 CSS_STYLE = """
 .json-container {
+    height: 95vh !important;
     overflow-y: auto !important;
 }
 .chatbot {
+    height: calc(95vh - 100px) !important;
     overflow-y: auto !important;
 }
 footer {visibility: hidden}
@@ -99,10 +101,20 @@ def main():
         fill_height=True,
         css=CSS_STYLE,
     ) as demo:
-        with gr.Row():
+        with gr.Row(equal_height=True):
             state = gr.State({})
 
-            with gr.Column():
+            with gr.Column(scale=1):
+                with gr.Accordion("See available tools", open=False):
+                    with gr.Column(scale=1):
+                        gr.JSON(
+                            value=get_prompt_targets(),
+                            show_indices=False,
+                            elem_classes="json-container",
+                            min_height="95vh",
+                        )
+
+            with gr.Column(scale=2):
                 chatbot = gr.Chatbot(
                     label="Arch Chatbot",
                     elem_classes="chatbot",
@@ -111,19 +123,10 @@ def main():
                     show_label=False,
                     placeholder="Enter text and press enter",
                     autofocus=True,
+                    elem_classes="textbox",
                 )
 
             textbox.submit(chat, [textbox, chatbot, state], [textbox, chatbot, state])
-
-        with gr.Row():
-            with gr.Accordion("See available tools", open=False):
-                with gr.Column(scale=1):
-                    gr.JSON(
-                        value=get_prompt_targets(),
-                        show_indices=False,
-                        label="Available Tools",
-                        elem_classes="json-container",
-                    )
 
     demo.launch(server_name="0.0.0.0", server_port=8080, show_error=True, debug=True)
 
