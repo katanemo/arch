@@ -52,6 +52,15 @@ static_resources:
                             cluster: arch_llm_listener
                             timeout: 60s
                 http_filters:
+                  - name: envoy.filters.http.compressor
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+                      compressor_library:
+                        name: compress
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip
+                          memory_level: 3
+                          window_bits: 10
                   - name: envoy.filters.http.wasm
                     typed_config:
                       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -69,6 +78,17 @@ static_resources:
                             code:
                               local:
                                 filename: "/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm"
+                  - name: envoy.filters.http.decompressor
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.decompressor.v3.Decompressor
+                      decompressor_library:
+                        name: decompress
+                        typed_config:
+                          "@type": "type.googleapis.com/envoy.extensions.compression.gzip.decompressor.v3.Gzip"
+                          window_bits: 9
+                          chunk_size: 8192
+                          # If this ratio is set too low, then body data will not be decompressed completely.
+                          max_inflate_ratio: 1000
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -187,6 +207,12 @@ static_resources:
                       domains:
                         - "*"
                       routes:
+                        - match:
+                            prefix: "/healthz"
+                          route:
+                            auto_host_rewrite: true
+                            cluster: openai
+                            timeout: 60s
                       {% for provider in arch_llm_providers %}
                         - match:
                             prefix: "/"
@@ -206,6 +232,15 @@ static_resources:
                             body:
                               inline_string: "x-arch-llm-provider header not set, llm gateway cannot perform routing\n"
                 http_filters:
+                  - name: envoy.filters.http.compressor
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+                      compressor_library:
+                        name: compress
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip
+                          memory_level: 3
+                          window_bits: 10
                   - name: envoy.filters.http.wasm
                     typed_config:
                       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -223,6 +258,17 @@ static_resources:
                             code:
                               local:
                                 filename: "/etc/envoy/proxy-wasm-plugins/llm_gateway.wasm"
+                  - name: envoy.filters.http.decompressor
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.decompressor.v3.Decompressor
+                      decompressor_library:
+                        name: decompress
+                        typed_config:
+                          "@type": "type.googleapis.com/envoy.extensions.compression.gzip.decompressor.v3.Gzip"
+                          window_bits: 9
+                          chunk_size: 8192
+                          # If this ratio is set too low, then body data will not be decompressed completely.
+                          max_inflate_ratio: 1000
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

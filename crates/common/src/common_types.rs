@@ -34,10 +34,15 @@ pub struct SearchPointResult {
 }
 
 pub mod open_ai {
-    use std::collections::HashMap;
+    use std::{
+        collections::{HashMap, VecDeque},
+        fmt::Display,
+    };
 
     use serde::{ser::SerializeMap, Deserialize, Serialize};
     use serde_yaml::Value;
+
+    use crate::consts::{ARCH_FC_MODEL_NAME, ASSISTANT_ROLE};
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ChatCompletionsRequest {
@@ -182,12 +187,16 @@ pub mod open_ai {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Message {
         pub role: String,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub content: Option<String>,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub model: Option<String>,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tool_calls: Option<Vec<ToolCall>>,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tool_call_id: Option<String>,
     }
@@ -235,15 +244,114 @@ pub mod open_ai {
         pub metadata: Option<HashMap<String, String>>,
     }
 
+    impl ChatCompletionsResponse {
+        pub fn new(message: String) -> Self {
+            ChatCompletionsResponse {
+                choices: vec![Choice {
+                    message: Message {
+                        role: ASSISTANT_ROLE.to_string(),
+                        content: Some(message),
+                        model: Some(ARCH_FC_MODEL_NAME.to_string()),
+                        tool_calls: None,
+                        tool_call_id: None,
+                    },
+                    index: 0,
+                    finish_reason: "done".to_string(),
+                }],
+                usage: None,
+                model: ARCH_FC_MODEL_NAME.to_string(),
+                metadata: None,
+            }
+        }
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Usage {
         pub completion_tokens: usize,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct ChatCompletionChunkResponse {
-        pub model: String,
+    pub struct ChatCompletionStreamResponse {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub model: Option<String>,
         pub choices: Vec<ChunkChoice>,
+    }
+
+    impl ChatCompletionStreamResponse {
+        pub fn new(
+            response: Option<String>,
+            role: Option<String>,
+            model: Option<String>,
+            tool_calls: Option<Vec<ToolCall>>,
+        ) -> Self {
+            ChatCompletionStreamResponse {
+                model,
+                choices: vec![ChunkChoice {
+                    delta: Delta {
+                        role,
+                        content: response,
+                        tool_calls,
+                        model: None,
+                        tool_call_id: None,
+                    },
+                    finish_reason: None,
+                }],
+            }
+        }
+    }
+
+    #[derive(Debug, thiserror::Error)]
+    pub enum ChatCompletionChunkResponseError {
+        #[error("failed to deserialize")]
+        Deserialization(#[from] serde_json::Error),
+        #[error("empty content in data chunk")]
+        EmptyContent,
+        #[error("no chunks present")]
+        NoChunks,
+    }
+
+    pub struct ChatCompletionStreamResponseServerEvents {
+        pub events: Vec<ChatCompletionStreamResponse>,
+    }
+
+    impl Display for ChatCompletionStreamResponseServerEvents {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let tokens_str = self
+                .events
+                .iter()
+                .map(|response_chunk| {
+                    if response_chunk.choices.is_empty() {
+                        return "".to_string();
+                    }
+                    response_chunk.choices[0]
+                        .delta
+                        .content
+                        .clone()
+                        .unwrap_or("".to_string())
+                })
+                .collect::<Vec<String>>()
+                .join("");
+
+            write!(f, "{}", tokens_str)
+        }
+    }
+
+    impl TryFrom<&str> for ChatCompletionStreamResponseServerEvents {
+        type Error = ChatCompletionChunkResponseError;
+
+        fn try_from(value: &str) -> Result<Self, Self::Error> {
+            let response_chunks: VecDeque<ChatCompletionStreamResponse> = value
+                .lines()
+                .filter(|line| line.starts_with("data: "))
+                .map(|line| line.get(6..).unwrap())
+                .filter(|data_chunk| *data_chunk != "[DONE]")
+                .map(serde_json::from_str::<ChatCompletionStreamResponse>)
+                .collect::<Result<VecDeque<ChatCompletionStreamResponse>, _>>()?;
+
+            Ok(ChatCompletionStreamResponseServerEvents {
+                events: response_chunks.into(),
+            })
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -255,7 +363,30 @@ pub mod open_ai {
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Delta {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub role: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub content: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tool_calls: Option<Vec<ToolCall>>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub model: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tool_call_id: Option<String>,
+    }
+
+    pub fn to_server_events(chunks: Vec<ChatCompletionStreamResponse>) -> String {
+        let mut response_str = String::new();
+        for chunk in chunks.iter() {
+            response_str.push_str("data: ");
+            response_str.push_str(&serde_json::to_string(&chunk).unwrap());
+            response_str.push_str("\n\n");
+        }
+        response_str
     }
 }
 
@@ -313,7 +444,7 @@ pub struct PromptGuardResponse {
 
 #[cfg(test)]
 mod test {
-    use crate::common_types::open_ai::Message;
+    use crate::common_types::open_ai::{ChatCompletionStreamResponseServerEvents, Message};
     use pretty_assertions::{assert_eq, assert_ne};
     use std::collections::HashMap;
 
@@ -446,6 +577,175 @@ mod test {
                 .unwrap()
                 .parameter_type,
             ParameterType::String
+        );
+    }
+
+    #[test]
+    fn stream_chunk_parse() {
+        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
+
+        const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"!"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" How"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" can"},"logprobs":null,"finish_reason":null}]}
+
+
+"#;
+
+        let sever_events =
+            ChatCompletionStreamResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
+        assert_eq!(sever_events.events.len(), 5);
+        assert_eq!(
+            sever_events.events[0].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            ""
+        );
+        assert_eq!(
+            sever_events.events[1].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            "Hello"
+        );
+        assert_eq!(
+            sever_events.events[2].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            "!"
+        );
+        assert_eq!(
+            sever_events.events[3].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            " How"
+        );
+        assert_eq!(
+            sever_events.events[4].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            " can"
+        );
+        assert_eq!(sever_events.to_string(), "Hello! How can");
+    }
+
+    #[test]
+    fn stream_chunk_parse_done() {
+        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
+
+        const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" I"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" assist"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" you"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" today"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"?"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}
+
+data: [DONE]
+"#;
+
+        let sever_events: ChatCompletionStreamResponseServerEvents =
+            ChatCompletionStreamResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
+        assert_eq!(sever_events.events.len(), 6);
+        assert_eq!(
+            sever_events.events[0].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            " I"
+        );
+        assert_eq!(
+            sever_events.events[1].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            " assist"
+        );
+        assert_eq!(
+            sever_events.events[2].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            " you"
+        );
+        assert_eq!(
+            sever_events.events[3].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            " today"
+        );
+        assert_eq!(
+            sever_events.events[4].choices[0]
+                .delta
+                .content
+                .as_ref()
+                .unwrap(),
+            "?"
+        );
+        assert_eq!(sever_events.events[5].choices[0].delta.content, None);
+
+        assert_eq!(sever_events.to_string(), " I assist you today?");
+    }
+
+    #[test]
+    fn stream_chunk_parse_mistral() {
+        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
+
+        const CHUNK_RESPONSE: &str = r#"data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":"!"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":" How"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":" can"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":" I"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":" assist"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":" you"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":" today"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":"?"},"finish_reason":null}]}
+
+data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":4,"total_tokens":13,"completion_tokens":9}}
+
+data: [DONE]
+"#;
+
+        let sever_events: ChatCompletionStreamResponseServerEvents =
+            ChatCompletionStreamResponseServerEvents::try_from(CHUNK_RESPONSE).unwrap();
+        assert_eq!(sever_events.events.len(), 11);
+
+        assert_eq!(
+            sever_events.to_string(),
+            "Hello! How can I assist you today?"
         );
     }
 }

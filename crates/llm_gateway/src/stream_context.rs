@@ -1,23 +1,21 @@
 use crate::filter_context::WasmMetrics;
 use common::common_types::open_ai::{
-    ArchState, ChatCompletionChunkResponse, ChatCompletionsRequest, ChatCompletionsResponse,
-    Message, ToolCall, ToolCallState,
+    ChatCompletionStreamResponseServerEvents, ChatCompletionsRequest, ChatCompletionsResponse,
+    StreamOptions,
 };
 use common::configuration::LlmProvider;
 use common::consts::{
-    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, ARCH_STATE_HEADER, CHAT_COMPLETIONS_PATH,
-    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER, USER_ROLE,
+    ARCH_PROVIDER_HINT_HEADER, ARCH_ROUTING_HEADER, CHAT_COMPLETIONS_PATH,
+    RATELIMIT_SELECTOR_HEADER_KEY, REQUEST_ID_HEADER,
 };
 use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
 use common::ratelimit::Header;
 use common::{ratelimit, routing, tokenizer};
 use http::StatusCode;
-use log::debug;
+use log::{debug, trace, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
-use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::num::NonZero;
 use std::rc::Rc;
 
@@ -26,15 +24,10 @@ use common::stats::IncrementingMetric;
 pub struct StreamContext {
     context_id: u32,
     metrics: Rc<WasmMetrics>,
-    tool_calls: Option<Vec<ToolCall>>,
-    tool_call_response: Option<String>,
-    arch_state: Option<Vec<ArchState>>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
-    user_prompt: Option<Message>,
     response_tokens: usize,
     is_chat_completions_request: bool,
-    chat_completions_request: Option<ChatCompletionsRequest>,
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
@@ -45,13 +38,8 @@ impl StreamContext {
         StreamContext {
             context_id,
             metrics,
-            chat_completions_request: None,
-            tool_calls: None,
-            tool_call_response: None,
-            arch_state: None,
             ratelimit_selector: None,
             streaming_response: false,
-            user_prompt: None,
             response_tokens: 0,
             is_chat_completions_request: false,
             llm_providers,
@@ -223,6 +211,21 @@ impl HttpContext for StreamContext {
             .clone_from(&self.llm_provider.as_ref().unwrap().model);
         let chat_completion_request_str = serde_json::to_string(&deserialized_body).unwrap();
 
+        trace!(
+            "arch => {:?}, body: {}",
+            deserialized_body.model,
+            chat_completion_request_str
+        );
+
+        if deserialized_body.stream {
+            self.streaming_response = true;
+        }
+        if deserialized_body.stream && deserialized_body.stream_options.is_none() {
+            deserialized_body.stream_options = Some(StreamOptions {
+                include_usage: true,
+            });
+        }
+
         // enforce ratelimits on ingress
         if let Err(e) =
             self.enforce_ratelimits(&deserialized_body.model, &chat_completion_request_str)
@@ -235,10 +238,6 @@ impl HttpContext for StreamContext {
             return Action::Continue;
         }
 
-        debug!(
-            "arch => {:?}, body: {}",
-            deserialized_body.model, chat_completion_request_str
-        );
         self.set_http_request_body(0, body_size, chat_completion_request_str.as_bytes());
 
         Action::Continue
@@ -246,78 +245,112 @@ impl HttpContext for StreamContext {
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         debug!(
-            "recv [S={}] bytes={} end_stream={}",
+            "on_http_response_body [S={}] bytes={} end_stream={}",
             self.context_id, body_size, end_of_stream
         );
 
         if !self.is_chat_completions_request {
-            if let Some(body_str) = self
-                .get_http_response_body(0, body_size)
-                .and_then(|bytes| String::from_utf8(bytes).ok())
-            {
-                debug!("recv [S={}] body_str={}", self.context_id, body_str);
-            }
+            debug!("non-chatcompletion request");
             return Action::Continue;
         }
 
-        if !end_of_stream {
-            return Action::Pause;
-        }
-
-        let body = self
-            .get_http_response_body(0, body_size)
-            .expect("cant get response body");
-
-        if self.streaming_response {
-            let body_str = String::from_utf8(body).expect("body is not utf-8");
-            debug!("streaming response");
-            let chat_completions_data = match body_str.split_once("data: ") {
-                Some((_, chat_completions_data)) => chat_completions_data,
+        let body = if self.streaming_response {
+            if end_of_stream && body_size == 0 {
+                return Action::Continue;
+            }
+            let chunk_start = 0;
+            let chunk_size = body_size;
+            debug!(
+                "streaming response reading, {}..{}",
+                chunk_start, chunk_size
+            );
+            let streaming_chunk = match self.get_http_response_body(0, chunk_size) {
+                Some(chunk) => chunk,
                 None => {
-                    self.send_server_error(
-                        ServerError::LogicError(String::from("parsing error in streaming data")),
-                        None,
+                    warn!(
+                        "response body empty, chunk_start: {}, chunk_size: {}",
+                        chunk_start, chunk_size
                     );
-                    return Action::Pause;
+                    return Action::Continue;
                 }
             };
 
-            let chat_completions_chunk_response: ChatCompletionChunkResponse =
-                match serde_json::from_str(chat_completions_data) {
-                    Ok(de) => de,
-                    Err(_) => {
-                        if chat_completions_data != "[NONE]" {
-                            self.send_server_error(
-                                ServerError::LogicError(String::from(
-                                    "error in streaming response",
-                                )),
-                                None,
-                            );
-                            return Action::Continue;
-                        }
+            if streaming_chunk.len() != chunk_size {
+                warn!(
+                    "chunk size mismatch: read: {} != requested: {}",
+                    streaming_chunk.len(),
+                    chunk_size
+                );
+            }
+            streaming_chunk
+        } else {
+            debug!("non streaming response bytes read: 0:{}", body_size);
+            match self.get_http_response_body(0, body_size) {
+                Some(body) => body,
+                None => {
+                    warn!("non streaming response body empty");
+                    return Action::Continue;
+                }
+            }
+        };
+
+        let body_utf8 = match String::from_utf8(body) {
+            Ok(body_utf8) => body_utf8,
+            Err(e) => {
+                debug!("could not convert to utf8: {}", e);
+                return Action::Continue;
+            }
+        };
+
+        if self.streaming_response {
+            let chat_completions_chunk_response_events =
+                match ChatCompletionStreamResponseServerEvents::try_from(body_utf8.as_str()) {
+                    Ok(response) => response,
+                    Err(e) => {
+                        debug!(
+                            "invalid streaming response: body str: {}, {:?}",
+                            body_utf8, e
+                        );
                         return Action::Continue;
                     }
                 };
 
-            if let Some(content) = chat_completions_chunk_response
-                .choices
+            if chat_completions_chunk_response_events.events.is_empty() {
+                debug!("empty streaming response");
+                return Action::Continue;
+            }
+
+            let mut model = chat_completions_chunk_response_events
+                .events
                 .first()
                 .unwrap()
-                .delta
-                .content
-                .as_ref()
+                .model
+                .clone();
+            let tokens_str = chat_completions_chunk_response_events.to_string();
+            //HACK: add support for tokenizing mistral and other models
+            //filed issue https://github.com/katanemo/arch/issues/222
+            if model.as_ref().unwrap().starts_with("mistral")
+                || model.as_ref().unwrap().starts_with("ministral")
             {
-                let model = &chat_completions_chunk_response.model;
-                let token_count = tokenizer::token_count(model, content).unwrap_or(0);
-                self.response_tokens += token_count;
+                model = Some("gpt-4".to_string());
             }
+            let token_count =
+                match tokenizer::token_count(model.as_ref().unwrap().as_str(), tokens_str.as_str())
+                {
+                    Ok(token_count) => token_count,
+                    Err(e) => {
+                        debug!("could not get token count: {:?}", e);
+                        return Action::Continue;
+                    }
+                };
+            self.response_tokens += token_count;
         } else {
             debug!("non streaming response");
             let chat_completions_response: ChatCompletionsResponse =
-                match serde_json::from_slice(&body) {
+                match serde_json::from_str(body_utf8.as_str()) {
                     Ok(de) => de,
                     Err(_e) => {
-                        debug!("invalid response: {}", String::from_utf8_lossy(&body));
+                        debug!("invalid response: {}", body_utf8);
                         return Action::Continue;
                     }
                 };
@@ -329,65 +362,6 @@ impl HttpContext for StreamContext {
                     .unwrap()
                     .completion_tokens;
             }
-
-            if let Some(tool_calls) = self.tool_calls.as_ref() {
-                if !tool_calls.is_empty() {
-                    if self.arch_state.is_none() {
-                        self.arch_state = Some(Vec::new());
-                    }
-
-                    // compute sha hash from message history
-                    let mut hasher = Sha256::new();
-                    let prompts: Vec<String> = self
-                        .chat_completions_request
-                        .as_ref()
-                        .unwrap()
-                        .messages
-                        .iter()
-                        .filter(|msg| msg.role == USER_ROLE)
-                        .map(|msg| msg.content.clone().unwrap())
-                        .collect();
-                    let prompts_merged = prompts.join("#.#");
-                    hasher.update(prompts_merged.clone());
-                    let hash_key = hasher.finalize();
-                    // conver hash to hex string
-                    let hash_key_str = format!("{:x}", hash_key);
-                    debug!("hash key: {}, prompts: {}", hash_key_str, prompts_merged);
-
-                    // create new tool call state
-                    let tool_call_state = ToolCallState {
-                        key: hash_key_str,
-                        message: self.user_prompt.clone(),
-                        tool_call: tool_calls[0].function.clone(),
-                        tool_response: self.tool_call_response.clone().unwrap(),
-                    };
-
-                    // push tool call state to arch state
-                    self.arch_state
-                        .as_mut()
-                        .unwrap()
-                        .push(ArchState::ToolCall(vec![tool_call_state]));
-
-                    let mut data: Value = serde_json::from_slice(&body).unwrap();
-                    // use serde::Value to manipulate the json object and ensure that we don't lose any data
-                    if let Value::Object(ref mut map) = data {
-                        // serialize arch state and add to metadata
-                        let arch_state_str = serde_json::to_string(&self.arch_state).unwrap();
-                        debug!("arch_state: {}", arch_state_str);
-                        let metadata = map
-                            .entry("metadata")
-                            .or_insert(Value::Object(serde_json::Map::new()));
-                        metadata.as_object_mut().unwrap().insert(
-                            ARCH_STATE_HEADER.to_string(),
-                            serde_json::Value::String(arch_state_str),
-                        );
-
-                        let data_serialized = serde_json::to_string(&data).unwrap();
-                        debug!("arch => user: {}", data_serialized);
-                        self.set_http_response_body(0, body_size, data_serialized.as_bytes());
-                    };
-                }
-            }
         }
 
         debug!(
@@ -395,7 +369,6 @@ impl HttpContext for StreamContext {
             self.context_id, self.response_tokens, end_of_stream
         );
 
-        // TODO:: ratelimit based on response tokens.
         Action::Continue
     }
 }

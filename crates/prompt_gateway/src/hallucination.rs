@@ -1,9 +1,9 @@
 use common::{
     common_types::open_ai::Message,
-    consts::{ARCH_MODEL_PREFIX, USER_ROLE, HALLUCINATION_TEMPLATE},
+    consts::{ARCH_MODEL_PREFIX, HALLUCINATION_TEMPLATE, USER_ROLE},
 };
 
-pub fn extract_messages_for_hallucination(messages: &Vec<Message>) -> Vec<String> {
+pub fn extract_messages_for_hallucination(messages: &[Message]) -> Vec<String> {
     let mut arch_assistant = false;
     let mut user_messages = Vec::new();
     if messages.len() >= 2 {
@@ -18,11 +18,11 @@ pub fn extract_messages_for_hallucination(messages: &Vec<Message>) -> Vec<String
         for message in messages.iter().rev() {
             if let Some(model) = message.model.as_ref() {
                 if !model.starts_with(ARCH_MODEL_PREFIX) {
-                  if let Some(content) = &message.content {
-                      if !content.starts_with(HALLUCINATION_TEMPLATE) {
-                          break;
-                      }
-                  }
+                    if let Some(content) = &message.content {
+                        if !content.starts_with(HALLUCINATION_TEMPLATE) {
+                            break;
+                        }
+                    }
                 }
             }
             if message.role == USER_ROLE {
@@ -37,13 +37,13 @@ pub fn extract_messages_for_hallucination(messages: &Vec<Message>) -> Vec<String
         }
     }
     user_messages.reverse(); // Reverse to maintain the original order
-    return user_messages;
+    user_messages
 }
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::assert_eq;
     use common::common_types::open_ai::Message;
+    use pretty_assertions::assert_eq;
 
     use super::extract_messages_for_hallucination;
 
@@ -160,7 +160,9 @@ mod test {
         let messages_for_halluncination = extract_messages_for_hallucination(&messages);
         println!("{:?}", messages_for_halluncination);
         assert_eq!(messages_for_halluncination.len(), 3);
-        assert_eq!(["tell me about the weather", "Seattle", "7 days"], messages_for_halluncination.as_slice());
+        assert_eq!(
+            ["tell me about the weather", "Seattle", "7 days"],
+            messages_for_halluncination.as_slice()
+        );
     }
-
 }

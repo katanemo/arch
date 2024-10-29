@@ -1,6 +1,6 @@
 services:
   archgw:
-    image: archgw:latest
+    image: katanemo/archgw:latest
     ports:
       - "10000:10000"
       - "11000:11000"
@@ -10,9 +10,13 @@ services:
       - ${ARCH_CONFIG_FILE:-../demos/function_calling/arch_config.yaml}:/config/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ./envoy.template.yaml:/config/envoy.template.yaml
-      - ./target/wasm32-wasi/release/intelligent_prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/intelligent_prompt_gateway.wasm
       - ./arch_config_schema.yaml:/config/arch_config_schema.yaml
-      - ./tools/config_generator.py:/config/config_generator.py
-      - ./arch_logs:/var/log/
-    env_file:
-      - stage.env
+      - ./tools/cli/config_generator.py:/config/config_generator.py
+      - ../crates/target/wasm32-wasi/release/llm_gateway.wasm:/etc/envoy/proxy-wasm-plugins/llm_gateway.wasm
+      - ../crates/target/wasm32-wasi/release/prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm
+      - ~/archgw_logs:/var/log/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}

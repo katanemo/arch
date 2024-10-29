@@ -65,7 +65,7 @@ def start_server(port=51000):
         process.terminate()
 
 
-def wait_for_health_check(url, timeout=180):
+def wait_for_health_check(url, timeout=300):
     """Wait for the Uvicorn server to respond to health-check requests."""
     start_time = time.time()
     while time.time() - start_time < timeout:

@@ -16,11 +16,26 @@ overrides:
   prompt_target_intent_matching_threshold: 0.6
 
 llm_providers:
-  - name: gpt
-    access_key: OPENAI_API_KEY
+  - name: gpt-4o-mini
+    access_key: $OPENAI_API_KEY
     provider: openai
-    model: gpt-3.5-turbo
+    model: gpt-4o-mini
     default: true
+
+  - name: gpt-3.5-turbo-0125
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-3.5-turbo-0125
+
+  - name: gpt-4o
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o
+
+  - name: ministral-3b
+    access_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: ministral-3b-latest
 
 system_prompt: |
   You are a helpful assistant.
@@ -67,10 +82,10 @@ prompt_targets:
       name: api_server
       path: /default_target
     system_prompt: |
-      You are a helpful assistant. Use the information that is provided to you.
+      You are a helpful assistant! Summarize the user's request and provide a helpful response.
     # if it is set to false arch will send response that it received from this prompt target to the user
     # if true arch will forward the response to the default LLM
-    auto_llm_dispatch_on_response: true
+    auto_llm_dispatch_on_response: false
 
 tracing:
   random_sampling: 100

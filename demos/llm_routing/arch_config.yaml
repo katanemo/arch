@@ -1,0 +1,32 @@
+version: "0.1-beta"
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
+llm_providers:
+  - name: gpt-4o-mini
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o-mini
+    default: true
+
+  - name: gpt-3.5-turbo-0125
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-3.5-turbo-0125
+
+  - name: gpt-4o
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o
+
+  - name: ministral-3b
+    access_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: ministral-3b-latest
+
+tracing:
+  random_sampling: 100

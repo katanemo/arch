@@ -47,13 +47,14 @@ def validate_and_render_schema():
     config_schema_yaml = yaml.safe_load(arch_config_schema)
     inferred_clusters = {}
 
-    for prompt_target in config_yaml["prompt_targets"]:
-        name = prompt_target.get("endpoint", {}).get("name", "")
-        if name not in inferred_clusters:
-            inferred_clusters[name] = {
-                "name": name,
-                "port": 80,  # default port
-            }
+    if "prompt_targets" in config_yaml:
+        for prompt_target in config_yaml["prompt_targets"]:
+            name = prompt_target.get("endpoint", {}).get("name", "")
+            if name not in inferred_clusters:
+                inferred_clusters[name] = {
+                    "name": name,
+                    "port": 80,  # default port
+                }
 
     print(inferred_clusters)
     endpoints = config_yaml.get("endpoints", {})

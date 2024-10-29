@@ -31,3 +31,4 @@ arch_logs/
 dist/
 crates/*/target/
 crates/target/
+build.log
