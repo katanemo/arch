@@ -8,6 +8,8 @@ from typing import List, Optional, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
 
+from common import get_prompt_targets
+
 load_dotenv()
 
 
@@ -40,50 +42,6 @@ client = OpenAI(
 )
 
 
-def convert_prompt_target_to_openai_format(target):
-    tool = {
-        "description": target["description"],
-        "parameters": {"type": "object", "properties": {}, "required": []},
-    }
-
-    if "parameters" in target:
-        for param_info in target["parameters"]:
-            parameter = {
-                "type": param_info["type"],
-                "description": param_info["description"],
-            }
-
-            for key in ["default", "format", "enum", "items", "minimum", "maximum"]:
-                if key in param_info:
-                    parameter[key] = param_info[key]
-
-            tool["parameters"]["properties"][param_info["name"]] = parameter
-
-            required = param_info.get("required", False)
-            if required:
-                tool["parameters"]["required"].append(param_info["name"])
-
-    return {"name": target["name"], "info": tool}
-
-
-def get_prompt_targets():
-    try:
-        with open(os.getenv("ARCH_CONFIG", "arch_config.yaml"), "r") as file:
-            config = yaml.safe_load(file)
-
-            available_tools = []
-            for target in config["prompt_targets"]:
-                if not target.get("default", False):
-                    available_tools.append(
-                        convert_prompt_target_to_openai_format(target)
-                    )
-
-            return {tool["name"]: tool["info"] for tool in available_tools}
-    except Exception as e:
-        log.info(e)
-        return None
-
-
 def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], state):
     if "history" not in state:
         state["history"] = []
@@ -105,7 +63,6 @@ def chat(query: Optional[str], conversation: Optional[List[Tuple[str, str]]], st
         log.info("Error calling gateway API: {}".format(e))
         raise gr.Error("Error calling gateway API: {}".format(e))
 
-    history.append({"role": "assistant", "content": "", "model": ""})
     conversation.append((query, ""))
 
     for chunk in response:

@@ -13,6 +13,6 @@ FROM python:3.10-slim AS output
 COPY --from=builder /runtime /usr/local
 
 WORKDIR /app
-COPY /run_stream.py .
+COPY *.py .
 
 CMD ["python", "run_stream.py"]
