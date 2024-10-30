@@ -12,7 +12,6 @@ include = [
 # Include package data (docker-compose.yaml and other files)[
     "config/docker-compose.yaml",
     "config/arch_config_schema.yaml",
-    "config/stage.env"
 ]
 
 [tool.poetry.dependencies]
