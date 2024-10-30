@@ -316,7 +316,14 @@ impl HttpContext for StreamContext {
                     self.arch_state = Some(Vec::new());
                 }
 
-                let mut data = serde_json::from_str(&body_utf8).unwrap();
+                let mut data = match serde_json::from_str(&body_utf8) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        warn!("could not deserialize response: {}", e);
+                        self.send_server_error(ServerError::Deserialization(e), None);
+                        return Action::Pause;
+                    }
+                };
                 // use serde::Value to manipulate the json object and ensure that we don't lose any data
                 if let Value::Object(ref mut map) = data {
                     // serialize arch state and add to metadata
