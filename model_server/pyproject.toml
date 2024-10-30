@@ -32,7 +32,6 @@ onnxruntime = "1.19.2"
 httpx = "*"
 pytest-asyncio = "*"
 pytest = "*"
-tensorflow = "2.17"
 
 [tool.poetry.scripts]
 archgw_modelserver = "app.cli:run_server"

@@ -170,7 +170,7 @@ def up(file, path, service):
             arch_config_schema_file=arch_schema_config,
         )
     except Exception as e:
-        log.info(f"Exiting archgw up: {e}")
+        log.info(f"Exiting archgw up: validation failed")
         sys.exit(1)
 
     log.info("Starging arch model server and arch gateway")
@@ -183,6 +183,8 @@ def up(file, path, service):
 
     # remove duplicates
     access_keys = set(access_keys)
+    # remove the $ from the access_keys
+    access_keys = [item[1:] if item.startswith("$") else item for item in access_keys]
 
     if access_keys:
         if file:
@@ -212,7 +214,7 @@ def up(file, path, service):
                     env_stage[access_key] = env_file_dict[access_key]
 
     with open(
-        pkg_resources.resource_filename(__name__, "../config/stage.env"), "w"
+        pkg_resources.resource_filename(__name__, "../config/env.list"), "w"
     ) as file:
         for key, value in env_stage.items():
             file.write(f"{key}={value}\n")

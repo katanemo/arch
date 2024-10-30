@@ -11,6 +11,11 @@ services:
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ~/archgw_logs:/var/log/
     env_file:
-      - stage.env
+      - env.list
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
