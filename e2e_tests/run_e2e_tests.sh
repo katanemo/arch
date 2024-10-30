@@ -6,6 +6,8 @@ set -e
 
 print_disk_usage
 
+touch ~/archgw_logs/modelserver.log
+
 print_debug() {
   log "Received signal to stop"
   log "Printing debug logs for model_server"
@@ -28,42 +30,26 @@ cd -
 
 print_disk_usage
 
-# log building model server
-# log =====================
-# cd ../model_server
-# poetry install 2>&1 >> ../build.log
-# print_disk_usage
-
-# log starting model server
-# log =====================
-# mkdir -p ~/archgw_logs
-# touch ~/archgw_logs/modelserver.log
-# poetry run archgw_modelserver restart &
-# tail -F ~/archgw_logs/modelserver.log &
-# model_server_tail_pid=$!
-# cd -
-
-log building model server
-log =====================
+log building and install model server
+log =================================
 cd ../model_server
 poetry install
 cd -
 
-log building archgw cli
-log ===================
+log building and installing archgw cli
+log ==================================
 cd ../arch/tools
 sh build_cli.sh
 cd -
 
 log building docker image for arch gateway
 log ======================================
-cd ../arch
-sh build_filter_image.sh
+cd ../
+archgw build
 cd -
 
 log startup arch gateway with function calling demo
 cd ..
-touch ~/archgw_logs/modelserver.log
 tail -F ~/archgw_logs/modelserver.log &
 model_server_tail_pid=$!
 archgw down
