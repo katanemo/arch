@@ -37,17 +37,23 @@ cd ../model_server
 poetry install
 cd -
 
+print_disk_usage
+
 log building and installing archgw cli
 log ==================================
 cd ../arch/tools
 sh build_cli.sh
 cd -
 
+print_disk_usage
+
 log building docker image for arch gateway
 log ======================================
 cd ../
 archgw build
 cd -
+
+print_disk_usage
 
 log startup arch gateway with function calling demo
 cd ..
@@ -57,6 +63,8 @@ archgw down
 archgw up demos/function_calling/arch_config.yaml
 kill $model_server_tail_pid
 cd -
+
+print_disk_usage
 
 log running e2e tests
 log =================
