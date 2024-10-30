@@ -494,6 +494,23 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
 
 [[package]]
+name = "pytest-retry"
+version = "1.6.3"
+description = "Adds the ability to retry flaky tests in CI environments"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pytest_retry-1.6.3-py3-none-any.whl", hash = "sha256:e96f7df77ee70b0838d1085f9c3b8b5b7d74bf8947a0baf32e2b8c71b27683c8"},
+    {file = "pytest_retry-1.6.3.tar.gz", hash = "sha256:36ccfa11c8c8f9ddad5e20375182146d040c20c4a791745139c5a99ddf1b557d"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0"
+
+[package.extras]
+dev = ["black", "flake8", "isort", "mypy"]
+
+[[package]]
 name = "pytest-sugar"
 version = "1.0.0"
 description = "pytest-sugar is a plugin for pytest that changes the default look and feel of pytest (e.g. progressbar, show tests that fail instantly)."
@@ -699,4 +716,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "6ae4fa6397091b87b63698201a08d7d97628ed65992d46514f118768b46b99ce"
+content-hash = "a5a13987eab6bb15765c050d6a7aaf3b0d0cf661eedb129d6b811d654880a3cb"
