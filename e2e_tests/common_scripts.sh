@@ -28,6 +28,9 @@ wait_for_healthz() {
       return 1
     fi
 
+    echo print free disk space
+    df -h
+
     sleep $sleep_between
   done
 }
