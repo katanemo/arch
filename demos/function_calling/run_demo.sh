@@ -12,8 +12,14 @@ start_demo() {
       exit 1
     fi
 
+    if [ -z "$MISTRAL_API_KEY" ]; then
+      echo "Error: OPENAI_API_KEY environment variable is not set for the demo."
+      exit 1
+    fi
+
     echo "Creating .env file..."
     echo "OPENAI_API_KEY=$OPENAI_API_KEY" > .env
+    echo "MISTRAL_API_KEY=$MISTRAL_API_KEY" >> .env
     echo ".env file created with OPENAI_API_KEY."
   fi
 
