@@ -183,8 +183,6 @@ def up(file, path, service):
 
     # remove duplicates
     access_keys = set(access_keys)
-    # remove the $ from the access_keys
-    access_keys = [item[1:] if item.startswith("$") else item for item in access_keys]
 
     if access_keys:
         if file:

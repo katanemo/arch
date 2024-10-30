@@ -26,10 +26,14 @@ cd ../demos/function_calling
 docker compose up api_server --build -d
 cd -
 
+print_disk_usage
+
 log building model server
 log =====================
 cd ../model_server
 poetry install 2>&1 >> ../build.log
+print_disk_usage
+
 log starting model server
 log =====================
 mkdir -p ~/archgw_logs
@@ -42,7 +46,9 @@ cd -
 log building llm and prompt gateway rust modules
 log ============================================
 cd ../arch
+print_disk_usage
 docker build  -f Dockerfile .. -t katanemo/archgw -q
+print_disk_usage
 log starting the arch gateway service
 log =================================
 docker compose -f docker-compose.e2e.yaml down
