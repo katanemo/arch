@@ -6,6 +6,7 @@ set -e
 
 print_disk_usage
 
+mkdir -p ~/archgw_logs
 touch ~/archgw_logs/modelserver.log
 
 print_debug() {
