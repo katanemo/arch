@@ -18,13 +18,10 @@ trap 'print_debug' INT TERM ERR
 
 log starting > ../build.log
 
-log building function_callling demo
+log building and running function_callling demo
 log ===============================
 cd ../demos/function_calling
-docker compose build -q
-
-log starting the function_calling demo
-docker compose up -d
+docker compose up api_server --build -d
 cd -
 
 log building model server
