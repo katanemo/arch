@@ -8,8 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on:
-      labels: gh-large-150gb-ssd
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
