@@ -24,7 +24,6 @@ logging.basicConfig(
 
 log = logging.getLogger("model_server.cli")
 log.setLevel(logging.INFO)
-
 log.info(f"model server version: {get_version()}")
 
 
