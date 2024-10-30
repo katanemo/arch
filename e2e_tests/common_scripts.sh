@@ -6,6 +6,11 @@ log() {
   echo "$timestamp: $message"
 }
 
+print_disk_usage() {
+    echo free disk space
+    df -h | grep "/$"
+}
+
 wait_for_healthz() {
   local healthz_url="$1"
   local timeout_seconds="${2:-30}"  # Default timeout of 30 seconds
@@ -28,8 +33,7 @@ wait_for_healthz() {
       return 1
     fi
 
-    echo print free disk space
-    df -h
+    print_disk_usage
 
     sleep $sleep_between
   done

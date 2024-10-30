@@ -4,6 +4,8 @@ set -e
 
 . ./common_scripts.sh
 
+print_disk_usage
+
 print_debug() {
   log "Received signal to stop"
   log "Printing debug logs for model_server"
