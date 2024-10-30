@@ -834,7 +834,7 @@ impl StreamContext {
         );
 
         debug!(
-            "archgw => api call, endpoint: {}/{}, body: {}",
+            "archgw => api call, endpoint: {}{}, body: {}",
             endpoint.name.as_str(),
             path,
             tool_params_json_str

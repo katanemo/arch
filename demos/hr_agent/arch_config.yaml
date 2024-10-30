@@ -27,12 +27,6 @@ system_prompt: |
   You are a Workforce assistant that helps on workforce planning and HR decision makers with reporting and workfoce planning. NOTHING ELSE. When you get data in json format, offer some summary but don't be too verbose.
 
 prompt_targets:
-    - name: hr_qa
-      endpoint:
-        name: app_server
-        path: /agent/hr_qa
-      description: Handle general Q/A related to HR.
-      default: true
     - name: workforce
       description: Get workforce data like headcount and satisfacton levels by region and staffing type
       endpoint:
@@ -47,10 +41,10 @@ prompt_targets:
           type: str
           required: true
           description: Geographical region for which you want workforce data like asia, europe, americas.
-        - name: point_in_time
+        - name: data_snapshot_days_ago
           type: int
           required: false
-          description: the point in time for which to retrieve data. For e.g 0 days ago, 30 days ago, etc.
+          description: the snapshot day for which you want workforce data.
     - name: slack_message
       endpoint:
         name: app_server

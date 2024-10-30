@@ -5,16 +5,12 @@ FROM base AS builder
 WORKDIR /src
 
 COPY requirements.txt /src/
-COPY workforce_data.json /src/
 RUN pip install --prefix=/runtime --force-reinstall -r requirements.txt
 
-COPY . /src
-
 FROM python:3.10-slim AS output
-
 COPY --from=builder /runtime /usr/local
 
-COPY . /app
 WORKDIR /app
+COPY . /app
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--log-level", "info"]

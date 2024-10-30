@@ -1,20 +1,31 @@
 import os
 import json
 import pandas as pd
+import gradio as gr
+import logging
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional
 from enum import Enum
+from typing import List, Optional, Tuple
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+from openai import OpenAI
+from common import create_gradio_app
 
 app = FastAPI()
 workforce_data_df = None
+demo_description = """This demo showcases how the **Arch** can be used to build an
+HR agent to manage workforce-related inquiries, workforce planning, and communication via Slack.
+It intelligently routes incoming prompts to the correct targets, providing concise and useful responses
+tailored for HR and workforce decision-making. """
 
 with open("workforce_data.json") as file:
     workforce_data = json.load(file)
     workforce_data_df = pd.json_normalize(
-        workforce_data, record_path=["regions"], meta=["point_in_time", "satisfaction"]
+        workforce_data,
+        record_path=["regions"],
+        meta=["data_snapshot_days_ago", "satisfaction"],
     )
 
 
@@ -22,7 +33,7 @@ with open("workforce_data.json") as file:
 class WorkforceRequset(BaseModel):
     region: str
     staffing_type: str
-    point_in_time: Optional[int] = None
+    data_snapshot_days_ago: Optional[int] = None
 
 
 class SlackRequest(BaseModel):
@@ -34,25 +45,6 @@ class WorkforceResponse(BaseModel):
     staffing_type: str
     headcount: int
     satisfaction: float
-
-
-# Post method for device summary
-@app.post("/agent/workforce")
-def get_workforce(request: WorkforceRequset):
-    """
-    Endpoint to workforce data by region, staffing type at a given point in time.
-    """
-    region = request.region.lower()
-    staffing_type = request.staffing_type.lower()
-    point_in_time = request.point_in_time if request.point_in_time else 0
-
-    response = {
-        "region": region,
-        "staffing_type": f"Staffing agency: {staffing_type}",
-        "headcount": f"Headcount: {int(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['point_in_time']==point_in_time)][staffing_type].values[0])}",
-        "satisfaction": f"Satisifaction: {float(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['point_in_time']==point_in_time)]['satisfaction'].values[0])}",
-    }
-    return response
 
 
 @app.post("/agent/slack_message")
@@ -80,27 +72,38 @@ def send_slack_message(request: SlackRequest):
             print(f"Error sending message: {e.response['error']}")
 
 
-@app.post("/agent/hr_qa")
-async def general_hr_qa():
+# Post method for device summary
+@app.post("/agent/workforce")
+def get_workforce(request: WorkforceRequset):
     """
-    This method handles Q/A related to general issues in HR.
-    It forwards the conversation to the OpenAI client via a local proxy and returns the response.
+    Endpoint to workforce data by region, staffing type at a given point in time.
     """
-    return {
-        "choices": [
-            {
-                "message": {
-                    "role": "assistant",
-                    "content": "I am a helpful HR agent, and I can help you plan for workforce related questions",
-                },
-                "finish_reason": "completed",
-                "index": 0,
-            }
-        ],
-        "model": "hr_agent",
-        "usage": {"completion_tokens": 0},
-    }
+    region = request.region.lower()
+    staffing_type = request.staffing_type.lower()
+    data_snapshot_days_ago = (
+        request.data_snapshot_days_ago
+        if request.data_snapshot_days_ago
+        else 0  # this param is not required.
+    )
 
+    response = {
+        "region": region,
+        "staffing_type": f"Staffing agency: {staffing_type}",
+        "headcount": f"Headcount: {int(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['data_snapshot_days_ago']==data_snapshot_days_ago)][staffing_type].values[0])}",
+        "satisfaction": f"Satisifaction: {float(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['data_snapshot_days_ago']==data_snapshot_days_ago)]['satisfaction'].values[0])}",
+    }
+    return response
+
+
+CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
+client = OpenAI(
+    api_key="--",
+    base_url=CHAT_COMPLETION_ENDPOINT,
+)
+
+gr.mount_gradio_app(
+    app, create_gradio_app(demo_description, client), path="/agent/chat"
+)
 
 if __name__ == "__main__":
     app.run(debug=True)
