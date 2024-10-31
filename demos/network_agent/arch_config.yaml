@@ -8,36 +8,17 @@ listener:
 llm_providers:
   - name: OpenAI
     provider: openai
-    access_key: OPENAI_API_KEY
+    access_key: $OPENAI_API_KEY
     model: gpt-3.5-turbo
     default: true
 
 # default system prompt used by all prompt targets
 system_prompt: |
-  You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
+  You are a network assistant that helps operators with a better understanding of network traffic flow and perform actions on networking operations. No advice on manufacturers or purchasing decisions.
 
 prompt_targets:
-    - name: reboot_devices
-      description: Reboot specific devices or device groups
-      endpoint:
-        name: app_server
-        path: /agent/device_reboot
-      parameters:
-        - name: device_ids
-          type: list
-          description: A list of device identifiers (IDs) to reboot.
-          required: true
-        - name: time_range
-          type: int
-          description: Optional time range in days for reboot operations. Defaults to 7.
-    - name: network_qa
-      endpoint:
-        name: app_server
-        path: /agent/network_summary
-      description: Handle general Q/A related to networking.
-      default: true
     - name: device_summary
-      description: Retrieve statistics for specific devices within a time range
+      description: Retrieve network statistics for specific devices within a time range
       endpoint:
         name: app_server
         path: /agent/device_summary
@@ -46,9 +27,23 @@ prompt_targets:
           type: list
           description: A list of device identifiers (IDs) to retrieve statistics for.
           required: true  # device_ids are required to get device statistics
-        - name: time_range
+        - name: days
           type: int
-          description: Time range in days for which to gather device statistics. Defaults to 7.
+          description: The number of days for which to gather device statistics.
+          default: "7"
+    - name: reboot_devices
+      description: Reboot a list of devices
+      endpoint:
+        name: app_server
+        path: /agent/device_reboot
+      parameters:
+        - name: device_ids
+          type: list
+          description: A list of device identifiers (IDs).
+          required: true
+        - name: days
+          type: int
+          description: A list of device identifiers (IDs)
           default: "7"
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
@@ -60,12 +55,3 @@ endpoints:
     endpoint: host.docker.internal:18083
     # max time to wait for a connection to be established
     connect_timeout: 0.005s
-
-ratelimits:
-  - model: gpt-4
-    selector:
-      key: selector-key
-      value: selector-value
-    limit:
-      tokens: 1
-      unit: minute

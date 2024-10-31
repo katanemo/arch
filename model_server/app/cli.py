@@ -1,3 +1,4 @@
+import importlib
 import sys
 import os
 import time
@@ -7,6 +8,15 @@ import tempfile
 import subprocess
 import logging
 
+
+def get_version():
+    try:
+        version = importlib.metadata.version("archgw_modelserver")
+        return version
+    except importlib.metadata.PackageNotFoundError:
+        return "version not found"
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -14,6 +24,7 @@ logging.basicConfig(
 
 log = logging.getLogger("model_server.cli")
 log.setLevel(logging.INFO)
+log.info(f"model server version: {get_version()}")
 
 
 def run_server(port=51000):
@@ -37,8 +48,9 @@ def run_server(port=51000):
 def start_server(port=51000):
     """Start the Uvicorn server"""
     log.info(
-        "Starting model server - loading some awesomeness, this may take some time :)"
+        "starting model server - loading some awesomeness, this may take some time :)"
     )
+
     process = subprocess.Popen(
         [
             "python",
@@ -61,7 +73,7 @@ def start_server(port=51000):
         log.info(f"Model server started with PID {process.pid}")
     else:
         # Add model_server boot-up logs
-        log.info("Model server - Didn't Sart In Time. Shutting Down")
+        log.info("model server - didn't start in time, shutting down")
         process.terminate()
 
 

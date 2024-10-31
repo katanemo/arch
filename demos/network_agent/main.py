@@ -1,8 +1,15 @@
+from openai import OpenAI
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from common import create_gradio_app
+import gradio as gr
+import os
+
 
 app = FastAPI()
+demo_description = """This demo illustrates how **Arch** can be used to perform function calling with network-related tasks.
+In this demo, you act as a **network assistant** that provides factual information, without offering advice on manufacturers or purchasing decisions."""
 
 
 # Define the request model
@@ -88,27 +95,15 @@ def get_device_summary(request: DeviceSummaryRequest):
     return DeviceSummaryResponse(statistics=statistics)
 
 
-@app.post("/agent/network_summary")
-async def policy_qa():
-    """
-    This method handles Q/A related to general issues in networks.
-    It forwards the conversation to the OpenAI client via a local proxy and returns the response.
-    """
-    return {
-        "choices": [
-            {
-                "message": {
-                    "role": "assistant",
-                    "content": "I am a helpful networking agent, and I can help you get status for network devices or reboot them",
-                },
-                "finish_reason": "completed",
-                "index": 0,
-            }
-        ],
-        "model": "network_agent",
-        "usage": {"completion_tokens": 0},
-    }
+CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
+client = OpenAI(
+    api_key="--",
+    base_url=CHAT_COMPLETION_ENDPOINT,
+)
 
+gr.mount_gradio_app(
+    app, create_gradio_app(demo_description, client), path="/agent/chat"
+)
 
 if __name__ == "__main__":
     app.run(debug=True)

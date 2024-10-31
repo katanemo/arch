@@ -17,10 +17,6 @@
       "path": "model_server"
     },
     {
-      "name": "chatbot_ui",
-      "path": "chatbot_ui"
-    },
-    {
       "name": "e2e_tests",
       "path": "e2e_tests"
     },

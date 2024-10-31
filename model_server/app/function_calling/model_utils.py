@@ -75,12 +75,16 @@ async def chat_completion(req: ChatMessage, res: Response):
         f"model_server => arch_function: {client_model_name}, messages: {json.dumps(messages)}"
     )
 
-    resp = const.arch_function_client.chat.completions.create(
-        messages=messages,
-        model=client_model_name,
-        stream=True,
-        extra_body=const.arch_function_generation_params,
-    )
+    try:
+        resp = const.arch_function_client.chat.completions.create(
+            messages=messages,
+            model=client_model_name,
+            stream=False,
+            extra_body=const.arch_function_generation_params,
+        )
+    except Exception as e:
+        logger.error(f"model_server <= arch_function: error: {e}")
+        raise
 
     # Retrieve the first token, handling the Stream object carefully
     first_token_content = ""

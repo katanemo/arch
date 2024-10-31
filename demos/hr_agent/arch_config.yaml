@@ -8,7 +8,7 @@ listener:
 llm_providers:
   - name: OpenAI
     provider: openai
-    access_key: OPENAI_API_KEY
+    access_key: $OPENAI_API_KEY
     model: gpt-4o-mini
     default: true
 
@@ -24,15 +24,11 @@ endpoints:
 
 # default system prompt used by all prompt targets
 system_prompt: |
-  You are a Workforce assistant that helps on workforce planning and HR decision makers with reporting and workfoce planning. NOTHING ELSE. When you get data in json format, offer some summary but don't be too verbose.
+  You are a Workforce assistant that helps on workforce planning and HR decision makers with reporting and workforce planning. Use following rules when responding,
+  - when you get data in json format, offer some summary but don't be too verbose
+  - be concise, to the point and do not over analyze the data
 
 prompt_targets:
-    - name: hr_qa
-      endpoint:
-        name: app_server
-        path: /agent/hr_qa
-      description: Handle general Q/A related to HR.
-      default: true
     - name: workforce
       description: Get workforce data like headcount and satisfacton levels by region and staffing type
       endpoint:
@@ -41,16 +37,16 @@ prompt_targets:
       parameters:
         - name: staffing_type
           type: str
-          description: Staffing type like contract, fte or agency
+          description: specific category or nature of employment used by an organization like fte, contract and agency
           required: true
         - name: region
           type: str
           required: true
           description: Geographical region for which you want workforce data like asia, europe, americas.
-        - name: point_in_time
+        - name: data_snapshot_days_ago
           type: int
           required: false
-          description: the point in time for which to retrieve data. For e.g 0 days ago, 30 days ago, etc.
+          description: the snapshot day for which you want workforce data.
     - name: slack_message
       endpoint:
         name: app_server
