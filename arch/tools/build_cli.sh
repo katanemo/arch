@@ -3,7 +3,6 @@
 # Define paths
 source_schema="../arch_config_schema.yaml"
 source_compose="../docker-compose.yaml"
-source_stage_env="../stage.env"
 destination_dir="config"
 
 # Ensure the destination directory exists only if it doesn't already
@@ -15,7 +14,7 @@ fi
 # Copy the files
 cp "$source_schema" "$destination_dir/arch_config_schema.yaml"
 cp "$source_compose" "$destination_dir/docker-compose.yaml"
-cp "$source_stage_env" "$destination_dir/stage.env"
+touch "$destination_dir/env.list"
 
 # Print success message
 echo "Files copied successfully!"

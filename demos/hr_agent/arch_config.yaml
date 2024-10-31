@@ -8,7 +8,7 @@ listener:
 llm_providers:
   - name: OpenAI
     provider: openai
-    access_key: OPENAI_API_KEY
+    access_key: $OPENAI_API_KEY
     model: gpt-4o-mini
     default: true
 
@@ -24,7 +24,9 @@ endpoints:
 
 # default system prompt used by all prompt targets
 system_prompt: |
-  You are a Workforce assistant that helps on workforce planning and HR decision makers with reporting and workfoce planning. NOTHING ELSE. When you get data in json format, offer some summary but don't be too verbose.
+  You are a Workforce assistant that helps on workforce planning and HR decision makers with reporting and workforce planning. Use following rules when responding,
+  - when you get data in json format, offer some summary but don't be too verbose
+  - be concise, to the point and do not over analyze the data
 
 prompt_targets:
     - name: workforce

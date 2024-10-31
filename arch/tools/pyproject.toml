@@ -12,7 +12,6 @@ include = [
 # Include package data (docker-compose.yaml and other files)[
     "config/docker-compose.yaml",
     "config/arch_config_schema.yaml",
-    "config/stage.env"
 ]
 
 [tool.poetry.dependencies]
@@ -22,8 +21,8 @@ pydantic = "^2.9.2"
 click = "^8.1.7"
 jinja2 = "^3.1.4"
 jsonschema = "^4.23.0"
-setuptools = "75.2.0"
-archgw_modelserver = "0.0.4"
+setuptools = "75.3.0"
+archgw_modelserver = "0.0.5"
 huggingface_hub = "^0.26.0"
 
 [tool.poetry.scripts]

@@ -6,6 +6,11 @@ log() {
   echo "$timestamp: $message"
 }
 
+print_disk_usage() {
+    echo free disk space
+    df -h | grep "/$"
+}
+
 wait_for_healthz() {
   local healthz_url="$1"
   local timeout_seconds="${2:-30}"  # Default timeout of 30 seconds
@@ -27,6 +32,8 @@ wait_for_healthz() {
       log "Timeout reached. Healthz endpoint is still unhealthy. Exiting..."
       return 1
     fi
+
+    print_disk_usage
 
     sleep $sleep_between
   done

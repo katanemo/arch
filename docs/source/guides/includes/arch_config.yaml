@@ -10,7 +10,7 @@ listener:
 llm_providers:
   - name: OpenAI
     provider: openai
-    access_key: OPENAI_API_KEY
+    access_key: $OPENAI_API_KEY
     model: gpt-4o
     default: true
     stream: true

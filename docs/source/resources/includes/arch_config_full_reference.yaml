@@ -32,7 +32,7 @@ endpoints:
 llm_providers:
   - name: OpenAI
     provider: openai
-    access_key: OPENAI_API_KEY
+    access_key: $OPENAI_API_KEY
     model: gpt-4o
     default: true
     stream: true
@@ -47,7 +47,7 @@ llm_providers:
 
   - name: Mistral8x7b
     provider: mistral
-    access_key: MISTRAL_API_KEY
+    access_key: $MISTRAL_API_KEY
     model: mistral-8x7b
 
   - name: MistralLocal7b
