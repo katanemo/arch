@@ -39,4 +39,4 @@ Arch gateway publishes stats endpoint at http://localhost:19901/stats. In this d
 
 Here is sample interaction
 
-<img width="575" alt="image" src="https://github.com/user-attachments/assets/25d40f46-616e-41ea-be8e-1623055c84ec">
+![alt text](image.png)
