@@ -25,5 +25,5 @@ This demo showcases how the **Arch** can be used to build an HR agent to manage 
    ```sh
    sh run_demo.sh
    ```
-3. Navigate to http://localhost:18080/
+3. Navigate to http://localhost:18080/agent/chat
 4. "Can you give me workforce data for asia?"
