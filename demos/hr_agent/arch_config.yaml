@@ -9,7 +9,7 @@ llm_providers:
   - name: OpenAI
     provider: openai
     access_key: $OPENAI_API_KEY
-    model: gpt-4o
+    model: gpt-4o-mini
     default: true
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
@@ -26,8 +26,7 @@ endpoints:
 system_prompt: |
   You are a Workforce assistant that helps on workforce planning and HR decision makers with reporting and workforce planning. Use following rules when responding,
   - when you get data in json format, offer some summary but don't be too verbose
-  - be concise and to the point
-  - if you don't have data, say so and offer to help with something else
+  - be concise, to the point and do not over analyze the data
 
 prompt_targets:
     - name: workforce
