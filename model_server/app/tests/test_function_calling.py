@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+import app.commons.constants as const
 from fastapi import Response
 from app.function_calling.model_utils import (
     process_messages,
@@ -86,4 +87,4 @@ async def test_chat_completion(mock_hanlder, mock_client):
     second_call_args = mock_client.chat.completions.create.call_args_list[1][1]
     assert second_call_args["stream"] == False
     assert "model" in second_call_args
-    assert second_call_args["messages"][-1]["content"] == "Sure!"
+    assert second_call_args["messages"][-1]["content"] in const.prefill_list
