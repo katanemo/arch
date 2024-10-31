@@ -24,7 +24,7 @@ The assistant can perform several key operations, including rebooting devices, a
    ```sh
    sh run_demo.sh
    ```
-3. Navigate to http://localhost:18080/
+3. Navigate to http://localhost:18080/agent/chat
 4. Tell me what can you do for me?"
 
 # Observability

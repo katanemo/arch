@@ -8,7 +8,7 @@ services:
       - ./arch_config.yaml:/app/arch_config.yaml
       - ../shared/chatbot_ui/common.py:/app/common.py
     ports:
-      - "18083:80"
+      - "18080:80"
     healthcheck:
         test: ["CMD", "curl" ,"http://localhost:80/healthz"]
         interval: 5s
