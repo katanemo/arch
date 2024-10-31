@@ -27,5 +27,3 @@ This demo showcases how the **Arch** can be used to build an HR agent to manage 
    ```
 3. Navigate to http://localhost:18080/
 4. "Can you give me workforce data for asia?"
-
-![alt text](image.png)
