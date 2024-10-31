@@ -15,11 +15,11 @@ log = logging.getLogger(__name__)
 
 GRADIO_CSS_STYLE = """
 .json-container {
-    height: 95vh !important;
+    height: 80vh !important;
     overflow-y: auto !important;
 }
 .chatbot {
-    height: calc(95vh - 100px) !important;
+    height: calc(80vh - 100px) !important;
     overflow-y: auto !important;
 }
 footer {visibility: hidden}

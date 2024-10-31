@@ -37,7 +37,7 @@ prompt_targets:
       parameters:
         - name: staffing_type
           type: str
-          description: Staffing type like contract, fte or agency
+          description: specific category or nature of employment used by an organization like fte, contract and agency
           required: true
         - name: region
           type: str
