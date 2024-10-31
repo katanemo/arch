@@ -25,10 +25,16 @@ class ChatMessage(BaseModel):
 
 class Choice(BaseModel):
     message: Message
+    finish_reason: Optional[str] = "stop"
+    index: Optional[int] = 0
 
 
 class ChatCompletionResponse(BaseModel):
     choices: List[Choice]
+    model: Optional[str] = "Arch-Function"
+    created: Optional[str] = ""
+    id: Optional[str] = ""
+    object: Optional[str] = "chat_completion"
 
 
 def process_messages(history: list[Message]):
@@ -132,7 +138,9 @@ async def chat_completion(req: ChatMessage, res: Response):
     else:
         message = Message(content=full_response, tool_calls=[])
     choice = Choice(message=message)
-    chat_completion_response = ChatCompletionResponse(choices=[choice])
+    chat_completion_response = ChatCompletionResponse(
+        choices=[choice], model=client_model_name
+    )
 
     logger.info(
         f"model_server <= arch_function: (tools): {json.dumps([tool_call['function'] for tool_call in tool_calls])}"

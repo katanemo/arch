@@ -215,5 +215,10 @@ async def hallucination(req: HallucinationRequest, res: Response):
 
 @app.post("/v1/chat/completions")
 async def chat_completion(req: ChatMessage, res: Response):
-    result = await arch_function_chat_completion(req, res)
-    return result
+    try:
+        result = await arch_function_chat_completion(req, res)
+        return result
+    except Exception as e:
+        logger.error(f"Error in chat_completion: {e}")
+        res.status_code = 500
+        return {"error": "Internal server error"}
