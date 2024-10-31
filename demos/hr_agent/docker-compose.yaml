@@ -4,6 +4,7 @@ services:
       context: .
     environment:
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-None}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
       - CHAT_COMPLETION_ENDPOINT=http://host.docker.internal:10000/v1
     volumes:
       - ./arch_config.yaml:/app/arch_config.yaml
