@@ -79,7 +79,7 @@ async def chat_completion(req: ChatMessage, res: Response):
         resp = const.arch_function_client.chat.completions.create(
             messages=messages,
             model=client_model_name,
-            stream=False,
+            stream=True,
             extra_body=const.arch_function_generation_params,
         )
     except Exception as e:
