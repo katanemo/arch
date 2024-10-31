@@ -30,7 +30,7 @@ with open("workforce_data.json") as file:
 
 
 # Define the request model
-class WorkforceRequset(BaseModel):
+class WorkforceRequest(BaseModel):
     region: str
     staffing_type: str
     data_snapshot_days_ago: Optional[int] = None
@@ -74,7 +74,7 @@ def send_slack_message(request: SlackRequest):
 
 # Post method for device summary
 @app.post("/agent/workforce")
-def get_workforce(request: WorkforceRequset):
+def get_workforce(request: WorkforceRequest):
     """
     Endpoint to workforce data by region, staffing type at a given point in time.
     """
@@ -90,7 +90,7 @@ def get_workforce(request: WorkforceRequset):
         "region": region,
         "staffing_type": f"Staffing agency: {staffing_type}",
         "headcount": f"Headcount: {int(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['data_snapshot_days_ago']==data_snapshot_days_ago)][staffing_type].values[0])}",
-        "satisfaction": f"Satisifaction: {float(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['data_snapshot_days_ago']==data_snapshot_days_ago)]['satisfaction'].values[0])}",
+        "satisfaction": f"Satisfaction: {float(workforce_data_df[(workforce_data_df['region']==region) & (workforce_data_df['data_snapshot_days_ago']==data_snapshot_days_ago)]['satisfaction'].values[0])}",
     }
     return response
 
