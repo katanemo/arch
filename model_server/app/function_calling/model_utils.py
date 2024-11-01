@@ -96,6 +96,7 @@ async def chat_completion(
         except Exception as e:
             logger.error(f"model_server <= arch_function: error: {e}")
             raise
+
         first_token_content = ""
         for token in resp:
             first_token_content = token.choices[
@@ -113,11 +114,16 @@ async def chat_completion(
             messages.append({"role": "assistant", "content": prefill_content})
 
             # Send a new completion request with the updated messages
+            extra_body = {
+                **const.arch_function_generation_params,
+                "continue_final_message": True,
+                "add_generation_prompt": False,
+            }
             pre_fill_resp = const.arch_function_client.chat.completions.create(
                 messages=messages,
                 model=client_model_name,
                 stream=False,
-                extra_body=const.arch_function_generation_params,
+                extra_body=extra_body,
             )
             full_response = pre_fill_resp.choices[0].message.content
         else:
