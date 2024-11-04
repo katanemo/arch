@@ -1,0 +1,76 @@
+@llm_endpoint = http://localhost:12000
+@openai_endpoint = https://api.openai.com
+@access_key = {{$dotenv OPENAI_API_KEY}}
+
+### openai request
+POST {{openai_endpoint}}/v1/chat/completions HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{access_key}}
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ],
+  "model": "gpt-4o-mini"
+}
+
+### openai request (streaming)
+POST {{openai_endpoint}}/v1/chat/completions HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{access_key}}
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ],
+  "model": "gpt-4o-mini",
+  "stream": true
+}
+
+
+### llm gateway request
+POST {{llm_endpoint}}/v1/chat/completions HTTP/1.1
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ]
+}
+
+### llm gateway request (streaming)
+POST {{llm_endpoint}}/v1/chat/completions HTTP/1.1
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ],
+  "stream": true
+}
+
+### llm gateway request (provider hint)
+POST {{llm_endpoint}}/v1/chat/completions HTTP/1.1
+Content-Type: application/json
+x-arch-llm-provider-hint: gpt-3.5-turbo-0125
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ]
+}
