@@ -12,7 +12,7 @@ use common::http::Client;
 use common::stats::Gauge;
 use common::stats::IncrementingMetric;
 use http::StatusCode;
-use log::{debug, info, warn};
+use log::{debug, info, trace, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::cell::RefCell;
@@ -215,7 +215,7 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        debug!(
+        trace!(
             "filter_context: on_http_call_response called with token_id: {:?}",
             token_id
         );
@@ -283,10 +283,7 @@ impl RootContext for FilterContext {
             context_id
         );
 
-        let embedding_store = match self.embeddings_store.as_ref() {
-            None => None,
-            Some(store) => Some(Rc::clone(store)),
-        };
+        let embedding_store = self.embeddings_store.as_ref().map(Rc::clone);
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
@@ -308,18 +305,18 @@ impl RootContext for FilterContext {
     }
 
     fn on_tick(&mut self) {
-        debug!("starting up arch filter in mode: prompt gateway mode");
         if self.embeddings_store.is_some() {
-            info!("All embeddings have been fetched, disabling tick");
+            info!("embeddings store initialized");
             self.set_tick_period(Duration::from_secs(0));
         } else {
-            info!("waiting for embeddings to be fetched, continuing to wait");
             if self.active_embedding_calls_count == 0 {
-                info!("no active calls seen, it seems like embedding calls are done but embedding store is not yet populated, retrying");
+                info!("retrieving embeddings from embedding server");
                 self.process_prompt_targets();
+            } else {
+                info!("waiting for embeddings store to be initialized");
             }
 
-            self.set_tick_period(Duration::from_secs(1));
+            self.set_tick_period(Duration::from_secs(5));
         }
     }
 }
