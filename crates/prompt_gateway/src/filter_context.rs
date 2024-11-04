@@ -66,7 +66,7 @@ impl FilterContext {
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),
             prompt_guards: Rc::new(PromptGuards::default()),
-            embeddings_store: None,
+            embeddings_store: Some(Rc::new(HashMap::new())),
             temp_embeddings_store: HashMap::new(),
             active_embedding_calls_count: 0,
         }
@@ -305,7 +305,9 @@ impl RootContext for FilterContext {
     }
 
     fn on_tick(&mut self) {
-        if self.embeddings_store.is_some() {
+        if self.embeddings_store.is_some()
+            && self.embeddings_store.as_ref().unwrap().len() == self.prompt_targets.len()
+        {
             info!("embeddings store initialized");
             self.set_tick_period(Duration::from_secs(0));
         } else {
