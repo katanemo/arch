@@ -1,7 +1,7 @@
 @model_server_endpoint = http://localhost:51000
 @archfc_endpoint = https://api.fc.archgw.com
 
-### prompt gateway request param gathering and function calling
+### talk to model_server for completion
 POST {{model_server_endpoint}}/v1/chat/completions HTTP/1.1
 Content-Type: application/json
 
@@ -25,7 +25,7 @@ Content-Type: application/json
 }
 
 
-### prompt gateway request param gathering and function calling
+### talk to arch_fc directly for completion
 POST {{archfc_endpoint}}/v1/chat/completions HTTP/1.1
 Content-Type: application/json
 
