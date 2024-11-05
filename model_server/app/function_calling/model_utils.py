@@ -133,6 +133,7 @@ async def chat_completion(
                 if hasattr(token.choices[0].delta, "content"):
                     full_response += token.choices[0].delta.content
     else:
+        logger.info("Stream is disabled, not engaging pre-filling")
         full_response = resp.choices[0].message.content
 
     tool_calls = const.arch_function_hanlder.extract_tool_calls(full_response)

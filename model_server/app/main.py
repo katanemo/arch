@@ -6,7 +6,7 @@ import app.prompt_guard.model_utils as guard_utils
 
 from typing import List, Dict
 from pydantic import BaseModel
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import FastAPI, Response, HTTPException, Request
 from app.function_calling.model_utils import ChatMessage
 
 from app.commons.constants import embedding_model, zero_shot_model, arch_guard_handler
@@ -214,9 +214,12 @@ async def hallucination(req: HallucinationRequest, res: Response):
 
 
 @app.post("/v1/chat/completions")
-async def chat_completion(req: ChatMessage, res: Response):
+async def chat_completion(req: ChatMessage, res: Response, request: Request):
     try:
-        result = await arch_function_chat_completion(req, res)
+        prefill_enabled = (
+            request.query_params.get("prefill_enabled", "true").lower() == "true"
+        )
+        result = await arch_function_chat_completion(req, res, prefill_enabled)
         return result
     except Exception as e:
         logger.error(f"Error in chat_completion: {e}")

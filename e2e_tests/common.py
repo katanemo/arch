@@ -30,7 +30,8 @@ def get_arch_messages(response_json):
     arch_messages = []
     if response_json and "metadata" in response_json:
         # load arch_state from metadata
-        arch_state_str = response_json.get("metadata", {}).get(ARCH_STATE_HEADER, "{}")
+        arch_state_str = response_json.get("metadata") or {}
+        arch_state_str = arch_state_str.get(ARCH_STATE_HEADER, "{}")
         # parse arch_state into json object
         arch_state = json.loads(arch_state_str)
         # load messages from arch_state
