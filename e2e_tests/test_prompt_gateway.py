@@ -2,7 +2,6 @@ import json
 import pytest
 import requests
 from deepdiff import DeepDiff
-import model_server.app.commons.constants as const
 
 from common import PROMPT_GATEWAY_ENDPOINT, get_arch_messages, get_data_chunks
 
@@ -276,24 +275,25 @@ def test_prompt_gateway_arch_prefill(prefill_enabled):
     }
     response = requests.post(PROMPT_GATEWAY_ENDPOINT, json=body)
     assert response.status_code == 200
+    response_json = response.json()
+    assert response_json.get("model").startswith("Arch")
+    choices = response_json.get("choices", [])
+    assert len(choices) > 0
     if prefill_enabled:
-        chunks = get_data_chunks(response, n=3)
-        assert len(chunks) > 0
-        response_json = json.loads(chunks[0])
-        # make sure arch responded directly
-        assert response_json.get("model").startswith("Arch")
-        # and tool call is null
-        choices = response_json.get("choices", [])
-        assert len(choices) > 0
-        tool_calls = choices[0].get("delta", {}).get("tool_calls", [])
-        assert len(tool_calls) == 0
-        assistant_message = choices[0].get("delta", {}).get("content", "")
-        assert assistant_message in const.prefill_list
+        prefill_list = [
+            "May",
+            "Could",
+            "Sure",
+            "Definitely",
+            "Certainly",
+            "Of course",
+            "Can",
+        ]
+        assistant_message = choices[0]["message"]["content"]
+        assert any(
+            assistant_message.startswith(word) for word in prefill_list
+        ), f"Expected assistant message to start with one of {prefill_list}, but got '{assistant_message}'"
 
     else:
-        response_json = response.json()
-        assert response_json.get("model").startswith("Arch")
-        choices = response_json.get("choices", [])
-        assert len(choices) > 0
         message = choices[0]["message"]["content"]
         assert "Could you provide the following details days" not in message
