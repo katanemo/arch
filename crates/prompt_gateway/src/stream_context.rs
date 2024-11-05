@@ -685,7 +685,7 @@ impl StreamContext {
         if self.tool_calls.is_none() || self.tool_calls.as_ref().unwrap().is_empty() {
             // This means that Arch FC did not have enough information to resolve the function call
             // Arch FC probably responded with a message asking for more information.
-            // Let's send the response back to the user to initalize lightweight dialog for parameter collection
+            // Let's send the response back to the user to initialize lightweight dialog for parameter collection
 
             //TODO: add resolver name to the response so the client can send the response back to the correct resolver
 
