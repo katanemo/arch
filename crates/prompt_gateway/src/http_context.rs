@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Write, time::Duration};
+use std::{collections::HashMap, time::Duration};
 
 use common::{
     common_types::{
@@ -16,11 +16,9 @@ use common::{
     http::{CallArgs, Client},
 };
 use http::StatusCode;
-use log::{debug, info, trace, warn};
+use log::{debug, trace, warn};
 use proxy_wasm::{traits::HttpContext, types::Action};
 use serde_json::Value;
-
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
 use crate::stream_context::{ResponseHandlerType, StreamCallContext, StreamContext};
 
@@ -56,8 +54,8 @@ impl HttpContext for StreamContext {
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
         self.traceparent = self.get_http_request_header(TRACE_PARENT_HEADER);
         if self.traceparent.is_none() {
-          // let trace_id: String = generate_random_hex_string(16);
-          // self.set_http_request_header("x-client-trace-id", Some(trace_id.as_str()));
+            // let trace_id: String = generate_random_hex_string(16);
+            // self.set_http_request_header("x-client-trace-id", Some(trace_id.as_str()));
         }
         //     let trace_id: String = generate_random_hex_string(16);
 
@@ -388,16 +386,4 @@ impl HttpContext for StreamContext {
 
         Action::Continue
     }
-}
-
-fn generate_random_hex_string(len: usize) -> String {
-    let mut rng = thread_rng();
-    let mut hex_string = String::with_capacity(len);
-
-    for _ in 0..len {
-        let byte = rng.gen::<u8>();
-        write!(&mut hex_string, "{:02x}", byte).unwrap();
-    }
-
-    hex_string
 }
