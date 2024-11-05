@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, fmt::Write, time::Duration};
 
 use common::{
     common_types::{
@@ -8,15 +8,19 @@ use common::{
         PromptGuardRequest, PromptGuardTask,
     },
     consts::{
-        ARCH_FC_MODEL_NAME, ARCH_INTERNAL_CLUSTER_NAME, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, CHAT_COMPLETIONS_PATH, GUARD_INTERNAL_HOST, HEALTHZ_PATH, REQUEST_ID_HEADER, TOOL_ROLE, TRACE_PARENT_HEADER, USER_ROLE
+        ARCH_FC_MODEL_NAME, ARCH_INTERNAL_CLUSTER_NAME, ARCH_STATE_HEADER,
+        ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, CHAT_COMPLETIONS_PATH, GUARD_INTERNAL_HOST,
+        HEALTHZ_PATH, REQUEST_ID_HEADER, TOOL_ROLE, TRACE_PARENT_HEADER, USER_ROLE,
     },
     errors::ServerError,
     http::{CallArgs, Client},
 };
 use http::StatusCode;
-use log::{debug, trace, warn};
+use log::{debug, info, trace, warn};
 use proxy_wasm::{traits::HttpContext, types::Action};
 use serde_json::Value;
+
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
 use crate::stream_context::{ResponseHandlerType, StreamCallContext, StreamContext};
 
@@ -51,13 +55,38 @@ impl HttpContext for StreamContext {
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
         self.traceparent = self.get_http_request_header(TRACE_PARENT_HEADER);
+        if self.traceparent.is_none() {
+          // let trace_id: String = generate_random_hex_string(16);
+          // self.set_http_request_header("x-client-trace-id", Some(trace_id.as_str()));
+        }
+        //     let trace_id: String = generate_random_hex_string(16);
 
+        //     let parent_id: String = generate_random_hex_string(8);
+
+        //     // let's add a traceparent header if it's not present
+        //     let trace_version = "00";
+        //     //TODO: fix 00 if sampled, 01 if not sampled. Hard coded for now.
+        //     let trace_flags = "01";
+
+        //     let trace_id = format!(
+        //         "{}-{}-{}-{}",
+        //         trace_version, trace_id, parent_id, trace_flags
+        //     );
+
+        //     debug!("attaching traceparent header: {}", trace_id);
+
+        //     self.traceparent = Some(trace_id.clone());
+        //     self.set_http_request_header(TRACE_PARENT_HEADER, Some(trace_id.as_str()));
+        // }
+
+        self.set_http_request_header("x-envoy-force-trace", Some("true"));
         Action::Continue
     }
 
     fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         // Let the client send the gateway all the data before sending to the LLM_provider.
         // TODO: consider a streaming API.
+
         if !end_of_stream {
             return Action::Pause;
         }
@@ -359,4 +388,16 @@ impl HttpContext for StreamContext {
 
         Action::Continue
     }
+}
+
+fn generate_random_hex_string(len: usize) -> String {
+    let mut rng = thread_rng();
+    let mut hex_string = String::with_capacity(len);
+
+    for _ in 0..len {
+        let byte = rng.gen::<u8>();
+        write!(&mut hex_string, "{:02x}", byte).unwrap();
+    }
+
+    hex_string
 }

@@ -7,7 +7,7 @@ static_resources:
       address:
         socket_address:
           address: 0.0.0.0
-          port_value: 10000
+          port_value: 9000
       traffic_direction: INBOUND
       filter_chains:
         - filters:
@@ -40,6 +40,10 @@ static_resources:
                     path: "/var/log/access_ingress.log"
                 route_config:
                   name: local_routes
+                  request_headers_to_add:
+                  - header:
+                      key: "x-envoy-force-trace"
+                      value: "true"
                   virtual_hosts:
                     - name: local_service
                       domains:
@@ -60,7 +64,7 @@ static_resources:
       address:
         socket_address:
           address: 0.0.0.0
-          port_value: 10001
+          port_value: 10000
       traffic_direction: INBOUND
       filter_chains:
         - filters:
@@ -93,6 +97,10 @@ static_resources:
                     path: "/var/log/access_ingress_prompt.log"
                 route_config:
                   name: local_routes
+                  request_headers_to_add:
+                  - header:
+                      key: "x-envoy-force-trace"
+                      value: "true"
                   virtual_hosts:
                     - name: local_service
                       domains:
@@ -184,6 +192,10 @@ static_resources:
                     path: "/var/log/access_internal.log"
                 route_config:
                   name: local_routes
+                  request_headers_to_add:
+                  - header:
+                      key: "x-envoy-force-trace"
+                      value: "true"
                   virtual_hosts:
                     - name: local_service
                       domains:
@@ -256,6 +268,10 @@ static_resources:
                     path: "/var/log/access_llm.log"
                 route_config:
                   name: local_routes
+                  request_headers_to_add:
+                  - header:
+                      key: "x-envoy-force-trace"
+                      value: "true"
                   virtual_hosts:
                     - name: local_service
                       domains:
@@ -454,7 +470,7 @@ static_resources:
                   address:
                     socket_address:
                       address: 0.0.0.0
-                      port_value: 10001
+                      port_value: 10000
                   hostname: arch_prompt_gateway_listener
 
     - name: arch_llm_listener

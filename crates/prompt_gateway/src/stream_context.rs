@@ -155,6 +155,7 @@ impl StreamContext {
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ("x-envoy-force-trace", "true"),
         ];
 
         if self.request_id.is_some() {
@@ -284,6 +285,7 @@ impl StreamContext {
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ("x-envoy-force-trace", "true"),
         ];
 
         if self.request_id.is_some() {
@@ -484,6 +486,7 @@ impl StreamContext {
                     ("content-type", "application/json"),
                     ("x-envoy-max-retries", "3"),
                     ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
+                    ("x-envoy-force-trace", "true"),
                 ];
 
                 if self.request_id.is_some() {
@@ -635,6 +638,7 @@ impl StreamContext {
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
+            ("x-envoy-force-trace", "true"),
         ];
 
         if self.request_id.is_some() {
@@ -815,6 +819,7 @@ impl StreamContext {
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
             ("x-envoy-upstream-rq-timeout-ms", "60000"),
+            ("x-envoy-force-trace", "true"),
         ];
 
         if self.request_id.is_some() {
@@ -870,6 +875,7 @@ impl StreamContext {
             (":authority", endpoint.name.as_str()),
             ("content-type", "application/json"),
             ("x-envoy-max-retries", "3"),
+            ("x-envoy-force-trace", "true"),
         ];
 
         if self.request_id.is_some() {
