@@ -130,9 +130,9 @@ impl FilterContext {
 
     fn embedding_response_handler(
         &mut self,
-        body_size: usize,
         embedding_type: EmbeddingType,
         prompt_target_name: String,
+        body: Vec<u8>,
     ) {
         let prompt_target = self
             .prompt_targets
@@ -144,9 +144,6 @@ impl FilterContext {
                 )
             });
 
-        let body = self
-            .get_http_call_response_body(0, body_size)
-            .expect("No body in response");
         if !body.is_empty() {
             let mut embedding_response: CreateEmbeddingResponse =
                 match serde_json::from_slice(&body) {
@@ -225,17 +222,16 @@ impl Context for FilterContext {
             .remove(&token_id)
             .expect("invalid token_id");
 
-        let body_bytes = self.get_http_call_response_body(0, body_size).unwrap();
-
         self.active_embedding_calls_count -= 1;
         self.metrics.active_http_calls.increment(-1);
+        let body_bytes = self.get_http_call_response_body(0, body_size).unwrap();
 
         if let Some(status_code) = self.get_http_call_response_header(":status") {
             if status_code == StatusCode::OK.as_str() {
                 self.embedding_response_handler(
-                    body_size,
                     callout_data.embedding_type,
                     callout_data.prompt_target_name,
+                    body_bytes,
                 );
             } else {
                 warn!(
