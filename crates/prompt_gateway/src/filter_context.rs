@@ -11,7 +11,8 @@ use common::http::CallArgs;
 use common::http::Client;
 use common::stats::Gauge;
 use common::stats::IncrementingMetric;
-use log::debug;
+use http::StatusCode;
+use log::{debug, info, trace, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::cell::RefCell;
@@ -53,6 +54,7 @@ pub struct FilterContext {
     prompt_guards: Rc<PromptGuards>,
     embeddings_store: Option<Rc<EmbeddingsStore>>,
     temp_embeddings_store: EmbeddingsStore,
+    active_embedding_calls_count: u32,
 }
 
 impl FilterContext {
@@ -66,22 +68,26 @@ impl FilterContext {
             prompt_guards: Rc::new(PromptGuards::default()),
             embeddings_store: Some(Rc::new(HashMap::new())),
             temp_embeddings_store: HashMap::new(),
+            active_embedding_calls_count: 0,
         }
     }
 
-    fn process_prompt_targets(&self) {
-        for values in self.prompt_targets.iter() {
-            let prompt_target = values.1;
-            self.schedule_embeddings_call(
-                &prompt_target.name,
-                &prompt_target.description,
-                EmbeddingType::Description,
-            );
-        }
+    fn process_prompt_targets(&mut self) {
+        let prompt_target_description: Vec<(String, String)> = self
+            .prompt_targets
+            .iter()
+            .map(|(k, v)| (k.clone(), v.description.clone()))
+            .collect();
+
+        prompt_target_description
+            .iter()
+            .for_each(|(name, description)| {
+                self.schedule_embeddings_call(name, description, EmbeddingType::Description);
+            });
     }
 
     fn schedule_embeddings_call(
-        &self,
+        &mut self,
         prompt_target_name: &str,
         input: &str,
         embedding_type: EmbeddingType,
@@ -116,6 +122,7 @@ impl FilterContext {
             embedding_type,
         };
 
+        self.active_embedding_calls_count += 1;
         if let Err(error) = self.http_call(call_args, call_context) {
             panic!("{error}")
         }
@@ -123,9 +130,9 @@ impl FilterContext {
 
     fn embedding_response_handler(
         &mut self,
-        body_size: usize,
         embedding_type: EmbeddingType,
         prompt_target_name: String,
+        body: Vec<u8>,
     ) {
         let prompt_target = self
             .prompt_targets
@@ -137,9 +144,6 @@ impl FilterContext {
                 )
             });
 
-        let body = self
-            .get_http_call_response_body(0, body_size)
-            .expect("No body in response");
         if !body.is_empty() {
             let mut embedding_response: CreateEmbeddingResponse =
                 match serde_json::from_slice(&body) {
@@ -208,7 +212,7 @@ impl Context for FilterContext {
         body_size: usize,
         _num_trailers: usize,
     ) {
-        debug!(
+        trace!(
             "filter_context: on_http_call_response called with token_id: {:?}",
             token_id
         );
@@ -218,13 +222,26 @@ impl Context for FilterContext {
             .remove(&token_id)
             .expect("invalid token_id");
 
+        self.active_embedding_calls_count -= 1;
         self.metrics.active_http_calls.increment(-1);
+        let body_bytes = self.get_http_call_response_body(0, body_size).unwrap();
 
-        self.embedding_response_handler(
-            body_size,
-            callout_data.embedding_type,
-            callout_data.prompt_target_name,
-        )
+        if let Some(status_code) = self.get_http_call_response_header(":status") {
+            if status_code == StatusCode::OK.as_str() {
+                self.embedding_response_handler(
+                    callout_data.embedding_type,
+                    callout_data.prompt_target_name,
+                    body_bytes,
+                );
+            } else {
+                warn!(
+                    "Received non-200 status code: {} for callout with token_id: {}: body_str: {}",
+                    status_code,
+                    token_id,
+                    String::from_utf8(body_bytes).unwrap()
+                );
+            }
+        }
     }
 }
 
@@ -262,10 +279,7 @@ impl RootContext for FilterContext {
             context_id
         );
 
-        let embedding_store = match self.embeddings_store.as_ref() {
-            None => return None,
-            Some(store) => Some(Rc::clone(store)),
-        };
+        let embedding_store = self.embeddings_store.as_ref().map(Rc::clone);
         Some(Box::new(StreamContext::new(
             context_id,
             Rc::clone(&self.metrics),
@@ -287,8 +301,20 @@ impl RootContext for FilterContext {
     }
 
     fn on_tick(&mut self) {
-        debug!("starting up arch filter in mode: prompt gateway mode");
-        self.process_prompt_targets();
-        self.set_tick_period(Duration::from_secs(0));
+        if self.embeddings_store.is_some()
+            && self.embeddings_store.as_ref().unwrap().len() == self.prompt_targets.len()
+        {
+            info!("embeddings store initialized");
+            self.set_tick_period(Duration::from_secs(0));
+        } else {
+            if self.active_embedding_calls_count == 0 {
+                info!("retrieving embeddings from embedding server");
+                self.process_prompt_targets();
+            } else {
+                info!("waiting for embeddings store to be initialized");
+            }
+
+            self.set_tick_period(Duration::from_secs(5));
+        }
     }
 }
