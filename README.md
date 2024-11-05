@@ -1,6 +1,9 @@
-<p>
-  <img src="docs/source/_static/img/arch-logo.png" alt="Arch Gateway Logo" title="Arch Gateway Logo">
-</p>
+![alt text](image.png)
+
+[![pre-commit](https://github.com/katanemo/arch/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/pre-commit.yml)
+[![rust tests (prompt and llm gateway)](https://github.com/katanemo/arch/actions/workflows/rust_tests.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/rust_tests.yml)
+[![e2e tests](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml)
+[![Build and Deploy Documentation](https://github.com/katanemo/arch/actions/workflows/static.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/static.yml)
 
 ## Build fast, robust, and personalized AI agents.
 
@@ -68,28 +71,43 @@ listener:
 llm_providers:
   - name: OpenAI
     provider: openai
-    access_key: OPENAI_API_KEY
-    model: gpt-4o
+    access_key: $OPENAI_API_KEY
+    model: gpt-3.5-turbo
     default: true
 
 # default system prompt used by all prompt targets
 system_prompt: |
-   You are a network assistant that just offers facts; not advice on manufacturers or purchasing decisions.
+  You are a network assistant that helps operators with a better understanding of network traffic flow and perform actions on networking operations. No advice on manufacturers or purchasing decisions.
 
 prompt_targets:
-  - name: reboot_devices
-    description: Reboot specific devices or device groups
-
-    path: /agent/device_reboot
-    parameters:
-      - name: device_ids
-        type: list
-        description: A list of device identifiers (IDs) to reboot.
-        required: false
-      - name: device_group
-        type: str
-        description: The name of the device group to reboot
-        required: false
+    - name: device_summary
+      description: Retrieve network statistics for specific devices within a time range
+      endpoint:
+        name: app_server
+        path: /agent/device_summary
+      parameters:
+        - name: device_ids
+          type: list
+          description: A list of device identifiers (IDs) to retrieve statistics for.
+          required: true  # device_ids are required to get device statistics
+        - name: days
+          type: int
+          description: The number of days for which to gather device statistics.
+          default: "7"
+    - name: reboot_devices
+      description: Reboot a list of devices
+      endpoint:
+        name: app_server
+        path: /agent/device_reboot
+      parameters:
+        - name: device_ids
+          type: list
+          description: A list of device identifiers (IDs).
+          required: true
+        - name: days
+          type: int
+          description: A list of device identifiers (IDs)
+          default: "7"
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
 endpoints:
@@ -97,7 +115,7 @@ endpoints:
     # value could be ip address or a hostname with port
     # this could also be a list of endpoints for load balancing
     # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: 127.0.0.1:80
+    endpoint: host.docker.internal:18083
     # max time to wait for a connection to be established
     connect_timeout: 0.005s
 ```
@@ -106,20 +124,23 @@ endpoints:
 Make outbound calls via Arch
 
 ```python
-import openai
-
-# Set the OpenAI API base URL to the Arch gateway endpoint
-openai.api_base = "http://127.0.0.1:12000/v1"
-# No need to set a specific openai.api_key since it's configured in Arch's gateway
-openai.api_key = "null"
+from openai import OpenAI
 
 # Use the OpenAI client as usual
-response = openai.Completion.create(
-   model="text-davinci-003",
-   prompt="What is the capital of France?"
+client = OpenAI(
+  # No need to set a specific openai.api_key since it's configured in Arch's gateway
+  api_key = '--',
+  # Set the OpenAI API base URL to the Arch gateway endpoint
+  base_url = "http://127.0.0.1:12000/v1"
 )
 
-print("OpenAI Response:", response.choices[0].text.strip())
+response = client.chat.completions.create(
+    # we select model from arch_config file
+    model="--",
+    messages=[{"role": "user", "content": "What is the capital of France?"}],
+)
+
+print("OpenAI Response:", response.choices[0].message.content)
 
 ```
 

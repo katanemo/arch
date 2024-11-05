@@ -24,7 +24,7 @@ The assistant can perform several key operations, including rebooting devices, a
    ```sh
    sh run_demo.sh
    ```
-3. Navigate to http://localhost:18080/
+3. Navigate to http://localhost:18080/agent/chat
 4. Tell me what can you do for me?"
 
 # Observability
@@ -39,4 +39,4 @@ Arch gateway publishes stats endpoint at http://localhost:19901/stats. In this d
 
 Here is sample interaction
 
-<img width="575" alt="image" src="https://github.com/user-attachments/assets/25d40f46-616e-41ea-be8e-1623055c84ec">
+![alt text](image.png)
