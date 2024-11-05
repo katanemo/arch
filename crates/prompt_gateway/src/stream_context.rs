@@ -61,7 +61,7 @@ pub struct StreamCallContext {
 
 pub struct StreamContext {
     system_prompt: Rc<Option<String>>,
-    prompt_targets: Rc<HashMap<String, PromptTarget>>,
+    pub prompt_targets: Rc<HashMap<String, PromptTarget>>,
     pub embeddings_store: Option<Rc<EmbeddingsStore>>,
     overrides: Rc<Option<Overrides>>,
     pub metrics: Rc<WasmMetrics>,
@@ -111,10 +111,21 @@ impl StreamContext {
             traceparent: None,
         }
     }
+
     fn embeddings_store(&self) -> &EmbeddingsStore {
-        self.embeddings_store
-            .as_ref()
-            .expect("embeddings store is not set")
+        self.embeddings_store.as_ref().unwrap()
+    }
+
+    pub fn is_embedding_store_initialized(&self) -> bool {
+        if self.embeddings_store.as_ref().is_none() {
+            return false;
+        }
+
+        if self.embeddings_store.as_ref().unwrap().len() == self.prompt_targets.len() {
+            return true;
+        }
+
+        false
     }
 
     pub fn send_server_error(&self, error: ServerError, override_status_code: Option<StatusCode>) {
@@ -232,7 +243,7 @@ impl StreamContext {
                             "embeddings not found for prompt target name: {}",
                             prompt_name
                         );
-                        return (prompt_name.clone(), f64::NAN);
+                        return (prompt_name.clone(), 0.0);
                     }
                 };
 
@@ -243,7 +254,7 @@ impl StreamContext {
                             "description embeddings not found for prompt target name: {}",
                             prompt_name
                         );
-                        return (prompt_name.clone(), f64::NAN);
+                        return (prompt_name.clone(), 0.0);
                     }
                 };
                 let similarity_score_description =
@@ -698,7 +709,7 @@ impl StreamContext {
         if self.tool_calls.is_none() || self.tool_calls.as_ref().unwrap().is_empty() {
             // This means that Arch FC did not have enough information to resolve the function call
             // Arch FC probably responded with a message asking for more information.
-            // Let's send the response back to the user to initalize lightweight dialog for parameter collection
+            // Let's send the response back to the user to initialize lightweight dialog for parameter collection
 
             //TODO: add resolver name to the response so the client can send the response back to the correct resolver
 

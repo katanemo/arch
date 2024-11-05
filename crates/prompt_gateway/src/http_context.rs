@@ -37,10 +37,10 @@ impl HttpContext for StreamContext {
 
         let request_path = self.get_http_request_header(":path").unwrap_or_default();
         if request_path == HEALTHZ_PATH {
-            if self.embeddings_store.is_none() {
-                self.send_http_response(503, vec![], None);
-            } else {
+            if self.is_embedding_store_initialized() {
                 self.send_http_response(200, vec![], None);
+            } else {
+                self.send_http_response(503, vec![], None);
             }
             return Action::Continue;
         }

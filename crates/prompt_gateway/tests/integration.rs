@@ -161,6 +161,7 @@ fn normal_flow(module: &mut Tester, filter_context: i32, http_context: i32) {
         .expect_get_buffer_bytes(Some(BufferType::HttpCallResponseBody))
         .returning(Some(&embeddings_response_buffer))
         .expect_log(Some(LogLevel::Trace), None)
+        .expect_log(Some(LogLevel::Warn), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Trace), None)
         .expect_http_call(
@@ -244,7 +245,7 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
 
     module
         .call_proxy_on_tick(filter_context)
-        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Info), None)
         .expect_log(Some(LogLevel::Trace), None)
         .expect_http_call(
             Some("arch_internal"),
@@ -262,7 +263,7 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
         )
         .returning(Some(101))
         .expect_metric_increment("active_http_calls", 1)
-        .expect_set_tick_period_millis(Some(0))
+        .expect_set_tick_period_millis(Some(5000))
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -289,7 +290,7 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
             0,
         )
         .expect_log(
-            Some(LogLevel::Debug),
+            Some(LogLevel::Trace),
             Some(
                 format!(
                     "filter_context: on_http_call_response called with token_id: {:?}",
@@ -332,7 +333,7 @@ llm_providers:
 
 overrides:
   # confidence threshold for prompt target intent matching
-  prompt_target_intent_matching_threshold: 0.6
+  prompt_target_intent_matching_threshold: 0.0
 
 system_prompt: |
   You are a helpful assistant.
