@@ -25,7 +25,7 @@ static_resources:
                         envoy_grpc:
                           cluster_name: opentelemetry_collector
                         timeout: 0.250s
-                      service_name: front_end
+                      service_name: prompt_gateway
                   random_sampling:
                     value: {{ arch_tracing.random_sampling }}
                 {% endif %}
@@ -78,7 +78,7 @@ static_resources:
                         envoy_grpc:
                           cluster_name: opentelemetry_collector
                         timeout: 0.250s
-                      service_name: prompt_gateway
+                      service_name: prompt_internal
                   random_sampling:
                     value: {{ arch_tracing.random_sampling }}
                 {% endif %}
