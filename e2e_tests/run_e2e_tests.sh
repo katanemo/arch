@@ -19,14 +19,14 @@ print_debug() {
   tail -n 500 ../build.log
 }
 
-trap 'print_debug' INT TERM ERR
+# trap 'print_debug' INT TERM ERR
 
 log starting > ../build.log
 
 log building and running function_callling demo
 log ===========================================
-cd ../demos/function_calling
-docker compose up api_server --build -d
+cd ../demos/weather_forecast
+docker compose up weather_forecast_service --build -d
 cd -
 
 print_disk_usage
@@ -60,7 +60,7 @@ cd ..
 tail -F ~/archgw_logs/modelserver.log &
 model_server_tail_pid=$!
 archgw down
-archgw up demos/function_calling/arch_config.yaml
+archgw up demos/weather_forecast/arch_config.yaml
 kill $model_server_tail_pid
 cd -
 
@@ -77,8 +77,8 @@ cd ../
 archgw down
 cd -
 
-log shutting down the function_calling demo
+log shutting down the weather_forecast demo
 log =======================================
-cd ../demos/function_calling
+cd ../demos/weather_forecast
 docker compose down
 cd -
