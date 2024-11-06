@@ -248,9 +248,7 @@ def test_prompt_gateway_default_target(stream):
         choices = response_json.get("choices", [])
         assert len(choices) > 0
         content = choices[0]["delta"]["content"]
-        assert (
-            content == "I can help you with weather forecast or insurance claim details"
-        )
+        assert content == "I can help you with weather forecast"
     else:
         response_json = response.json()
         assert response_json.get("model").startswith("api_server")
@@ -258,5 +256,5 @@ def test_prompt_gateway_default_target(stream):
         assert response_json.get("choices")[0]["message"]["role"] == "assistant"
         assert (
             response_json.get("choices")[0]["message"]["content"]
-            == "I can help you with weather forecast or insurance claim details"
+            == "I can help you with weather forecast"
         )
