@@ -1,0 +1,26 @@
+include:
+  - ../shared/signoz/docker-compose-minimal.yaml
+
+services:
+  weather_forecast_service:
+    build:
+      context: ../shared/weather_forecast_service
+    environment:
+      - OLTP_HOST=http://otel-collector:4317
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "18083:80"
+
+  chatbot_ui:
+    build:
+      context: ../shared/chatbot_ui
+    ports:
+      - "18080:8080"
+    environment:
+      # this is only because we are running the sample app in the same docker container environemtn as archgw
+      - CHAT_COMPLETION_ENDPOINT=http://host.docker.internal:10000/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./arch_config.yaml:/app/arch_config.yaml
