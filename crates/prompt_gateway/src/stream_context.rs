@@ -82,7 +82,7 @@ pub struct StreamContext {
 }
 
 impl StreamContext {
-    #[warn(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
