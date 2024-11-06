@@ -271,7 +271,7 @@ impl HttpContext for StreamContext {
         );
 
         if !self.is_chat_completions_request {
-            debug!("non-streaming request");
+            debug!("non-gpt request");
             return Action::Continue;
         }
 

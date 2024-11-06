@@ -149,6 +149,8 @@ properties:
     properties:
       random_sampling:
         type: integer
+      trace_arch:
+        type: boolean
       additionalProperties: false
   mode:
     type: string

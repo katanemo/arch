@@ -6,7 +6,6 @@
   "configurations": [
     {
       "name": "function-calling api server",
-      "cwd": "${workspaceFolder}/app",
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",

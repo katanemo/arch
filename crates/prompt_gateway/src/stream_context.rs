@@ -10,7 +10,7 @@ use common::common_types::{
     EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
     PromptGuardResponse, ZeroShotClassificationRequest, ZeroShotClassificationResponse,
 };
-use common::configuration::{Overrides, PromptGuards, PromptTarget};
+use common::configuration::{Overrides, PromptGuards, PromptTarget, Tracing};
 use common::consts::{
     ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS,
     ARCH_INTERNAL_CLUSTER_NAME, ARCH_MODEL_PREFIX, ARCH_STATE_HEADER, ARCH_UPSTREAM_HOST_HEADER,
@@ -78,9 +78,11 @@ pub struct StreamContext {
     pub prompt_guards: Rc<PromptGuards>,
     pub request_id: Option<String>,
     pub traceparent: Option<String>,
+    pub tracing: Rc<Option<Tracing>>,
 }
 
 impl StreamContext {
+    #[warn(clippy::too_many_arguments)]
     pub fn new(
         context_id: u32,
         metrics: Rc<WasmMetrics>,
@@ -89,6 +91,7 @@ impl StreamContext {
         prompt_guards: Rc<PromptGuards>,
         overrides: Rc<Option<Overrides>>,
         embeddings_store: Option<Rc<EmbeddingsStore>>,
+        tracing: Rc<Option<Tracing>>,
     ) -> Self {
         StreamContext {
             context_id,
@@ -109,6 +112,7 @@ impl StreamContext {
             overrides,
             request_id: None,
             traceparent: None,
+            tracing,
         }
     }
 
@@ -173,7 +177,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.traceparent.is_some() {
+        if self.trace_arch() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
@@ -303,7 +307,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.traceparent.is_some() {
+        if self.trace_arch() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
@@ -320,6 +324,16 @@ impl StreamContext {
         if let Err(e) = self.http_call(call_args, callout_context) {
             warn!("error dispatching zero shot classification request: {}", e);
             self.send_server_error(ServerError::HttpDispatch(e), None);
+        }
+    }
+
+    fn trace_arch(&self) -> bool {
+        match self.tracing.as_ref() {
+            Some(tracing) => match tracing.trace_arch.as_ref() {
+                Some(trace_arch) => *trace_arch,
+                None => false,
+            },
+            None => false,
         }
     }
 
@@ -504,7 +518,7 @@ impl StreamContext {
                     headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
                 }
 
-                if self.traceparent.is_some() {
+                if self.trace_arch() && self.traceparent.is_some() {
                     headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
                 }
 
@@ -656,7 +670,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.traceparent.is_some() {
+        if self.trace_arch() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
@@ -837,7 +851,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.traceparent.is_some() {
+        if self.trace_arch() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
