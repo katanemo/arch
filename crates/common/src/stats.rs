@@ -80,7 +80,7 @@ impl RecordingMetric for Gauge {}
 /// For offset deltas
 impl IncrementingMetric for Gauge {}
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Histogram {
     id: u32,
 }

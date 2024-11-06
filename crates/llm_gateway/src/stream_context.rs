@@ -20,7 +20,10 @@ use proxy_wasm::types::*;
 use std::num::NonZero;
 use std::rc::Rc;
 
-use common::stats::IncrementingMetric;
+use common::stats::{IncrementingMetric, RecordingMetric};
+
+use proxy_wasm::hostcalls::get_current_time;
+use std::time::{Duration, SystemTime};
 
 pub struct StreamContext {
     context_id: u32,
@@ -32,6 +35,9 @@ pub struct StreamContext {
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
+    start_time: Option<SystemTime>,
+    ttft_recorded: bool,
+    ttft_duration: Option<Duration>, // Store the duration directly
 }
 
 impl StreamContext {
@@ -46,6 +52,9 @@ impl StreamContext {
             llm_providers,
             llm_provider: None,
             request_id: None,
+            start_time: None,
+            ttft_recorded: false,
+            ttft_duration: None,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -344,6 +353,31 @@ impl HttpContext for StreamContext {
                     }
                 };
             self.response_tokens += token_count;
+
+            // Compute TFT if not already recorded
+            if !self.ttft_recorded {
+                if let Some(start_time) = self.start_time {
+                    match get_current_time() {
+                        Ok(current_time) => match current_time.duration_since(start_time) {
+                            Ok(duration) => {
+                                let duration_ms = duration.as_millis();
+                                debug!("Time to First Token (TFT): {} milliseconds", duration_ms);
+                                self.ttft_duration = Some(duration);
+                                self.metrics.time_to_first_token.record(duration_ms as u64);
+                            }
+                            Err(e) => {
+                                warn!("SystemTime error: {:?}", e);
+                            }
+                        },
+                        Err(e) => {
+                            warn!("Failed to get current time: {:?}", e);
+                        }
+                    }
+                    self.ttft_recorded = true;
+                } else {
+                    warn!("Start time was not recorded");
+                }
+            }
         } else {
             debug!("non streaming response");
             let chat_completions_response: ChatCompletionsResponse =
@@ -361,6 +395,31 @@ impl HttpContext for StreamContext {
                     .as_ref()
                     .unwrap()
                     .completion_tokens;
+            }
+
+            // Compute TFT if not already recorded
+            if !self.ttft_recorded {
+                if let Some(start_time) = self.start_time {
+                    match get_current_time() {
+                        Ok(current_time) => match current_time.duration_since(start_time) {
+                            Ok(duration) => {
+                                let duration_ms = duration.as_millis();
+                                debug!("Time to First Token (TFT): {} milliseconds", duration_ms);
+                                self.ttft_duration = Some(duration);
+                                self.metrics.time_to_first_token.record(duration_ms as u64);
+                            }
+                            Err(e) => {
+                                warn!("SystemTime error: {:?}", e);
+                            }
+                        },
+                        Err(e) => {
+                            warn!("Failed to get current time: {:?}", e);
+                        }
+                    }
+                    self.ttft_recorded = true;
+                } else {
+                    warn!("Start time was not recorded");
+                }
             }
         }
 

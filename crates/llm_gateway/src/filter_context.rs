@@ -5,6 +5,7 @@ use common::llm_providers::LlmProviders;
 use common::ratelimit;
 use common::stats::Counter;
 use common::stats::Gauge;
+use common::stats::Histogram;
 use log::debug;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
@@ -16,6 +17,7 @@ use std::rc::Rc;
 pub struct WasmMetrics {
     pub active_http_calls: Gauge,
     pub ratelimited_rq: Counter,
+    pub time_to_first_token: Histogram,
 }
 
 impl WasmMetrics {
@@ -23,6 +25,7 @@ impl WasmMetrics {
         WasmMetrics {
             active_http_calls: Gauge::new(String::from("active_http_calls")),
             ratelimited_rq: Counter::new(String::from("ratelimited_rq")),
+            time_to_first_token: Histogram::new(String::from("time_to_first_token")),
         }
     }
 }
