@@ -3,20 +3,12 @@ import pytest
 import requests
 from deepdiff import DeepDiff
 
-from common import PROMPT_GATEWAY_ENDPOINT, get_arch_messages, get_data_chunks
-
-
-def get_prefill_list():
-    prefill_list = [
-        "May",
-        "Could",
-        "Sure",
-        "Definitely",
-        "Certainly",
-        "Of course",
-        "Can",
-    ]
-    return prefill_list
+from common import (
+    PROMPT_GATEWAY_ENDPOINT,
+    PREFILL_LIST,
+    get_arch_messages,
+    get_data_chunks,
+)
 
 
 @pytest.mark.parametrize("stream", [True, False])
@@ -126,10 +118,9 @@ def test_prompt_gateway_arch_direct_response(stream):
         message = choices[0]["message"]["content"]
 
         assert "Could you provide the following details days" not in message
-    prefill_list = get_prefill_list()
     assert any(
-        message.startswith(word) for word in prefill_list
-    ), f"Expected assistant message to start with one of {prefill_list}, but got '{assistant_message}'"
+        message.startswith(word) for word in PREFILL_LIST
+    ), f"Expected assistant message to start with one of {PREFILL_LIST}, but got '{assistant_message}'"
 
 
 @pytest.mark.parametrize("stream", [True, False])

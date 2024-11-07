@@ -10,6 +10,16 @@ LLM_GATEWAY_ENDPOINT = os.getenv(
 )
 ARCH_STATE_HEADER = "x-arch-state"
 
+PREFILL_LIST = [
+    "May",
+    "Could",
+    "Sure",
+    "Definitely",
+    "Certainly",
+    "Of course",
+    "Can",
+]
+
 
 def get_data_chunks(stream, n=1):
     chunks = []

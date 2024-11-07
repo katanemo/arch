@@ -87,14 +87,14 @@ async def chat_completion(req: ChatMessage, res: Response):
         resp = const.arch_function_client.chat.completions.create(
             messages=messages,
             model=client_model_name,
-            stream=const.prefill_enabled,
+            stream=const.PREFILL_ENABLED,
             extra_body=const.arch_function_generation_params,
         )
     except Exception as e:
         logger.error(f"model_server <= arch_function: error: {e}")
         raise
 
-    if const.prefill_enabled:
+    if const.PREFILL_ENABLED:
         first_token_content = ""
         for token in resp:
             first_token_content = token.choices[
@@ -104,14 +104,16 @@ async def chat_completion(req: ChatMessage, res: Response):
                 break
 
         # Check if the first token requires tool call handling
-        if first_token_content != "<tool_call>":
+        if first_token_content != const.TOOL_CALL_TOKEN:
             # Engage pre-filling response if no tool call is indicated
             resp.close()
             logger.info("Tool call is not found! Engage pre filling")
-            prefill_content = random.choice(const.prefill_list)
+            prefill_content = random.choice(const.PREFILL_LIST)
             messages.append({"role": "assistant", "content": prefill_content})
 
             # Send a new completion request with the updated messages
+            # the model will continue the final message in the chat instead of starting a new one
+            # disable add_generation_prompt which tells the template to add tokens that indicate the start of a bot response.
             extra_body = {
                 **const.arch_function_generation_params,
                 "continue_final_message": True,
