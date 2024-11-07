@@ -38,6 +38,8 @@ pub struct StreamContext {
     start_time: Option<SystemTime>,
     ttft_recorded: bool,
     ttft_duration: Option<Duration>, // Store the duration directly
+    first_token_processed: bool,
+    last_token_time: Option<SystemTime>,
 }
 
 impl StreamContext {
@@ -55,6 +57,8 @@ impl StreamContext {
             start_time: None,
             ttft_recorded: false,
             ttft_duration: None,
+            first_token_processed: false,
+            last_token_time: None,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -354,14 +358,14 @@ impl HttpContext for StreamContext {
                 };
             self.response_tokens += token_count;
 
-            // Compute TFT if not already recorded
+            // Compute TTFT if not already recorded
             if !self.ttft_recorded {
                 if let Some(start_time) = self.start_time {
                     match get_current_time() {
                         Ok(current_time) => match current_time.duration_since(start_time) {
                             Ok(duration) => {
                                 let duration_ms = duration.as_millis();
-                                debug!("Time to First Token (TFT): {} milliseconds", duration_ms);
+                                debug!("Time to First Token (TTFT): {} milliseconds", duration_ms);
                                 self.ttft_duration = Some(duration);
                                 self.metrics.time_to_first_token.record(duration_ms as u64);
                             }
@@ -376,6 +380,50 @@ impl HttpContext for StreamContext {
                     self.ttft_recorded = true;
                 } else {
                     warn!("Start time was not recorded");
+                }
+            }
+            // Check if first token was not processed yet, and if there are tokens in the response.
+            // If so, set the last_token_time to now and set first_token_processed to true
+            if !self.first_token_processed && token_count > 0 {
+                self.first_token_processed = true;
+                // Set last_token_time to now
+                match get_current_time() {
+                    Ok(current_time) => {
+                        self.last_token_time = Some(current_time);
+                    }
+                    Err(e) => {
+                        warn!("Failed to get current time: {:?}", e);
+                    }
+                }
+            } else if self.first_token_processed && token_count == 0 {
+                if let Some(last_token_time) = self.last_token_time {
+                    match get_current_time() {
+                        Ok(current_time) => {
+                            // record the time for the current output token and calculate the time per output token
+                            match current_time.duration_since(last_token_time) {
+                                Ok(duration) => {
+                                    // Convert the duration to milliseconds
+                                    let duration_ms = duration.as_millis();
+                                    debug!(
+                                        "Time for Current Output Token: {} milliseconds",
+                                        duration_ms
+                                    );
+                                    // Record TPOT metric for historgram
+                                    self.metrics
+                                        .time_per_output_token
+                                        .record(duration_ms as u64);
+                                }
+                                Err(e) => {
+                                    warn!("SystemTime error: {:?}", e);
+                                }
+                            }
+                            // Set last_token_time to now
+                            self.last_token_time = Some(current_time);
+                        }
+                        Err(e) => {
+                            warn!("Failed to get current time: {:?}", e);
+                        }
+                    }
                 }
             }
         } else {

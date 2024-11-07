@@ -18,6 +18,7 @@ pub struct WasmMetrics {
     pub active_http_calls: Gauge,
     pub ratelimited_rq: Counter,
     pub time_to_first_token: Histogram,
+    pub time_per_output_token: Histogram,
 }
 
 impl WasmMetrics {
@@ -26,6 +27,7 @@ impl WasmMetrics {
             active_http_calls: Gauge::new(String::from("active_http_calls")),
             ratelimited_rq: Counter::new(String::from("ratelimited_rq")),
             time_to_first_token: Histogram::new(String::from("time_to_first_token")),
+            time_per_output_token: Histogram::new(String::from("time_per_output_token")),
         }
     }
 }
