@@ -64,9 +64,7 @@ def process_messages(history: list[Message]):
     return updated_history
 
 
-async def chat_completion(
-    req: ChatMessage, res: Response, prefill_enabled: bool = True
-):
+async def chat_completion(req: ChatMessage, res: Response):
     logger.info("starting request")
 
     tools_encoded = const.arch_function_hanlder._format_system(req.tools)
@@ -89,14 +87,14 @@ async def chat_completion(
         resp = const.arch_function_client.chat.completions.create(
             messages=messages,
             model=client_model_name,
-            stream=prefill_enabled,
+            stream=const.prefill_enabled,
             extra_body=const.arch_function_generation_params,
         )
     except Exception as e:
         logger.error(f"model_server <= arch_function: error: {e}")
         raise
 
-    if prefill_enabled:
+    if const.prefill_enabled:
         first_token_content = ""
         for token in resp:
             first_token_content = token.choices[

@@ -216,10 +216,7 @@ async def hallucination(req: HallucinationRequest, res: Response):
 @app.post("/v1/chat/completions")
 async def chat_completion(req: ChatMessage, res: Response, request: Request):
     try:
-        prefill_enabled = (
-            request.query_params.get("prefill_enabled", "true").lower() == "true"
-        )
-        result = await arch_function_chat_completion(req, res, prefill_enabled)
+        result = await arch_function_chat_completion(req, res)
         return result
     except Exception as e:
         logger.error(f"Error in chat_completion: {e}")

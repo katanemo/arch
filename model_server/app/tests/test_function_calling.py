@@ -73,7 +73,7 @@ async def test_chat_completion(mock_hanlder, mock_client):
     mock_hanlder._format_system.return_value = "<formatted_tools>"
 
     response = Response()
-    chat_response = await chat_completion(request, response, prefill_enabled=True)
+    chat_response = await chat_completion(request, response)
 
     assert isinstance(chat_response, ChatCompletionResponse)
     assert chat_response.choices[0].message.content is not None

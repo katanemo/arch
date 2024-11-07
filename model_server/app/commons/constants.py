@@ -9,6 +9,7 @@ logger = utils.get_model_server_logger()
 
 arch_function_hanlder = ArchFunctionHandler()
 prefill_list = ["May", "Could", "Sure", "Definitely", "Certainly", "Of course", "Can"]
+prefill_enabled = True
 arch_function_endpoint = "https://api.fc.archgw.com/v1"
 arch_function_client = utils.get_client(arch_function_endpoint)
 arch_function_generation_params = {
