@@ -176,7 +176,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.trace_arch() && self.traceparent.is_some() {
+        if self.trace_arch_internal() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
@@ -305,7 +305,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.trace_arch() && self.traceparent.is_some() {
+        if self.trace_arch_internal() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
@@ -325,10 +325,10 @@ impl StreamContext {
         }
     }
 
-    fn trace_arch(&self) -> bool {
+    fn trace_arch_internal(&self) -> bool {
         match self.tracing.as_ref() {
-            Some(tracing) => match tracing.trace_arch.as_ref() {
-                Some(trace_arch) => *trace_arch,
+            Some(tracing) => match tracing.trace_arch_internal.as_ref() {
+                Some(trace_arch_internal) => *trace_arch_internal,
                 None => false,
             },
             None => false,
@@ -515,7 +515,7 @@ impl StreamContext {
                     headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
                 }
 
-                if self.trace_arch() && self.traceparent.is_some() {
+                if self.trace_arch_internal() && self.traceparent.is_some() {
                     headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
                 }
 
@@ -666,7 +666,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.trace_arch() && self.traceparent.is_some() {
+        if self.trace_arch_internal() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
@@ -846,7 +846,7 @@ impl StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
-        if self.trace_arch() && self.traceparent.is_some() {
+        if self.trace_arch_internal() && self.traceparent.is_some() {
             headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
         }
 
