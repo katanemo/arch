@@ -3,6 +3,7 @@ services:
     image: katanemo/archgw:latest
     ports:
       - "10000:10000"
+      - "10001:10001"
       - "11000:11000"
       - "12000:12000"
       - "19901:9901"

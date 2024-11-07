@@ -1095,7 +1095,17 @@ impl StreamContext {
         {
             let default_target_response_str = if self.streaming_response {
                 let chat_completion_response =
-                    serde_json::from_slice::<ChatCompletionsResponse>(&body).unwrap();
+                    match serde_json::from_slice::<ChatCompletionsResponse>(&body) {
+                        Ok(chat_completion_response) => chat_completion_response,
+                        Err(e) => {
+                            warn!(
+                                "error deserializing default target response: {}, body str: {}",
+                                e,
+                                String::from_utf8(body).unwrap()
+                            );
+                            return self.send_server_error(ServerError::Deserialization(e), None);
+                        }
+                    };
 
                 let chunks = vec![
                     ChatCompletionStreamResponse::new(

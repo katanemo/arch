@@ -74,4 +74,4 @@ prompt_targets:
 
 tracing:
   random_sampling: 100
-  # trace_arch: true
+  trace_arch: true

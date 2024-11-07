@@ -13,6 +13,20 @@ Content-Type: application/json
   ]
 }
 
+### prompt gateway request default target
+POST {{prompt_endpoint}}/v1/chat/completions HTTP/1.1
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    }
+  ]
+}
+
+
 ### prompt gateway request (streaming)
 POST {{prompt_endpoint}}/v1/chat/completions HTTP/1.1
 Content-Type: application/json
