@@ -3,7 +3,12 @@ import pytest
 import requests
 from deepdiff import DeepDiff
 
-from common import PROMPT_GATEWAY_ENDPOINT, get_arch_messages, get_data_chunks
+from common import (
+    PROMPT_GATEWAY_ENDPOINT,
+    PREFILL_LIST,
+    get_arch_messages,
+    get_data_chunks,
+)
 
 
 @pytest.mark.parametrize("stream", [True, False])
@@ -101,13 +106,21 @@ def test_prompt_gateway_arch_direct_response(stream):
         assert len(choices) > 0
         tool_calls = choices[0].get("delta", {}).get("tool_calls", [])
         assert len(tool_calls) == 0
+        response_json = json.loads(chunks[1])
+        choices = response_json.get("choices", [])
+        assert len(choices) > 0
+        message = choices[0]["delta"]["content"]
     else:
         response_json = response.json()
         assert response_json.get("model").startswith("Arch")
         choices = response_json.get("choices", [])
         assert len(choices) > 0
         message = choices[0]["message"]["content"]
+
         assert "Could you provide the following details days" not in message
+    assert any(
+        message.startswith(word) for word in PREFILL_LIST
+    ), f"Expected assistant message to start with one of {PREFILL_LIST}, but got '{assistant_message}'"
 
 
 @pytest.mark.parametrize("stream", [True, False])

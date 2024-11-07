@@ -8,6 +8,9 @@ from app.prompt_guard.model_handler import ArchGuardHanlder
 logger = utils.get_model_server_logger()
 
 arch_function_hanlder = ArchFunctionHandler()
+PREFILL_LIST = ["May", "Could", "Sure", "Definitely", "Certainly", "Of course", "Can"]
+PREFILL_ENABLED = True
+TOOL_CALL_TOKEN = "<tool_call>"
 arch_function_endpoint = "https://api.fc.archgw.com/v1"
 arch_function_client = utils.get_client(arch_function_endpoint)
 arch_function_generation_params = {
