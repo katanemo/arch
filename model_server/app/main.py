@@ -42,10 +42,14 @@ app = FastAPI()
 
 FastAPIInstrumentor().instrument_app(app)
 
+# DEFAULT_OTLP_HOST = "http://localhost:4317"
+DEFAULT_OTLP_HOST = "none"
+
 # Configure the OTLP exporter (Jaeger, Zipkin, etc.)
 otlp_exporter = OTLPSpanExporter(
-    endpoint=os.getenv("OLTP_HOST", "http://localhost:4317")  # noqa: F821
+    endpoint=os.getenv("OTLP_HOST", DEFAULT_OTLP_HOST)  # noqa: F821
 )
+
 trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
 
 
