@@ -133,16 +133,39 @@ impl StreamContext {
         model: &str,
         json_string: &str,
     ) -> Result<(), ratelimit::Error> {
+        // Tokenize and record token count.
+        let token_count = tokenizer::token_count(model, json_string).unwrap_or(0);
+
+        // Record the token count to metrics.
+        self.metrics
+            .input_sequence_length
+            .record(token_count as u64);
+        log::debug!("Recorded input token count: {}", token_count);
+
+        // Check if rate limiting needs to be applied.
         if let Some(selector) = self.ratelimit_selector.take() {
-            // Tokenize and Ratelimit.
-            if let Ok(token_count) = tokenizer::token_count(model, json_string) {
-                ratelimit::ratelimits(None).read().unwrap().check_limit(
-                    model.to_owned(),
-                    selector,
-                    NonZero::new(token_count as u32).unwrap(),
-                )?;
+            log::debug!("Rate limiting applied for model: {}", model);
+            let result = ratelimit::ratelimits(None).read().unwrap().check_limit(
+                model.to_owned(),
+                selector,
+                NonZero::new(token_count as u32).unwrap(),
+            );
+
+            match result {
+                Ok(_) => log::debug!("Rate limit check passed for model: {}", model),
+                Err(e) => {
+                    log::debug!(
+                        "Rate limit check failed for model: {} with error: {:?}",
+                        model,
+                        e
+                    );
+                    return Err(e);
+                }
             }
+        } else {
+            log::debug!("No rate limit applied for model: {}", model);
         }
+
         Ok(())
     }
 }

@@ -21,7 +21,7 @@ pub struct WasmMetrics {
     pub time_per_output_token: Histogram,
     pub latency: Histogram,
     pub output_sequence_length: Histogram,
-    // TODO: Add Input Sequence Length
+    pub input_sequence_length: Histogram,
 }
 
 impl WasmMetrics {
@@ -33,6 +33,7 @@ impl WasmMetrics {
             time_per_output_token: Histogram::new(String::from("time_per_output_token")),
             latency: Histogram::new(String::from("latency")),
             output_sequence_length: Histogram::new(String::from("output_sequence_length")),
+            input_sequence_length: Histogram::new(String::from("input_sequence_length")),
         }
     }
 }
