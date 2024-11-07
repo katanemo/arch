@@ -395,7 +395,7 @@ impl HttpContext for StreamContext {
                         warn!("Failed to get current time: {:?}", e);
                     }
                 }
-            } else if self.first_token_processed && token_count == 0 {
+            } else if self.first_token_processed && token_count > 0 {
                 if let Some(last_token_time) = self.last_token_time {
                     match get_current_time() {
                         Ok(current_time) => {
@@ -405,13 +405,13 @@ impl HttpContext for StreamContext {
                                     // Convert the duration to milliseconds
                                     let duration_ms = duration.as_millis();
                                     debug!(
-                                        "Time for Current Output Token: {} milliseconds",
+                                        "Time for Current Output Tokens: {} milliseconds",
                                         duration_ms
                                     );
                                     // Record TPOT metric for historgram
                                     self.metrics
                                         .time_per_output_token
-                                        .record(duration_ms as u64);
+                                        .record((duration_ms as u64) / (token_count as u64));
                                 }
                                 Err(e) => {
                                     warn!("SystemTime error: {:?}", e);
