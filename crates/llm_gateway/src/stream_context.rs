@@ -269,6 +269,32 @@ impl HttpContext for StreamContext {
 
         let body = if self.streaming_response {
             if end_of_stream && body_size == 0 {
+                // All streaming responses end with bytes=0 and end_stream=true
+                // Record the latency for the request
+                if let Some(start_time) = self.start_time {
+                    match get_current_time() {
+                        Ok(current_time) => match current_time.duration_since(start_time) {
+                            Ok(duration) => {
+                                // Convert the duration to milliseconds
+                                let duration_ms = duration.as_millis();
+                                debug!("Total latency: {} milliseconds", duration_ms);
+                                // Record the latency to the latency histogram
+                                self.metrics.latency.record(duration_ms as u64);
+                            }
+                            Err(e) => {
+                                warn!("SystemTime error: {:?}", e);
+                            }
+                        },
+                        Err(e) => {
+                            warn!("Failed to get current time: {:?}", e);
+                        }
+                    }
+                }
+                // Record the output sequence length
+                self.metrics
+                    .output_sequence_length
+                    .record(self.response_tokens as u64);
+
                 return Action::Continue;
             }
             let chunk_start = 0;
@@ -405,8 +431,8 @@ impl HttpContext for StreamContext {
                                     // Convert the duration to milliseconds
                                     let duration_ms = duration.as_millis();
                                     debug!(
-                                        "Time for Current Output Tokens: {} milliseconds",
-                                        duration_ms
+                                        "Time for Current Output Token: {} milliseconds",
+                                        duration_ms as u64 / token_count as u64
                                     );
                                     // Record TPOT metric for historgram
                                     self.metrics
