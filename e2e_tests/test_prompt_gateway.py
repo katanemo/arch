@@ -134,6 +134,7 @@ def test_prompt_gateway_param_gathering(stream):
         assert len(choices) > 0
         tool_calls = choices[0].get("delta", {}).get("tool_calls", [])
         assert len(tool_calls) == 0
+        # chunk would have "Could you provide the following details days"
     else:
         response_json = response.json()
         assert response_json.get("model").startswith("Arch")
