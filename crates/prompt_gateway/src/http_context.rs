@@ -53,31 +53,6 @@ impl HttpContext for StreamContext {
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
         self.traceparent = self.get_http_request_header(TRACE_PARENT_HEADER);
-        if self.traceparent.is_none() {
-            // let trace_id: String = generate_random_hex_string(16);
-            // self.set_http_request_header("x-client-trace-id", Some(trace_id.as_str()));
-        }
-        //     let trace_id: String = generate_random_hex_string(16);
-
-        //     let parent_id: String = generate_random_hex_string(8);
-
-        //     // let's add a traceparent header if it's not present
-        //     let trace_version = "00";
-        //     //TODO: fix 00 if sampled, 01 if not sampled. Hard coded for now.
-        //     let trace_flags = "01";
-
-        //     let trace_id = format!(
-        //         "{}-{}-{}-{}",
-        //         trace_version, trace_id, parent_id, trace_flags
-        //     );
-
-        //     debug!("attaching traceparent header: {}", trace_id);
-
-        //     self.traceparent = Some(trace_id.clone());
-        //     self.set_http_request_header(TRACE_PARENT_HEADER, Some(trace_id.as_str()));
-        // }
-
-        self.set_http_request_header("x-envoy-force-trace", Some("true"));
         Action::Continue
     }
 
