@@ -10,6 +10,7 @@ use common::consts::{
 };
 use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
+use common::pii::obfuscate_auth_header;
 use common::ratelimit::Header;
 use common::{ratelimit, routing, tokenizer};
 use http::StatusCode;
@@ -153,7 +154,7 @@ impl HttpContext for StreamContext {
         debug!(
             "on_http_request_headers S[{}] req_headers={:?}",
             self.context_id,
-            self.get_http_request_headers()
+            obfuscate_auth_header(&mut self.get_http_request_headers())
         );
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
