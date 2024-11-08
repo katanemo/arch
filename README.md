@@ -48,6 +48,15 @@ Before you begin, ensure you have the following:
 Arch's CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:
 Tip: We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that archgw and its dependencies do not interfere with other packages on your system.
 
+Make sure you have following utilities installed before proceeding further,
+
+1. [Docker System](https://docs.docker.com/get-started/get-docker/) (v24)
+2. [Docker compose](https://docs.docker.com/compose/install/) (v2.29)
+3. [Python](https://www.python.org/downloads/) (v3.10)
+4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3)
+
+*Note: Poetry is needed for local development*
+
 
 ```console
 $ python -m venv venv
