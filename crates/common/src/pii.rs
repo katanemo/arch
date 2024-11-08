@@ -20,6 +20,25 @@ mod test {
     pub fn test_obfuscate_auth_header() {
         let mut headers = vec![("Authorization".to_string(), "Bearer 1234".to_string())];
         obfuscate_auth_header(&mut headers);
-        assert_eq!(headers, vec![("Authorization".to_string(), "Bearer ***".to_string())]);
+        assert_eq!(
+            headers,
+            vec![("Authorization".to_string(), "Bearer ***".to_string())]
+        );
+    }
+
+    #[test]
+    pub fn test_obfuscate_no_auth_header_found() {
+        let mut headers = vec![
+            (":path".to_string(), "/healthz".to_string()),
+            (":method".to_string(), "POST".to_string()),
+        ];
+        obfuscate_auth_header(&mut headers);
+        assert_eq!(
+            headers,
+            vec![
+                (":path".to_string(), "/healthz".to_string()),
+                (":method".to_string(), "POST".to_string()),
+            ]
+        );
     }
 }
