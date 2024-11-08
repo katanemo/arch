@@ -15,7 +15,7 @@
         "LLM": "1",
         "CHAT_COMPLETION_ENDPOINT": "http://localhost:10000/v1",
         "STREAMING": "True",
-        "ARCH_CONFIG": "../demos/function_calling/arch_config.yaml"
+        "ARCH_CONFIG": "../demos/weather_forecast/arch_config.yaml"
       }
     },
     {
