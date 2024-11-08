@@ -11,3 +11,4 @@ pub mod ratelimit;
 pub mod routing;
 pub mod stats;
 pub mod tokenizer;
+pub mod pii;

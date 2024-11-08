@@ -13,7 +13,7 @@ use common::{
         HEALTHZ_PATH, REQUEST_ID_HEADER, TOOL_ROLE, TRACE_PARENT_HEADER, USER_ROLE,
     },
     errors::ServerError,
-    http::{CallArgs, Client},
+    http::{CallArgs, Client}, pii::obfuscate_auth_header,
 };
 use http::StatusCode;
 use log::{debug, trace, warn};
@@ -48,7 +48,7 @@ impl HttpContext for StreamContext {
         trace!(
             "on_http_request_headers S[{}] req_headers={:?}",
             self.context_id,
-            self.get_http_request_headers()
+            obfuscate_auth_header(&mut self.get_http_request_headers())
         );
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
