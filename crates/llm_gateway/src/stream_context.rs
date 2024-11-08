@@ -194,6 +194,20 @@ impl HttpContext for StreamContext {
         );
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
+
+        //start the timing for the request using get_current_time()
+        match get_current_time() {
+            Ok(current_time) => {
+                self.start_time = Some(current_time);
+                self.ttft_recorded = false;
+                self.ttft_duration = None;
+            }
+            Err(e) => {
+                warn!("Failed to get current time: {:?}", e);
+                self.start_time = None;
+            }
+        }
+
         Action::Continue
     }
 
@@ -494,30 +508,30 @@ impl HttpContext for StreamContext {
                     .completion_tokens;
             }
 
-            // Compute TFT if not already recorded
-            if !self.ttft_recorded {
-                if let Some(start_time) = self.start_time {
-                    match get_current_time() {
-                        Ok(current_time) => match current_time.duration_since(start_time) {
-                            Ok(duration) => {
-                                let duration_ms = duration.as_millis();
-                                debug!("Time to First Token (TFT): {} milliseconds", duration_ms);
-                                self.ttft_duration = Some(duration);
-                                self.metrics.time_to_first_token.record(duration_ms as u64);
-                            }
-                            Err(e) => {
-                                warn!("SystemTime error: {:?}", e);
-                            }
-                        },
-                        Err(e) => {
-                            warn!("Failed to get current time: {:?}", e);
-                        }
-                    }
-                    self.ttft_recorded = true;
-                } else {
-                    warn!("Start time was not recorded");
-                }
-            }
+            // // Compute TFT if not already recorded
+            // if !self.ttft_recorded {
+            //     if let Some(start_time) = self.start_time {
+            //         match get_current_time() {
+            //             Ok(current_time) => match current_time.duration_since(start_time) {
+            //                 Ok(duration) => {
+            //                     let duration_ms = duration.as_millis();
+            //                     debug!("Time to First Token (TFT): {} milliseconds", duration_ms);
+            //                     self.ttft_duration = Some(duration);
+            //                     self.metrics.time_to_first_token.record(duration_ms as u64);
+            //                 }
+            //                 Err(e) => {
+            //                     warn!("SystemTime error: {:?}", e);
+            //                 }
+            //             },
+            //             Err(e) => {
+            //                 warn!("Failed to get current time: {:?}", e);
+            //             }
+            //         }
+            //         self.ttft_recorded = true;
+            //     } else {
+            //         warn!("Start time was not recorded");
+            //     }
+            // }
         }
 
         debug!(
