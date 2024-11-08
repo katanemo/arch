@@ -4,7 +4,7 @@ e2e tests for arch llm gateway and prompt gateway
 
 To be able to run e2e tests successfully run_e2e_script prepares environment in following way,
 
-1. build and start function_calling demo (using docker compose)
+1. build and start weather_forecast demo (using docker compose)
 1. build, install and start model server async (using poetry)
 1. build and start arch gateway (using docker compose)
 1. wait for model server to be ready
@@ -15,7 +15,7 @@ To be able to run e2e tests successfully run_e2e_script prepares environment in 
 2. cleanup
    1. stops arch gateway
    2. stops model server
-   3. stops function_calling demo
+   3. stops weather_forecast demo
 
 ## How to run
 
