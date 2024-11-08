@@ -32,6 +32,10 @@ onnxruntime = "1.19.2"
 httpx = "*"
 pytest-asyncio = "*"
 pytest = "*"
+opentelemetry-api = "^1.28.0"
+opentelemetry-sdk = "^1.28.0"
+opentelemetry-exporter-otlp = "^1.28.0"
+opentelemetry-instrumentation-fastapi = "^0.49b0"
 
 [tool.poetry.scripts]
 archgw_modelserver = "app.cli:run_server"

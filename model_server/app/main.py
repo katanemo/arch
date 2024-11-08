@@ -1,3 +1,4 @@
+import os
 import time
 import torch
 import app.commons.utilities as utils
@@ -15,11 +16,41 @@ from app.function_calling.model_utils import (
 )
 from unittest.mock import patch
 
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource
+
+resource = Resource.create(
+    {
+        "service.name": "model-server",
+    }
+)
+
+# Initialize the tracer provider
+trace.set_tracer_provider(TracerProvider(resource=resource))
+tracer = trace.get_tracer(__name__)
+
+
 logger = utils.get_model_server_logger()
 
 logger.info(f"Ready to serve traffic. available device: {glb.DEVICE}")
 
 app = FastAPI()
+
+FastAPIInstrumentor().instrument_app(app)
+
+# DEFAULT_OTLP_HOST = "http://localhost:4317"
+DEFAULT_OTLP_HOST = "none"
+
+# Configure the OTLP exporter (Jaeger, Zipkin, etc.)
+otlp_exporter = OTLPSpanExporter(
+    endpoint=os.getenv("OTLP_HOST", DEFAULT_OTLP_HOST)  # noqa: F821
+)
+
+trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
 
 
 class EmbeddingRequest(BaseModel):

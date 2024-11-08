@@ -1,6 +1,6 @@
 use crate::stream_context::StreamContext;
 use common::common_types::EmbeddingType;
-use common::configuration::{Configuration, Overrides, PromptGuards, PromptTarget};
+use common::configuration::{Configuration, Overrides, PromptGuards, PromptTarget, Tracing};
 use common::consts::ARCH_UPSTREAM_HOST_HEADER;
 use common::consts::DEFAULT_EMBEDDING_MODEL;
 use common::consts::{ARCH_INTERNAL_CLUSTER_NAME, EMBEDDINGS_INTERNAL_HOST};
@@ -55,6 +55,7 @@ pub struct FilterContext {
     embeddings_store: Option<Rc<EmbeddingsStore>>,
     temp_embeddings_store: EmbeddingsStore,
     active_embedding_calls_count: u32,
+    tracing: Rc<Option<Tracing>>,
 }
 
 impl FilterContext {
@@ -69,6 +70,7 @@ impl FilterContext {
             embeddings_store: Some(Rc::new(HashMap::new())),
             temp_embeddings_store: HashMap::new(),
             active_embedding_calls_count: 0,
+            tracing: Rc::new(None),
         }
     }
 
@@ -270,6 +272,8 @@ impl RootContext for FilterContext {
             self.prompt_guards = Rc::new(prompt_guards)
         }
 
+        self.tracing = Rc::new(config.tracing);
+
         true
     }
 
@@ -288,6 +292,7 @@ impl RootContext for FilterContext {
             Rc::clone(&self.prompt_guards),
             Rc::clone(&self.overrides),
             embedding_store,
+            Rc::clone(&self.tracing),
         )))
     }
 

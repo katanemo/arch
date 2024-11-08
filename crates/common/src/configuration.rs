@@ -12,6 +12,7 @@ pub struct Overrides {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Tracing {
     pub sampling_rate: Option<f64>,
+    pub trace_arch_internal: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]

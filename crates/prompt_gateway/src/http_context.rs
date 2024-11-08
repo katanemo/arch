@@ -10,7 +10,7 @@ use common::{
     consts::{
         ARCH_FC_MODEL_NAME, ARCH_INTERNAL_CLUSTER_NAME, ARCH_STATE_HEADER,
         ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, CHAT_COMPLETIONS_PATH, GUARD_INTERNAL_HOST,
-        HEALTHZ_PATH, REQUEST_ID_HEADER, TOOL_ROLE, USER_ROLE,
+        HEALTHZ_PATH, REQUEST_ID_HEADER, TOOL_ROLE, TRACE_PARENT_HEADER, USER_ROLE,
     },
     errors::ServerError,
     http::{CallArgs, Client},
@@ -52,13 +52,14 @@ impl HttpContext for StreamContext {
         );
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
-
+        self.traceparent = self.get_http_request_header(TRACE_PARENT_HEADER);
         Action::Continue
     }
 
     fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         // Let the client send the gateway all the data before sending to the LLM_provider.
         // TODO: consider a streaming API.
+
         if !end_of_stream {
             return Action::Pause;
         }
@@ -195,6 +196,10 @@ impl HttpContext for StreamContext {
             headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
         }
 
+        if self.traceparent.is_some() {
+            headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
+        }
+
         let call_args = CallArgs::new(
             ARCH_INTERNAL_CLUSTER_NAME,
             "/guard",
@@ -241,7 +246,7 @@ impl HttpContext for StreamContext {
         );
 
         if !self.is_chat_completions_request {
-            debug!("non-streaming request");
+            debug!("non-gpt request");
             return Action::Continue;
         }
 

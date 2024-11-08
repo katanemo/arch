@@ -36,6 +36,8 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .expect_log(Some(LogLevel::Trace), None)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("x-request-id"))
         .returning(None)
+        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("traceparent"))
+        .returning(None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 }

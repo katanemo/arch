@@ -32,3 +32,4 @@ dist/
 crates/*/target/
 crates/target/
 build.log
+demos/shared/signoz/data

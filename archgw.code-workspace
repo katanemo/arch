@@ -21,8 +21,8 @@
       "path": "e2e_tests"
     },
     {
-      "name": "demos/function_calling",
-      "path": "./demos/function_calling",
+      "name": "demos/weather_forecast",
+      "path": "./demos/weather_forecast",
     },
     {
       "name": "demos/insurance_agent",

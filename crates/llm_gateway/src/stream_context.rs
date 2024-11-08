@@ -157,7 +157,6 @@ impl HttpContext for StreamContext {
         );
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
-
         Action::Continue
     }
 

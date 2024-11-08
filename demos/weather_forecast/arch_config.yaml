@@ -7,7 +7,7 @@ listener:
   connect_timeout: 0.005s
 
 endpoints:
-  api_server:
+  weather_forecast_service:
     endpoint: host.docker.internal:18083
     connect_timeout: 0.005s
 
@@ -57,29 +57,14 @@ prompt_targets:
         type: str
         default: Fahrenheit
     endpoint:
-      name: api_server
+      name: weather_forecast_service
       path: /weather
-
-  - name: insurance_claim_details
-    description: Get the details of the insurance claim for a given policy number
-    parameters:
-      - name: policy_number
-        type: str
-        description: the policy number for the insurance claim
-        required: true
-      - name: include_expired
-        description: indicate whether to include expired insurance claims
-        type: bool
-        required: true
-    endpoint:
-      name: api_server
-      path: /insurance_claim_details
 
   - name: default_target
     default: true
     description: This is the default target for all unmatched prompts.
     endpoint:
-      name: api_server
+      name: weather_forecast_service
       path: /default_target
     system_prompt: |
       You are a helpful assistant! Summarize the user's request and provide a helpful response.
@@ -89,3 +74,4 @@ prompt_targets:
 
 tracing:
   random_sampling: 100
+  trace_arch_internal: true

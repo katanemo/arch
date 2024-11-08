@@ -34,14 +34,14 @@ impl Context for StreamContext {
         │ on_http_request_body ├──►│ prompt received ├──►│ get embeddings ├──►│ zeroshot intent │
         │                      │   │                 │   │                │   │                 │
         └──────────────────────┘   └────────┬────────┘   └────────────────┘   └─────────────────┘
-                                          │                     ▲
-                                          │                     │
-                                          │                     │
-                                          │            ┌────────┴───────┐
-                                          │            │                │
-                                          └───────────►│   arch guard   │
-                                                       │                │
-                                                       └────────────────┘
+                                            │                     ▲
+                                            │                     │
+                                            │                     │
+                                            │            ┌────────┴───────┐
+                                            │            │                │
+                                            └───────────►│   arch guard   │
+                                                         │                │
+                                                         └────────────────┘
 
 
         continue from zeroshot intent
