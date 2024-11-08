@@ -7,10 +7,10 @@ use serial_test::serial;
 use std::path::Path;
 
 fn wasm_module() -> String {
-    let wasm_file = Path::new("../target/wasm32-wasi/release/llm_gateway.wasm");
+    let wasm_file = Path::new("../target/wasm32-wasip1/release/llm_gateway.wasm");
     assert!(
         wasm_file.exists(),
-        "Run `cargo build --release --target=wasm32-wasi` first"
+        "Run `cargo build --release --target=wasm32-wasip1` first"
     );
     wasm_file.to_str().unwrap().to_string()
 }

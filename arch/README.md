@@ -3,13 +3,13 @@
 ## Add toolchain
 
 ```sh
-$ rustup target add wasm32-wasi
+$ rustup target add wasm32-wasip1
 ```
 
 ## Building
 
 ```sh
-$ cargo build --target wasm32-wasi --release
+$ cargo build --target wasm32-wasip1 --release
 ```
 
 ## Testing
@@ -25,7 +25,7 @@ $ cargo test
 
 - Build filter binary,
   ```
-  $ cargo build --target wasm32-wasi --release
+  $ cargo build --target wasm32-wasip1 --release
   ```
 - Start envoy with arch_config.yaml and test,
   ```

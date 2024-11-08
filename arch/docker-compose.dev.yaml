@@ -13,8 +13,8 @@ services:
       - ./envoy.template.yaml:/config/envoy.template.yaml
       - ./arch_config_schema.yaml:/config/arch_config_schema.yaml
       - ./tools/cli/config_generator.py:/config/config_generator.py
-      - ../crates/target/wasm32-wasi/release/llm_gateway.wasm:/etc/envoy/proxy-wasm-plugins/llm_gateway.wasm
-      - ../crates/target/wasm32-wasi/release/prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm
+      - ../crates/target/wasm32-wasip1/release/llm_gateway.wasm:/etc/envoy/proxy-wasm-plugins/llm_gateway.wasm
+      - ../crates/target/wasm32-wasip1/release/prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm
       - ~/archgw_logs:/var/log/
     extra_hosts:
       - "host.docker.internal:host-gateway"
