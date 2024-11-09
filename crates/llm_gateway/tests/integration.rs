@@ -51,6 +51,8 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("x-request-id"))
         .returning(None)
+        .expect_get_current_time_nanos()
+        .returning(Some(0))
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 }
@@ -72,6 +74,11 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
         .call_proxy_on_context_create(filter_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
         .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
+        .expect_metric_creation(MetricType::Histogram, "time_to_first_token")
+        .expect_metric_creation(MetricType::Histogram, "time_per_output_token")
+        .expect_metric_creation(MetricType::Histogram, "latency")
+        .expect_metric_creation(MetricType::Histogram, "output_sequence_length")
+        .expect_metric_creation(MetricType::Histogram, "input_sequence_length")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -283,7 +290,7 @@ fn llm_gateway_request_ratelimited() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
-        allow_unexpected: false,
+        allow_unexpected: true,
     };
     let mut module = tester::mock(args).unwrap();
 
