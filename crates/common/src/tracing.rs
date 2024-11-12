@@ -118,6 +118,12 @@ pub struct TraceData {
     resource_spans: Vec<ResourceSpan>,
 }
 
+impl Default for TraceData {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TraceData {
     pub fn new() -> Self {
         TraceData {
