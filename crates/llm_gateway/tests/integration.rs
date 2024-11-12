@@ -216,6 +216,10 @@ fn llm_gateway_successful_request_to_open_ai_chat_completions() {
         .returning(Some(chat_completions_request_body))
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_record("input_sequence_length", 49)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
@@ -334,9 +338,12 @@ fn llm_gateway_request_ratelimited() {
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_record("input_sequence_length", 108)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        // .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
             Some(StatusCode::TOO_MANY_REQUESTS.as_u16().into()),
             None,
@@ -397,6 +404,10 @@ fn llm_gateway_request_not_ratelimited() {
         .returning(Some(chat_completions_request_body))
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_log(Some(LogLevel::Trace), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_record("input_sequence_length", 57)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
