@@ -51,6 +51,8 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("x-request-id"))
         .returning(None)
+        .expect_get_current_time_nanos()
+        .returning(Some(0))
         .execute_and_expect(ReturnType::Action(Action::Continue))
         .unwrap();
 }
@@ -72,6 +74,10 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
         .call_proxy_on_context_create(filter_context, 0)
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
         .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
+        .expect_metric_creation(MetricType::Histogram, "time_to_first_token")
+        .expect_metric_creation(MetricType::Histogram, "request_latency")
+        .expect_metric_creation(MetricType::Histogram, "output_sequence_length")
+        .expect_metric_creation(MetricType::Histogram, "input_sequence_length")
         .execute_and_expect(ReturnType::None)
         .unwrap();
 
@@ -209,6 +215,9 @@ fn llm_gateway_successful_request_to_open_ai_chat_completions() {
         .returning(Some(chat_completions_request_body))
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_record("input_sequence_length", 21)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .execute_and_expect(ReturnType::Action(Action::Continue))
@@ -310,7 +319,7 @@ fn llm_gateway_request_ratelimited() {
     },\
     {\
         \"role\": \"user\",\
-        \"content\": \"Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. And also summarize it how a 4th graded would understand it.\"\
+        \"content\": \"Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. Compose a poem that explains the concept of recursion in programming. And also summarize it how a 4th graded would understand it. Compose a poem that explains the concept of recursion in programming. And also summarize it how a 4th graded would understand it.\"\
     }\
     ],\
     \"model\": \"gpt-4\"\
@@ -327,9 +336,11 @@ fn llm_gateway_request_ratelimited() {
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_record("input_sequence_length", 107)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
-        // .expect_metric_increment("active_http_calls", 1)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
             Some(StatusCode::TOO_MANY_REQUESTS.as_u16().into()),
             None,
@@ -390,6 +401,9 @@ fn llm_gateway_request_not_ratelimited() {
         .returning(Some(chat_completions_request_body))
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_log(Some(LogLevel::Trace), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_metric_record("input_sequence_length", 29)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
