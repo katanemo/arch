@@ -15,6 +15,7 @@ thiserror = "1.0.64"
 tiktoken-rs = "0.5.9"
 rand = "0.8.5"
 serde_json = "1.0"
+hex = "0.4.3"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

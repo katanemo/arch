@@ -120,7 +120,7 @@ static_resources:
                           "@type": type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip
                           memory_level: 3
                           window_bits: 10
-                  - name: envoy.filters.http.wasm
+                  - name: envoy.filters.http.wasm_prompt
                     typed_config:
                       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
                       type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
@@ -137,7 +137,7 @@ static_resources:
                             code:
                               local:
                                 filename: "/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm"
-                  - name: envoy.filters.http.wasm
+                  - name: envoy.filters.http.wasm_llm
                     typed_config:
                       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
                       type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
@@ -498,4 +498,22 @@ static_resources:
                 socket_address:
                   address: host.docker.internal
                   port_value: 4317
+    - name: opentelemetry_collector_http
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
+      lb_policy: ROUND_ROBIN
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: opentelemetry_collector_http
+        endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: host.docker.internal
+                  port_value: 4318
 {% endif %}

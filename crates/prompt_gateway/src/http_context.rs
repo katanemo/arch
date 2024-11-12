@@ -1,4 +1,7 @@
-use std::{collections::HashMap, time::Duration};
+use std::{
+    collections::HashMap,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use common::{
     common_types::{
@@ -13,7 +16,9 @@ use common::{
         HEALTHZ_PATH, REQUEST_ID_HEADER, TOOL_ROLE, TRACE_PARENT_HEADER, USER_ROLE,
     },
     errors::ServerError,
-    http::{CallArgs, Client}, pii::obfuscate_auth_header,
+    http::{CallArgs, Client},
+    pii::obfuscate_auth_header,
+    tracing::{get_random_span_id, Span},
 };
 use http::StatusCode;
 use log::{debug, trace, warn};
@@ -238,15 +243,45 @@ impl HttpContext for StreamContext {
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
-        trace!(
-            "recv [S={}] bytes={} end_stream={}",
-            self.context_id,
-            body_size,
-            end_of_stream
+        debug!(
+            "on_http_response_body: recv [S={}] bytes={} end_stream={}",
+            self.context_id, body_size, end_of_stream
         );
 
         if !self.is_chat_completions_request {
             debug!("non-gpt request");
+            return Action::Continue;
+        }
+
+        if end_of_stream {
+            let start = SystemTime::now();
+            let since_the_epoch_ns = match start.duration_since(UNIX_EPOCH) {
+                Ok(duration) => duration.as_nanos(),
+                Err(_) => {
+                    eprintln!("System time went backwards");
+                    std::process::exit(1);
+                }
+            };
+
+            if let Some(traceparent) = self.traceparent.as_ref() {
+                let traceparent_tokens = traceparent.split("-").collect::<Vec<&str>>();
+                let parent_trace_id = traceparent_tokens[1];
+                let parent_span_id = traceparent_tokens[2];
+                let mut trace_data = common::tracing::TraceData::new();
+                trace_data.add_span(Span {
+                    trace_id: parent_trace_id.to_string(),
+                    parent_span_id: Some(parent_span_id.to_string()),
+                    span_id: format!("{}", get_random_span_id()),
+                    name: "archgw".to_string(),
+                    start_time_unix_nano: format!("{}", self.start_upstream_llm_request_time),
+                    end_time_unix_nano: format!("{}", since_the_epoch_ns),
+                    kind: 1,
+                    attributes: vec![],
+                });
+                let trace_data_str = serde_json::to_string(&trace_data).unwrap();
+                debug!("upstream_llm trace details: {}", trace_data_str);
+                // send trace_data to http tracing endpoint
+            }
             return Action::Continue;
         }
 

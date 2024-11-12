@@ -33,7 +33,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub enum ResponseHandlerType {
@@ -77,6 +77,7 @@ pub struct StreamContext {
     pub chat_completions_request: Option<ChatCompletionsRequest>,
     pub prompt_guards: Rc<PromptGuards>,
     pub request_id: Option<String>,
+    pub start_upstream_llm_request_time: u128,
     pub traceparent: Option<String>,
     pub tracing: Rc<Option<Tracing>>,
 }
@@ -113,6 +114,7 @@ impl StreamContext {
             request_id: None,
             traceparent: None,
             tracing,
+            start_upstream_llm_request_time: 0,
         }
     }
 
@@ -1002,6 +1004,14 @@ impl StreamContext {
             }
         };
         debug!("archgw => llm request: {}", llm_request_str);
+
+        self.start_upstream_llm_request_time = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(duration) => duration.as_nanos(),
+            Err(_) => {
+                eprintln!("System time went backwards");
+                std::process::exit(1);
+            }
+        };
 
         self.set_http_request_body(0, self.request_body_size, &llm_request_str.into_bytes());
         self.resume_http_request();

@@ -11,7 +11,7 @@ RUN cd llm_gateway && cargo build --release --target wasm32-wasi
 FROM envoyproxy/envoy:v1.31-latest as envoy
 
 #Build config generator, so that we have a single build image for both Rust and Python
-FROM python:3-slim as arch
+FROM python:3.12-slim as arch
 
 RUN apt-get update && apt-get install -y gettext-base curl && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -25,5 +25,4 @@ COPY arch/tools/cli/config_generator.py .
 COPY arch/envoy.template.yaml .
 COPY arch/arch_config_schema.yaml .
 
-
-ENTRYPOINT ["sh", "-c", "python config_generator.py && envsubst < /etc/envoy/envoy.yaml > /etc/envoy.env_sub.yaml && envoy -c /etc/envoy.env_sub.yaml --component-log-level wasm:debug"]
+ENTRYPOINT ["sh", "-c", "python config_generator.py && envsubst < /etc/envoy/envoy.yaml > /etc/envoy.env_sub.yaml && envoy -c /etc/envoy.env_sub.yaml --log-path /var/log/envoy.log --component-log-level wasm:debug]
