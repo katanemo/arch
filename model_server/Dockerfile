@@ -1,9 +1,9 @@
-FROM python:3.10 AS builder
+FROM python:3.12 AS builder
 
 COPY requirements.txt .
 RUN pip install --prefix=/runtime -r requirements.txt
 
-FROM python:3.10-slim AS output
+FROM python:3.12-slim AS output
 
 # curl is needed for health check in docker-compose
 RUN apt-get update && apt-get install -y curl && apt-get clean && rm -rf /var/lib/apt/lists/*
