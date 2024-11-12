@@ -253,15 +253,21 @@ impl HttpContext for StreamContext {
             return Action::Continue;
         }
 
+        if self.time_to_first_token.is_none() {
+            self.time_to_first_token = Some(
+                SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos(),
+            );
+        }
+
         if end_of_stream {
             if let Some(traceparent) = self.traceparent.as_ref() {
-                let since_the_epoch_ns = match SystemTime::now().duration_since(UNIX_EPOCH) {
-                    Ok(duration) => duration.as_nanos(),
-                    Err(_) => {
-                        eprintln!("System time went backwards");
-                        std::process::exit(1);
-                    }
-                };
+                let since_the_epoch_ns = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos();
 
                 let traceparent_tokens = traceparent.split("-").collect::<Vec<&str>>();
                 if traceparent_tokens.len() != 4 {
@@ -275,12 +281,24 @@ impl HttpContext for StreamContext {
                     trace_id: parent_trace_id.to_string(),
                     parent_span_id: Some(parent_span_id.to_string()),
                     span_id: format!("{}", get_random_span_id()),
-                    name: "archgw".to_string(),
+                    name: "total_time".to_string(),
                     start_time_unix_nano: format!("{}", self.start_upstream_llm_request_time),
                     end_time_unix_nano: format!("{}", since_the_epoch_ns),
                     kind: 1,
                     attributes: vec![],
                 });
+
+                trace_data.add_span(Span {
+                    trace_id: parent_trace_id.to_string(),
+                    parent_span_id: Some(parent_span_id.to_string()),
+                    span_id: format!("{}", get_random_span_id()),
+                    name: "time_to_first_token".to_string(),
+                    start_time_unix_nano: format!("{}", self.start_upstream_llm_request_time),
+                    end_time_unix_nano: format!("{}", self.time_to_first_token.unwrap()),
+                    kind: 1,
+                    attributes: vec![],
+                });
+
                 let trace_data_str = serde_json::to_string(&trace_data).unwrap();
                 debug!("upstream_llm trace details: {}", trace_data_str);
                 // send trace_data to http tracing endpoint
