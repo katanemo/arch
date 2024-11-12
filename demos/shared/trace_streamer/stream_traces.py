@@ -1,14 +1,20 @@
 import os
 import time
 import requests
+import logging
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 otel_tracing_endpoint = os.getenv(
     "OTEL_TRACING_HTTP_ENDPOINT", "http://localhost:4318/v1/traces"
 )
 envoy_log_path = os.getenv("ENVOY_LOG_PATH", "/var/log/envoy.log")
 
-print(f"Using otel-tracing host: {otel_tracing_endpoint}")
-print(f"Using envoy log path: {envoy_log_path}")
+logging.info(f"Using otel-tracing host: {otel_tracing_endpoint}")
+logging.info(f"Using envoy log path: {envoy_log_path}")
 
 
 def process_log_line(line):
@@ -18,12 +24,14 @@ def process_log_line(line):
             data=line,
             headers={"Content-Type": "application/json"},
         )
-        print(f"Sent trace to otel-tracing: {response.status_code}")
+        logging.info(f"Sent trace to otel-tracing: {response.status_code}")
     except Exception as e:
-        print(f"Failed to send trace to otel-tracing: {e}")
+        logging.error(f"Failed to send trace to otel-tracing: {e}")
 
 
 with open(envoy_log_path, "r") as f:
+    # Seek to the end of the file so we only read new lines
+    f.seek(0, os.SEEK_END)
     while True:
         line = f.readline()
         if not line:
