@@ -284,32 +284,33 @@ impl HttpContext for StreamContext {
             return Action::Continue;
         }
 
-        let body = if self.streaming_response {
-            if end_of_stream && body_size == 0 {
-                // All streaming responses end with bytes=0 and end_stream=true
-                // Record the latency for the request
-                if let Some(start_time) = self.start_time {
-                    let current_time = get_current_time().unwrap();
-                    match current_time.duration_since(start_time) {
-                        Ok(duration) => {
-                            // Convert the duration to milliseconds
-                            let duration_ms = duration.as_millis();
-                            debug!("Total latency: {} milliseconds", duration_ms);
-                            // Record the latency to the latency histogram
-                            self.metrics.request_latency.record(duration_ms as u64);
-                        }
-                        Err(e) => {
-                            warn!("SystemTime error: {:?}", e);
-                        }
+        let current_time = get_current_time().unwrap();
+        if end_of_stream && body_size == 0 {
+            // All streaming responses end with bytes=0 and end_stream=true
+            // Record the latency for the request
+            if let Some(start_time) = self.start_time {
+                match current_time.duration_since(start_time) {
+                    Ok(duration) => {
+                        // Convert the duration to milliseconds
+                        let duration_ms = duration.as_millis();
+                        debug!("Total latency: {} milliseconds", duration_ms);
+                        // Record the latency to the latency histogram
+                        self.metrics.request_latency.record(duration_ms as u64);
+                    }
+                    Err(e) => {
+                        warn!("SystemTime error: {:?}", e);
                     }
                 }
-                // Record the output sequence length
-                self.metrics
-                    .output_sequence_length
-                    .record(self.response_tokens as u64);
-
-                return Action::Continue;
             }
+            // Record the output sequence length
+            self.metrics
+                .output_sequence_length
+                .record(self.response_tokens as u64);
+
+            return Action::Continue;
+        }
+
+        let body = if self.streaming_response {
             let chunk_start = 0;
             let chunk_size = body_size;
             debug!(
