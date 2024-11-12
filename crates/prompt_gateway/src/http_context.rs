@@ -264,7 +264,7 @@ impl HttpContext for StreamContext {
             );
         }
 
-        if end_of_stream {
+        if end_of_stream && body_size == 0 {
             if let Some(traceparent) = self.traceparent.as_ref() {
                 let since_the_epoch_ns = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
