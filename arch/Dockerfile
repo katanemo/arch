@@ -11,7 +11,7 @@ RUN cd llm_gateway && cargo build --release --target wasm32-wasip1
 FROM envoyproxy/envoy:v1.32-latest as envoy
 
 #Build config generator, so that we have a single build image for both Rust and Python
-FROM python:3.13-slim as arch
+FROM python:3.12-slim as arch
 
 RUN apt-get update && apt-get install -y gettext-base curl && apt-get clean && rm -rf /var/lib/apt/lists/*
 
