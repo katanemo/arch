@@ -41,6 +41,63 @@ pub struct Span {
     pub end_time_unix_nano: String,
     pub kind: u32,
     pub attributes: Vec<Attribute>,
+    pub events: Option<Vec<Event>>,
+}
+
+impl Span {
+    pub fn new(
+        name: String,
+        parent_trace_id: String,
+        parent_span_id: Option<String>,
+        start_time_unix_nano: u128,
+        end_time_unix_nano: u128,
+    ) -> Self {
+        Span {
+            trace_id: parent_trace_id,
+            span_id: get_random_span_id(),
+            parent_span_id,
+            name,
+            start_time_unix_nano: format!("{}", start_time_unix_nano),
+            end_time_unix_nano: format!("{}", end_time_unix_nano),
+            kind: 0,
+            attributes: Vec::new(),
+            events: None,
+        }
+    }
+
+    pub fn add_attribute(&mut self, key: String, value: String) {
+        self.attributes.push(Attribute {
+            key,
+            value: AttributeValue {
+                string_value: Some(value),
+            },
+        });
+    }
+
+    pub fn add_event(&mut self, event: Event) {
+        if self.events.is_none() {
+            self.events = Some(Vec::new());
+        }
+        self.events.as_mut().unwrap().push(event);
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Event {
+    #[serde(rename = "timeUnixNano")]
+    pub time_unix_nano: String,
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+}
+
+impl Event {
+    pub fn new(name: String, time_unix_nano: u128) -> Self {
+        Event {
+            time_unix_nano: format!("{}", time_unix_nano),
+            name,
+            attributes: Vec::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

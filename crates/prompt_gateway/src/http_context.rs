@@ -18,7 +18,7 @@ use common::{
     errors::ServerError,
     http::{CallArgs, Client},
     pii::obfuscate_auth_header,
-    tracing::{get_random_span_id, Span},
+    tracing::{Event, Span},
 };
 use http::StatusCode;
 use log::{debug, trace, warn};
@@ -243,9 +243,11 @@ impl HttpContext for StreamContext {
     }
 
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
-        debug!(
+        trace!(
             "on_http_response_body: recv [S={}] bytes={} end_stream={}",
-            self.context_id, body_size, end_of_stream
+            self.context_id,
+            body_size,
+            end_of_stream
         );
 
         if !self.is_chat_completions_request {
@@ -277,27 +279,23 @@ impl HttpContext for StreamContext {
                 let parent_trace_id = traceparent_tokens[1];
                 let parent_span_id = traceparent_tokens[2];
                 let mut trace_data = common::tracing::TraceData::new();
-                trace_data.add_span(Span {
-                    trace_id: parent_trace_id.to_string(),
-                    parent_span_id: Some(parent_span_id.to_string()),
-                    span_id: format!("{}", get_random_span_id()),
-                    name: "total_time".to_string(),
-                    start_time_unix_nano: format!("{}", self.start_upstream_llm_request_time),
-                    end_time_unix_nano: format!("{}", since_the_epoch_ns),
-                    kind: 1,
-                    attributes: vec![],
-                });
-
-                trace_data.add_span(Span {
-                    trace_id: parent_trace_id.to_string(),
-                    parent_span_id: Some(parent_span_id.to_string()),
-                    span_id: format!("{}", get_random_span_id()),
-                    name: "time_to_first_token".to_string(),
-                    start_time_unix_nano: format!("{}", self.start_upstream_llm_request_time),
-                    end_time_unix_nano: format!("{}", self.time_to_first_token.unwrap()),
-                    kind: 1,
-                    attributes: vec![],
-                });
+                let mut llm_span = Span::new(
+                    "upstream_llm_time".to_string(),
+                    parent_trace_id.to_string(),
+                    Some(parent_span_id.to_string()),
+                    self.start_upstream_llm_request_time,
+                    since_the_epoch_ns,
+                );
+                if let Some(prompt) = self.user_prompt.as_ref() {
+                    if let Some(content) = prompt.content.as_ref() {
+                        llm_span.add_attribute("user_prompt".to_string(), content.to_string());
+                    }
+                }
+                llm_span.add_event(Event::new(
+                    "time_to_first_token".to_string(),
+                    self.time_to_first_token.unwrap(),
+                ));
+                trace_data.add_span(llm_span);
 
                 let trace_data_str = serde_json::to_string(&trace_data).unwrap();
                 debug!("upstream_llm trace details: {}", trace_data_str);
