@@ -254,17 +254,20 @@ impl HttpContext for StreamContext {
         }
 
         if end_of_stream {
-            let start = SystemTime::now();
-            let since_the_epoch_ns = match start.duration_since(UNIX_EPOCH) {
-                Ok(duration) => duration.as_nanos(),
-                Err(_) => {
-                    eprintln!("System time went backwards");
-                    std::process::exit(1);
-                }
-            };
-
             if let Some(traceparent) = self.traceparent.as_ref() {
+                let since_the_epoch_ns = match SystemTime::now().duration_since(UNIX_EPOCH) {
+                    Ok(duration) => duration.as_nanos(),
+                    Err(_) => {
+                        eprintln!("System time went backwards");
+                        std::process::exit(1);
+                    }
+                };
+
                 let traceparent_tokens = traceparent.split("-").collect::<Vec<&str>>();
+                if traceparent_tokens.len() != 4 {
+                    warn!("traceparent header is invalid: {}", traceparent);
+                    return Action::Continue;
+                }
                 let parent_trace_id = traceparent_tokens[1];
                 let parent_span_id = traceparent_tokens[2];
                 let mut trace_data = common::tracing::TraceData::new();
