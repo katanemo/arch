@@ -250,9 +250,15 @@ impl HttpContext for StreamContext {
             });
         }
 
+        // only use the tokens from the messages, excluding the metadata and json tags
+        let input_tokens_str = deserialized_body
+            .messages
+            .iter()
+            .fold(String::new(), |acc, m| {
+                acc + " " + m.content.as_ref().unwrap_or(&String::new())
+            });
         // enforce ratelimits on ingress
-        if let Err(e) =
-            self.enforce_ratelimits(&deserialized_body.model, &chat_completion_request_str)
+        if let Err(e) = self.enforce_ratelimits(&deserialized_body.model, input_tokens_str.as_str())
         {
             self.send_server_error(
                 ServerError::ExceededRatelimit(e),
