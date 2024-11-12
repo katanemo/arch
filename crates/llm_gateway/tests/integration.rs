@@ -290,7 +290,7 @@ fn llm_gateway_request_ratelimited() {
     let args = tester::MockSettings {
         wasm_path: wasm_module(),
         quiet: false,
-        allow_unexpected: true,
+        allow_unexpected: false,
     };
     let mut module = tester::mock(args).unwrap();
 
