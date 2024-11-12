@@ -98,6 +98,15 @@ impl Event {
             attributes: Vec::new(),
         }
     }
+
+    pub fn add_attribute(&mut self, key: String, value: String) {
+        self.attributes.push(Attribute {
+            key,
+            value: AttributeValue {
+                string_value: Some(value),
+            },
+        });
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
