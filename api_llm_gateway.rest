@@ -14,7 +14,8 @@ Authorization: Bearer {{access_key}}
       "content": "hello"
     }
   ],
-  "model": "gpt-4o-mini"
+  "model": "gpt-4o-mini",
+  "stream": true
 }
 
 ### openai request (streaming)
