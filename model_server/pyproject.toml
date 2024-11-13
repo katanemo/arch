@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "archgw_modelserver"
-version = "0.1.1"
+version = "0.1.2"
 description = "A model server for serving models"
 authors = ["Katanemo Labs, Inc <archgw@katanemo.com>"]
 license = "Apache 2.0"
@@ -12,7 +12,7 @@ packages = [
 include = ["app/*.yaml"]
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.12"
 fastapi = "0.115.0"
 sentence-transformers = "3.1.1"
 torch = "2.4.1"
