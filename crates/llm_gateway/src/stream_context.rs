@@ -296,6 +296,17 @@ impl HttpContext for StreamContext {
                         debug!("Total latency: {} milliseconds", duration_ms);
                         // Record the latency to the latency histogram
                         self.metrics.request_latency.record(duration_ms as u64);
+
+                        // Compute the time per output token
+                        let tpot = (duration_ms as u64
+                            - self.ttft_duration.unwrap().as_millis() as u64)
+                            / self.response_tokens as u64;
+
+                        // Record the time per output token
+                        self.metrics.time_per_output_token.record(tpot);
+
+                        // Record the tokens per second
+                        self.metrics.tokens_per_second.record(1000 / tpot);
                     }
                     Err(e) => {
                         warn!("SystemTime error: {:?}", e);
