@@ -186,7 +186,7 @@ impl HttpContext for StreamContext {
         self.traceparent = self.get_http_request_header(TRACE_PARENT_HEADER);
 
         //start the timing for the request using get_current_time()
-        let current_time = get_current_time().unwrap();
+        let current_time: SystemTime = get_current_time().unwrap();
         self.start_time = Some(current_time);
         self.ttft_duration = None;
 

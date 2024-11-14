@@ -51,6 +51,8 @@ fn request_headers_expectations(module: &mut Tester, http_context: i32) {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("x-request-id"))
         .returning(None)
+        .expect_get_header_map_value(Some(MapType::HttpRequestHeaders), Some("traceparent"))
+        .returning(None)
         .expect_get_current_time_nanos()
         .returning(Some(0))
         .execute_and_expect(ReturnType::Action(Action::Continue))
