@@ -30,14 +30,6 @@ services:
       - "4317:4317"
       - "4318:4318"
 
-  trace_streamer:
-    build:
-      context: ../shared/trace_streamer
-    environment:
-      - OTEL_TRACING_HTTP_ENDPOINT=http://jaeger:4318/v1/traces
-    volumes:
-      - ~/archgw_logs:/var/log/
-
   prometheus:
     build:
       context: ../shared/prometheus

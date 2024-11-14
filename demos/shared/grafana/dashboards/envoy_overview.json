@@ -192,8 +192,8 @@
       "targets": [
         {
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(input_sequence_length_bucket[1h])))",
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(input_sequence_length_bucket[5m])))",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "legendFormat": "__auto",
@@ -202,7 +202,7 @@
           "useBackend": false
         }
       ],
-      "title": "input sequence length (p50)",
+      "title": "input sequence length (p90)",
       "type": "timeseries"
     },
     {
@@ -307,7 +307,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum(rate(output_sequence_length_bucket[1h])) by(le))",
+          "expr": "histogram_quantile(0.9, sum(rate(output_sequence_length_bucket[5m])) by(le))",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "instant": false,
@@ -317,7 +317,7 @@
           "useBackend": false
         }
       ],
-      "title": "output sequence length (p50)",
+      "title": "output sequence length (p90)",
       "type": "timeseries"
     },
     {
@@ -416,8 +416,8 @@
       "targets": [
         {
           "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(time_to_first_token_bucket[1h])))",
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(time_to_first_token_bucket[5m])))",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "legendFormat": "__auto",
@@ -426,7 +426,7 @@
           "useBackend": false
         }
       ],
-      "title": "time to first token (p50)",
+      "title": "time to first token (p90)",
       "type": "timeseries"
     },
     {
@@ -542,28 +542,15 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum(rate(latency_bucket[60m])) by (le))",
+          "expr": "histogram_quantile(0.9, sum(rate(request_latency_bucket[60m])) by (le))",
           "hide": false,
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum(rate(time_to_first_token_bucket[60m])) by (le))",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
         }
       ],
-      "title": "request latency (p50)",
+      "title": "request latency (p90)",
       "type": "timeseries"
     }
   ],

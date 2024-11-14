@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import logging
 import os
@@ -159,13 +160,44 @@ def get_prompt_targets():
             config = yaml.safe_load(file)
 
             available_tools = []
-            for target in config["prompt_targets"]:
-                if not target.get("default", False):
-                    available_tools.append(
-                        convert_prompt_target_to_openai_format(target)
-                    )
+            if "prompt_targets" in config:
+                for target in config["prompt_targets"]:
+                    if not target.get("default", False):
+                        available_tools.append(
+                            convert_prompt_target_to_openai_format(target)
+                        )
 
-            return {tool["name"]: tool["info"] for tool in available_tools}
+                return {tool["name"]: tool["info"] for tool in available_tools}
+            elif "llm_providers" in config:
+                return config["llm_providers"]
+
     except Exception as e:
         log.info(e)
         return None
+
+
+def get_llm_models():
+    try:
+        with open(os.getenv("ARCH_CONFIG", "arch_config.yaml"), "r") as file:
+            config = yaml.safe_load(file)
+
+            available_models = [""]
+            default_llm = None
+            for llm_providers in config["llm_providers"]:
+                if llm_providers.get("default", False):
+                    default_llm = llm_providers["name"]
+                else:
+                    available_models.append(llm_providers["name"])
+
+            # place default model at the beginning of the list
+            if default_llm:
+                available_models.insert(0, default_llm)
+            return available_models
+    except Exception as e:
+        log.info(e)
+        return []
+
+
+def format_log(message):
+    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
+    return f"{time_now} - {message}"
