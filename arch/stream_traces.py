@@ -31,9 +31,7 @@ def process_log_line(line):
 
 
 for line in sys.stdin:
-    if not line:
-        time.sleep(1)
-        continue
-    tokens = line.split("gateway: upstream_llm trace details: ")
-    if len(tokens) > 1:
-        process_log_line(tokens[1])
+    if line:
+        tokens = line.split("gateway: upstream_llm trace details: ")
+        if len(tokens) > 1:
+            process_log_line(tokens[1])
