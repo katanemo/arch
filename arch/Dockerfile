@@ -28,5 +28,6 @@ COPY arch/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY arch/stream_traces.py .
 
 RUN pip install requests
+RUN touch /var/log/envoy.log
 
 ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

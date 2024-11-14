@@ -13,6 +13,8 @@ services:
       - ~/archgw_logs:/var/log/
     env_file:
       - env.list
+    environment:
+      - OTEL_TRACING_HTTP_ENDPOINT=http://host.docker.internal:4318/v1/traces
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
