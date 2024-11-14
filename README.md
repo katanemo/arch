@@ -1,4 +1,6 @@
 ![alt text](image.png)
+<a href="https://www.producthunt.com/posts/arch-3?embed=true&utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-arch&#0045;3" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=565761&theme=light&period=daily" alt="Arch - Build&#0032;fast&#0044;&#0032;hyper&#0045;personalized&#0032;agents&#0032;with&#0032;intelligent&#0032;infra | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 
 [![pre-commit](https://github.com/katanemo/arch/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/pre-commit.yml)
 [![rust tests (prompt and llm gateway)](https://github.com/katanemo/arch/actions/workflows/rust_tests.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/rust_tests.yml)
@@ -53,9 +55,7 @@ Make sure you have following utilities installed before proceeding further,
 1. [Docker System](https://docs.docker.com/get-started/get-docker/) (v24)
 2. [Docker compose](https://docs.docker.com/compose/install/) (v2.29)
 3. [Python](https://www.python.org/downloads/) (v3.10)
-4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3)
-
-*Note: Poetry is needed for local development*
+4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3. *Note: only needed for local development*)
 
 
 ```console
