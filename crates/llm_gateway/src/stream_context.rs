@@ -298,9 +298,7 @@ impl HttpContext for StreamContext {
                         self.metrics.request_latency.record(duration_ms as u64);
 
                         // Compute the time per output token
-                        let tpot = (duration_ms as u64
-                            - self.ttft_duration.unwrap().as_millis() as u64)
-                            / self.response_tokens as u64;
+                        let tpot = duration_ms as u64 / self.response_tokens as u64;
 
                         debug!("Time per output token: {} milliseconds", tpot);
                         // Record the time per output token
