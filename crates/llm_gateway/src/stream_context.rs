@@ -302,9 +302,11 @@ impl HttpContext for StreamContext {
                             - self.ttft_duration.unwrap().as_millis() as u64)
                             / self.response_tokens as u64;
 
+                        debug!("Time per output token: {} milliseconds", tpot);
                         // Record the time per output token
                         self.metrics.time_per_output_token.record(tpot);
 
+                        debug!("Tokens per second: {}", 1000 / tpot);
                         // Record the tokens per second
                         self.metrics.tokens_per_second.record(1000 / tpot);
                     }
