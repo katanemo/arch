@@ -77,6 +77,8 @@ fn setup_filter(module: &mut Tester, config: &str) -> i32 {
         .expect_metric_creation(MetricType::Gauge, "active_http_calls")
         .expect_metric_creation(MetricType::Counter, "ratelimited_rq")
         .expect_metric_creation(MetricType::Histogram, "time_to_first_token")
+        .expect_metric_creation(MetricType::Histogram, "time_per_output_token")
+        .expect_metric_creation(MetricType::Histogram, "tokens_per_second")
         .expect_metric_creation(MetricType::Histogram, "request_latency")
         .expect_metric_creation(MetricType::Histogram, "output_sequence_length")
         .expect_metric_creation(MetricType::Histogram, "input_sequence_length")
