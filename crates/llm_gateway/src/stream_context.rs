@@ -288,6 +288,31 @@ impl HttpContext for StreamContext {
         Action::Continue
     }
 
+    fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
+        debug!(
+            "on_http_response_headers [S={}] end_stream={}",
+            self.context_id, _end_of_stream
+        );
+
+        if let Some(user_message) = self.user_message.as_ref() {
+            if let Some(prompt) = user_message.content.as_ref() {
+                debug!("setting user-message header: {}", prompt);
+                self.set_http_response_header("x-user-message", Some(&prompt));
+            }
+        }
+
+        let tftt_time_ms = get_current_time()
+            .unwrap()
+            .duration_since(self.start_time.unwrap())
+            .unwrap()
+            .as_millis();
+
+        let tftt_time = tftt_time_ms.to_string();
+        self.set_http_response_header("x-time-to-first-token", Some(&tftt_time));
+
+        Action::Continue
+    }
+
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         debug!(
             "on_http_response_body [S={}] bytes={} end_stream={}",
@@ -364,6 +389,7 @@ impl HttpContext for StreamContext {
                     }
                 }
                 llm_span.add_attribute("model".to_string(), self.llm_provider().name.to_string());
+
                 llm_span.add_event(Event::new(
                     "time_to_first_token".to_string(),
                     self.ttft_time
