@@ -21,22 +21,25 @@
       "path": "e2e_tests"
     },
     {
-      "name": "demos/weather_forecast",
-      "path": "./demos/weather_forecast",
-    },
-    {
-      "name": "demos/insurance_agent",
-      "path": "./demos/insurance_agent",
-    },
+      "name": "chatbot_ui",
+      "path": "demos/shared/chatbot_ui"
+    }
   ],
   "settings": {
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter",
+      "editor.formatOnSave": true
+    },
   },
   "extensions": {
     "recommendations": [
       "ms-python.python",
       "ms-python.debugpy",
       "rust-lang.rust-analyzer",
-      "humao.rest-client"
+      "humao.rest-client",
+      "github.copilot",
+      "eamodio.gitlens",
+      "ms-python.black-formatter",
       ]
   }
 }

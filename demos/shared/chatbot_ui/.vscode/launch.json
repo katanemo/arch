@@ -15,19 +15,21 @@
         "LLM": "1",
         "CHAT_COMPLETION_ENDPOINT": "http://localhost:10000/v1",
         "STREAMING": "True",
-        "ARCH_CONFIG": "../demos/weather_forecast/arch_config.yaml"
+        "ARCH_CONFIG": "../../weather_forecast/arch_config.yaml"
       }
     },
     {
+      "python": "${workspaceFolder}/venv/bin/python",
       "name": "chatbot-ui llm",
-      "cwd": "${workspaceFolder}/app",
       "type": "debugpy",
       "request": "launch",
-      "program": "run.py",
+      "program": "run_stream.py",
       "console": "integratedTerminal",
       "env": {
         "LLM": "1",
-        "CHAT_COMPLETION_ENDPOINT": "http://localhost:12000/v1"
+        "CHAT_COMPLETION_ENDPOINT": "http://localhost:12000/v1",
+        "STREAMING": "True",
+        "ARCH_CONFIG": "../../llm_routing/arch_config.yaml"
       }
     },
   ]

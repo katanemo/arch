@@ -29,15 +29,11 @@ cd ../demos/weather_forecast
 docker compose up weather_forecast_service --build -d
 cd -
 
-print_disk_usage
-
 log building and install model server
 log =================================
 cd ../model_server
 poetry install
 cd -
-
-print_disk_usage
 
 log building and installing archgw cli
 log ==================================
@@ -45,15 +41,11 @@ cd ../arch/tools
 sh build_cli.sh
 cd -
 
-print_disk_usage
-
 log building docker image for arch gateway
 log ======================================
 cd ../
 archgw build
 cd -
-
-print_disk_usage
 
 log startup arch gateway with function calling demo
 cd ..
@@ -63,8 +55,6 @@ archgw down
 archgw up demos/weather_forecast/arch_config.yaml
 kill $model_server_tail_pid
 cd -
-
-print_disk_usage
 
 log running e2e tests
 log =================

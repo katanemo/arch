@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import requests
 import logging
@@ -29,14 +30,8 @@ def process_log_line(line):
         logging.error(f"Failed to send trace to otel-tracing: {e}")
 
 
-with open(envoy_log_path, "r") as f:
-    # Seek to the end of the file so we only read new lines
-    f.seek(0, os.SEEK_END)
-    while True:
-        line = f.readline()
-        if not line:
-            time.sleep(1)
-            continue
-        tokens = line.split("prompt_gateway: upstream_llm trace details: ")
+for line in sys.stdin:
+    if line:
+        tokens = line.split("gateway: upstream_llm trace details: ")
         if len(tokens) > 1:
             process_log_line(tokens[1])
