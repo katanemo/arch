@@ -7,7 +7,7 @@
 [![e2e tests](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml)
 [![Build and Deploy Documentation](https://github.com/katanemo/arch/actions/workflows/static.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/static.yml)
 
-## Build fast, robust, and personalized AI agents.
+## Build fast, observable, and personalized AI agents.
 
 Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed to protect, observe, and personalize LLM applications (agents, assistants, co-pilots) with your APIs.
 
