@@ -12,7 +12,9 @@ Welcome to Arch!
    <p>Build <strong>fast</strong>, <strong>robust</strong>, and <strong>personalized</strong> GenAI apps</p>
    </div>
 
-Arch (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) was born out of the belief that:
+   <a href="https://www.producthunt.com/posts/arch-3?embed=true&utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-arch&#0045;3" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=565761&theme=light&period=daily" alt="Arch - Build&#0032;fast&#0044;&#0032;hyper&#0045;personalized&#0032;agents&#0032;with&#0032;intelligent&#0032;infra | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
+Arch is an intelligent infrastructure primitive for GenAI (built by the contributors of `Envoy <https://www.envoyproxy.io/>`_ ) that born out of the belief that:
 
   *Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization - all outside business logic.*
 
