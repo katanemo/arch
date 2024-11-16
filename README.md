@@ -7,7 +7,7 @@
 [![e2e tests](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml)
 [![Build and Deploy Documentation](https://github.com/katanemo/arch/actions/workflows/static.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/static.yml)
 
-## Build fast, robust, and personalized AI agents.
+## Build fast, observable, and personalized AI agents.
 
 Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed to protect, observe, and personalize LLM applications (agents, assistants, co-pilots) with your APIs.
 
@@ -155,6 +155,8 @@ print("OpenAI Response:", response.choices[0].message.content)
 
 ### [Observability](https://docs.archgw.com/guides/observability/observability.html)
 Arch is designed to support best-in class observability by supporting open standards. Please read our [docs](https://docs.archgw.com/guides/observability/observability.html) on observability for more details on tracing, metrics, and logs
+
+![alt text](docs/source/_static/img/tracing.png)
 
 ### Contribution
 We would love feedback on our [Roadmap](https://github.com/orgs/katanemo/projects/1) and we welcome contributions to **Arch**!
