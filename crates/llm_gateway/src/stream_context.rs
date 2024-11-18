@@ -12,14 +12,16 @@ use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
 use common::pii::obfuscate_auth_header;
 use common::ratelimit::Header;
-use common::tracing::{Event, Span};
+use common::tracing::{get_random_span_id, get_random_trace_id, Event, Span, TraceData};
 use common::{ratelimit, routing, tokenizer};
 use http::StatusCode;
 use log::{debug, trace, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use std::collections::VecDeque;
 use std::num::NonZero;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use common::stats::{IncrementingMetric, RecordingMetric};
 
@@ -36,15 +38,27 @@ pub struct StreamContext {
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
-    start_time: Option<SystemTime>,
+    start_time: SystemTime,
     ttft_duration: Option<Duration>,
     ttft_time: Option<SystemTime>,
-    pub traceparent: Option<String>,
+    trace_id: String,
+    span_id: String,
+    traceparent: String,
+    parent_span_id: Option<String>,
+    traceparent_present_in_request: bool,
     user_message: Option<Message>,
+    traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
 }
 
 impl StreamContext {
-    pub fn new(context_id: u32, metrics: Rc<WasmMetrics>, llm_providers: Rc<LlmProviders>) -> Self {
+    pub fn new(
+        context_id: u32,
+        metrics: Rc<WasmMetrics>,
+        llm_providers: Rc<LlmProviders>,
+        traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
+    ) -> Self {
+        let trace_id = get_random_trace_id();
+        let span_id = get_random_span_id();
         StreamContext {
             context_id,
             metrics,
@@ -55,11 +69,16 @@ impl StreamContext {
             llm_providers,
             llm_provider: None,
             request_id: None,
-            start_time: None,
+            start_time: SystemTime::now(),
             ttft_duration: None,
-            traceparent: None,
+            traceparent: format!("00-{}-{}-01", trace_id, span_id),
+            trace_id,
+            parent_span_id: Some(span_id.clone()),
+            span_id,
             ttft_time: None,
             user_message: None,
+            traces_queue,
+            traceparent_present_in_request: false,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -183,12 +202,24 @@ impl HttpContext for StreamContext {
         );
 
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
-        self.traceparent = self.get_http_request_header(TRACE_PARENT_HEADER);
-
-        //start the timing for the request using get_current_time()
-        let current_time: SystemTime = get_current_time().unwrap();
-        self.start_time = Some(current_time);
-        self.ttft_duration = None;
+        // if traceparent is not present in the request, set it and add it to the response headers
+        if let Some(traceparent) = self.get_http_request_header(TRACE_PARENT_HEADER) {
+            debug!("traceparent set");
+            self.traceparent = traceparent;
+            self.traceparent_present_in_request = true;
+            self.parent_span_id = {
+                let traceparent_tokens: Vec<&str> =
+                    self.traceparent.split("-").collect::<Vec<&str>>();
+                if traceparent_tokens.len() != 4 {
+                    warn!("traceparent header is invalid: {}", self.traceparent);
+                    None
+                } else {
+                    Some(traceparent_tokens[2].to_string())
+                }
+            };
+        } else {
+            self.set_http_request_header(TRACE_PARENT_HEADER, Some(self.traceparent.as_str()));
+        }
 
         Action::Continue
     }
@@ -294,21 +325,26 @@ impl HttpContext for StreamContext {
             self.context_id, _end_of_stream
         );
 
-        if let Some(user_message) = self.user_message.as_ref() {
-            if let Some(prompt) = user_message.content.as_ref() {
-                debug!("setting user-message header: {}", prompt);
-                self.set_http_response_header("x-user-message", Some(&prompt));
-            }
-        }
+        // if let Some(user_message) = self.user_message.as_ref() {
+        //     if let Some(prompt) = user_message.content.as_ref() {
+        //         debug!("setting user-message header: {}", prompt);
+        //         self.set_http_response_header("x-user-message", Some(&prompt));
+        //     }
+        // }
 
-        let tftt_time_ms = get_current_time()
-            .unwrap()
-            .duration_since(self.start_time.unwrap())
-            .unwrap()
-            .as_millis();
+        // let tftt_time_ms = get_current_time()
+        //     .unwrap()
+        //     .duration_since(self.start_time.unwrap())
+        //     .unwrap()
+        //     .as_millis();
 
-        let tftt_time = tftt_time_ms.to_string();
-        self.set_http_response_header("x-time-to-first-token", Some(&tftt_time));
+        // let tftt_time = tftt_time_ms.to_string();
+        // self.set_http_response_header("x-time-to-first-token", Some(&tftt_time));
+
+        self.set_property(
+            vec!["metadata", "filter_metadata", "llm_filter", "user_prompt"],
+            Some("hello world from filter".as_bytes()),
+        );
 
         Action::Continue
     }
@@ -328,29 +364,27 @@ impl HttpContext for StreamContext {
         if end_of_stream && body_size == 0 {
             // All streaming responses end with bytes=0 and end_stream=true
             // Record the latency for the request
-            if let Some(start_time) = self.start_time {
-                match current_time.duration_since(start_time) {
-                    Ok(duration) => {
-                        // Convert the duration to milliseconds
-                        let duration_ms = duration.as_millis();
-                        debug!("Total latency: {} milliseconds", duration_ms);
-                        // Record the latency to the latency histogram
-                        self.metrics.request_latency.record(duration_ms as u64);
+            match current_time.duration_since(self.start_time) {
+                Ok(duration) => {
+                    // Convert the duration to milliseconds
+                    let duration_ms = duration.as_millis();
+                    debug!("Total latency: {} milliseconds", duration_ms);
+                    // Record the latency to the latency histogram
+                    self.metrics.request_latency.record(duration_ms as u64);
 
-                        // Compute the time per output token
-                        let tpot = duration_ms as u64 / self.response_tokens as u64;
+                    // Compute the time per output token
+                    let tpot = duration_ms as u64 / self.response_tokens as u64;
 
-                        debug!("Time per output token: {} milliseconds", tpot);
-                        // Record the time per output token
-                        self.metrics.time_per_output_token.record(tpot);
+                    debug!("Time per output token: {} milliseconds", tpot);
+                    // Record the time per output token
+                    self.metrics.time_per_output_token.record(tpot);
 
-                        debug!("Tokens per second: {}", 1000 / tpot);
-                        // Record the tokens per second
-                        self.metrics.tokens_per_second.record(1000 / tpot);
-                    }
-                    Err(e) => {
-                        warn!("SystemTime error: {:?}", e);
-                    }
+                    debug!("Tokens per second: {}", 1000 / tpot);
+                    // Record the tokens per second
+                    self.metrics.tokens_per_second.record(1000 / tpot);
+                }
+                Err(e) => {
+                    warn!("SystemTime error: {:?}", e);
                 }
             }
             // Record the output sequence length
@@ -358,52 +392,55 @@ impl HttpContext for StreamContext {
                 .output_sequence_length
                 .record(self.response_tokens as u64);
 
-            if let Some(traceparent) = self.traceparent.as_ref() {
-                let since_the_epoch_ns = SystemTime::now()
+            // if let Some(traceparent) = self.traceparent.as_ref() {
+            let since_the_epoch_ns = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos();
+
+            let parent_span_id = {
+                if self.traceparent_present_in_request {
+                    self.parent_span_id.clone()
+                } else {
+                    None
+                }
+            };
+
+            let mut trace_data = common::tracing::TraceData::new();
+            let mut llm_span = Span::new(
+                "upstream_llm_time".to_string(),
+                self.trace_id.to_string(),
+                self.span_id.to_string(),
+                parent_span_id,
+                self.start_time
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
-                    .as_nanos();
-
-                let traceparent_tokens = traceparent.split("-").collect::<Vec<&str>>();
-                if traceparent_tokens.len() != 4 {
-                    warn!("traceparent header is invalid: {}", traceparent);
-                    return Action::Continue;
+                    .as_nanos(),
+                since_the_epoch_ns,
+            );
+            if let Some(user_message) = self.user_message.as_ref() {
+                if let Some(prompt) = user_message.content.as_ref() {
+                    llm_span.add_attribute("user_prompt".to_string(), prompt.to_string());
                 }
-                let parent_trace_id = traceparent_tokens[1];
-                let parent_span_id = traceparent_tokens[2];
-                let mut trace_data = common::tracing::TraceData::new();
-                let mut llm_span = Span::new(
-                    "upstream_llm_time".to_string(),
-                    parent_trace_id.to_string(),
-                    Some(parent_span_id.to_string()),
-                    self.start_time
-                        .unwrap()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_nanos(),
-                    since_the_epoch_ns,
-                );
-                if let Some(user_message) = self.user_message.as_ref() {
-                    if let Some(prompt) = user_message.content.as_ref() {
-                        llm_span.add_attribute("user_prompt".to_string(), prompt.to_string());
-                    }
-                }
-                llm_span.add_attribute("model".to_string(), self.llm_provider().name.to_string());
-
-                llm_span.add_event(Event::new(
-                    "time_to_first_token".to_string(),
-                    self.ttft_time
-                        .unwrap()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_nanos(),
-                ));
-                trace_data.add_span(llm_span);
-
-                let trace_data_str = serde_json::to_string(&trace_data).unwrap();
-                debug!("upstream_llm trace details: {}", trace_data_str);
-                // send trace_data to http tracing endpoint
             }
+            llm_span.add_attribute("model".to_string(), self.llm_provider().name.to_string());
+
+            llm_span.add_event(Event::new(
+                "time_to_first_token".to_string(),
+                self.ttft_time
+                    .unwrap()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos(),
+            ));
+            trace_data.add_span(llm_span);
+
+            // debug!("upstream_llm trace details: {:?}", trace_data);
+            self.traces_queue.lock().unwrap().push_back(trace_data);
+
+            // let trace_data_str = serde_json::to_string(&trace_data).unwrap();
+            // send trace_data to http tracing endpoint
+            // }
 
             return Action::Continue;
         }
@@ -498,23 +535,23 @@ impl HttpContext for StreamContext {
 
             // Compute TTFT if not already recorded
             if self.ttft_duration.is_none() {
-                if let Some(start_time) = self.start_time {
-                    let current_time = get_current_time().unwrap();
-                    self.ttft_time = Some(current_time);
-                    match current_time.duration_since(start_time) {
-                        Ok(duration) => {
-                            let duration_ms = duration.as_millis();
-                            debug!("Time to First Token (TTFT): {} milliseconds", duration_ms);
-                            self.ttft_duration = Some(duration);
-                            self.metrics.time_to_first_token.record(duration_ms as u64);
-                        }
-                        Err(e) => {
-                            warn!("SystemTime error: {:?}", e);
-                        }
+                // if let Some(start_time) = self.start_time {
+                let current_time = get_current_time().unwrap();
+                self.ttft_time = Some(current_time);
+                match current_time.duration_since(self.start_time) {
+                    Ok(duration) => {
+                        let duration_ms = duration.as_millis();
+                        debug!("Time to First Token (TTFT): {} milliseconds", duration_ms);
+                        self.ttft_duration = Some(duration);
+                        self.metrics.time_to_first_token.record(duration_ms as u64);
                     }
-                } else {
-                    warn!("Start time was not recorded");
+                    Err(e) => {
+                        warn!("SystemTime error: {:?}", e);
+                    }
                 }
+                // } else {
+                // warn!("Start time was not recorded");
+                // }
             }
         } else {
             debug!("non streaming response");

@@ -47,14 +47,15 @@ pub struct Span {
 impl Span {
     pub fn new(
         name: String,
-        parent_trace_id: String,
+        trace_id: String,
+        span_id: String,
         parent_span_id: Option<String>,
         start_time_unix_nano: u128,
         end_time_unix_nano: u128,
     ) -> Self {
         Span {
-            trace_id: parent_trace_id,
-            span_id: get_random_span_id(),
+            trace_id,
+            span_id,
             parent_span_id,
             name,
             start_time_unix_nano: format!("{}", start_time_unix_nano),
@@ -174,4 +175,12 @@ pub fn get_random_span_id() -> String {
     rng.fill_bytes(&mut random_bytes);
 
     hex::encode(random_bytes)
+}
+
+pub fn get_random_trace_id() -> String {
+  let mut rng = rand::thread_rng();
+  let mut random_bytes = [0u8; 16];
+  rng.fill_bytes(&mut random_bytes);
+
+  hex::encode(random_bytes)
 }

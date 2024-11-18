@@ -1,17 +1,25 @@
 use crate::stream_context::StreamContext;
 use common::configuration::Configuration;
+use common::consts::OTEL_COLLECTOR_HTTP;
+use common::http::CallArgs;
 use common::http::Client;
 use common::llm_providers::LlmProviders;
 use common::ratelimit;
 use common::stats::Counter;
 use common::stats::Gauge;
 use common::stats::Histogram;
+use common::tracing::TraceData;
 use log::debug;
+use log::warn;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::rc::Rc;
+use std::time::Duration;
+
+use std::sync::{Arc, Mutex};
 
 #[derive(Copy, Clone, Debug)]
 pub struct WasmMetrics {
@@ -49,14 +57,31 @@ pub struct FilterContext {
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, CallContext>>,
     llm_providers: Option<Rc<LlmProviders>>,
+    // traces: Rc<RefCell<VecDeque<TraceData>>>,
+    traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
+    // trace_sender: Rc<Sender<TraceData>>,
+    // receiver: Receiver<TraceData>,
 }
 
 impl FilterContext {
     pub fn new() -> FilterContext {
+        // let (sender, receiver) = channel::<TraceData>();
+        // thread::spawn(move || {
+        //     while let Ok(trace) = receiver.recv() {
+        //         debug!("received trace: {:?}", trace);
+        //     }
+        // });
+        // let queue: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        // queue.lock().unwrap().push("foo".to_string());
+
         FilterContext {
             callouts: RefCell::new(HashMap::new()),
             metrics: Rc::new(WasmMetrics::new()),
             llm_providers: None,
+            // traces: Rc::new(RefCell::new(VecDeque::new())),
+            traces_queue: Arc::new(Mutex::new(VecDeque::new())),
+            // trace_sender: Rc::new(sender),
+            // receiver,
         }
     }
 }
@@ -72,8 +97,6 @@ impl Client for FilterContext {
         &self.metrics.active_http_calls
     }
 }
-
-impl Context for FilterContext {}
 
 // RootContext allows the Rust code to reach into the Envoy Config
 impl RootContext for FilterContext {
@@ -111,10 +134,68 @@ impl RootContext for FilterContext {
                     .as_ref()
                     .expect("LLM Providers must exist when Streams are being created"),
             ),
+            Arc::clone(&self.traces_queue),
         )))
     }
 
     fn get_type(&self) -> Option<ContextType> {
         Some(ContextType::HttpContext)
+    }
+
+    fn on_vm_start(&mut self, _vm_configuration_size: usize) -> bool {
+        self.set_tick_period(Duration::from_secs(1));
+        true
+    }
+
+    fn on_tick(&mut self) {
+        let _ = self.traces_queue.try_lock().map(|mut traces_queue| {
+            while let Some(trace) = traces_queue.pop_front() {
+                debug!("trace received: {:?}", trace);
+
+                let trace_str = serde_json::to_string(&trace).unwrap();
+                debug!("trace: {}", trace_str);
+                let call_args = CallArgs::new(
+                    OTEL_COLLECTOR_HTTP,
+                    "/v1/traces",
+                    vec![
+                        (":method", "POST"),
+                        (":path", "/v1/traces"),
+                        (":authority", OTEL_COLLECTOR_HTTP),
+                        ("content-type", "application/json"),
+                    ],
+                    Some(trace_str.as_bytes()),
+                    vec![],
+                    Duration::from_secs(60),
+                );
+                if let Err(error) = self.http_call(call_args, CallContext {}) {
+                    warn!("failed to schedule http call: {:?}", error);
+                }
+            }
+        });
+    }
+}
+
+impl Context for FilterContext {
+    fn on_http_call_response(
+        &mut self,
+        token_id: u32,
+        _num_headers: usize,
+        _body_size: usize,
+        _num_trailers: usize,
+    ) {
+        debug!(
+            "||| on_http_call_response called with token_id: {:?} |||",
+            token_id
+        );
+
+        let _callout_data = self
+            .callouts
+            .borrow_mut()
+            .remove(&token_id)
+            .expect("invalid token_id");
+
+        self.get_http_call_response_header(":status").map(|status| {
+            debug!("trace response status: {:?}", status);
+        });
     }
 }
