@@ -43,9 +43,10 @@ pub struct StreamContext {
     ttft_time: Option<SystemTime>,
     trace_id: String,
     span_id: String,
-    traceparent: String,
     parent_span_id: Option<String>,
+    traceparent: String,
     traceparent_present_in_request: bool,
+    request_body_sent_time: Option<SystemTime>,
     user_message: Option<Message>,
     traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
 }
@@ -79,6 +80,7 @@ impl StreamContext {
             user_message: None,
             traces_queue,
             traceparent_present_in_request: false,
+            request_body_sent_time: None,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -227,6 +229,11 @@ impl HttpContext for StreamContext {
     fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         // Let the client send the gateway all the data before sending to the LLM_provider.
         // TODO: consider a streaming API.
+
+        if self.request_body_sent_time.is_none() {
+            self.request_body_sent_time = Some(get_current_time().unwrap());
+        }
+
         if !end_of_stream {
             return Action::Pause;
         }
@@ -412,7 +419,8 @@ impl HttpContext for StreamContext {
                 self.trace_id.to_string(),
                 self.span_id.to_string(),
                 parent_span_id,
-                self.start_time
+                self.request_body_sent_time
+                    .unwrap()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_nanos(),

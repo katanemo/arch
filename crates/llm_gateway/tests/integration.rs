@@ -217,6 +217,8 @@ fn llm_gateway_successful_request_to_open_ai_chat_completions() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
+        .expect_get_current_time_nanos()
+        .returning(Some(0))
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_metric_record("input_sequence_length", 21)
@@ -279,6 +281,8 @@ fn llm_gateway_bad_request_to_open_ai_chat_completions() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(incomplete_chat_completions_request_body))
+        .expect_get_current_time_nanos()
+        .returning(Some(0))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_send_local_response(
             Some(StatusCode::BAD_REQUEST.as_u16().into()),
@@ -337,6 +341,8 @@ fn llm_gateway_request_ratelimited() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
+        .expect_get_current_time_nanos()
+        .returning(Some(0))
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
@@ -403,6 +409,8 @@ fn llm_gateway_request_not_ratelimited() {
         )
         .expect_get_buffer_bytes(Some(BufferType::HttpRequestBody))
         .returning(Some(chat_completions_request_body))
+        .expect_get_current_time_nanos()
+        .returning(Some(0))
         // The actual call is not important in this test, we just need to grab the token_id
         .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Debug), None)
