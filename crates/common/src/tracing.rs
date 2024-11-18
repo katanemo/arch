@@ -47,15 +47,18 @@ pub struct Span {
 impl Span {
     pub fn new(
         name: String,
-        trace_id: String,
-        span_id: String,
+        trace_id: Option<String>,
         parent_span_id: Option<String>,
         start_time_unix_nano: u128,
         end_time_unix_nano: u128,
     ) -> Self {
+        let trace_id = match trace_id {
+            Some(trace_id) => trace_id,
+            None => Span::get_random_trace_id(),
+        };
         Span {
             trace_id,
-            span_id,
+            span_id: Span::get_random_span_id(),
             parent_span_id,
             name,
             start_time_unix_nano: format!("{}", start_time_unix_nano),
@@ -80,6 +83,22 @@ impl Span {
             self.events = Some(Vec::new());
         }
         self.events.as_mut().unwrap().push(event);
+    }
+
+    fn get_random_span_id() -> String {
+        let mut rng = rand::thread_rng();
+        let mut random_bytes = [0u8; 8];
+        rng.fill_bytes(&mut random_bytes);
+
+        hex::encode(random_bytes)
+    }
+
+    fn get_random_trace_id() -> String {
+        let mut rng = rand::thread_rng();
+        let mut random_bytes = [0u8; 16];
+        rng.fill_bytes(&mut random_bytes);
+
+        hex::encode(random_bytes)
     }
 }
 
@@ -167,20 +186,4 @@ impl TraceData {
         }
         self.resource_spans[0].scope_spans[0].spans.push(span);
     }
-}
-
-pub fn get_random_span_id() -> String {
-    let mut rng = rand::thread_rng();
-    let mut random_bytes = [0u8; 8];
-    rng.fill_bytes(&mut random_bytes);
-
-    hex::encode(random_bytes)
-}
-
-pub fn get_random_trace_id() -> String {
-  let mut rng = rand::thread_rng();
-  let mut random_bytes = [0u8; 16];
-  rng.fill_bytes(&mut random_bytes);
-
-  hex::encode(random_bytes)
 }
