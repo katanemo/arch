@@ -1,7 +1,16 @@
 import json
 from app.function_calling.hallucination_handler import hallucination_detect
 import pytest
+import os
 
+# Get the directory of the current file
+current_dir = os.path.dirname(__file__)
+
+# Construct the full path to the JSON file
+json_file_path = os.path.join(current_dir, "test_cases.json")
+
+with open(json_file_path) as f:
+    test_cases = json.load(f)
 
 get_weather_api = {
     "type": "function",
@@ -40,9 +49,6 @@ for func in function_description:
     func_name = func["name"]
     parameters = func["parameters"]["properties"]
     parameter_names[func_name] = list(parameters.keys())
-
-with open("test_cases.json") as f:
-    test_cases = json.load(f)
 
 
 @pytest.mark.parametrize("case", test_cases)
