@@ -305,22 +305,6 @@ impl HttpContext for StreamContext {
             self.context_id, _end_of_stream
         );
 
-        // if let Some(user_message) = self.user_message.as_ref() {
-        //     if let Some(prompt) = user_message.content.as_ref() {
-        //         debug!("setting user-message header: {}", prompt);
-        //         self.set_http_response_header("x-user-message", Some(&prompt));
-        //     }
-        // }
-
-        // let tftt_time_ms = get_current_time()
-        //     .unwrap()
-        //     .duration_since(self.start_time.unwrap())
-        //     .unwrap()
-        //     .as_millis();
-
-        // let tftt_time = tftt_time_ms.to_string();
-        // self.set_http_response_header("x-time-to-first-token", Some(&tftt_time));
-
         self.set_property(
             vec!["metadata", "filter_metadata", "llm_filter", "user_prompt"],
             Some("hello world from filter".as_bytes()),
