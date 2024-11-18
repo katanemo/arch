@@ -504,9 +504,6 @@ impl HttpContext for StreamContext {
                         warn!("SystemTime error: {:?}", e);
                     }
                 }
-                // } else {
-                // warn!("Start time was not recorded");
-                // }
             }
         } else {
             debug!("non streaming response");
