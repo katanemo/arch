@@ -169,7 +169,10 @@ impl RootContext for FilterContext {
                     Duration::from_secs(60),
                 );
                 if let Err(error) = self.http_call(call_args, CallContext {}) {
-                    warn!("failed to schedule http call: {:?}", error);
+                    warn!(
+                        "failed to schedule http call to otel-collector: {:?}",
+                        error
+                    );
                 }
             }
         });
