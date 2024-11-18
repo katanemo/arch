@@ -40,6 +40,7 @@ pub struct StreamContext {
     ttft_duration: Option<Duration>,
     ttft_time: Option<SystemTime>,
     pub traceparent: Option<String>,
+    request_body_sent_time: Option<SystemTime>,
     user_message: Option<Message>,
 }
 
@@ -60,6 +61,7 @@ impl StreamContext {
             traceparent: None,
             ttft_time: None,
             user_message: None,
+            request_body_sent_time: None,
         }
     }
     fn llm_provider(&self) -> &LlmProvider {
@@ -196,6 +198,11 @@ impl HttpContext for StreamContext {
     fn on_http_request_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         // Let the client send the gateway all the data before sending to the LLM_provider.
         // TODO: consider a streaming API.
+
+        if self.request_body_sent_time.is_none() {
+            self.request_body_sent_time = Some(get_current_time().unwrap());
+        }
+
         if !end_of_stream {
             return Action::Pause;
         }
@@ -351,7 +358,7 @@ impl HttpContext for StreamContext {
                     "upstream_llm_time".to_string(),
                     parent_trace_id.to_string(),
                     Some(parent_span_id.to_string()),
-                    self.start_time
+                    self.request_body_sent_time
                         .unwrap()
                         .duration_since(UNIX_EPOCH)
                         .unwrap()
