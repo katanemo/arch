@@ -1,6 +1,7 @@
 use crate::stream_context::StreamContext;
 use common::configuration::Configuration;
 use common::consts::OTEL_COLLECTOR_HTTP;
+use common::consts::OTEL_POST_PATH;
 use common::http::CallArgs;
 use common::http::Client;
 use common::llm_providers::LlmProviders;
@@ -156,10 +157,10 @@ impl RootContext for FilterContext {
                 debug!("trace: {}", trace_str);
                 let call_args = CallArgs::new(
                     OTEL_COLLECTOR_HTTP,
-                    "/v1/traces",
+                    OTEL_POST_PATH,
                     vec![
-                        (":method", "POST"),
-                        (":path", "/v1/traces"),
+                        (":method", http::Method::POST.as_str()),
+                        (":path", OTEL_POST_PATH),
                         (":authority", OTEL_COLLECTOR_HTTP),
                         ("content-type", "application/json"),
                     ],
