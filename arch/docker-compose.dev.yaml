@@ -8,11 +8,11 @@ services:
       - "12000:12000"
       - "19901:9901"
     volumes:
-      - ${ARCH_CONFIG_FILE:-../demos/weather_forecast/arch_config.yaml}:/config/arch_config.yaml
+      - ${ARCH_CONFIG_FILE:-../demos/weather_forecast/arch_config.yaml}:/app/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
-      - ./envoy.template.yaml:/config/envoy.template.yaml
-      - ./arch_config_schema.yaml:/config/arch_config_schema.yaml
-      - ./tools/cli/config_generator.py:/config/config_generator.py
+      - ./envoy.template.yaml:/app/envoy.template.yaml
+      - ./arch_config_schema.yaml:/app/arch_config_schema.yaml
+      - ./tools/cli/config_generator.py:/app/config_generator.py
       - ../crates/target/wasm32-wasip1/release/llm_gateway.wasm:/etc/envoy/proxy-wasm-plugins/llm_gateway.wasm
       - ../crates/target/wasm32-wasip1/release/prompt_gateway.wasm:/etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm
       - ~/archgw_logs:/var/log/
@@ -21,3 +21,4 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
+      - OTEL_TRACING_HTTP_ENDPOINT=http://host.docker.internal:4318/v1/traces

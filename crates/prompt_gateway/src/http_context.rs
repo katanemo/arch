@@ -18,7 +18,6 @@ use common::{
     errors::ServerError,
     http::{CallArgs, Client},
     pii::obfuscate_auth_header,
-    tracing::{Event, Span},
 };
 use http::StatusCode;
 use log::{debug, trace, warn};
@@ -265,42 +264,6 @@ impl HttpContext for StreamContext {
         }
 
         if end_of_stream && body_size == 0 {
-            if let Some(traceparent) = self.traceparent.as_ref() {
-                let since_the_epoch_ns = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
-
-                let traceparent_tokens = traceparent.split("-").collect::<Vec<&str>>();
-                if traceparent_tokens.len() != 4 {
-                    warn!("traceparent header is invalid: {}", traceparent);
-                    return Action::Continue;
-                }
-                let parent_trace_id = traceparent_tokens[1];
-                let parent_span_id = traceparent_tokens[2];
-                let mut trace_data = common::tracing::TraceData::new();
-                let mut llm_span = Span::new(
-                    "upstream_llm_time".to_string(),
-                    parent_trace_id.to_string(),
-                    Some(parent_span_id.to_string()),
-                    self.start_upstream_llm_request_time,
-                    since_the_epoch_ns,
-                );
-                if let Some(prompt) = self.user_prompt.as_ref() {
-                    if let Some(content) = prompt.content.as_ref() {
-                        llm_span.add_attribute("user_prompt".to_string(), content.to_string());
-                    }
-                }
-                llm_span.add_event(Event::new(
-                    "time_to_first_token".to_string(),
-                    self.time_to_first_token.unwrap(),
-                ));
-                trace_data.add_span(llm_span);
-
-                let trace_data_str = serde_json::to_string(&trace_data).unwrap();
-                debug!("upstream_llm trace details: {}", trace_data_str);
-                // send trace_data to http tracing endpoint
-            }
             return Action::Continue;
         }
 

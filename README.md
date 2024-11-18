@@ -1,13 +1,15 @@
 ![alt text](image.png)
+<a href="https://www.producthunt.com/posts/arch-3?embed=true&utm_source=badge-top-post-badge&utm_medium=badge&utm_souce=badge-arch&#0045;3" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=565761&theme=light&period=daily" alt="Arch - Build&#0032;fast&#0044;&#0032;hyper&#0045;personalized&#0032;agents&#0032;with&#0032;intelligent&#0032;infra | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 
 [![pre-commit](https://github.com/katanemo/arch/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/pre-commit.yml)
 [![rust tests (prompt and llm gateway)](https://github.com/katanemo/arch/actions/workflows/rust_tests.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/rust_tests.yml)
 [![e2e tests](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/e2e_tests.yml)
 [![Build and Deploy Documentation](https://github.com/katanemo/arch/actions/workflows/static.yml/badge.svg)](https://github.com/katanemo/arch/actions/workflows/static.yml)
 
-## Build fast, robust, and personalized AI agents.
+## Build fast, observable, and personalized AI agents.
 
-Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed to protect, observe, and personalize LLM applications (agents, assistants, co-pilots) with your APIs.
+Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed to protect, observe, and personalize AI agents (assistants, co-pilots) with your APIs.
 
 Engineered with purpose-built LLMs, Arch handles the critical but undifferentiated tasks related to the handling and processing of prompts, including detecting and rejecting [jailbreak](https://github.com/verazuo/jailbreak_llms) attempts, intelligently calling "backend" APIs to fulfill the user's request represented in a prompt, routing to and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
 
@@ -53,9 +55,7 @@ Make sure you have following utilities installed before proceeding further,
 1. [Docker System](https://docs.docker.com/get-started/get-docker/) (v24)
 2. [Docker compose](https://docs.docker.com/compose/install/) (v2.29)
 3. [Python](https://www.python.org/downloads/) (v3.10)
-4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3)
-
-*Note: Poetry is needed for local development*
+4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3. *Note: only needed for local development*)
 
 
 ```console
@@ -155,6 +155,8 @@ print("OpenAI Response:", response.choices[0].message.content)
 
 ### [Observability](https://docs.archgw.com/guides/observability/observability.html)
 Arch is designed to support best-in class observability by supporting open standards. Please read our [docs](https://docs.archgw.com/guides/observability/observability.html) on observability for more details on tracing, metrics, and logs
+
+![alt text](docs/source/_static/img/tracing.png)
 
 ### Contribution
 We would love feedback on our [Roadmap](https://github.com/orgs/katanemo/projects/1) and we welcome contributions to **Arch**!

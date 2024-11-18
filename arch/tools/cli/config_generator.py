@@ -6,7 +6,7 @@ from jsonschema import validate
 ENVOY_CONFIG_TEMPLATE_FILE = os.getenv(
     "ENVOY_CONFIG_TEMPLATE_FILE", "envoy.template.yaml"
 )
-ARCH_CONFIG_FILE = os.getenv("ARCH_CONFIG_FILE", "/config/arch_config.yaml")
+ARCH_CONFIG_FILE = os.getenv("ARCH_CONFIG_FILE", "/app/arch_config.yaml")
 ENVOY_CONFIG_FILE_RENDERED = os.getenv(
     "ENVOY_CONFIG_FILE_RENDERED", "/etc/envoy/envoy.yaml"
 )

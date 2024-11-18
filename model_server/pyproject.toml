@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "archgw_modelserver"
-version = "0.1.2"
+version = "0.1.3"
 description = "A model server for serving models"
 authors = ["Katanemo Labs, Inc <archgw@katanemo.com>"]
 license = "Apache 2.0"
