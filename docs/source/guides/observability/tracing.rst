@@ -23,6 +23,10 @@ flow, enabling **end-to-end tracing** across the entire application. By using Op
 that developers can capture this trace data consistently and in a format compatible with various observability
 tools.
 
+.. image:: /_static/img/tracing.png
+   :width: 100%
+   :align: center
+
 
 Benefits of Using ``Traceparent`` Headers
 -----------------------------------------
