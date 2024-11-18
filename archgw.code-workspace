@@ -40,6 +40,7 @@
       "github.copilot",
       "eamodio.gitlens",
       "ms-python.black-formatter",
+      "tamasfe.even-better-toml",
       ]
   }
 }
