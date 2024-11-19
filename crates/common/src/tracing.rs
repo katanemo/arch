@@ -1,3 +1,5 @@
+use std::path::Display;
+
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
@@ -47,14 +49,18 @@ pub struct Span {
 impl Span {
     pub fn new(
         name: String,
-        parent_trace_id: String,
+        trace_id: Option<String>,
         parent_span_id: Option<String>,
         start_time_unix_nano: u128,
         end_time_unix_nano: u128,
     ) -> Self {
+        let trace_id = match trace_id {
+            Some(trace_id) => trace_id,
+            None => Span::get_random_trace_id(),
+        };
         Span {
-            trace_id: parent_trace_id,
-            span_id: get_random_span_id(),
+            trace_id,
+            span_id: Span::get_random_span_id(),
             parent_span_id,
             name,
             start_time_unix_nano: format!("{}", start_time_unix_nano),
@@ -79,6 +85,22 @@ impl Span {
             self.events = Some(Vec::new());
         }
         self.events.as_mut().unwrap().push(event);
+    }
+
+    fn get_random_span_id() -> String {
+        let mut rng = rand::thread_rng();
+        let mut random_bytes = [0u8; 8];
+        rng.fill_bytes(&mut random_bytes);
+
+        hex::encode(random_bytes)
+    }
+
+    fn get_random_trace_id() -> String {
+        let mut rng = rand::thread_rng();
+        let mut random_bytes = [0u8; 16];
+        rng.fill_bytes(&mut random_bytes);
+
+        hex::encode(random_bytes)
     }
 }
 
@@ -168,10 +190,42 @@ impl TraceData {
     }
 }
 
-pub fn get_random_span_id() -> String {
-    let mut rng = rand::thread_rng();
-    let mut random_bytes = [0u8; 8];
-    rng.fill_bytes(&mut random_bytes);
+pub struct Traceparent {
+    pub version: String,
+    pub trace_id: String,
+    pub parent_id: String,
+    pub flags: String,
+}
 
-    hex::encode(random_bytes)
+impl std::fmt::Display for Traceparent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}-{}-{}-{}",
+            self.version, self.trace_id, self.parent_id, self.flags
+        )
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum TraceparentNewError {
+    #[error("Invalid traceparent: \'{0}\'")]
+    InvalidTraceparent(String),
+}
+
+impl TryFrom<String> for Traceparent {
+    type Error = TraceparentNewError;
+
+    fn try_from(traceparent: String) -> Result<Self, Self::Error> {
+        let traceparent_tokens: Vec<&str> = traceparent.split("-").collect::<Vec<&str>>();
+        if traceparent_tokens.len() != 4 {
+            return Err(TraceparentNewError::InvalidTraceparent(traceparent));
+        }
+        Ok(Traceparent {
+            version: traceparent_tokens[0].to_string(),
+            trace_id: traceparent_tokens[1].to_string(),
+            parent_id: traceparent_tokens[2].to_string(),
+            flags: traceparent_tokens[3].to_string(),
+        })
+    }
 }

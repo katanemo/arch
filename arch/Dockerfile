@@ -13,7 +13,7 @@ FROM envoyproxy/envoy:v1.32-latest as envoy
 #Build config generator, so that we have a single build image for both Rust and Python
 FROM python:3.12-slim as arch
 
-RUN apt-get update && apt-get install -y gettext-base curl supervisor && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y gettext-base curl && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /arch/target/wasm32-wasip1/release/prompt_gateway.wasm /etc/envoy/proxy-wasm-plugins/prompt_gateway.wasm
 COPY --from=builder /arch/target/wasm32-wasip1/release/llm_gateway.wasm /etc/envoy/proxy-wasm-plugins/llm_gateway.wasm
@@ -24,10 +24,8 @@ RUN pip install -r requirements.txt
 COPY arch/tools/cli/config_generator.py .
 COPY arch/envoy.template.yaml .
 COPY arch/arch_config_schema.yaml .
-COPY arch/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY arch/stream_traces.py .
 
 RUN pip install requests
 RUN touch /var/log/envoy.log
 
-ENTRYPOINT ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+ENTRYPOINT ["sh","-c", "python config_generator.py && envsubst < /etc/envoy/envoy.yaml > /etc/envoy.env_sub.yaml && envoy -c /etc/envoy.env_sub.yaml --component-log-level wasm:debug 2>&1 | tee /var/log/envoy.log"]

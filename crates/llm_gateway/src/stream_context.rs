@@ -12,14 +12,16 @@ use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
 use common::pii::obfuscate_auth_header;
 use common::ratelimit::Header;
-use common::tracing::{Event, Span};
+use common::tracing::{Event, Span, TraceData, Traceparent};
 use common::{ratelimit, routing, tokenizer};
 use http::StatusCode;
 use log::{debug, trace, warn};
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
+use std::collections::VecDeque;
 use std::num::NonZero;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use common::stats::{IncrementingMetric, RecordingMetric};
 
@@ -36,16 +38,22 @@ pub struct StreamContext {
     llm_providers: Rc<LlmProviders>,
     llm_provider: Option<Rc<LlmProvider>>,
     request_id: Option<String>,
-    start_time: Option<SystemTime>,
+    start_time: SystemTime,
     ttft_duration: Option<Duration>,
-    ttft_time: Option<SystemTime>,
-    pub traceparent: Option<String>,
-    request_body_sent_time: Option<SystemTime>,
+    ttft_time: Option<u128>,
+    traceparent: Option<String>,
+    request_body_sent_time: Option<u128>,
     user_message: Option<Message>,
+    traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
 }
 
 impl StreamContext {
-    pub fn new(context_id: u32, metrics: Rc<WasmMetrics>, llm_providers: Rc<LlmProviders>) -> Self {
+    pub fn new(
+        context_id: u32,
+        metrics: Rc<WasmMetrics>,
+        llm_providers: Rc<LlmProviders>,
+        traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
+    ) -> Self {
         StreamContext {
             context_id,
             metrics,
@@ -56,11 +64,12 @@ impl StreamContext {
             llm_providers,
             llm_provider: None,
             request_id: None,
-            start_time: None,
+            start_time: SystemTime::now(),
             ttft_duration: None,
             traceparent: None,
             ttft_time: None,
             user_message: None,
+            traces_queue,
             request_body_sent_time: None,
         }
     }
@@ -187,11 +196,6 @@ impl HttpContext for StreamContext {
         self.request_id = self.get_http_request_header(REQUEST_ID_HEADER);
         self.traceparent = self.get_http_request_header(TRACE_PARENT_HEADER);
 
-        //start the timing for the request using get_current_time()
-        let current_time: SystemTime = get_current_time().unwrap();
-        self.start_time = Some(current_time);
-        self.ttft_duration = None;
-
         Action::Continue
     }
 
@@ -200,7 +204,7 @@ impl HttpContext for StreamContext {
         // TODO: consider a streaming API.
 
         if self.request_body_sent_time.is_none() {
-            self.request_body_sent_time = Some(get_current_time().unwrap());
+            self.request_body_sent_time = Some(current_time_ns());
         }
 
         if !end_of_stream {
@@ -295,6 +299,20 @@ impl HttpContext for StreamContext {
         Action::Continue
     }
 
+    fn on_http_response_headers(&mut self, _num_headers: usize, _end_of_stream: bool) -> Action {
+        debug!(
+            "on_http_response_headers [S={}] end_stream={}",
+            self.context_id, _end_of_stream
+        );
+
+        self.set_property(
+            vec!["metadata", "filter_metadata", "llm_filter", "user_prompt"],
+            Some("hello world from filter".as_bytes()),
+        );
+
+        Action::Continue
+    }
+
     fn on_http_response_body(&mut self, body_size: usize, end_of_stream: bool) -> Action {
         debug!(
             "on_http_response_body [S={}] bytes={} end_stream={}",
@@ -310,29 +328,27 @@ impl HttpContext for StreamContext {
         if end_of_stream && body_size == 0 {
             // All streaming responses end with bytes=0 and end_stream=true
             // Record the latency for the request
-            if let Some(start_time) = self.start_time {
-                match current_time.duration_since(start_time) {
-                    Ok(duration) => {
-                        // Convert the duration to milliseconds
-                        let duration_ms = duration.as_millis();
-                        debug!("Total latency: {} milliseconds", duration_ms);
-                        // Record the latency to the latency histogram
-                        self.metrics.request_latency.record(duration_ms as u64);
+            match current_time.duration_since(self.start_time) {
+                Ok(duration) => {
+                    // Convert the duration to milliseconds
+                    let duration_ms = duration.as_millis();
+                    debug!("Total latency: {} milliseconds", duration_ms);
+                    // Record the latency to the latency histogram
+                    self.metrics.request_latency.record(duration_ms as u64);
 
-                        // Compute the time per output token
-                        let tpot = duration_ms as u64 / self.response_tokens as u64;
+                    // Compute the time per output token
+                    let tpot = duration_ms as u64 / self.response_tokens as u64;
 
-                        debug!("Time per output token: {} milliseconds", tpot);
-                        // Record the time per output token
-                        self.metrics.time_per_output_token.record(tpot);
+                    debug!("Time per output token: {} milliseconds", tpot);
+                    // Record the time per output token
+                    self.metrics.time_per_output_token.record(tpot);
 
-                        debug!("Tokens per second: {}", 1000 / tpot);
-                        // Record the tokens per second
-                        self.metrics.tokens_per_second.record(1000 / tpot);
-                    }
-                    Err(e) => {
-                        warn!("SystemTime error: {:?}", e);
-                    }
+                    debug!("Tokens per second: {}", 1000 / tpot);
+                    // Record the tokens per second
+                    self.metrics.tokens_per_second.record(1000 / tpot);
+                }
+                Err(e) => {
+                    warn!("SystemTime error: {:?}", e);
                 }
             }
             // Record the output sequence length
@@ -341,49 +357,41 @@ impl HttpContext for StreamContext {
                 .record(self.response_tokens as u64);
 
             if let Some(traceparent) = self.traceparent.as_ref() {
-                let since_the_epoch_ns = SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos();
+                let current_time_ns = current_time_ns();
 
-                let traceparent_tokens = traceparent.split("-").collect::<Vec<&str>>();
-                if traceparent_tokens.len() != 4 {
-                    warn!("traceparent header is invalid: {}", traceparent);
-                    return Action::Continue;
-                }
-                let parent_trace_id = traceparent_tokens[1];
-                let parent_span_id = traceparent_tokens[2];
-                let mut trace_data = common::tracing::TraceData::new();
-                let mut llm_span = Span::new(
-                    "upstream_llm_time".to_string(),
-                    parent_trace_id.to_string(),
-                    Some(parent_span_id.to_string()),
-                    self.request_body_sent_time
-                        .unwrap()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_nanos(),
-                    since_the_epoch_ns,
-                );
-                if let Some(user_message) = self.user_message.as_ref() {
-                    if let Some(prompt) = user_message.content.as_ref() {
-                        llm_span.add_attribute("user_prompt".to_string(), prompt.to_string());
+                match Traceparent::try_from(traceparent.to_string()) {
+                    Err(e) => {
+                        warn!("traceparent header is invalid: {}", e);
                     }
-                }
-                llm_span.add_attribute("model".to_string(), self.llm_provider().name.to_string());
-                llm_span.add_event(Event::new(
-                    "time_to_first_token".to_string(),
-                    self.ttft_time
-                        .unwrap()
-                        .duration_since(UNIX_EPOCH)
-                        .unwrap()
-                        .as_nanos(),
-                ));
-                trace_data.add_span(llm_span);
+                    Ok(traceparent) => {
+                        let mut trace_data = common::tracing::TraceData::new();
+                        let mut llm_span = Span::new(
+                            "upstream_llm_time".to_string(),
+                            Some(traceparent.trace_id),
+                            Some(traceparent.parent_id),
+                            self.request_body_sent_time.unwrap(),
+                            current_time_ns,
+                        );
+                        if let Some(user_message) = self.user_message.as_ref() {
+                            if let Some(prompt) = user_message.content.as_ref() {
+                                llm_span
+                                    .add_attribute("user_prompt".to_string(), prompt.to_string());
+                            }
+                        }
+                        llm_span.add_attribute(
+                            "model".to_string(),
+                            self.llm_provider().name.to_string(),
+                        );
 
-                let trace_data_str = serde_json::to_string(&trace_data).unwrap();
-                debug!("upstream_llm trace details: {}", trace_data_str);
-                // send trace_data to http tracing endpoint
+                        llm_span.add_event(Event::new(
+                            "time_to_first_token".to_string(),
+                            self.ttft_time.unwrap(),
+                        ));
+                        trace_data.add_span(llm_span);
+
+                        self.traces_queue.lock().unwrap().push_back(trace_data);
+                    }
+                };
             }
 
             return Action::Continue;
@@ -479,22 +487,19 @@ impl HttpContext for StreamContext {
 
             // Compute TTFT if not already recorded
             if self.ttft_duration.is_none() {
-                if let Some(start_time) = self.start_time {
-                    let current_time = get_current_time().unwrap();
-                    self.ttft_time = Some(current_time);
-                    match current_time.duration_since(start_time) {
-                        Ok(duration) => {
-                            let duration_ms = duration.as_millis();
-                            debug!("Time to First Token (TTFT): {} milliseconds", duration_ms);
-                            self.ttft_duration = Some(duration);
-                            self.metrics.time_to_first_token.record(duration_ms as u64);
-                        }
-                        Err(e) => {
-                            warn!("SystemTime error: {:?}", e);
-                        }
+                // if let Some(start_time) = self.start_time {
+                let current_time = get_current_time().unwrap();
+                self.ttft_time = Some(current_time_ns());
+                match current_time.duration_since(self.start_time) {
+                    Ok(duration) => {
+                        let duration_ms = duration.as_millis();
+                        debug!("Time to First Token (TTFT): {} milliseconds", duration_ms);
+                        self.ttft_duration = Some(duration);
+                        self.metrics.time_to_first_token.record(duration_ms as u64);
                     }
-                } else {
-                    warn!("Start time was not recorded");
+                    Err(e) => {
+                        warn!("SystemTime error: {:?}", e);
+                    }
                 }
             }
         } else {
@@ -524,6 +529,13 @@ impl HttpContext for StreamContext {
 
         Action::Continue
     }
+}
+
+fn current_time_ns() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos()
 }
 
 impl Context for StreamContext {}
