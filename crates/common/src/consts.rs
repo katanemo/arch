@@ -30,4 +30,4 @@ pub const ARCH_MODEL_PREFIX: &str = "Arch";
 pub const HALLUCINATION_TEMPLATE: &str =
     "It seems I'm missing some information. Could you provide the following details ";
 pub const OTEL_COLLECTOR_HTTP: &str = "opentelemetry_collector_http";
-pub const OTEL_POST_PATH: &str = "/v1/trace";
+pub const OTEL_POST_PATH: &str = "/v1/traces";
