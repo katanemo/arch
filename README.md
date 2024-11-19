@@ -9,7 +9,7 @@
 
 ## Build fast, observable, and personalized AI agents.
 
-Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) gateway designed to protect, observe, and personalize AI agents (assistants, co-pilots) with your APIs.
+Arch is an intelligent [Layer 7](https://www.cloudflare.com/learning/ddos/what-is-layer-7/) distributed proxy designed to protect, observe, and personalize AI agents with your APIs.
 
 Engineered with purpose-built LLMs, Arch handles the critical but undifferentiated tasks related to the handling and processing of prompts, including detecting and rejecting [jailbreak](https://github.com/verazuo/jailbreak_llms) attempts, intelligently calling "backend" APIs to fulfill the user's request represented in a prompt, routing to and offering disaster recovery between upstream LLMs, and managing the observability of prompts and LLM interactions in a centralized way.
 
@@ -25,6 +25,12 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
   - Standards-based Observability: Arch uses the W3C Trace Context standard to enable complete request tracing across applications, ensuring compatibility with observability tools, and provides metrics to monitor latency, token usage, and error rates, helping optimize AI application performance.
 
 **Jump to our [docs](https://docs.archgw.com)** to learn how you can use Arch to improve the speed, security and personalization of your GenAI apps.
+
+> [!NOTE]
+> Today, the function calling LLM (Arch-Function) designed for the agentic and RAG scenarios is hosted for free in the US-central region.
+> To offer consistent throughput, and to manage our expenses, we will enable access to the hosted LLM via developers keys or give you the option to run that LLM locally.
+> Pricing for the hosted version of Arch-Function will be ~ $0.10/M output token (100x cheaper that GPT-4o for function calling scenarios)
+
 
 ## Contact
 To get in touch with us, please join our [discord server](https://discord.gg/pGZf2gcwEc). We will be monitoring that actively and offering support there.
