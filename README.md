@@ -27,9 +27,9 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 **Jump to our [docs](https://docs.archgw.com)** to learn how you can use Arch to improve the speed, security and personalization of your GenAI apps.
 
 > [!NOTE]
-> Today, the function calling LLM (Arch-Function) designed for the agentic and RAG scenarios is hosted for free in the US-central region.
-> To offer consistent throughput, and to manage our expenses, we will enable access to the hosted LLM via developers keys in 90 days, and give you the option to run that LLM locally.
-> Pricing for the hosted version of Arch-Function will be ~ $0.10/M output token (100x cheaper that GPT-4o for function calling scenarios)
+> Today, the function calling LLM (Arch-Function) designed for the agentic and RAG scenarios is hosted free of charge in the US-central region.
+> To offer consistent latencies and throughput, and to manage our expenses, we will enable access to the hosted version via developers keys soon, and give you the option to run that
+> LLM locally. Pricing for the hosted version of Arch-Function will be ~ $0.10/M output token (100x cheaper that GPT-4o for function calling scenarios).
 
 
 ## Contact
