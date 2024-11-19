@@ -1,12 +1,8 @@
 name: Publish Docker image
 
 on:
-  # we should publish docker image only when we release a new version
-  # release:
-  #   types: [published]
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 jobs:
   push_to_registry:
