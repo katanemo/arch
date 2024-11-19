@@ -1,15 +1,12 @@
 name: Publish Docker image
 
-# on:
-#   release:
-#     types: [published]
-
 on:
+  # we should publish docker image only when we release a new version
+  # release:
+  #   types: [published]
   push:
     branches:
-      - main  # Run tests on pushes to the main branch
-  pull_request:
-
+      - main
 
 jobs:
   push_to_registry:
@@ -45,10 +42,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
