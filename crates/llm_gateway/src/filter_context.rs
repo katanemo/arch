@@ -58,31 +58,16 @@ pub struct FilterContext {
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, CallContext>>,
     llm_providers: Option<Rc<LlmProviders>>,
-    // traces: Rc<RefCell<VecDeque<TraceData>>>,
     traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
-    // trace_sender: Rc<Sender<TraceData>>,
-    // receiver: Receiver<TraceData>,
 }
 
 impl FilterContext {
     pub fn new() -> FilterContext {
-        // let (sender, receiver) = channel::<TraceData>();
-        // thread::spawn(move || {
-        //     while let Ok(trace) = receiver.recv() {
-        //         debug!("received trace: {:?}", trace);
-        //     }
-        // });
-        // let queue: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-        // queue.lock().unwrap().push("foo".to_string());
-
         FilterContext {
             callouts: RefCell::new(HashMap::new()),
             metrics: Rc::new(WasmMetrics::new()),
             llm_providers: None,
-            // traces: Rc::new(RefCell::new(VecDeque::new())),
             traces_queue: Arc::new(Mutex::new(VecDeque::new())),
-            // trace_sender: Rc::new(sender),
-            // receiver,
         }
     }
 }
