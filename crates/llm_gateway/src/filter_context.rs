@@ -183,8 +183,8 @@ impl Context for FilterContext {
             .remove(&token_id)
             .expect("invalid token_id");
 
-        self.get_http_call_response_header(":status").map(|status| {
+        if let Some(status) = self.get_http_call_response_header(":status") {
             debug!("trace response status: {:?}", status);
-        });
+        };
     }
 }

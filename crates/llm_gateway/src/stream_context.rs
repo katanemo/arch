@@ -12,7 +12,7 @@ use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
 use common::pii::obfuscate_auth_header;
 use common::ratelimit::Header;
-use common::tracing::{Event, Span, TraceData};
+use common::tracing::{Event, Span, TraceData, Traceparent};
 use common::{ratelimit, routing, tokenizer};
 use http::StatusCode;
 use log::{debug, trace, warn};
@@ -359,42 +359,39 @@ impl HttpContext for StreamContext {
             if let Some(traceparent) = self.traceparent.as_ref() {
                 let current_time_ns = current_time_ns();
 
-                let (trace_id, parent_span_id) = {
-                    let traceparent_tokens: Vec<&str> =
-                        traceparent.split("-").collect::<Vec<&str>>();
-                    if traceparent_tokens.len() != 4 {
-                        warn!("traceparent header is invalid: {}", traceparent);
-                        (None, None)
-                    } else {
-                        (
-                            Some(traceparent_tokens[1].to_string()),
-                            Some(traceparent_tokens[2].to_string()),
-                        )
+                match Traceparent::try_from(traceparent.to_string()) {
+                    Err(e) => {
+                        warn!("traceparent header is invalid: {}", e);
+                    }
+                    Ok(traceparent) => {
+                        let mut trace_data = common::tracing::TraceData::new();
+                        let mut llm_span = Span::new(
+                            "upstream_llm_time".to_string(),
+                            Some(traceparent.trace_id),
+                            Some(traceparent.parent_id),
+                            self.request_body_sent_time.unwrap(),
+                            current_time_ns,
+                        );
+                        if let Some(user_message) = self.user_message.as_ref() {
+                            if let Some(prompt) = user_message.content.as_ref() {
+                                llm_span
+                                    .add_attribute("user_prompt".to_string(), prompt.to_string());
+                            }
+                        }
+                        llm_span.add_attribute(
+                            "model".to_string(),
+                            self.llm_provider().name.to_string(),
+                        );
+
+                        llm_span.add_event(Event::new(
+                            "time_to_first_token".to_string(),
+                            self.ttft_time.unwrap(),
+                        ));
+                        trace_data.add_span(llm_span);
+
+                        self.traces_queue.lock().unwrap().push_back(trace_data);
                     }
                 };
-
-                let mut trace_data = common::tracing::TraceData::new();
-                let mut llm_span = Span::new(
-                    "upstream_llm_time".to_string(),
-                    trace_id,
-                    parent_span_id,
-                    self.request_body_sent_time.unwrap(),
-                    current_time_ns,
-                );
-                if let Some(user_message) = self.user_message.as_ref() {
-                    if let Some(prompt) = user_message.content.as_ref() {
-                        llm_span.add_attribute("user_prompt".to_string(), prompt.to_string());
-                    }
-                }
-                llm_span.add_attribute("model".to_string(), self.llm_provider().name.to_string());
-
-                llm_span.add_event(Event::new(
-                    "time_to_first_token".to_string(),
-                    self.ttft_time.unwrap(),
-                ));
-                trace_data.add_span(llm_span);
-
-                self.traces_queue.lock().unwrap().push_back(trace_data);
             }
 
             return Action::Continue;

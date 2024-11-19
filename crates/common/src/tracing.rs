@@ -1,3 +1,5 @@
+use std::path::Display;
+
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 
@@ -185,5 +187,45 @@ impl TraceData {
             self.resource_spans.push(resource_span);
         }
         self.resource_spans[0].scope_spans[0].spans.push(span);
+    }
+}
+
+pub struct Traceparent {
+    pub version: String,
+    pub trace_id: String,
+    pub parent_id: String,
+    pub flags: String,
+}
+
+impl std::fmt::Display for Traceparent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}-{}-{}-{}",
+            self.version, self.trace_id, self.parent_id, self.flags
+        )
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum TraceparentNewError {
+    #[error("Invalid traceparent: \'{0}\'")]
+    InvalidTraceparent(String),
+}
+
+impl TryFrom<String> for Traceparent {
+    type Error = TraceparentNewError;
+
+    fn try_from(traceparent: String) -> Result<Self, Self::Error> {
+        let traceparent_tokens: Vec<&str> = traceparent.split("-").collect::<Vec<&str>>();
+        if traceparent_tokens.len() != 4 {
+            return Err(TraceparentNewError::InvalidTraceparent(traceparent));
+        }
+        Ok(Traceparent {
+            version: traceparent_tokens[0].to_string(),
+            trace_id: traceparent_tokens[1].to_string(),
+            parent_id: traceparent_tokens[2].to_string(),
+            flags: traceparent_tokens[3].to_string(),
+        })
     }
 }
