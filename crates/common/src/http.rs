@@ -3,8 +3,8 @@ use crate::{
     stats::{Gauge, IncrementingMetric},
 };
 use derivative::Derivative;
-use log::{debug, trace};
-use proxy_wasm::{traits::Context, types::Status};
+use log::trace;
+use proxy_wasm::traits::Context;
 use serde::Serialize;
 use std::{cell::RefCell, collections::HashMap, fmt::Debug, time::Duration};
 
