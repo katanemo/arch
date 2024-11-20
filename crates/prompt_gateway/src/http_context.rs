@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
-
+use crate::stream_context::{ResponseHandlerType, StreamCallContext, StreamContext};
 use common::{
     common_types::{
         open_ai::{
@@ -23,8 +19,10 @@ use http::StatusCode;
 use log::{debug, trace, warn};
 use proxy_wasm::{traits::HttpContext, types::Action};
 use serde_json::Value;
-
-use crate::stream_context::{ResponseHandlerType, StreamCallContext, StreamContext};
+use std::{
+    collections::HashMap,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 // HttpContext is the trait that allows the Rust code to interact with HTTP objects.
 impl HttpContext for StreamContext {
