@@ -55,4 +55,6 @@ def test_hallucination(case):
             state.tokens.append(token)
             state.logprobs.append(logprob)
             state.process_token()
+            if state.hallucination:
+                break
     assert state.hallucination == case["expect"]

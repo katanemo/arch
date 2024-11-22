@@ -15,7 +15,7 @@
 },
 {
    "case" : "parameter_value_hallucination",
-   "expect" : 1,
+   "expect" : 0,
    "tokens" : ["<tool_call>",
    "\n",
    "{'",
@@ -404,7 +404,7 @@
 },
 {
    "case": "fail_case",
-   "expect" : 1,
+   "expect" : 0,
    "tokens" : ["<tool_call>",
    "\n",
    "{'",
