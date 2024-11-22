@@ -19,6 +19,7 @@ arch_function_generation_params = {
     "top_k": 50,
     "max_tokens": 512,
     "stop_token_ids": [151645],
+    "top_logprobs": 10,
 }
 
 arch_guard_model_type = {
