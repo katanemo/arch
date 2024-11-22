@@ -34,3 +34,21 @@ zero_shot_model = loader.get_zero_shot_model()
 prompt_guard_dict = loader.get_prompt_guard(arch_guard_model_type[glb.DEVICE])
 
 arch_guard_handler = ArchGuardHanlder(model_dict=prompt_guard_dict)
+# Patterns for function name and parameter parsing
+FUNC_NAME_START_PATTERN = ('<tool_call>\n{"name":"', "<tool_call>\n{'name':'")
+FUNC_NAME_END_TOKEN = ('",', "',")
+
+FIRST_PARAM_NAME_START_PATTERN = ('"arguments":{"', "'arguments':{'")
+PARAMETER_NAME_END_TOKENS = ('":', ':"', "':", ":'")
+PARAMETER_NAME_START_PATTERN = (',"', ",'")
+PARAMETER_VALUE_START_PATTERN = ('":', "':")
+PARAMETER_VALUE_END_TOKEN = ('",', "}}\n", "',")
+
+# Thresholds
+HALLUCINATION_THRESHOLD_DICT = {
+    "t": {"entropy": 0.1, "varentropy": 0.5},
+    "v": {
+        "entropy": 0.5,
+        "varentropy": 2.5,
+    },
+}
