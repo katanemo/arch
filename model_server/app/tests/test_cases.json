@@ -403,8 +403,8 @@
    -24.34499740600586]]
 },
 {
-   "case": "pass_cases",
-   "expect" : 0,
+   "case": "fail_case",
+   "expect" : 1,
    "tokens" : ["<tool_call>",
    "\n",
    "{'",
