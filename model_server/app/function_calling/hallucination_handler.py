@@ -212,7 +212,7 @@ class HallucinationStateHandler:
                 if (
                     len(self.mask) > 1
                     and self.mask[-2] != "v"
-                    and not check_parameter_property(
+                    and not is_parameter_property(
                         self.function_properties[self.function_name],
                         self.parameter_name[-1],
                         "default",
