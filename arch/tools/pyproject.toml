@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "archgw"
-version = "0.1.3"
+version = "0.1.4"
 description = "Python-based CLI tool to manage Arch Gateway."
 authors = ["Katanemo Labs, Inc."]
 packages = [
@@ -16,7 +16,7 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.12"
-archgw_modelserver = "0.1.3"
+archgw_modelserver = "0.1.4"
 pyyaml = "^6.0.2"
 pydantic = "^2.9.2"
 click = "^8.1.7"

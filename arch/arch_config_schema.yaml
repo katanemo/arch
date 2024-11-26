@@ -157,6 +157,29 @@ properties:
     enum:
       - llm
       - prompt
+  prompt_guards:
+    type: object
+    properties:
+      input_guards:
+        type: object
+        properties:
+          jailbreak:
+            type: object
+            properties:
+              on_exception:
+                type: object
+                properties:
+                  message:
+                    type: string
+                additionalProperties: false
+                required:
+                  - message
+            additionalProperties: false
+            required:
+              - on_exception
+        additionalProperties: false
+        required:
+          - jailbreak
 additionalProperties: false
 required:
   - version
