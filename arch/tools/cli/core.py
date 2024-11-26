@@ -19,7 +19,6 @@ from dotenv import dotenv_values
 log = getLogger(__name__)
 
 dot_env = dotenv_values(".env")
-dot_env["OTEL_TRACING_HTTP_ENDPOINT"] = "http://host.docker.internal:4318/v1/traces"
 
 
 def start_archgw_docker(client, arch_config_file):
@@ -42,7 +41,10 @@ def start_archgw_docker(client, arch_config_file):
             "/etc/ssl/cert.pem": {"bind": "/etc/ssl/cert.pem", "mode": "ro"},
             "archgw_logs": {"bind": "/var/log"},
         },
-        environment=dot_env,
+        environment={
+            "OTEL_TRACING_HTTP_ENDPOINT": "http://host.docker.internal:4318/v1/traces",
+            **dot_env,
+        },
         extra_hosts={"host.docker.internal": "host-gateway"},
         healthcheck={
             "test": ["CMD", "curl", "-f", "http://localhost:10000/healthz"],
