@@ -1,5 +1,4 @@
 use proxy_wasm::types::Status;
-use serde_json::error;
 
 use crate::{common_types::open_ai::ChatCompletionChunkResponseError, ratelimit};
 

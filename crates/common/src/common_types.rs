@@ -445,7 +445,7 @@ pub struct PromptGuardResponse {
 #[cfg(test)]
 mod test {
     use crate::common_types::open_ai::{ChatCompletionStreamResponseServerEvents, Message};
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
     use std::collections::HashMap;
 
     const TOOL_SERIALIZED: &str = r#"{
@@ -534,9 +534,7 @@ mod test {
 
     #[test]
     fn test_parameter_types() {
-        use super::open_ai::{
-            ChatCompletionsRequest, FunctionDefinition, FunctionParameter, ParameterType, ToolType,
-        };
+        use super::open_ai::{FunctionParameter, ParameterType};
 
         const PARAMETER_SERIALZIED: &str = r#"{
   "city": {
@@ -582,8 +580,6 @@ mod test {
 
     #[test]
     fn stream_chunk_parse() {
-        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
-
         const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
 
 data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.chunk","created":1729755226,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
@@ -645,8 +641,6 @@ data: {"id":"chatcmpl-ALmdmtKulBMEq3fRLbrnxJwcKOqvS","object":"chat.completion.c
 
     #[test]
     fn stream_chunk_parse_done() {
-        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
-
         const CHUNK_RESPONSE: &str = r#"data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" I"},"logprobs":null,"finish_reason":null}]}
 
 data: {"id":"chatcmpl-ALn2KTfmrIpYd9N3Un4Kyg08WIIP6","object":"chat.completion.chunk","created":1729756748,"model":"gpt-3.5-turbo-0125","system_fingerprint":null,"choices":[{"index":0,"delta":{"content":" assist"},"logprobs":null,"finish_reason":null}]}
@@ -712,8 +706,6 @@ data: [DONE]
 
     #[test]
     fn stream_chunk_parse_mistral() {
-        use super::open_ai::{ChatCompletionStreamResponse, ChunkChoice, Delta};
-
         const CHUNK_RESPONSE: &str = r#"data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}
 
 data: {"id":"e1ebce16de5443b79613512c2d757936","object":"chat.completion.chunk","created":1729805261,"model":"ministral-8b-latest","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}
