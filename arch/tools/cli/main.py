@@ -1,12 +1,10 @@
 import click
 import os
-import pkg_resources
 import sys
 import subprocess
 import multiprocessing
 import importlib.metadata
 from cli import targets
-from cli import config_generator
 from cli.utils import (
     getLogger,
     get_llm_provider_access_keys,
