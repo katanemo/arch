@@ -56,7 +56,6 @@ def validate_and_render_schema():
                     "port": 80,  # default port
                 }
 
-    print(inferred_clusters)
     endpoints = config_yaml.get("endpoints", {})
 
     # override the inferred clusters with the ones defined in the config
@@ -88,7 +87,6 @@ def validate_and_render_schema():
     }
 
     rendered = template.render(data)
-    print(rendered)
     print(ENVOY_CONFIG_FILE_RENDERED)
     with open(ENVOY_CONFIG_FILE_RENDERED, "w") as file:
         file.write(rendered)
@@ -108,7 +106,7 @@ def validate_prompt_config(arch_config_file, arch_config_schema_file):
         validate(config_yaml, config_schema_yaml)
     except Exception as e:
         print(
-            f"Error validating arch_config file: {arch_config_file}, error: {e.message}"
+            f"Error validating arch_config file: {arch_config_file}, schema file: {arch_config_schema_file}, error: {e.message}"
         )
         raise e
 

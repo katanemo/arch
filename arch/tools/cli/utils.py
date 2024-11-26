@@ -6,6 +6,9 @@ import shlex
 import yaml
 import json
 import logging
+import docker
+
+from cli.consts import ARCHGW_DOCKER_IMAGE, ARCHGW_DOCKER_NAME
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,6 +23,41 @@ def getLogger(name="cli"):
 
 
 log = getLogger(__name__)
+
+
+def validate_schema(arch_config_file: str) -> None:
+    try:
+        client = docker.from_env()
+        # Run the container with detach=True to avoid blocking main process
+        container = client.containers.run(
+            image=ARCHGW_DOCKER_IMAGE,
+            volumes={
+                f"{arch_config_file}": {
+                    "bind": "/app/arch_config.yaml",
+                    "mode": "ro",
+                },
+            },
+            entrypoint=["python", "config_generator.py"],
+            detach=True,
+        )
+
+        # Wait for the container to finish and get the exit code
+        exit_code = container.wait()
+
+        # Check exit code for validation success
+        if exit_code["StatusCode"] != 0:
+            # Validation failed (non-zero exit code)
+            logs = container.logs().decode()  # Get container logs for debugging
+            raise ValueError(
+                f"Validation failed. Container exited with code {exit_code}.\nLogs:\n{logs}"
+            )
+
+        # Successful validation (exit code 0)
+        log.info("Schema validation successful!")
+
+    except docker.errors.APIError as e:
+        # Handle container creation error
+        raise ValueError(f"Failed to create container: {e}")
 
 
 def run_docker_compose_ps(compose_file, env):
