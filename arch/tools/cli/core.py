@@ -18,10 +18,8 @@ from dotenv import dotenv_values
 
 log = getLogger(__name__)
 
-dot_env = dotenv_values(".env")
 
-
-def start_archgw_docker(client, arch_config_file):
+def start_archgw_docker(client, arch_config_file, env):
     logs_path = "~/archgw_logs"
     logs_path_abs = os.path.expanduser(logs_path)
 
@@ -46,7 +44,7 @@ def start_archgw_docker(client, arch_config_file):
         },
         environment={
             "OTEL_TRACING_HTTP_ENDPOINT": "http://host.docker.internal:4318/v1/traces",
-            **dot_env,
+            **env,
         },
         extra_hosts={"host.docker.internal": "host-gateway"},
         healthcheck={
@@ -132,7 +130,7 @@ def start_arch(arch_config_file, env, log_timeout=120):
     try:
         client = docker.from_env()
 
-        container = start_archgw_docker(client, arch_config_file)
+        container = start_archgw_docker(client, arch_config_file, env)
 
         start_time = time.time()
 
