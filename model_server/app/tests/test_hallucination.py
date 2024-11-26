@@ -120,7 +120,7 @@ def test_hallucination_prompt(is_hallucinate_sample):
         messages = [
             {"role": "system", "content": system_prompt},
             # {"role": "user", "content": "can you help me check weather?"},
-            {"role": "user", "content": "How is the weather in Seattle in?"},
+            {"role": "user", "content": "How is the weather in Seattle in days?"},
             # {"role": "assistant", "content": "Of course!"},
             # {"role": "user", "content": "Seattle please"}
         ]
