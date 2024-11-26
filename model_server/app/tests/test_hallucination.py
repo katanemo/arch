@@ -52,7 +52,7 @@ def test_hallucination(case):
     )
     for token, logprob in zip(case["tokens"], case["logprobs"]):
         if token != "</tool_call>":
-            state.check_token_hallucination(token, logprob)
+            state.append_and_check_token_hallucination(token, logprob)
             if state.hallucination:
                 break
     assert state.hallucination == case["expect"]

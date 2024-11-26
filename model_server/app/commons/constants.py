@@ -4,6 +4,7 @@ import app.loader as loader
 
 from app.function_calling.model_handler import ArchFunctionHandler
 from app.prompt_guard.model_handler import ArchGuardHanlder
+from enum import Enum
 
 logger = utils.get_model_server_logger()
 
@@ -38,6 +39,7 @@ arch_guard_handler = ArchGuardHanlder(model_dict=prompt_guard_dict)
 # Patterns for function name and parameter parsing
 FUNC_NAME_START_PATTERN = ('<tool_call>\n{"name":"', "<tool_call>\n{'name':'")
 FUNC_NAME_END_TOKEN = ('",', "',")
+TOOL_CALL_TOKEN = "<tool_call>"
 
 FIRST_PARAM_NAME_START_PATTERN = ('"arguments":{"', "'arguments':{'")
 PARAMETER_NAME_END_TOKENS = ('":', ':"', "':", ":'")
@@ -45,10 +47,19 @@ PARAMETER_NAME_START_PATTERN = (',"', ",'")
 PARAMETER_VALUE_START_PATTERN = ('":', "':")
 PARAMETER_VALUE_END_TOKEN = ('",', "}}\n", "',")
 
+
 # Thresholds
+class MaskToken(Enum):
+    FUNCTION_NAME = "f"
+    PARAMETER_VALUE = "v"
+    PARAMETER_NAME = "p"
+    NOT_USED = "e"
+    TOOL_CALL = "t"
+
+
 HALLUCINATION_THRESHOLD_DICT = {
-    "t": {"entropy": 0.1, "varentropy": 0.5},
-    "v": {
+    MaskToken.TOOL_CALL.value: {"entropy": 0.1, "varentropy": 0.5},
+    MaskToken.PARAMETER_VALUE.value: {
         "entropy": 0.5,
         "varentropy": 2.5,
     },
