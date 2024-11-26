@@ -26,11 +26,8 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 
 **Jump to our [docs](https://docs.archgw.com)** to learn how you can use Arch to improve the speed, security and personalization of your GenAI apps.
 
-> [!NOTE]
-> Today, the function calling LLM (Arch-Function) designed for the agentic and RAG scenarios is hosted free of charge in the US-central region.
-> To offer consistent latencies and throughput, and to manage our expenses, we will enable access to the hosted version via developers keys soon, and give you the option to run that
-> LLM locally. Pricing for the hosted version of Arch-Function will be ~ $0.10/M output token (100x cheaper that GPT-4o for function calling scenarios).
-
+> [!IMPORTANT]
+> Today, the function calling LLM (Arch-Function) designed for the agentic and RAG scenarios is hosted free of charge in the US-central region. To offer consistent latencies and throughput, and to manage our expenses, we will enable access to the hosted version via developers keys soon, and give you the option to run that LLM locally, see here for details [#258](https://github.com/katanemo/archgw/issues/258)
 
 ## Contact
 To get in touch with us, please join our [discord server](https://discord.gg/pGZf2gcwEc). We will be monitoring that actively and offering support there.
@@ -50,9 +47,6 @@ Before you begin, ensure you have the following:
 
 - `Docker` & `Python` installed on your system
 - `API Keys` for LLM providers (if using external LLMs)
-
-> [!IMPORTANT]
-> We use vllm to serve arch-fc model but vllm is not supported in mac currently. So we have hosted arch-fc in a cloud instance to simplify the e2e experience. We are working on to make this better by providing support for running arch-fc locally. More here [#258](https://github.com/katanemo/archgw/issues/258).
 
 
 ### Step 1: Install Arch
