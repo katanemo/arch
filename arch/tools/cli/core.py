@@ -5,9 +5,12 @@ import pkg_resources
 import select
 import sys
 import glob
+import docker
 from cli.utils import run_docker_compose_ps, print_service_status, check_services_state
 from cli.utils import getLogger
 from cli.consts import (
+    ARCHGW_DOCKER_IMAGE,
+    ARCHGW_DOCKER_NAME,
     KATANEMO_LOCAL_MODEL_LIST,
     MODEL_SERVER_LOG_FILE,
     ACCESS_LOG_FILES,
@@ -27,7 +30,7 @@ def stream_gateway_logs(follow):
 
     log.info("Logs from arch gateway service.")
 
-    options = ["docker", "compose", "-p", "arch", "logs"]
+    options = ["docker", "logs", "archgw"]
     if follow:
         options.append("-f")
     try:
@@ -88,42 +91,49 @@ def start_arch(arch_config_file, env, log_timeout=120):
     Start Docker Compose in detached mode and stream logs until services are healthy.
 
     Args:
-        path (str): The path where the prompt_confi.yml file is located.
+        path (str): The path where the prompt_config.yml file is located.
         log_timeout (int): Time in seconds to show logs before checking for healthy state.
     """
     log.info("Starting arch gateway")
-    compose_file = pkg_resources.resource_filename(
-        __name__, "../config/docker-compose.yaml"
-    )
 
     try:
-        # Run the Docker Compose command in detached mode (-d)
-        subprocess.run(
-            [
-                "docker",
-                "compose",
-                "-p",
-                "arch",
-                "up",
-                "-d",
-            ],
-            cwd=os.path.dirname(
-                compose_file
-            ),  # Ensure the Docker command runs in the correct path
-            env=env,  # Pass the modified environment
-            check=True,  # Raise an exception if the command fails
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
+        client = docker.from_env()
+
+        container = client.containers.run(
+            name=ARCHGW_DOCKER_NAME,
+            image=ARCHGW_DOCKER_IMAGE,
+            detach=True,  # Run in detached mode
+            ports={
+                "10000/tcp": 10000,
+                "10001/tcp": 10001,
+                "11000/tcp": 11000,
+                "12000/tcp": 12000,
+                "19901/tcp": 19901,
+            },
+            volumes={
+                f"{arch_config_file}": {
+                    "bind": "/app/arch_config.yaml",
+                    "mode": "ro",
+                },
+                "/etc/ssl/cert.pem": {"bind": "/etc/ssl/cert.pem", "mode": "ro"},
+                "archgw_logs": {"bind": "/var/log"},
+            },
+            environment={
+                "OTEL_TRACING_HTTP_ENDPOINT": "http://host.docker.internal:4318/v1/traces"
+            },
+            extra_hosts={"host.docker.internal": "host-gateway"},
+            healthcheck={
+                "test": ["CMD", "curl", "-f", "http://localhost:10000/healthz"],
+                "interval": 5000000000,  # 5 seconds
+                "timeout": 1000000000,  # 1 seconds
+                "retries": 3,
+            },
         )
-        log.info(f"Arch docker-compose started in detached.")
 
         start_time = time.time()
-        services_status = {}
-        services_running = (
-            False  # assume that the services are not running at the moment
-        )
 
         while True:
+            container = client.containers.get(container.id)
             current_time = time.time()
             elapsed_time = current_time - start_time
 
@@ -132,53 +142,16 @@ def start_arch(arch_config_file, env, log_timeout=120):
                 log.info(f"Stopping log monitoring after {log_timeout} seconds.")
                 break
 
-            current_services_status = run_docker_compose_ps(
-                compose_file=compose_file, env=env
-            )
-            if not current_services_status:
-                log.info(
-                    "Status for the services could not be detected. Something went wrong. Please run docker logs"
-                )
+            container_status = container.attrs["State"]["Health"]["Status"]
+
+            if container_status == "healthy":
+                log.info("Container is healthy!")
                 break
+            else:
+                log.info(f"Container health status: {container_status}")
+                time.sleep(1)
 
-            if not services_status:
-                services_status = current_services_status  # set the first time
-                print_service_status(
-                    services_status
-                )  # print the services status and proceed.
-
-            # check if anyone service is failed or exited state, if so print and break out
-            unhealthy_states = ["unhealthy", "exit", "exited", "dead", "bad"]
-            running_states = ["running", "up"]
-
-            if check_services_state(current_services_status, running_states):
-                log.info("Arch gateway is up and running!")
-                break
-
-            if check_services_state(current_services_status, unhealthy_states):
-                log.info(
-                    "One or more Arch services are unhealthy. Please run `docker logs` for more information"
-                )
-                print_service_status(
-                    current_services_status
-                )  # print the services status and proceed.
-                break
-
-            # check to see if the status of one of the services has changed from prior. Print and loop over until finish, or error
-            for service_name in services_status.keys():
-                if (
-                    services_status[service_name]["State"]
-                    != current_services_status[service_name]["State"]
-                ):
-                    log.info(
-                        "One or more Arch services have changed state. Printing current state"
-                    )
-                    print_service_status(current_services_status)
-                    break
-
-            services_status = current_services_status
-
-    except subprocess.CalledProcessError as e:
+    except docker.errors.APIError as e:
         log.info(f"Failed to start Arch: {str(e)}")
 
 
@@ -189,21 +162,16 @@ def stop_arch():
     Args:
         path (str): The path where the docker-compose.yml file is located.
     """
-    compose_file = pkg_resources.resource_filename(
-        __name__, "../config/docker-compose.yaml"
-    )
-
     log.info("Shutting down arch gateway service.")
 
     try:
-        # Run `docker-compose down` to shut down all services
         subprocess.run(
-            ["docker", "compose", "-p", "arch", "down"],
-            cwd=os.path.dirname(compose_file),
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            ["docker", "stop", "archgw"],
         )
+        subprocess.run(
+            ["docker", "remove", "archgw"],
+        )
+
         log.info("Successfully shut down arch gateway service.")
 
     except subprocess.CalledProcessError as e:
