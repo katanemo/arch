@@ -3,19 +3,11 @@ import yaml
 import torch
 import string
 import logging
-import pkg_resources
 
 from openai import OpenAI
 
 
 logger_instance = None
-
-
-def load_yaml_config(file_name):
-    # Load the YAML file from the package
-    yaml_path = pkg_resources.resource_filename("app", file_name)
-    with open(yaml_path, "r") as yaml_file:
-        return yaml.safe_load(yaml_file)
 
 
 def get_device():

@@ -1,11 +1,8 @@
-import subprocess
-import os
-import time
-import select
-import shlex
 import yaml
-import json
 import logging
+import docker
+
+from cli.consts import ARCHGW_DOCKER_IMAGE, ARCHGW_DOCKER_NAME
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,72 +19,39 @@ def getLogger(name="cli"):
 log = getLogger(__name__)
 
 
-def run_docker_compose_ps(compose_file, env):
-    """
-    Check if all Docker Compose services are in a healthy state.
-
-    Args:
-        path (str): The path where the docker-compose.yml file is located.
-    """
+def validate_schema(arch_config_file: str) -> None:
     try:
-        # Run `docker compose ps` to get the health status of each service.
-        # This should be a non-blocking call so using subprocess.Popen(...)
-        ps_process = subprocess.Popen(
-            [
-                "docker",
-                "compose",
-                "-p",
-                "arch",
-                "ps",
-                "--format",
-                "table{{.Service}}\t{{.State}}\t{{.Ports}}",
-            ],
-            cwd=os.path.dirname(compose_file),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            start_new_session=True,
-            env=env,
+        client = docker.from_env()
+        # Run the container with detach=True to avoid blocking main process
+        container = client.containers.run(
+            image=ARCHGW_DOCKER_IMAGE,
+            volumes={
+                f"{arch_config_file}": {
+                    "bind": "/app/arch_config.yaml",
+                    "mode": "ro",
+                },
+            },
+            entrypoint=["python", "config_generator.py"],
+            detach=True,
         )
-        # Capture the output of `docker-compose ps`
-        services_status, error_output = ps_process.communicate()
 
-        # Check if there is any error output
-        if error_output:
-            log.info(
-                f"Error while checking service status:\n{error_output}",
-                file=os.sys.stderr,
+        # Wait for the container to finish and get the exit code
+        exit_code = container.wait()
+
+        # Check exit code for validation success
+        if exit_code["StatusCode"] != 0:
+            # Validation failed (non-zero exit code)
+            logs = container.logs().decode()  # Get container logs for debugging
+            raise ValueError(
+                f"Validation failed. Container exited with code {exit_code}.\nLogs:\n{logs}"
             )
-            return {}
 
-        services = parse_docker_compose_ps_output(services_status)
-        return services
+        # Successful validation (exit code 0)
+        log.info("Schema validation successful!")
 
-    except subprocess.CalledProcessError as e:
-        log.info(f"Failed to check service status. Error:\n{e.stderr}")
-        return e
-
-
-# Helper method to print service status
-def print_service_status(services):
-    log.info(f"{'Service Name':<25} {'State':<20} {'Ports'}")
-    log.info("=" * 72)
-    for service_name, info in services.items():
-        status = info["STATE"]
-        ports = info["PORTS"]
-        log.info(f"{service_name:<25} {status:<20} {ports}")
-
-
-# check for states based on the states passed in
-def check_services_state(services, states):
-    for service_name, service_info in services.items():
-        status = service_info[
-            "STATE"
-        ].lower()  # Convert status to lowercase for easier comparison
-        if any(state in status for state in states):
-            return True
-
-    return False
+    except docker.errors.APIError as e:
+        # Handle container creation error
+        raise ValueError(f"Failed to create container: {e}")
 
 
 def get_llm_provider_access_keys(arch_config_file):
@@ -127,28 +91,3 @@ def load_env_file_to_dict(file_path):
                 env_dict[key] = value
 
     return env_dict
-
-
-def parse_docker_compose_ps_output(output):
-    # Split the output into lines
-    lines = output.strip().splitlines()
-
-    # Extract the headers (first row) and the rest of the data
-    headers = lines[0].split()
-    service_data = lines[1:]
-
-    # Initialize the result dictionary
-    services = {}
-
-    # Iterate over each line of data after the headers
-    for line in service_data:
-        # Split the line by tabs or multiple spaces
-        parts = line.split()
-
-        # Create a dictionary entry using the header names
-        service_info = {headers[1]: parts[1], headers[2]: parts[2]}  # State  # Ports
-
-        # Add to the result dictionary using the service name as the key
-        services[parts[0]] = service_info
-
-    return services

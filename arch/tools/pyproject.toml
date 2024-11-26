@@ -8,22 +8,18 @@ packages = [
 ]
 readme = "README.md"
 
-include = [
-# Include package data (docker-compose.yaml and other files)[
-    "config/docker-compose.yaml",
-    "config/arch_config_schema.yaml",
-]
-
 [tool.poetry.dependencies]
 python = ">=3.12"
 archgw_modelserver = "0.1.4"
 pyyaml = "^6.0.2"
-pydantic = "^2.9.2"
+pydantic = "^2.10.1"
 click = "^8.1.7"
 jinja2 = "^3.1.4"
 jsonschema = "^4.23.0"
 setuptools = "75.5.0"
 huggingface_hub = "^0.26.0"
+docker = "^7.1.0"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.scripts]
 archgw = "cli.main:main"

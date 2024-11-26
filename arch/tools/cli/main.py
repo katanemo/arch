@@ -1,13 +1,16 @@
 import click
 import os
-import pkg_resources
 import sys
 import subprocess
 import multiprocessing
 import importlib.metadata
 from cli import targets
-from cli import config_generator
-from cli.utils import getLogger, get_llm_provider_access_keys, load_env_file_to_dict
+from cli.utils import (
+    getLogger,
+    get_llm_provider_access_keys,
+    load_env_file_to_dict,
+    validate_schema,
+)
 from cli.core import (
     start_arch_modelserver,
     stop_arch_modelserver,
@@ -160,17 +163,12 @@ def up(file, path, service):
         return
 
     log.info(f"Validating {arch_config_file}")
-    arch_schema_config = pkg_resources.resource_filename(
-        __name__, "../config/arch_config_schema.yaml"
-    )
 
     try:
-        config_generator.validate_prompt_config(
-            arch_config_file=arch_config_file,
-            arch_config_schema_file=arch_schema_config,
-        )
+        validate_schema(arch_config_file)
     except Exception as e:
         log.info(f"Exiting archgw up: validation failed")
+        log.info(f"Error: {str(e)}")
         sys.exit(1)
 
     log.info("Starging arch model server and arch gateway")
@@ -213,14 +211,7 @@ def up(file, path, service):
                 else:
                     env_stage[access_key] = env_file_dict[access_key]
 
-    with open(
-        pkg_resources.resource_filename(__name__, "../config/env.list"), "w"
-    ) as file:
-        for key, value in env_stage.items():
-            file.write(f"{key}={value}\n")
-
     env.update(env_stage)
-    env["ARCH_CONFIG_FILE"] = arch_config_file
 
     if service == SERVICE_NAME_ARCHGW:
         start_arch(arch_config_file, env)
