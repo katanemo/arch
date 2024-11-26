@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Function to start the demo
 start_demo() {
