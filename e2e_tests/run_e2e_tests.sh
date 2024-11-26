@@ -13,13 +13,14 @@ print_debug() {
   log "Received signal to stop"
   log "Printing debug logs for model_server"
   log "===================================="
-  tail -n 500 ~/archgw_logs/modelserver.log
+  tail -n 100 ~/archgw_logs/modelserver.log
   log "Printing debug logs for docker"
   log "===================================="
-  tail -n 500 ../build.log
+  tail -n 100 ../build.log
+  archgw logs --debug | tail -n 100
 }
 
-# trap 'print_debug' INT TERM ERR
+trap 'print_debug' INT TERM ERR
 
 log starting > ../build.log
 
