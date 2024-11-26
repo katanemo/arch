@@ -286,9 +286,24 @@ def test_prompt_gateway_prompt_guard_jailbreak(stream):
         "stream": stream,
     }
     response = requests.post(PROMPT_GATEWAY_ENDPOINT, json=body, stream=stream)
-    assert response.status_code == 400
-    response_json = response.text
-    assert (
-        response_json
-        == "jailbreak detected: Looks like you're curious about my abilities, but I can only provide assistance within my programmed parameters."
-    )
+    assert response.status_code == 200
+
+    if stream:
+        chunks = get_data_chunks(response, n=20)
+        assert len(chunks) == 2
+
+        response_json = json.loads(chunks[1])
+        print(response_json)
+        choices = response_json.get("choices", [])
+        assert len(choices) > 0
+        content = choices[0]["delta"]["content"]
+        assert (
+            content
+            == "Looks like you're curious about my abilities, but I can only provide assistance for weather forecasting."
+        )
+    else:
+        response_json = response.json()
+        assert (
+            response_json.get("choices")[0]["message"]["content"]
+            == "Looks like you're curious about my abilities, but I can only provide assistance for weather forecasting."
+        )

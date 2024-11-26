@@ -1074,7 +1074,36 @@ impl StreamContext {
                 .prompt_guards
                 .jailbreak_on_exception_message()
                 .unwrap_or("refrain from discussing jailbreaking.");
-            warn!("jailbreak detected: {}", msg);
+            info!("jailbreak detected: {}", msg);
+
+            let default_target_response_str = if self.streaming_response {
+                let chunks = vec![
+                    ChatCompletionStreamResponse::new(
+                        None,
+                        Some(ASSISTANT_ROLE.to_string()),
+                        Some(ARCH_FC_MODEL_NAME.to_owned()),
+                        None,
+                    ),
+                    ChatCompletionStreamResponse::new(
+                        Some(msg.to_string()),
+                        None,
+                        Some(ARCH_FC_MODEL_NAME.to_owned()),
+                        None,
+                    ),
+                ];
+
+                to_server_events(chunks)
+            } else {
+                let chat_completion_response = ChatCompletionsResponse::new(msg.to_string());
+                serde_json::to_string(&chat_completion_response).unwrap()
+            };
+
+            self.send_http_response(
+                StatusCode::OK.as_u16().into(),
+                vec![("Powered-By", "Katanemo")],
+                Some(default_target_response_str.as_bytes()),
+            );
+
             return self.send_server_error(
                 ServerError::Jailbreak(String::from(msg)),
                 Some(StatusCode::BAD_REQUEST),
