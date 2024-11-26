@@ -60,7 +60,7 @@ Make sure you have following utilities installed before proceeding further,
 
 1. [Docker System](https://docs.docker.com/get-started/get-docker/) (v24)
 2. [Docker compose](https://docs.docker.com/compose/install/) (v2.29)
-3. [Python](https://www.python.org/downloads/) (v3.10)
+3. [Python](https://www.python.org/downloads/) (v3.12)
 4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3. *Note: only needed for local development*)
 
 
