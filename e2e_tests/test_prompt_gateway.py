@@ -293,7 +293,6 @@ def test_prompt_gateway_prompt_guard_jailbreak(stream):
         assert len(chunks) == 2
 
         response_json = json.loads(chunks[1])
-        print(response_json)
         choices = response_json.get("choices", [])
         assert len(choices) > 0
         content = choices[0]["delta"]["content"]
