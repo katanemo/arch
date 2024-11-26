@@ -19,6 +19,7 @@ jsonschema = "^4.23.0"
 setuptools = "75.5.0"
 huggingface_hub = "^0.26.0"
 docker = "^7.1.0"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.scripts]
 archgw = "cli.main:main"

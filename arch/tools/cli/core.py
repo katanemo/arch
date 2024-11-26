@@ -1,12 +1,9 @@
 import subprocess
 import os
 import time
-import pkg_resources
-import select
 import sys
 import glob
 import docker
-from cli.utils import run_docker_compose_ps, print_service_status, check_services_state
 from cli.utils import getLogger
 from cli.consts import (
     ARCHGW_DOCKER_IMAGE,
@@ -16,18 +13,50 @@ from cli.consts import (
     ACCESS_LOG_FILES,
 )
 from huggingface_hub import snapshot_download
+from dotenv import dotenv_values
+
 
 log = getLogger(__name__)
+
+dot_env = dotenv_values(".env")
+dot_env["OTEL_TRACING_HTTP_ENDPOINT"] = "http://host.docker.internal:4318/v1/traces"
+
+
+def start_archgw_docker(client, arch_config_file):
+    return client.containers.run(
+        name=ARCHGW_DOCKER_NAME,
+        image=ARCHGW_DOCKER_IMAGE,
+        detach=True,  # Run in detached mode
+        ports={
+            "10000/tcp": 10000,
+            "10001/tcp": 10001,
+            "11000/tcp": 11000,
+            "12000/tcp": 12000,
+            "19901/tcp": 19901,
+        },
+        volumes={
+            f"{arch_config_file}": {
+                "bind": "/app/arch_config.yaml",
+                "mode": "ro",
+            },
+            "/etc/ssl/cert.pem": {"bind": "/etc/ssl/cert.pem", "mode": "ro"},
+            "archgw_logs": {"bind": "/var/log"},
+        },
+        environment=dot_env,
+        extra_hosts={"host.docker.internal": "host-gateway"},
+        healthcheck={
+            "test": ["CMD", "curl", "-f", "http://localhost:10000/healthz"],
+            "interval": 5000000000,  # 5 seconds
+            "timeout": 1000000000,  # 1 seconds
+            "retries": 3,
+        },
+    )
 
 
 def stream_gateway_logs(follow):
     """
     Stream logs from the arch gateway service.
     """
-    compose_file = pkg_resources.resource_filename(
-        __name__, "../config/docker-compose.yaml"
-    )
-
     log.info("Logs from arch gateway service.")
 
     options = ["docker", "logs", "archgw"]
@@ -37,7 +66,6 @@ def stream_gateway_logs(follow):
         # Run `docker-compose logs` to stream logs from the gateway service
         subprocess.run(
             options,
-            cwd=os.path.dirname(compose_file),
             check=True,
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -99,36 +127,7 @@ def start_arch(arch_config_file, env, log_timeout=120):
     try:
         client = docker.from_env()
 
-        container = client.containers.run(
-            name=ARCHGW_DOCKER_NAME,
-            image=ARCHGW_DOCKER_IMAGE,
-            detach=True,  # Run in detached mode
-            ports={
-                "10000/tcp": 10000,
-                "10001/tcp": 10001,
-                "11000/tcp": 11000,
-                "12000/tcp": 12000,
-                "19901/tcp": 19901,
-            },
-            volumes={
-                f"{arch_config_file}": {
-                    "bind": "/app/arch_config.yaml",
-                    "mode": "ro",
-                },
-                "/etc/ssl/cert.pem": {"bind": "/etc/ssl/cert.pem", "mode": "ro"},
-                "archgw_logs": {"bind": "/var/log"},
-            },
-            environment={
-                "OTEL_TRACING_HTTP_ENDPOINT": "http://host.docker.internal:4318/v1/traces"
-            },
-            extra_hosts={"host.docker.internal": "host-gateway"},
-            healthcheck={
-                "test": ["CMD", "curl", "-f", "http://localhost:10000/healthz"],
-                "interval": 5000000000,  # 5 seconds
-                "timeout": 1000000000,  # 1 seconds
-                "retries": 3,
-            },
-        )
+        container = start_archgw_docker(client, arch_config_file)
 
         start_time = time.time()
 
