@@ -212,7 +212,6 @@ def up(file, path, service):
                     env_stage[access_key] = env_file_dict[access_key]
 
     env.update(env_stage)
-    env["ARCH_CONFIG_FILE"] = arch_config_file
 
     if service == SERVICE_NAME_ARCHGW:
         start_arch(arch_config_file, env)
