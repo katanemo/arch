@@ -51,10 +51,8 @@ Before you begin, ensure you have the following:
 - `Docker` & `Python` installed on your system
 - `API Keys` for LLM providers (if using external LLMs)
 
-<div style="background-color: #ffdddd; border-left: 5px solid #ff0000; padding: 10px;">
-**Important Note:**
-We use vllm to serve arch-fc model but vllm is not supported in mac currently. So we have hosted arch-fc in a cloud instance to simplify the e2e experience. We are working on to make this better by providing support for running arch-fc locally. More here [#258](https://github.com/katanemo/archgw/issues/258).
-</div>
+[!NOTE] We use vllm to serve arch-fc model but vllm is not supported in mac currently. So we have hosted arch-fc in a cloud instance to simplify the e2e experience. We are working on to make this better by providing support for running arch-fc locally. More here [#258](https://github.com/katanemo/archgw/issues/258).
+
 
 ### Step 1: Install Arch
 
