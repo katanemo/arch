@@ -399,7 +399,7 @@ impl StreamContext {
             self.tool_calls = None;
             self.send_http_response(
                 StatusCode::OK.as_u16().into(),
-                vec![("Powered-By", "Katanemo")],
+                vec![],
                 Some(response_str.as_bytes()),
             );
         } else {
@@ -758,7 +758,7 @@ impl StreamContext {
             self.tool_calls = None;
             return self.send_http_response(
                 StatusCode::OK.as_u16().into(),
-                vec![("Powered-By", "Katanemo")],
+                vec![],
                 Some(direct_response_str.as_bytes()),
             );
         }
@@ -1100,7 +1100,7 @@ impl StreamContext {
 
             self.send_http_response(
                 StatusCode::OK.as_u16().into(),
-                vec![("Powered-By", "Katanemo")],
+                vec![],
                 Some(response_str.as_bytes()),
             );
 
@@ -1161,7 +1161,7 @@ impl StreamContext {
 
             self.send_http_response(
                 StatusCode::OK.as_u16().into(),
-                vec![("Powered-By", "Katanemo")],
+                vec![],
                 Some(default_target_response_str.as_bytes()),
             );
             return;
