@@ -22,6 +22,9 @@ dot_env = dotenv_values(".env")
 
 
 def start_archgw_docker(client, arch_config_file):
+    logs_path = "~/archgw_logs"
+    logs_path_abs = os.path.expanduser(logs_path)
+
     return client.containers.run(
         name=ARCHGW_DOCKER_NAME,
         image=ARCHGW_DOCKER_IMAGE,
@@ -39,7 +42,7 @@ def start_archgw_docker(client, arch_config_file):
                 "mode": "ro",
             },
             "/etc/ssl/cert.pem": {"bind": "/etc/ssl/cert.pem", "mode": "ro"},
-            "archgw_logs": {"bind": "/var/log"},
+            logs_path_abs: {"bind": "/var/log"},
         },
         environment={
             "OTEL_TRACING_HTTP_ENDPOINT": "http://host.docker.internal:4318/v1/traces",
