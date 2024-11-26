@@ -88,6 +88,10 @@ properties:
                 type: string
               type:
                 type: string
+              enum:
+                type: array
+                items:
+                  type: string
             additionalProperties: false
             required:
               - name

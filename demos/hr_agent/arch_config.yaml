@@ -30,7 +30,7 @@ system_prompt: |
 
 prompt_targets:
     - name: workforce
-      description: Get workforce data like headcount and satisfacton levels by region and staffing type
+      description: Get workforce data like headcount and satisfaction levels by region and staffing type
       endpoint:
         name: app_server
         path: /agent/workforce
@@ -39,6 +39,7 @@ prompt_targets:
           type: str
           description: specific category or nature of employment used by an organization like fte, contract and agency
           required: true
+          enum: [fte, contract, agency]
         - name: region
           type: str
           required: true
