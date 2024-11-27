@@ -415,11 +415,7 @@
         {
           "disableTextWrap": false,
           "editorMode": "code",
-<<<<<<< HEAD
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(time_to_first_token_bucket[5m])))",
-=======
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(time_to_first_token_bucket[1h])))",
->>>>>>> main
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(time_to_first_token_bucket[5m])))",
           "fullMetaSearch": false,
           "includeNullMetadata": false,
           "legendFormat": "__auto",
@@ -543,26 +539,17 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-<<<<<<< HEAD
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum(rate(request_latency_bucket[60m])) by (le))",
-=======
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(request_latency_bucket[1h])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(request_latency_bucket[5m])))",
           "fullMetaSearch": false,
->>>>>>> main
           "hide": false,
           "includeNullMetadata": false,
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
-<<<<<<< HEAD
-          "refId": "B"
-=======
           "refId": "A",
           "useBackend": false
->>>>>>> main
         }
       ],
       "title": "request latency (p90)",
