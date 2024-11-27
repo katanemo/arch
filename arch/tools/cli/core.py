@@ -32,7 +32,7 @@ def start_archgw_docker(client, arch_config_file, env):
             "10001/tcp": 10001,
             "11000/tcp": 11000,
             "12000/tcp": 12000,
-            "19901/tcp": 19901,
+            "9901/tcp": 19901,
         },
         volumes={
             f"{arch_config_file}": {
