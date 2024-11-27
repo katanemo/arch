@@ -19,6 +19,7 @@ arch_function_generation_params = {
     "top_k": 50,
     "max_tokens": 512,
     "stop_token_ids": [151645],
+    #    "top_logprobs": 10,
 }
 
 arch_guard_model_type = {
@@ -34,3 +35,4 @@ zero_shot_model = loader.get_zero_shot_model()
 prompt_guard_dict = loader.get_prompt_guard(arch_guard_model_type[glb.DEVICE])
 
 arch_guard_handler = ArchGuardHanlder(model_dict=prompt_guard_dict)
+# Patterns for function name and parameter parsing
