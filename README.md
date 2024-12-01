@@ -18,7 +18,7 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 >Prompts are nuanced and opaque user requests, which require the same capabilities as traditional HTTP requests including secure handling, intelligent routing, robust observability, and integration with backend (API) systems for personalization – all outside business logic.*
 
 **Core Features**:
-  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers as a side-car container, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egress traffic related to prompts and LLMs.
+  - Built on [Envoy](https://envoyproxy.io): Arch runs alongside application servers as a separate containerized process, and builds on top of Envoy's proven HTTP management and scalability features to handle ingress and egress traffic related to prompts and LLMs.
   - Function Calling for fast Agents and RAG apps. Engineered with purpose-built [LLMs](https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68) to handle fast, cost-effective, and accurate prompt-based tasks like function/API calling, and parameter extraction from prompts.
   - Prompt [Guard](https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d): Arch centralizes guardrails to prevent jailbreak attempts and ensure safe user interactions without writing a single line of code.
   - Routing & Traffic Management: Arch manages LLM calls, offering smart retries, automatic cutover, and resilient upstream connections for continuous availability.
@@ -106,20 +106,6 @@ prompt_targets:
         - name: days
           type: int
           description: The number of days for which to gather device statistics.
-          default: "7"
-    - name: reboot_devices
-      description: Reboot a list of devices
-      endpoint:
-        name: app_server
-        path: /agent/device_reboot
-      parameters:
-        - name: device_ids
-          type: list
-          description: A list of device identifiers (IDs).
-          required: true
-        - name: days
-          type: int
-          description: A list of device identifiers (IDs)
           default: "7"
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
