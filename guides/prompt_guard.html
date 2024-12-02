@@ -7,9 +7,9 @@
 <meta content="white" media="(prefers-color-scheme: light)" name="theme-color"/>
 <meta content="black" media="(prefers-color-scheme: dark)" name="theme-color"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Prompt Guard | Arch Docs v0.1.2</title>
-<meta content="Prompt Guard | Arch Docs v0.1.2" property="og:title"/>
-<meta content="Prompt Guard | Arch Docs v0.1.2" name="twitter:title"/>
+<title>Prompt Guard | Arch Docs v0.1.5</title>
+<meta content="Prompt Guard | Arch Docs v0.1.5" property="og:title"/>
+<meta content="Prompt Guard | Arch Docs v0.1.5" name="twitter:title"/>
 <link href="../_static/pygments.css?v=75ebff74" rel="stylesheet" type="text/css"/>
 <link href="../_static/theme.css?v=42baaae4" rel="stylesheet" type="text/css"/>
 <link href="../_static/_static/custom.css" rel="stylesheet" type="text/css"/>
@@ -39,7 +39,7 @@
     </a><header class="sticky top-0 z-40 w-full border-b shadow-sm border-border supports-backdrop-blur:bg-background/60 bg-background/95 backdrop-blur"><div class="container flex items-center h-14">
 <div class="hidden mr-4 md:flex">
 <a class="flex items-center mr-6" href="../index.html">
-<img alt="Logo" class="mr-2 dark:invert" height="24" src="../_static/favicon.ico" width="24"/><span class="hidden font-bold sm:inline-block text-clip whitespace-nowrap">Arch Docs v0.1.2</span>
+<img alt="Logo" class="mr-2 dark:invert" height="24" src="../_static/favicon.ico" width="24"/><span class="hidden font-bold sm:inline-block text-clip whitespace-nowrap">Arch Docs v0.1.5</span>
 </a></div><button @click="showSidebar = true" class="inline-flex items-center justify-center h-10 px-0 py-2 mr-2 text-base font-medium transition-colors rounded-md hover:text-accent-foreground hover:bg-transparent md:hidden" type="button">
 <svg aria-hidden="true" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
 <path d="M152.587 825.087q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440Zm0-203.587q-19.152 0-32.326-13.174T107.087 576q0-19.152 13.174-32.326t32.326-13.174h320q19.152 0 32.326 13.174T518.087 576q0 19.152-13.174 32.326T472.587 621.5h-320Zm0-203.587q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440ZM708.913 576l112.174 112.174q12.674 12.674 12.674 31.826t-12.674 31.826Q808.413 764.5 789.261 764.5t-31.826-12.674l-144-144Q600 594.391 600 576t13.435-31.826l144-144q12.674-12.674 31.826-12.674t31.826 12.674q12.674 12.674 12.674 31.826t-12.674 31.826L708.913 576Z"></path>
@@ -75,7 +75,7 @@
 </header>
 <div class="flex-1"><div class="container flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10"><aside :aria-hidden="!showSidebar" :class="{ 'translate-x-0': showSidebar }" class="fixed inset-y-0 left-0 md:top-14 z-50 md:z-30 bg-background md:bg-transparent transition-all duration-100 -translate-x-full md:translate-x-0 ml-0 p-6 md:p-0 md:-ml-2 md:h-[calc(100vh-3.5rem)] w-5/6 md:w-full shrink-0 overflow-y-auto border-r border-border md:sticky" id="left-sidebar">
 <a class="!justify-start text-sm md:!hidden bg-background" href="../index.html">
-<img alt="Logo" class="mr-2 dark:invert" height="16" src="../_static/favicon.ico" width="16"/><span class="font-bold text-clip whitespace-nowrap">Arch Docs v0.1.2</span>
+<img alt="Logo" class="mr-2 dark:invert" height="16" src="../_static/favicon.ico" width="16"/><span class="font-bold text-clip whitespace-nowrap">Arch Docs v0.1.5</span>
 </a>
 <div class="relative overflow-hidden md:overflow-auto my-4 md:my-0 h-[calc(100vh-8rem)] md:h-auto">
 <div class="overflow-y-auto h-full w-full relative pr-6">
@@ -143,7 +143,7 @@
 <div class="w-full min-w-0 mx-auto">
 <nav aria-label="breadcrumbs" class="flex items-center mb-4 space-x-1 text-sm text-muted-foreground">
 <a class="overflow-hidden text-ellipsis whitespace-nowrap hover:text-foreground" href="../index.html">
-<span class="hidden md:inline">Arch Docs v0.1.2</span>
+<span class="hidden md:inline">Arch Docs v0.1.5</span>
 <svg aria-label="Home" class="md:hidden" fill="currentColor" height="18" stroke="none" viewbox="0 96 960 960" width="18" xmlns="http://www.w3.org/2000/svg">
 <path d="M240 856h120V616h240v240h120V496L480 316 240 496v360Zm-80 80V456l320-240 320 240v480H520V696h-80v240H160Zm320-350Z"></path>
 </svg>
@@ -153,30 +153,15 @@
 <div id="content" role="main">
 <section id="prompt-guard">
 <span id="id1"></span><h1>Prompt Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prompt-guard"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
-<p><strong>Prompt guard</strong> is a security and validation layer designed to protect prompt-based systems by filtering and analyzing inputs before they reach the core processing stages.
-In applications where prompts generate responses or execute specific actions based on user inputs, prompt guard minimizes risks like malicious inputs, unexpected errors, or misaligned outputs.
-By adding a layer of input scrutiny, prompt guard ensures safer, more reliable, and accurate interactions in prompt-driven environments.</p>
+<p><strong>Prompt guard</strong> is a security and validation feature offered in Arch to protect agents, by filtering and analyzing prompts before they reach your application logic.
+In applications where prompts generate responses or execute specific actions based on user inputs, prompt guard minimizes risks like malicious inputs (or misaligned outputs).
+By adding a layer of input scrutiny, prompt guards ensures safer, more reliable, and accurate interactions with agents.</p>
 <section id="why-prompt-guard">
 <h2>Why Prompt Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#why-prompt-guard" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#why-prompt-guard'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <ul class="simple">
 <li><dl class="simple">
-<dt><strong>Input Validation</strong></dt><dd><ul>
-<li><p><strong>Type Enforcement</strong>: Ensures that inputs are of the expected data types, such as integers, strings, lists, or specific formats, reducing errors from unexpected data.</p></li>
-<li><p><strong>Value Constraints</strong>: Restricts inputs to valid ranges, lengths, or patterns to avoid unusual or incorrect responses.</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Prompt Sanitization</strong></dt><dd><ul>
+<dt><strong>Prompt Sanitization via Arch-Guard</strong></dt><dd><ul>
 <li><p><strong>Jailbreak Prevention</strong>: Detects and filters inputs that might attempt jailbreak attacks, like alternating LLM intended behavior, exposing the system prompt, or bypassing ethnics safety.</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt><strong>Intent Detection</strong></dt><dd><ul>
-<li><p><strong>Behavioral Analysis</strong>: Analyzes prompt intent to detect if the input aligns with the function’s intended use. This can help prevent unwanted behavior, such as attempts to bypass limitations or misuse system functions.</p></li>
 </ul>
 </dd>
 </dl>
@@ -189,21 +174,11 @@ By adding a layer of input scrutiny, prompt guard ensures safer, more reliable, 
 </dd>
 </dl>
 </li>
-<li><dl class="simple">
-<dt><strong>Policy Enforcement</strong></dt><dd><ul>
-<li><p><strong>Role-Based Filtering</strong>: Customizes input validation based on user roles or permissions, allowing more flexibility or stricter enforcement depending on user access.</p></li>
-<li><p><strong>Compliance Checks</strong>: Ensures inputs meet compliance or regulatory standards, especially in fields like finance or healthcare, where prompt outputs must align with strict guidelines.</p></li>
 </ul>
-</dd>
-</dl>
-</li>
-</ul>
-</section>
-<section id="arch-guard">
-<h2>Arch-Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#arch-guard" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#arch-guard'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>In the evolving landscape of LLM-powered applications, safeguarding against prompt attacks is crucial.
-These attacks involve malicious prompts crafted to manipulate the intended behavior of the model, potentially leading to undesirable outcomes.
-Arch-Guard is designed to address this challenge.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Today, Arch offers support for jailbreak via Arch-Guard. We will be adding support for additional guards in Q1, 2025 (including response guardrails)</p>
+</div>
 <section id="what-is-arch-guard">
 <h3>What Is Arch-Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#what-is-arch-guard" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#what-is-arch-guard'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
 <p><a class="reference external" href="https://huggingface.co/collections/katanemo/arch-guard-6702bdc08b889e4bce8f446d" rel="nofollow noopener">Arch-Guard<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a> is a robust classifier model specifically trained on a diverse corpus of prompt attacks.
@@ -213,8 +188,8 @@ It excels at detecting explicitly malicious prompts, providing an essential laye
 <section id="example-configuration">
 <h3>Example Configuration<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#example-configuration" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#example-configuration'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
 <p>Here is an example of using Arch-Guard in Arch:</p>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">Arch-Guard Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id3"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Arch-Guard Example Configuration</span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></div>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="linenos">1</span><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
 </span><span id="line-2"><span class="linenos">2</span><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
 </span><span id="line-3"><span class="linenos">3</span><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
@@ -229,17 +204,7 @@ It excels at detecting explicitly malicious prompts, providing an essential laye
 <ol class="arabic">
 <li><p><strong>Pre-Processing Stage</strong></p>
 <blockquote>
-<div><p>As a request or prompt is received, Prompt Guard first performs validation, applying any type, format, or constraint checks. If any violations are detected, the input is flagged, and a tailored error message may be returned.</p>
-</div></blockquote>
-</li>
-<li><p><strong>Sanitization Stage</strong></p>
-<blockquote>
-<div><p>The prompt is analyzed for potentially harmful or inappropriate content, and necessary filters are applied to clean the input.</p>
-</div></blockquote>
-</li>
-<li><p><strong>Behavior Analysis</strong></p>
-<blockquote>
-<div><p>Next, the system assesses the intent and context of the prompt, verifying that it aligns with predefined function requirements. If the prompt raises any red flags, it can be modified or flagged for review.</p>
+<div><p>As a request or prompt is received, Arch Guard first performs validation. If any violations are detected, the input is flagged, and a tailored error message may be returned.</p>
 </div></blockquote>
 </li>
 <li><p><strong>Error Handling and Feedback</strong></p>
@@ -247,20 +212,13 @@ It excels at detecting explicitly malicious prompts, providing an essential laye
 <div><p>If the prompt contains errors or does not meet certain criteria, the user receives immediate feedback or correction suggestions, enhancing usability and reducing the chance of repeated input mistakes.</p>
 </div></blockquote>
 </li>
-<li><p><strong>Output Control</strong></p>
-<blockquote>
-<div><p>After input validation and filtering, the prompt is allowed to proceed to the main processing phase. The output can also undergo a final check to ensure compliance with content guidelines or role-based policies.</p>
-</div></blockquote>
-</li>
 </ol>
 </section>
-<section id="benefits-of-using-prompt-guard">
-<h2>Benefits of Using Prompt Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#benefits-of-using-prompt-guard" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#benefits-of-using-prompt-guard'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<section id="benefits-of-using-arch-guard">
+<h2>Benefits of Using Arch Guard<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#benefits-of-using-arch-guard" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#benefits-of-using-arch-guard'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <ul class="simple">
 <li><p><strong>Enhanced Security</strong>: Protects against injection attacks, harmful content, and misuse, securing both system and user data.</p></li>
-<li><p><strong>Increased Accuracy</strong>: Filters out inappropriate or misaligned inputs, leading to more accurate and intended outputs.</p></li>
 <li><p><strong>Better User Experience</strong>: Clear feedback and error correction improve user interactions by guiding them to correct input formats and constraints.</p></li>
-<li><p><strong>Regulatory Compliance</strong>: Ensures that prompts adhere to necessary guidelines, especially for sensitive fields, minimizing the risk of regulatory breaches.</p></li>
 </ul>
 </section>
 <section id="summary">
@@ -289,14 +247,13 @@ By implementing Prompt Guard, developers can provide a robust layer of input val
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
-<li><a :data-current="activeSection === '#why-prompt-guard'" class="reference internal" href="#why-prompt-guard">Why Prompt Guard</a></li>
-<li><a :data-current="activeSection === '#arch-guard'" class="reference internal" href="#arch-guard">Arch-Guard</a><ul>
+<li><a :data-current="activeSection === '#why-prompt-guard'" class="reference internal" href="#why-prompt-guard">Why Prompt Guard</a><ul>
 <li><a :data-current="activeSection === '#what-is-arch-guard'" class="reference internal" href="#what-is-arch-guard">What Is Arch-Guard</a></li>
 <li><a :data-current="activeSection === '#example-configuration'" class="reference internal" href="#example-configuration">Example Configuration</a></li>
 </ul>
 </li>
 <li><a :data-current="activeSection === '#how-arch-guard-works'" class="reference internal" href="#how-arch-guard-works">How Arch-Guard Works</a></li>
-<li><a :data-current="activeSection === '#benefits-of-using-prompt-guard'" class="reference internal" href="#benefits-of-using-prompt-guard">Benefits of Using Prompt Guard</a></li>
+<li><a :data-current="activeSection === '#benefits-of-using-arch-guard'" class="reference internal" href="#benefits-of-using-arch-guard">Benefits of Using Arch Guard</a></li>
 <li><a :data-current="activeSection === '#summary'" class="reference internal" href="#summary">Summary</a></li>
 </ul>
 </div>
@@ -306,12 +263,12 @@ By implementing Prompt Guard, developers can provide a robust layer of input val
 </div><footer class="py-6 border-t border-border md:py-0">
 <div class="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
 <div class="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
-<p class="text-sm leading-loose text-center text-muted-foreground md:text-left">© 2024, Katanemo Labs, Inc Last updated: Nov 27, 2024. </p>
+<p class="text-sm leading-loose text-center text-muted-foreground md:text-left">© 2024, Katanemo Labs, Inc Last updated: Dec 02, 2024. </p>
 </div>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=f5cb0d3d"></script>
+<script src="../_static/documentation_options.js?v=10d53aa0"></script>
 <script src="../_static/doctools.js?v=9bcbadda"></script>
 <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
 <script defer="defer" src="../_static/theme.js?v=073f68d9"></script>
