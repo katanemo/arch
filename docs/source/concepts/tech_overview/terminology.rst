@@ -33,7 +33,7 @@ hosted on a different network (an API call). But these two processes are conside
 work in building generative AI apps. Prompt targets are endpoints that receive prompts that are processed by Arch.
 For example, Arch enriches incoming prompts with metadata like knowing when a request is a follow-up or clarifying prompt
 so that you can build faster, more accurate retrieval (RAG) apps. To support agentic apps, like scheduling travel plans or
-sharing comments on a document - via prompts, Bolt uses its function calling abilities to extract critical information from
+sharing comments on a document - via prompts, Arch uses its function calling abilities to extract critical information from
 the incoming prompt (or a set of prompts) needed by a downstream backend API or function call before calling it directly.
 
 **Error Target**: :ref:`Error targets <error_target>` are those endpoints that receive forwarded errors from Arch when issues arise,
