@@ -179,8 +179,6 @@ impl Display for LlmProvider {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Endpoint {
     pub endpoint: Option<String>,
-    // pub connect_timeout: Option<DurationString>,
-    // pub timeout: Option<DurationString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -193,6 +191,7 @@ pub struct Parameter {
     #[serde(rename = "enum")]
     pub enum_values: Option<Vec<String>>,
     pub default: Option<String>,
+    pub in_path: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -201,11 +200,31 @@ pub struct EndpointDetails {
     pub path: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
+pub enum HttpMethod {
+    #[serde(rename = "GET")]
+    Get,
+    #[default]
+    #[serde(rename = "POST")]
+    Post,
+}
+
+impl Display for HttpMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HttpMethod::Get => write!(f, "GET"),
+            HttpMethod::Post => write!(f, "POST"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PromptTarget {
     pub name: String,
     pub default: Option<bool>,
     pub description: String,
+    #[serde(rename = "http_method")]
+    pub method: Option<HttpMethod>,
     pub endpoint: Option<EndpointDetails>,
     pub parameters: Option<Vec<Parameter>>,
     pub system_prompt: Option<String>,

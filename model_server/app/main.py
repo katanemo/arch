@@ -220,6 +220,12 @@ async def hallucination(req: HallucinationRequest, res: Response):
     if "messages" in req.parameters:
         req.parameters.pop("messages")
 
+    if not req.parameters or len(req.parameters) == 0:
+        return {
+            "params_scores": {},
+            "model": req.model,
+        }
+
     candidate_labels = {f"{k} is {v}": k for k, v in req.parameters.items()}
 
     predictions = classifier(

@@ -1,0 +1,162 @@
+openapi: 3.0.0
+info:
+  contact:
+    email: support@katanemo.com
+    name: Katanemo Labs Inc.
+    url: https://katanemo.com
+  title: ACM API for cluster management - https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.12/html/apis/apis#tags
+  version: 2.12.0
+servers:
+- url: /
+paths:
+  /cluster.open-cluster-management.io/v1/managedclusters:
+    get:
+      operationId: list_managed_clusters
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ManagedCluster'
+                type: array
+          description: List of managed clusters
+      summary: Query your clusters for more details.
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    post:
+      operationId: create_cluster
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManagedCluster'
+        description: "Details about the service, including the text-representation\
+          \ of the service APIs."
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedCluster'
+          description: cluster created successfully
+      summary: Create a cluster
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+  /cluster.open-cluster-management.io/v1/managedclusters/{cluster_name}:
+    delete:
+      operationId: cluster_open_cluster_management_io_v1_managedclusters_cluster_name_delete
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedCluster'
+          description: Cluster details
+      summary: Delete a single cluster
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+    get:
+      operationId: get_cluster
+      parameters:
+      - description: The name of the cluster to retrieve
+        explode: false
+        in: path
+        name: cluster_name
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagedCluster'
+          description: Cluster details
+      summary: Query a single cluster for more details
+      x-openapi-router-controller: openapi_server.controllers.default_controller
+components:
+  schemas:
+    ManagedCluster:
+      example:
+        metadata:
+          name: name
+          labels:
+            key: labels
+        apiVersion: cluster.open-cluster-management.io/v1
+        kind: ManagedCluster
+        spec:
+          hubAcceptsClient: true
+          managedClusterClientConfigs:
+          - caBundle: caBundle
+            url: url
+          - caBundle: caBundle
+            url: url
+        status: status
+      properties:
+        apiVersion:
+          enum:
+          - cluster.open-cluster-management.io/v1
+          title: apiVersion
+          type: string
+        kind:
+          enum:
+          - ManagedCluster
+          title: kind
+          type: string
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+        spec:
+          $ref: '#/components/schemas/Spec'
+        status:
+          title: status
+          type: string
+      title: managed cluster details
+      type: object
+    Metadata:
+      example:
+        name: name
+        labels:
+          key: labels
+      properties:
+        name:
+          title: name
+          type: string
+        labels:
+          additionalProperties:
+            type: string
+          title: labels
+          type: object
+      title: metadata details
+      type: object
+    Spec:
+      example:
+        hubAcceptsClient: true
+        managedClusterClientConfigs:
+        - caBundle: caBundle
+          url: url
+        - caBundle: caBundle
+          url: url
+      properties:
+        hubAcceptsClient:
+          title: hubAcceptsClient
+          type: boolean
+        managedClusterClientConfigs:
+          items:
+            $ref: '#/components/schemas/ManagedClusterClientConfig'
+          title: managedClusterClientConfigs
+          type: array
+      title: spec details
+      type: object
+    ManagedClusterClientConfig:
+      example:
+        caBundle: caBundle
+        url: url
+      properties:
+        url:
+          title: url
+          type: string
+        caBundle:
+          title: caBundle
+          type: string
+      title: managed cluster client config details
+      type: object
