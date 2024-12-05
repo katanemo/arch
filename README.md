@@ -90,9 +90,6 @@ llm_providers:
     access_key: $MISTRAL_API_KEY
     provider: mistral
     model: ministral-3b-latest
-
-tracing:
-  random_sampling: 100
 ```
 
 #### Step 2. Start arch gateway
@@ -189,6 +186,80 @@ $ curl --header 'Content-Type: application/json' \
 ```
 
 ### Build Gen AI Application
+
+In following quickstart we will show you how easy it is to build gen ai application with Arch gateway. We will build a currency exchange agent using following simple steps. For this demo we will use `https://api.frankfurter.dev/` to fetch latest price for currencies and assume USD as base currency.
+
+Create `arch_config.yaml` file with following content,
+
+```yaml
+version: v0.1
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
+llm_providers:
+  - name: gpt-4o
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o
+
+system_prompt: |
+  You are a helpful assistant.
+
+prompt_guards:
+  input_guards:
+    jailbreak:
+      on_exception:
+        message: Looks like you're curious about my abilities, but I can only provide assistance for currency exchange.
+
+prompt_targets:
+  - name: currency_exchange
+    description: Get currency exchange rate
+    parameters:
+      - name: from_currency_symbol
+        description: the currency that needs conversion from
+        required: true
+        type: str
+        in_param: true
+      - name: to_currency_symbol
+        description: the currency that needs conversion to
+        required: true
+        type: str
+        in_param: true
+    endpoint:
+      name: frankfurther_api
+      path: /v1/latest?base={from_currency_symbol}
+
+  # - name: currency_exchange_history
+  #   description: Get historical data for currency exchange
+  #   parameters:
+  #     - name: base_currency_symbol
+  #       description: base currency
+  #       default: USD
+  #       type: str
+  #       in_param: true
+  #     - name: from_date
+  #       description: show historical data from date
+  #       required: true
+  #       type: str
+  #       in_param: true
+  #     - name: to_date
+  #       description: show historical data until this date
+  #       type: str
+  #       in_param: true
+  #       default: {from_date}
+  #   endpoint:
+  #     name: frankfurther_api
+  #     path: /v1/latest?base={from_date}...{to_date}&{base_currency_symbol}
+
+endpoints:
+  frankfurther_api:
+    endpoint: api.frankfurter.dev:443
+```
+
 TODO:
 
 ### [Observability](https://docs.archgw.com/guides/observability/observability.html)
