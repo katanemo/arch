@@ -358,15 +358,16 @@ class ArchFunctionHandler(ArchBaseHandler):
             for token in response:
                 token_content = token.choices[0].delta.content.strip()
 
-                if has_tool_call is None and token_content != "<tool_call>":
-                    has_tool_call = False
-                    response.close()
-                    break
-                else:
-                    has_tool_call = True
+                if token_content:
+                    if has_tool_call is None and token_content != "<tool_call>":
+                        has_tool_call = False
+                        response.close()
+                        break
+                    else:
+                        has_tool_call = True
 
-                if has_tool_call is True:
-                    model_response += token_content
+                    if has_tool_call is True:
+                        model_response += token_content
 
             # start parameter gathering if the model is not generating a tool call
             if has_tool_call is False:
