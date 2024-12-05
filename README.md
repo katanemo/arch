@@ -39,28 +39,21 @@ To get in touch with us, please join our [discord server](https://discord.gg/pGZ
 
 ## Quickstart
 
-Follow this guide to learn how to quickly set up Arch and integrate it into your generative AI applications.
+Follow this quickstart guide to use arch gateway to manage access keys, provide unified access to upstream LLMs and to provide e2e observability. Later we will see how you can use arch gateway to build a Gen AI application.
 
 ### Prerequisites
 
 Before you begin, ensure you have the following:
 
-- `Docker` & `Python` installed on your system
-- `API Keys` for LLM providers (if using external LLMs)
-
-
-### Step 1: Install Arch
-
-Arch's CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:
-Tip: We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that archgw and its dependencies do not interfere with other packages on your system.
-
-Make sure you have following utilities installed before proceeding further,
-
 1. [Docker System](https://docs.docker.com/get-started/get-docker/) (v24)
 2. [Docker compose](https://docs.docker.com/compose/install/) (v2.29)
 3. [Python](https://www.python.org/downloads/) (v3.12)
-4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3. *Note: only needed for local development*)
 
+###
+
+Arch's CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:
+
+Tip: We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that archgw and its dependencies do not interfere with other packages on your system.
 
 ```console
 $ python -m venv venv
@@ -68,59 +61,54 @@ $ source venv/bin/activate   # On Windows, use: venv\Scripts\activate
 $ pip install archgw
 ```
 
-### Step 2: Configure Arch with your application
+### Build LLM gateway
 
-Arch operates based on a configuration file where you can define LLM providers, prompt targets, guardrails, etc.
-Below is an example configuration to get you started:
+#### Step 1. Create arch config file
+
+Arch operates based on a configuration file where you can define LLM providers, prompt targets, guardrails, etc. Below is an example configuration that defines openai and mistral LLM providers.
+
+Create `arch_config.yaml` file with following content:
 
 ```yaml
 version: v0.1
-listener:
-  address: 127.0.0.1
-  port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
-  message_format: huggingface
 
-# Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
 llm_providers:
-  - name: OpenAI
-    provider: openai
+  - name: gpt-4o
     access_key: $OPENAI_API_KEY
-    model: gpt-3.5-turbo
+    provider: openai
+    model: gpt-4o
     default: true
 
-# default system prompt used by all prompt targets
-system_prompt: |
-  You are a network assistant that helps operators with a better understanding of network traffic flow and perform actions on networking operations. No advice on manufacturers or purchasing decisions.
+  - name: ministral-3b
+    access_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: ministral-3b-latest
 
-prompt_targets:
-    - name: device_summary
-      description: Retrieve network statistics for specific devices within a time range
-      endpoint:
-        name: app_server
-        path: /agent/device_summary
-      parameters:
-        - name: device_ids
-          type: list
-          description: A list of device identifiers (IDs) to retrieve statistics for.
-          required: true  # device_ids are required to get device statistics
-        - name: days
-          type: int
-          description: The number of days for which to gather device statistics.
-          default: "7"
-
-# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
-endpoints:
-  app_server:
-    # value could be ip address or a hostname with port
-    # this could also be a list of endpoints for load balancing
-    # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: host.docker.internal:18083
-    # max time to wait for a connection to be established
-    connect_timeout: 0.005s
+tracing:
+  random_sampling: 100
 ```
-### Step 3: Using OpenAI Client with Arch as an Egress Gateway
 
-Make outbound calls via Arch
+#### Step 2. Start arch gateway
+
+Once the config file is created ensure that you have env vars setup for `MISTRAL_API_KEY` and `OPENAI_API_KEY` (or these are defined in `.env` file).
+
+Start arch gateway,
+
+```
+$ archgw up arch_config.yaml
+```
+
+### Step 3: Interact with LLM
+
+#### Step 3.1: Using OpenAI python client
+
+Make outbound calls via Arch gateway
 
 ```python
 from openai import OpenAI
@@ -142,6 +130,26 @@ response = client.chat.completions.create(
 print("OpenAI Response:", response.choices[0].message.content)
 
 ```
+
+#### Step 3.2: Using curl command
+```
+$ curl --header 'Content-Type: application/json' \
+  --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
+  http://localhost:12000/v1/chat/completions
+```
+
+
+You can override model selection using `x-arch-llm-provider-hint` header. For example if you want to use mistral using following curl command,
+
+```
+$ curl --header 'Content-Type: application/json' \
+  --header 'x-arch-llm-provider-hint: ministral-3b'
+  --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
+  http://localhost:12000/v1/chat/completions
+```
+
+### Build Gen AI Application
+TODO:
 
 ### [Observability](https://docs.archgw.com/guides/observability/observability.html)
 Arch is designed to support best-in class observability by supporting open standards. Please read our [docs](https://docs.archgw.com/guides/observability/observability.html) on observability for more details on tracing, metrics, and logs. The screenshot below is from our integration with Signoz (among others)
