@@ -10,7 +10,9 @@ logger = utils.get_model_server_logger()
 
 
 # Define the client
-ARCH_CLIENT = OpenAI(base_url="https://api.fc.archgw.com/v1", api_key="EMPTY")
+ARCH_ENDPOINT = "https://api.fc.archgw.com/v1"
+ARCH_API_KEY = "EMPTY"
+ARCH_CLIENT = OpenAI(base_url=ARCH_ENDPOINT, api_key=ARCH_API_KEY)
 
 
 # Define model handlers
@@ -19,7 +21,7 @@ handler_map = {
         ARCH_CLIENT,
         ARCH_INTENT_MODEL_ALIAS,
         ARCH_INTENT_TASK_PROMPT,
-        ARCH_INTENT_TOOL_PROMPT,
+        ARCH_INTENT_TOOL_PROMPT_TEMPLATE,
         ARCH_INTENT_FORMAT_PROMPT,
         ARCH_INTENT_INSTRUCTION,
         **ARCH_INTENT_GENERATION_CONFIG,
@@ -28,7 +30,7 @@ handler_map = {
         ARCH_CLIENT,
         ARCH_FUNCTION_MODEL_ALIAS,
         ARCH_FUNCTION_TASK_PROMPT,
-        ARCH_FUNCTION_TOOL_PROMPT,
+        ARCH_FUNCTION_TOOL_PROMPT_TEMPLATE,
         ARCH_FUNCTION_FORMAT_PROMPT,
         **ARCH_FUNCTION_GENERATION_CONFIG,
     ),

@@ -4,7 +4,7 @@ from app.commons.globals import handler_map
 from app.model_handler.base_handler import ChatMessage
 from app.model_handler.guardrails import GuardRequest
 
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI, Response
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -53,24 +53,25 @@ async def models():
 
 
 @app.post("/function_calling")
-async def function_calling(req: ChatMessage, res: Response, request: Request):
+async def function_calling(req: ChatMessage, res: Response):
     try:
-        intent_result = await handler_map["Arch-Intent"].chat_completion(req)
+        intent_response = await handler_map["Arch-Intent"].chat_completion(req)
 
-        if intent_result.choices[0].message.content == "Yes":
+        if handler_map["Arch-Intent"].detect_intent(intent_response):
+            # [TODO] measure agreement between intent detection and function calling
             try:
-                function_result = await handler_map["Arch-Function"].chat_completion(
-                    req
-                )
-                return function_result
+                function_calling_response = await handler_map[
+                    "Arch-Function"
+                ].chat_completion(req)
+                return function_calling_response
             except Exception as e:
-                # [TODO]
+                # [TODO] Review: update how to collect debugging outputs
                 # logger.error(f"Error in chat_completion from `Arch-Function`: {e}")
                 res.status_code = 500
                 return {"error": f"[Arch-Function] - {e}"}
 
     except Exception as e:
-        # [TODO]
+        # [TODO] Review: update how to collect debugging outputs
         # logger.error(f"Error in chat_completion from `Arch-Intent`: {e}")
         res.status_code = 500
         return {"error": f"[Arch-Intent] - {e}"}
@@ -82,6 +83,6 @@ async def guardrails(req: GuardRequest, res: Response, max_num_words=300):
         guard_result = handler_map["Arch-Guard"].predict(req)
         return guard_result
     except Exception as e:
-        # [TODO]
+        # [TODO] Review: update how to collect debugging outputs
         res.status_code = 500
         return {"error": f"[Arch-Guard] - {e}"}

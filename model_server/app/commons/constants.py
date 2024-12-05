@@ -4,23 +4,23 @@ ARCH_INTENT_INSTRUCTION = "Are there any tools can help?"
 
 ARCH_INTENT_TASK_PROMPT = """
 You are a helpful assistant.
-""".strip()
+"""
 
 
-ARCH_INTENT_TOOL_PROMPT = """
+ARCH_INTENT_TOOL_PROMPT_TEMPLATE = """
 You task is to check if there are any tools that can be used to help the last user message in conversations according to the available tools listed below.
 
 <tools>
 {tool_text}
 </tools>
-""".strip()
+"""
 
 
 ARCH_INTENT_FORMAT_PROMPT = """
 Provide your tool assessment for ONLY THE LAST USER MESSAGE in the above conversation:
 - First line must read 'Yes' or 'No'.
 - If yes, a second line must include a comma-separated list of tool indexes.
-""".strip()
+"""
 
 
 ARCH_INTENT_GENERATION_CONFIG = {
@@ -37,10 +37,10 @@ ARCH_FUNCTION_MODEL_ALIAS = "Arch-Function"
 
 ARCH_FUNCTION_TASK_PROMPT = """
 You are a helpful assistant.
-""".strip()
+"""
 
 
-ARCH_FUNCTION_TOOL_PROMPT = """
+ARCH_FUNCTION_TOOL_PROMPT_TEMPLATE = """
 # Tools
 
 You may call one or more functions to assist with the user query.
@@ -49,7 +49,7 @@ You are provided with function signatures within <tools></tools> XML tags:
 <tools>
 {tool_text}
 </tools>
-""".strip()
+"""
 
 
 ARCH_FUNCTION_FORMAT_PROMPT = """
@@ -57,7 +57,7 @@ For each function call, return a json object with function name and arguments wi
 <tool_call>
 {"name": <function-name>, "arguments": <args-json-object>}
 </tool_call>
-""".strip()
+"""
 
 ARCH_FUNCTION_GENERATION_CONFIG = {
     "generation_params": {
