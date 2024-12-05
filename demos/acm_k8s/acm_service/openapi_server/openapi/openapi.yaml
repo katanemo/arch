@@ -4,7 +4,8 @@ info:
     email: support@katanemo.com
     name: Katanemo Labs Inc.
     url: https://katanemo.com
-  title: ACM API for cluster management - https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.12/html/apis/apis#tags
+  description: This is the API for managing clusters using ACM - https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.12/html/apis/apis#tags
+  title: ACM API for cluster management
   version: 2.12.0
 servers:
 - url: /

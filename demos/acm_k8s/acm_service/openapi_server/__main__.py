@@ -10,9 +10,7 @@ def main():
     app.app.json_encoder = encoder.JSONEncoder
     app.add_api(
         "openapi.yaml",
-        arguments={
-            "title": "ACM API for cluster management - https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.12/html/apis/apis#tags"
-        },
+        arguments={"title": "ACM API for cluster management"},
         pythonic_params=True,
     )
 

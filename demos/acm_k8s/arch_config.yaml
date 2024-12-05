@@ -42,14 +42,14 @@ prompt_guards:
         message: Looks like you're curious about my abilities, but I can only provide assistance for weather forecasting.
 
 prompt_targets:
-  - name: listManagedClusters
+  - name: listAllClusterDetails
     description: Query your clusters for more details.
     http_method: GET
     endpoint:
       name: acm_service
       path: /cluster.open-cluster-management.io/v1/managedclusters
 
-  - name: getCluster
+  - name: getClusterDetails
     description: Query a single cluster for more details
     http_method: GET
     endpoint:
@@ -61,6 +61,34 @@ prompt_targets:
         description: The name of the cluster to retrieve
         required: true
         type: str
+
+  - name: default_target
+    default: true
+    description: This is the default target for all unmatched prompts.
+    system_prompt: |
+      You are a helpful assistant that can help answer ACM queries. Following is a list of available commands user can ask. Based on question asked, tell me which command you want to execute.
+
+      - name: listAllClusterDetails
+        description: Query your clusters for more details.
+        http_method: GET
+        endpoint:
+          name: acm_service
+          path: /cluster.open-cluster-management.io/v1/managedclusters
+
+      - name: getClusterDetails
+        description: Query a single cluster for more details
+        http_method: GET
+        endpoint:
+          name: acm_service
+          path: /cluster.open-cluster-management.io/v1/managedclusters/{cluster_name}
+        parameters:
+          - name: cluster_name
+            in_path: true
+            description: The name of the cluster to retrieve
+            required: true
+            type: str
+
+    auto_llm_dispatch_on_response: true
 
 tracing:
   random_sampling: 100
