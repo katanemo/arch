@@ -58,7 +58,7 @@ Tip: We recommend that developers create a new Python virtual environment to iso
 ```console
 $ python -m venv venv
 $ source venv/bin/activate   # On Windows, use: venv\Scripts\activate
-$ pip install archgw
+$ pip install archgw==0.1.5
 ```
 
 ### Build LLM gateway
@@ -136,16 +136,50 @@ print("OpenAI Response:", response.choices[0].message.content)
 $ curl --header 'Content-Type: application/json' \
   --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
   http://localhost:12000/v1/chat/completions
-```
 
+$ curl --header 'Content-Type: application/json' \
+  --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
+  http://localhost:12000/v1/chat/completions
+
+{
+  ...
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      ...
+      "message": {
+        "role": "assistant",
+        "content": "The capital of France is Paris.",
+      },
+    }
+  ],
+...
+}
+
+```
 
 You can override model selection using `x-arch-llm-provider-hint` header. For example if you want to use mistral using following curl command,
 
 ```
 $ curl --header 'Content-Type: application/json' \
-  --header 'x-arch-llm-provider-hint: ministral-3b'
+  --header 'x-arch-llm-provider-hint: ministral-3b' \
   --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
   http://localhost:12000/v1/chat/completions
+{
+  ...
+  "model": "ministral-3b-latest",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "The capital of France is Paris. It is the most populous city in France and is known for its iconic landmarks such as the Eiffel Tower, the Louvre Museum, and Notre-Dame Cathedral. Paris is also a major global center for art, fashion, gastronomy, and culture.",
+      },
+      ...
+    }
+  ],
+  ...
+}
+
 ```
 
 ### Build Gen AI Application
