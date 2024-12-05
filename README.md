@@ -53,7 +53,8 @@ Before you begin, ensure you have the following:
 
 Arch's CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:
 
-Tip: We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that archgw and its dependencies do not interfere with other packages on your system.
+> [!TIP]
+> We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that archgw and its dependencies do not interfere with other packages on your system.
 
 ```console
 $ python -m venv venv
