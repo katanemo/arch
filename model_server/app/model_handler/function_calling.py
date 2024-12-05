@@ -25,7 +25,7 @@ class ArchIntentHandler(ArchBaseHandler):
         task_prompt: str,
         tool_prompt: str,
         format_prompt: str,
-        intent_instruction: str,
+        extra_instruction: str,
         generation_params: Dict,
     ):
         """
@@ -37,7 +37,7 @@ class ArchIntentHandler(ArchBaseHandler):
             task_prompt (str): The main task prompt for the system.
             tool_prompt (str): A prompt to describe tools.
             format_prompt (str): A prompt specifying the desired output format.
-            intent_instruction (str): Instructions specific to intent handling.
+            extra_instruction (str): Instructions specific to intent handling.
             generation_params (Dict): Generation parameters for the model.
         """
 
@@ -50,7 +50,7 @@ class ArchIntentHandler(ArchBaseHandler):
             generation_params,
         )
 
-        self.intent_instruction = intent_instruction
+        self.extra_instruction = extra_instruction
 
     @override
     def _convert_tools(self, tools: List[Dict[str, Any]]) -> str:
@@ -85,7 +85,7 @@ class ArchIntentHandler(ArchBaseHandler):
         """
 
         messages = self._process_messages(
-            req.messages, req.tools, self.intent_instruction
+            req.messages, req.tools, self.extra_instruction
         )
 
         model_response = self.client.chat.completions.create(

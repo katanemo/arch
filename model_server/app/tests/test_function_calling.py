@@ -64,6 +64,9 @@ def test_process_messages(mock_hanlder):
     }
 
 
+# [TODO] Review: Add tests for both `ArchIntentHandler` and `ArchFunctionHandler`. The following test may be outdated.
+
+
 # [TODO] Review: Update the following test
 @patch("app.commons.constants.arch_function_client")
 @patch("app.commons.constants.arch_function_hanlder")
