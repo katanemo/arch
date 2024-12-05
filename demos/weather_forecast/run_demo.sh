@@ -7,16 +7,16 @@ set -e
 get_compose_file() {
   case "$1" in
     jaeger)
-      echo "docker-compose.jaeger.yml"
+      echo "docker-compose-jaeger.yaml"
       ;;
     logfire)
-      echo "docker-compose.logfire.yml"
+      echo "docker-compose-logfire.yaml"
       ;;
     signoz)
-      echo "docker-compose.signoz.yml"
+      echo "docker-compose-signoz.yaml"
       ;;
     *)
-      echo "docker-compose.jaeger.yml"  # Default to Jaeger
+      echo "docker-compose.yaml"  # Default to Jaeger
       ;;
   esac
 }
@@ -55,7 +55,7 @@ stop_demo() {
   echo "Stopping all Docker Compose services..."
 
   # Stop all services by iterating through all configurations
-  for compose_file in ./*.yml; do
+  for compose_file in ./docker-compose*.yaml; do
     echo "Stopping services in $compose_file..."
     docker compose -f "$compose_file" down
   done

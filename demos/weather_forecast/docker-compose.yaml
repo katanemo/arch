@@ -1,7 +1,7 @@
 services:
   weather_forecast_service:
     build:
-      context: ../shared/weather_forecast_service
+      context: ./weather_forecast_service
     environment:
       - OLTP_HOST=http://jaeger:4317
     extra_hosts:
