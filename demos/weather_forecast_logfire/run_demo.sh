@@ -12,10 +12,15 @@ start_demo() {
       echo "Error: OPENAI_API_KEY environment variable is not set for the demo."
       exit 1
     fi
+    if [ -z "$LOGFIRE_API_KEY"]; then
+      echo "Error: LOGFIRE_API_KEY environment variable is not set for the demo."
+      exit 1
+    fi
 
     echo "Creating .env file..."
     echo "OPENAI_API_KEY=$OPENAI_API_KEY" > .env
-    echo ".env file created with OPENAI_API_KEY."
+    echo "LOGFIRE_API_KEY=$LOGFIRE_API_KEY" >> .env
+    echo ".env file created with OPENAI_API_KEY and LOGFIRE_API_KEY."
   fi
 
   # Step 3: Start Arch

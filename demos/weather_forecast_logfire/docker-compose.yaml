@@ -32,6 +32,8 @@ services:
       - ./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     env_file:
       - .env
+    environment:
+      - LOGFIRE_API_KEY
 
   prometheus:
     build:
