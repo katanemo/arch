@@ -1,13 +1,12 @@
+import json
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-import app.commons.constants as const
+
 from fastapi import Response
-from app.function_calling.model_utils import (
-    process_messages,
-    chat_completion,
+from unittest.mock import AsyncMock, MagicMock, patch
+from app.commons.globals import handler_map
+from app.model_handler.function_calling import (
     Message,
     ChatMessage,
-    Choice,
     ChatCompletionResponse,
 )
 
@@ -31,14 +30,27 @@ def sample_messages():
 def sample_request(sample_messages):
     return ChatMessage(
         messages=sample_messages,
-        tools=[{"name": "sample_tool", "description": "A sample tool"}],
+        tools=[
+            {
+                "type": "function",
+                "function": {
+                    "name": "sample_tool",
+                    "description": "A sample tool",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
+                    },
+                },
+            }
+        ],
     )
 
 
-@patch("app.commons.constants.arch_function_hanlder")
+@patch("app.commons.globals.handler_map")
 def test_process_messages(mock_hanlder):
     messages = sample_messages()
-    processed = process_messages(messages)
+    processed = handler_map["Arch-Function"]._process_messages(messages)
 
     assert len(processed) == 3
     assert processed[0] == {"role": "user", "content": "Hello!"}
@@ -48,10 +60,11 @@ def test_process_messages(mock_hanlder):
     }
     assert processed[2] == {
         "role": "user",
-        "content": "<tool_response>\nResponse from tool\n</tool_response>",
+        "content": f"<tool_response>\n{json.dumps('Response from tool')}\n</tool_response>",
     }
 
 
+# [TODO] Review: Update the following test
 @patch("app.commons.constants.arch_function_client")
 @patch("app.commons.constants.arch_function_hanlder")
 @pytest.mark.asyncio

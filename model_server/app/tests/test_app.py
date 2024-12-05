@@ -13,6 +13,7 @@ client = TestClient(app)
 logger.info(f"Model will be loaded on device: {glb.DEVICE}")
 
 
+# [TODO] Review: update the following code
 # Unit tests for the health check endpoint
 @pytest.mark.asyncio
 @patch("app.loader.glb.DEVICE", glb.DEVICE)  # Mock the device to 'cpu'
@@ -22,6 +23,7 @@ async def test_healthz():
     assert response.json() == {"status": "ok"}
 
 
+# [TODO] Review: update the following code
 # Unit test for the models endpoint
 @pytest.mark.asyncio
 @patch("app.loader.glb.DEVICE", glb.DEVICE)  # Mock the device to 'cpu'
@@ -32,6 +34,7 @@ async def test_models():
     assert len(response.json()["data"]) > 0
 
 
+# [TODO] Review: update the following code
 # Unit test for embeddings endpoint
 @pytest.mark.asyncio
 @patch("app.loader.glb.DEVICE", glb.DEVICE)  # Mock the device to 'cpu'
@@ -46,6 +49,7 @@ async def test_embedding():
         assert response.status_code == 400
 
 
+# [TODO] Review: update the following code
 # Unit test for the guard endpoint
 @pytest.mark.asyncio
 @patch("app.loader.glb.DEVICE", glb.DEVICE)  # Mock the device to 'cpu'
@@ -56,6 +60,7 @@ async def test_guard():
     assert "jailbreak_verdict" in response.json()
 
 
+# [TODO] Review: update the following code
 # Unit test for the zero-shot endpoint
 @pytest.mark.asyncio
 @patch("app.loader.glb.DEVICE", glb.DEVICE)  # Mock the device to 'cpu'
@@ -73,6 +78,7 @@ async def test_zeroshot():
         assert response.status_code == 400
 
 
+# [TODO] Review: update the following code
 # Unit test for the hallucination endpoint
 @pytest.mark.asyncio
 @patch("app.loader.glb.DEVICE", glb.DEVICE)  # Mock the device to 'cpu'
@@ -90,6 +96,7 @@ async def test_hallucination():
         assert response.status_code == 400
 
 
+# [TODO] Review: update the following code
 # Unit test for the chat completion endpoint
 @pytest.mark.asyncio
 @patch("app.loader.glb.DEVICE", glb.DEVICE)  # Mock the device to 'cpu'

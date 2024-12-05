@@ -1,10 +1,6 @@
 import os
-import yaml
 import torch
-import string
 import logging
-
-from openai import OpenAI
 
 
 logger_instance = None
@@ -29,11 +25,6 @@ def get_device():
         device = "cpu"
 
     return device
-
-
-def get_client(endpoint):
-    client = OpenAI(base_url=endpoint, api_key="EMPTY")
-    return client
 
 
 def get_model_server_logger():
@@ -72,12 +63,3 @@ def get_model_server_logger():
     # Initialize the logger instance after configuring handlers
     logger_instance = logging.getLogger("model_server_logger")
     return logger_instance
-
-
-def remove_punctuations(s):
-    s = s.translate(str.maketrans(string.punctuation, " " * len(string.punctuation)))
-    return " ".join(s.split()).lower()
-
-
-def get_label_map(labels):
-    return {remove_punctuations(label): label for label in labels}

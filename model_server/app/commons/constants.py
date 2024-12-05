@@ -1,38 +1,83 @@
-import app.commons.globals as glb
-import app.commons.utilities as utils
-import app.loader as loader
+# ========================== Arch-Intent Default Params ==========================
+ARCH_INTENT_MODEL_ALIAS = "Arch-Intent"
+ARCH_INTENT_INSTRUCTION = "Are there any tools can help?"
 
-from app.function_calling.model_handler import ArchFunctionHandler
-from app.prompt_guard.model_handler import ArchGuardHanlder
+ARCH_INTENT_TASK_PROMPT = """
+You are a helpful assistant.
+""".strip()
 
-logger = utils.get_model_server_logger()
 
-arch_function_hanlder = ArchFunctionHandler()
-PREFILL_LIST = ["May", "Could", "Sure", "Definitely", "Certainly", "Of course", "Can"]
-PREFILL_ENABLED = True
-TOOL_CALL_TOKEN = "<tool_call>"
-arch_function_endpoint = "https://api.fc.archgw.com/v1"
-arch_function_client = utils.get_client(arch_function_endpoint)
-arch_function_generation_params = {
-    "temperature": 0.2,
-    "top_p": 1.0,
-    "top_k": 50,
-    "max_tokens": 512,
-    "stop_token_ids": [151645],
-    #    "top_logprobs": 10,
+ARCH_INTENT_TOOL_PROMPT = """
+You task is to check if there are any tools that can be used to help the last user message in conversations according to the available tools listed below.
+
+<tools>
+{tool_text}
+</tools>
+""".strip()
+
+
+ARCH_INTENT_FORMAT_PROMPT = """
+Provide your tool assessment for ONLY THE LAST USER MESSAGE in the above conversation:
+- First line must read 'Yes' or 'No'.
+- If yes, a second line must include a comma-separated list of tool indexes.
+""".strip()
+
+
+ARCH_INTENT_GENERATION_CONFIG = {
+    "generation_params": {
+        "stop_token_ids": [151645],
+        "max_tokens": 1,
+        "guided_choice": ["Yes", "No"],
+    }
 }
 
-arch_guard_model_type = {
-    "cpu": "katanemo/Arch-Guard-cpu",
-    "cuda": "katanemo/Arch-Guard",
-    "mps": "katanemo/Arch-Guard",
+
+# ========================== Arch-Function Default Params ==========================
+ARCH_FUNCTION_MODEL_ALIAS = "Arch-Function"
+
+ARCH_FUNCTION_TASK_PROMPT = """
+You are a helpful assistant.
+""".strip()
+
+
+ARCH_FUNCTION_TOOL_PROMPT = """
+# Tools
+
+You may call one or more functions to assist with the user query.
+
+You are provided with function signatures within <tools></tools> XML tags:
+<tools>
+{tool_text}
+</tools>
+""".strip()
+
+
+ARCH_FUNCTION_FORMAT_PROMPT = """
+For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+<tool_call>
+{"name": <function-name>, "arguments": <args-json-object>}
+</tool_call>
+""".strip()
+
+ARCH_FUNCTION_GENERATION_CONFIG = {
+    "generation_params": {
+        "temperature": 0.2,
+        "top_p": 1.0,
+        "top_k": 50,
+        "max_tokens": 512,
+        "stop_token_ids": [151645],
+    },
+    "prefill_params": {
+        "continue_final_message": True,
+        "add_generation_prompt": False,
+    },
+    "prefill_prefix": [
+        "May",
+        "Could",
+        "Sure",
+        "Definitely",
+        "Certainly",
+        "Of course",
+        "Can",
+    ],
 }
-
-# Model definition
-embedding_model = loader.get_embedding_model()
-zero_shot_model = loader.get_zero_shot_model()
-
-prompt_guard_dict = loader.get_prompt_guard(arch_guard_model_type[glb.DEVICE])
-
-arch_guard_handler = ArchGuardHanlder(model_dict=prompt_guard_dict)
-# Patterns for function name and parameter parsing

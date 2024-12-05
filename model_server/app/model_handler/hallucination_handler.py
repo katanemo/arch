@@ -1,8 +1,6 @@
-import json
 import math
 import torch
-import random
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 import itertools
 from enum import Enum
 
@@ -74,26 +72,6 @@ def calculate_entropy(log_probs: List[float]) -> Tuple[float, float]:
     return entropy.item(), varentropy.item()
 
 
-def is_parameter_property(
-    function_description: Dict, parameter_name: str, property_name: str
-) -> bool:
-    """
-    Check if a parameter in an API description has a specific property.
-
-    Args:
-        function_description (dict): The API description in JSON format.
-        parameter_name (str): The name of the parameter to check.
-        property_name (str): The property to look for (e.g., 'format', 'default').
-
-    Returns:
-        bool: True if the parameter has the specified property, False otherwise.
-    """
-    parameters = function_description.get("properties", {})
-    parameter_info = parameters.get(parameter_name, {})
-
-    return property_name in parameter_info
-
-
 class HallucinationStateHandler:
     """
     A class to handle the state of hallucination detection in token processing.
@@ -111,7 +89,7 @@ class HallucinationStateHandler:
         token_probs_map (list): List mapping tokens to their entropy and variance of entropy.
     """
 
-    def __init__(self, response_iterator=None, function=None):
+    def __init__(self, response_iterator=None):
         """
         Initializes the HallucinationStateHandler with default values.
         """
@@ -126,19 +104,6 @@ class HallucinationStateHandler:
         self.parameter_name: List[str] = []
         self.token_probs_map: List[Tuple[str, float, float]] = []
         self.response_iterator = response_iterator
-        self._process_function(function)
-
-    def _process_function(self, function):
-        self.function = function
-        if self.function is None:
-            raise ValueError("API descriptions not set.")
-        parameter_names = {}
-        for func in self.function:
-            func_name = func["name"]
-            parameters = func["parameters"]["properties"]
-            parameter_names[func_name] = list(parameters.keys())
-        self.function_description = parameter_names
-        self.function_properties = {x["name"]: x["parameters"] for x in self.function}
 
     def append_and_check_token_hallucination(self, token, logprob):
         """
@@ -237,6 +202,8 @@ class HallucinationStateHandler:
             # checking if the token is a value token and is not empty
             if self.tokens[-1].strip() not in ['"', ""]:
                 self.mask.append(MaskToken.PARAMETER_VALUE)
+
+                # [TODO] Review: update the following code: `is_parameter_property` should not be here
                 # checking if the parameter doesn't have default and the token is the first parameter value token
                 if (
                     len(self.mask) > 1
@@ -299,26 +266,3 @@ class HallucinationStateHandler:
             if self.mask and self.mask[-1] == token
             else 0
         )
-
-    def _is_function_name_hallucinated(self):
-        """
-        Checks the extracted function name against the function descriptions.
-        Detects hallucinations if the function name is not found.
-        """
-        f_len = self._count_consecutive_token(MaskToken.FUNCTION_NAME)
-        self.function_name = "".join(self.tokens[:-1][-f_len:])
-        if self.function_name not in self.function_description.keys():
-            self.error_type = "function_name"
-            self.error_message = f"Function name '{self.function_name}' not found in given function descriptions."
-
-    def _is_parameter_name_hallucinated(self):
-        """
-        Checks the extracted parameter name against the function descriptions.
-        Detects hallucinations if the parameter name is not found.
-        """
-        p_len = self._count_consecutive_token(MaskToken.PARAMETER_NAME)
-        parameter_name = "".join(self.tokens[:-1][-p_len:])
-        self.parameter_name.append(parameter_name)
-        if parameter_name not in self.function_description[self.function_name]:
-            self.error_type = "parameter_name"
-            self.error_message = f"Parameter name '{parameter_name}' not found in given function descriptions."

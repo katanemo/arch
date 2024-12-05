@@ -1,10 +1,7 @@
 import importlib
 import sys
-import os
 import time
 import requests
-import psutil
-import tempfile
 import subprocess
 import logging
 
