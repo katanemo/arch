@@ -4,7 +4,7 @@ import pytest
 from fastapi import Response
 from unittest.mock import AsyncMock, MagicMock, patch
 from app.commons.globals import handler_map
-from app.model_handler.function_calling import (
+from app.model_handler.base_handler import (
     Message,
     ChatMessage,
     ChatCompletionResponse,

@@ -203,16 +203,16 @@ class HallucinationStateHandler:
             if self.tokens[-1].strip() not in ['"', ""]:
                 self.mask.append(MaskToken.PARAMETER_VALUE)
 
-                # [TODO] Review: update the following code: `is_parameter_property` should not be here
+                # [TODO] Review: update the following code: `is_parameter_property` should not be here, move to `ArchFunctionHandler`
                 # checking if the parameter doesn't have default and the token is the first parameter value token
                 if (
                     len(self.mask) > 1
                     and self.mask[-2] != MaskToken.PARAMETER_VALUE
-                    and not is_parameter_property(
-                        self.function_properties[self.function_name],
-                        self.parameter_name[-1],
-                        "default",
-                    )
+                    # and not is_parameter_property(
+                    #     self.function_properties[self.function_name],
+                    #     self.parameter_name[-1],
+                    #     "default",
+                    # )
                 ):
                     self._check_logprob()
             else:

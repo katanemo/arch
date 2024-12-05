@@ -1,7 +1,7 @@
 import os
 
 from app.commons.globals import handler_map
-from app.model_handler.function_calling import ChatMessage
+from app.model_handler.base_handler import ChatMessage
 from app.model_handler.guardrails import GuardRequest
 
 from fastapi import FastAPI, Response, Request
