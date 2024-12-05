@@ -1,13 +1,36 @@
 #!/bin/bash
 set -e
 
+# Directory where the Docker Compose files are stored
+
+# Function to determine the docker-compose file based on the argument
+get_compose_file() {
+  case "$1" in
+    jaeger)
+      echo "docker-compose.jaeger.yml"
+      ;;
+    logfire)
+      echo "docker-compose.logfire.yml"
+      ;;
+    signoz)
+      echo "docker-compose.signoz.yml"
+      ;;
+    *)
+      echo "docker-compose.jaeger.yml"  # Default to Jaeger
+      ;;
+  esac
+}
+
 # Function to start the demo
 start_demo() {
-  # Step 1: Check if .env file exists
+  # Step 1: Determine the docker-compose file
+  COMPOSE_FILE=$(get_compose_file "$1")
+
+  # Step 2: Check if .env file exists
   if [ -f ".env" ]; then
     echo ".env file already exists. Skipping creation."
   else
-    # Step 2: Create `.env` file and set OpenAI key
+    # Step 3: Create `.env` file and set OpenAI key
     if [ -z "$OPENAI_API_KEY" ]; then
       echo "Error: OPENAI_API_KEY environment variable is not set for the demo."
       exit 1
@@ -18,22 +41,26 @@ start_demo() {
     echo ".env file created with OPENAI_API_KEY."
   fi
 
-  # Step 3: Start Arch
+  # Step 4: Start Arch
   echo "Starting Arch with arch_config.yaml..."
   archgw up arch_config.yaml
 
-  # Step 4: Start Network Agent
-  echo "Starting Network Agent using Docker Compose..."
-  docker compose up -d  # Run in detached mode
+  # Step 5: Start Network Agent with the chosen Docker Compose file
+  echo "Starting Network Agent using $COMPOSE_FILE..."
+  docker compose -f "$COMPOSE_FILE" up -d  # Run in detached mode
 }
 
 # Function to stop the demo
 stop_demo() {
-  # Step 1: Stop Docker Compose services
-  echo "Stopping Network Agent using Docker Compose..."
-  docker compose down
+  echo "Stopping all Docker Compose services..."
 
-  # Step 2: Stop Arch
+  # Stop all services by iterating through all configurations
+  for compose_file in ./*.yml; do
+    echo "Stopping services in $compose_file..."
+    docker compose -f "$compose_file" down
+  done
+
+  # Stop Arch
   echo "Stopping Arch..."
   archgw down
 }
@@ -42,6 +69,6 @@ stop_demo() {
 if [ "$1" == "down" ]; then
   stop_demo
 else
-  # Default action is to bring the demo up
-  start_demo
+  # Use the argument (jaeger, logfire, signoz) to determine the compose file
+  start_demo "$1"
 fi
