@@ -196,7 +196,7 @@ def start_arch_modelserver():
         subprocess.run(
             ["archgw_modelserver", "restart"], check=True, start_new_session=True
         )
-        log.info("Successfull ran model_server")
+        log.info("Successfully ran model_server")
     except subprocess.CalledProcessError as e:
         log.info(f"Failed to start model_server. Please check archgw_modelserver logs")
         sys.exit(1)
@@ -212,7 +212,7 @@ def stop_arch_modelserver():
             ["archgw_modelserver", "stop"],
             check=True,
         )
-        log.info("Successfull stopped the archgw model_server")
+        log.info("Successfully stopped the archgw model_server")
     except subprocess.CalledProcessError as e:
         log.info(f"Failed to start model_server. Please check archgw_modelserver logs")
         sys.exit(1)
