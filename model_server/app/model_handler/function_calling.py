@@ -79,8 +79,10 @@ class ArchIntentHandler(ArchBaseHandler):
         Returns:
             bool: A boolean value to indicate if any intent match with prompts or not
         """
-
-        return content.choices[0].message.content == "Yes"
+        if hasattr(content.choices[0].message, "content"):
+            return content.choices[0].message.content == "Yes"
+        else:
+            return False
 
     @override
     async def chat_completion(self, req: ChatMessage) -> ChatCompletionResponse:
@@ -318,7 +320,7 @@ class ArchFunctionHandler(ArchBaseHandler):
                     if required_param not in func_args:
                         is_valid = False
                         error_tool_call = tool_call
-                        error_message = f"`{required_param}` is requried by the function `{func_name}` but not found in the tool call!"
+                        error_message = f"`{required_param}` is requiried by the function `{func_name}` but not found in the tool call!"
                         return is_valid, error_tool_call, error_message
 
                 # Verify the data type of each parameter in the tool calls
