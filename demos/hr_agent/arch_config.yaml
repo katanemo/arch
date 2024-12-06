@@ -31,6 +31,7 @@ system_prompt: |
 prompt_targets:
     - name: workforce
       description: Get workforce data like headcount and satisfaction levels by region and staffing type
+      http_method: POST
       endpoint:
         name: app_server
         path: /agent/workforce
@@ -49,6 +50,7 @@ prompt_targets:
           required: false
           description: the snapshot day for which you want workforce data.
     - name: slack_message
+      http_method: POST
       endpoint:
         name: app_server
         path: /agent/slack_message

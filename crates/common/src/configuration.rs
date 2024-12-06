@@ -202,9 +202,9 @@ pub struct EndpointDetails {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub enum HttpMethod {
+    #[default]
     #[serde(rename = "GET")]
     Get,
-    #[default]
     #[serde(rename = "POST")]
     Post,
 }

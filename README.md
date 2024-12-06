@@ -101,7 +101,6 @@ prompt_targets:
         required: true
         type: str
         in_path: true
-    http_method: GET
     endpoint:
       name: frankfurther_api
       path: /v1/latest?base=USD&symbols={currency_symbol}
@@ -110,7 +109,6 @@ prompt_targets:
 
   - name: get_supported_currencies
     description: Get list of supported currencies for conversion
-    http_method: GET
     endpoint:
       name: frankfurther_api
       path: /v1/currencies

@@ -19,6 +19,7 @@ system_prompt: |
 prompt_targets:
     - name: device_summary
       description: Retrieve network statistics for specific devices within a time range
+      http_method: POST
       endpoint:
         name: app_server
         path: /agent/device_summary
@@ -33,6 +34,7 @@ prompt_targets:
           default: "7"
     - name: reboot_devices
       description: Reboot a list of devices
+      http_method: POST
       endpoint:
         name: app_server
         path: /agent/device_reboot

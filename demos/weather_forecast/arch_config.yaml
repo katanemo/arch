@@ -57,6 +57,7 @@ prompt_targets:
         description: the temperature unit, e.g., Celsius and Fahrenheit
         type: str
         default: Fahrenheit
+    http_method: POST
     endpoint:
       name: weather_forecast_service
       path: /weather
@@ -64,6 +65,7 @@ prompt_targets:
   - name: default_target
     default: true
     description: This is the default target for all unmatched prompts.
+    http_method: POST
     endpoint:
       name: weather_forecast_service
       path: /default_target

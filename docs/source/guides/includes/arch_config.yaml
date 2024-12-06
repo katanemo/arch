@@ -28,6 +28,7 @@ prompt_targets:
   - name: information_extraction
     default: true
     description: handel all scenarios that are question and answer in nature. Like summarization, information extraction, etc.
+    http_method: POST
     endpoint:
       name: app_server
       path: /agent/summary
@@ -38,6 +39,7 @@ prompt_targets:
 
   - name: reboot_network_device
     description: Perform device operations like rebooting a device.
+    http_method: POST
     endpoint:
       name: app_server
       path: /agent/action
