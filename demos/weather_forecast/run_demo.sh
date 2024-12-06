@@ -88,7 +88,7 @@ stop_demo() {
 # Main script logic
 if [ "$1" == "down" ]; then
   # Call stop_demo with the second argument as the demo to stop
-  stop_demo 
+  stop_demo
 else
   # Use the argument (jaeger, logfire, signoz) to determine the compose file
   start_demo "$1"
