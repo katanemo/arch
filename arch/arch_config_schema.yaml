@@ -28,6 +28,11 @@ properties:
             type: string
           connect_timeout:
             type: string
+          protocol:
+            type: string
+            enum:
+              - http
+              - https
         additionalProperties: false
         required:
           - endpoint
