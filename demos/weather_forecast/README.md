@@ -57,7 +57,7 @@ If using Logfire, navigate to your logfire dashboard that you got the write key 
 
 ### Stopping Demo
 
-1. To end the demo, run the following command
+1. To end the demo, run the following command:
    ```sh
    sh run_demo.sh down
    ```
