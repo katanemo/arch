@@ -108,7 +108,9 @@ class ArchIntentHandler(ArchBaseHandler):
             extra_body=self.generation_params,
         )
 
-        model_response = Message(content=model_response, tool_calls=[])
+        model_response = Message(
+            content=model_response.choices[0].message.content, tool_calls=[]
+        )
 
         chat_completion_response = ChatCompletionResponse(
             choices=[Choice(message=model_response)], model=self.model_name

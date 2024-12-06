@@ -28,8 +28,8 @@ class ChatCompletionResponse(BaseModel):
     id: Optional[int] = 0
     object: Optional[str] = "chat_completion"
     created: Optional[str] = ""
-    model: str
     choices: List[Choice]
+    model: str
 
 
 class ArchBaseHandler:
@@ -124,7 +124,7 @@ class ArchBaseHandler:
 
         if tools:
             processed_messages.append(
-                {"role": "system", "content": self._format_system(tools)}
+                {"role": "system", "content": self._format_system_prompt(tools)}
             )
 
         for message in messages:

@@ -86,7 +86,7 @@ async def test_chat_completion(mock_hanlder, mock_client):
     mock_client.chat.completions.create.return_value = mock_response
 
     # Mock the tool formatter
-    mock_hanlder._format_system.return_value = "<formatted_tools>"
+    mock_hanlder._format_system_prompt.return_value = "<formatted_tools>"
 
     response = Response()
     chat_response = await chat_completion(request, response)

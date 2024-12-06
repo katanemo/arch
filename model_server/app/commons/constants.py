@@ -24,11 +24,7 @@ Provide your tool assessment for ONLY THE LAST USER MESSAGE in the above convers
 
 
 ARCH_INTENT_GENERATION_CONFIG = {
-    "generation_params": {
-        "stop_token_ids": [151645],
-        "max_tokens": 1,
-        "guided_choice": ["Yes", "No"],
-    }
+    "generation_params": {"max_tokens": 1, "stop_token_ids": [151645]}
 }
 
 
