@@ -106,7 +106,7 @@ class ArchBaseHandler:
         self,
         messages: List[Message],
         tools: List[Dict[str, Any]] = None,
-        extra_instructions: str = None,
+        extra_instruction: str = None,
     ):
         """
         Processes a list of messages and formats them appropriately.
@@ -114,7 +114,7 @@ class ArchBaseHandler:
         Args:
             messages (List[Message]): A list of message objects.
             tools (List[Dict[str, Any]], optional): A list of tools to include in the system prompt.
-            extra_instructions (str, optional): Additional instructions to append to the last user message.
+            extra_instruction (str, optional): Additional instructions to append to the last user message.
 
         Returns:
             List[Dict[str, Any]]: A list of processed message dictionaries.
@@ -148,8 +148,8 @@ class ArchBaseHandler:
 
         assert processed_messages[-1]["role"] == "user"
 
-        if extra_instructions:
-            processed_messages[-1]["content"] += extra_instructions
+        if extra_instruction:
+            processed_messages[-1]["content"] += extra_instruction
 
         return processed_messages
 
