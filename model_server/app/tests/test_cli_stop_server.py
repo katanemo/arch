@@ -1,7 +1,6 @@
 import unittest
+
 from unittest.mock import patch, MagicMock
-import subprocess
-import time
 from app.cli import kill_process
 
 

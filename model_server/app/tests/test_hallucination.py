@@ -1,7 +1,10 @@
 import json
-from app.function_calling.hallucination_handler import HallucinationStateHandler
 import pytest
 import os
+
+
+from app.model_handler.hallucination_handler import HallucinationStateHandler
+
 
 # Get the directory of the current file
 current_dir = os.path.dirname(__file__)
@@ -45,6 +48,7 @@ if type(function_description) != list:
     function_description = [get_weather_api["function"]]
 
 
+# [TODO] Review: update the following code
 @pytest.mark.parametrize("case", test_cases)
 def test_hallucination(case):
     state = HallucinationStateHandler(
@@ -58,6 +62,7 @@ def test_hallucination(case):
     assert state.hallucination == case["expect"]
 
 
+# [TODO] Review: update the following code
 @pytest.mark.parametrize("is_hallucinate_sample", [True, False])
 def test_hallucination_prompt(is_hallucinate_sample):
     TASK_PROMPT = """
