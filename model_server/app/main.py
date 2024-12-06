@@ -69,6 +69,8 @@ async def function_calling(req: ChatMessage, res: Response):
                 # logger.error(f"Error in chat_completion from `Arch-Function`: {e}")
                 res.status_code = 500
                 return {"error": f"[Arch-Function] - {e}"}
+        # [TODO] Review: define the behavior if `Arch-Intent` doesn't detect an intent
+        # else:
 
     except Exception as e:
         # [TODO] Review: update how to collect debugging outputs

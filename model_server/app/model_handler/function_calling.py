@@ -99,20 +99,24 @@ class ArchIntentHandler(ArchBaseHandler):
             Currently only support vllm inference
         """
 
-        messages = self._process_messages(
-            req.messages, req.tools, self.extra_instruction
-        )
+        # In the case that no tools are available, simply return `No` to avoid making a call
+        if len(req.tools) == 0:
+            model_response = Message(content="No", tool_calls=[])
+        else:
+            messages = self._process_messages(
+                req.messages, req.tools, self.extra_instruction
+            )
 
-        model_response = self.client.chat.completions.create(
-            messages=messages,
-            model=self.model_name,
-            stream=False,
-            extra_body=self.generation_params,
-        )
+            model_response = self.client.chat.completions.create(
+                messages=messages,
+                model=self.model_name,
+                stream=False,
+                extra_body=self.generation_params,
+            )
 
-        model_response = Message(
-            content=model_response.choices[0].message.content, tool_calls=[]
-        )
+            model_response = Message(
+                content=model_response.choices[0].message.content, tool_calls=[]
+            )
 
         chat_completion_response = ChatCompletionResponse(
             choices=[Choice(message=model_response)], model=self.model_name

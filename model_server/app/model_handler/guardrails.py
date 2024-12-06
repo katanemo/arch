@@ -105,7 +105,7 @@ class ArchGuardHanlder:
             sentence = None
 
         return GuardResponse(
-            prob=prob.item(), verdict=verdict, sentence=sentence, latency=latency
+            prob=[prob.item()], verdict=verdict, sentence=[sentence], latency=latency
         )
 
     def predict(self, req: GuardRequest, max_num_words=300) -> GuardResponse:
@@ -138,9 +138,9 @@ class ArchGuardHanlder:
                 chunk_result = self._predict_text(req.task, chunk)
 
                 if chunk_result.verdict:
-                    prob.append(chunk_result.prob)
+                    prob.append(chunk_result.prob[0])
                     verdict = True
-                    sentence.append(chunk_result.sentence)
+                    sentence.append(chunk_result.sentence[0])
                     latency += chunk_result.latency
 
             return GuardResponse(
