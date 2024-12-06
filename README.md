@@ -189,6 +189,8 @@ $ curl --header 'Content-Type: application/json' \
 
 In following quickstart we will show you how easy it is to build gen ai application with Arch gateway. We will build a currency exchange agent using following simple steps. For this demo we will use `https://api.frankfurter.dev/` to fetch latest price for currencies and assume USD as base currency.
 
+#### Step 1. Create arch config file
+
 Create `arch_config.yaml` file with following content,
 
 ```yaml
@@ -244,7 +246,25 @@ endpoints:
     protocol: https
 ```
 
-Now you can issue queries like "what is currency rate for gbp" or "show me list of currencies for conversion".
+#### Step 2. Start arch gateway with currency conversion config
+
+```sh
+
+$ archgw up arch_config.yaml
+2024-12-05 16:56:27,979 - cli.main - INFO - Starting archgw cli version: 0.1.5
+...
+2024-12-05 16:56:28,485 - cli.utils - INFO - Schema validation successful!
+2024-12-05 16:56:28,485 - cli.main - INFO - Starging arch model server and arch gateway
+...
+2024-12-05 16:56:51,647 - cli.core - INFO - Container is healthy!
+
+```
+
+Once the gateway is up you can start interacting with at port 10000 using openai chat completion API.
+
+Some of the sample queries you can ask could be `what is currency rate for gbp?` or `show me list of currencies for conversion`.
+
+#### Step 3. Interacting with gateway using curl command
 
 Here is a sample curl command you can use to interact,
 
