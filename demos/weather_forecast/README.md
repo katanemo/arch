@@ -57,26 +57,7 @@ If using Logfire, navigate to your logfire dashboard that you got the write key 
 
 ### Stopping Demo
 
-1. To shut down the Jaeger demo, run the following command:
-
-```sh
-sh run_demo.sh down jaeger
-```
-
-or run:
-
-```sh
-sh run_demo.sh down
-```
-
-2. To shut down the Logfire demo, run the following command:
-
-```sh
-sh run_demo.sh down logfire
-```
-
-3. To shut down the Signoz demo, run the following command:
-
-```sh
-sh run_demo.sh down signoz
-```
+1. To end the demo, run the following command:
+   ```sh
+   sh run_demo.sh down
+   ```
