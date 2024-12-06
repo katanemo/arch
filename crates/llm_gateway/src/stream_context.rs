@@ -1,4 +1,4 @@
-use crate::filter_context::WasmMetrics;
+use crate::metrics::Metrics;
 use common::common_types::open_ai::{
     ChatCompletionStreamResponseServerEvents, ChatCompletionsRequest, ChatCompletionsResponse,
     Message, StreamOptions,
@@ -12,25 +12,23 @@ use common::errors::ServerError;
 use common::llm_providers::LlmProviders;
 use common::pii::obfuscate_auth_header;
 use common::ratelimit::Header;
+use common::stats::{IncrementingMetric, RecordingMetric};
 use common::tracing::{Event, Span, TraceData, Traceparent};
 use common::{ratelimit, routing, tokenizer};
 use http::StatusCode;
 use log::{debug, trace, warn};
+use proxy_wasm::hostcalls::get_current_time;
 use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 use std::collections::VecDeque;
 use std::num::NonZero;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-
-use common::stats::{IncrementingMetric, RecordingMetric};
-
-use proxy_wasm::hostcalls::get_current_time;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub struct StreamContext {
     context_id: u32,
-    metrics: Rc<WasmMetrics>,
+    metrics: Rc<Metrics>,
     ratelimit_selector: Option<Header>,
     streaming_response: bool,
     response_tokens: usize,
@@ -50,7 +48,7 @@ pub struct StreamContext {
 impl StreamContext {
     pub fn new(
         context_id: u32,
-        metrics: Rc<WasmMetrics>,
+        metrics: Rc<Metrics>,
         llm_providers: Rc<LlmProviders>,
         traces_queue: Arc<Mutex<VecDeque<TraceData>>>,
     ) -> Self {

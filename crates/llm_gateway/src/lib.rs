@@ -3,6 +3,7 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
 mod filter_context;
+mod metrics;
 mod stream_context;
 
 proxy_wasm::main! {{

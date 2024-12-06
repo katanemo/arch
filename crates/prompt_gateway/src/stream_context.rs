@@ -1,5 +1,6 @@
-use crate::filter_context::{EmbeddingsStore, WasmMetrics};
+use crate::filter_context::EmbeddingsStore;
 use crate::hallucination::extract_messages_for_hallucination;
+use crate::metrics::Metrics;
 use acap::cos;
 use common::common_types::open_ai::{
     to_server_events, ArchState, ChatCompletionStreamResponse, ChatCompletionTool,
@@ -64,7 +65,7 @@ pub struct StreamContext {
     pub prompt_targets: Rc<HashMap<String, PromptTarget>>,
     pub embeddings_store: Option<Rc<EmbeddingsStore>>,
     overrides: Rc<Option<Overrides>>,
-    pub metrics: Rc<WasmMetrics>,
+    pub metrics: Rc<Metrics>,
     pub callouts: RefCell<HashMap<u32, StreamCallContext>>,
     pub context_id: u32,
     pub tool_calls: Option<Vec<ToolCall>>,
@@ -87,7 +88,7 @@ impl StreamContext {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         context_id: u32,
-        metrics: Rc<WasmMetrics>,
+        metrics: Rc<Metrics>,
         system_prompt: Rc<Option<String>>,
         prompt_targets: Rc<HashMap<String, PromptTarget>>,
         prompt_guards: Rc<PromptGuards>,
