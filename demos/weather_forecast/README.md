@@ -31,19 +31,19 @@ Here is a sample interaction,
 
 To see a tracing dashboard follow instructions below,
 
-1. For Jaeger, you can either use the default run_demo.sh script or run the following command,
+1. For Jaeger, you can either use the default run_demo.sh script or run the following command:
 
 ```sh
 sh run_demo.sh jaeger
 ```
 
-2. For Logfire, first make sure to add a LOGFIRE_API_KEY to the .env file. You can either use the default run_demo.sh script or run the following command,
+2. For Logfire, first make sure to add a LOGFIRE_API_KEY to the .env file. You can either use the default run_demo.sh script or run the following command:
 
 ```sh
 sh run_demo.sh logfire
 ```
 
-3. For Signoz, you can either use the default run_demo.sh script or run the following command,
+3. For Signoz, you can either use the default run_demo.sh script or run the following command:
 
 ```sh
 sh run_demo.sh signoz
