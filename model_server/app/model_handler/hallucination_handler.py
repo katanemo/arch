@@ -72,6 +72,25 @@ def calculate_entropy(log_probs: List[float]) -> Tuple[float, float]:
     return entropy.item(), varentropy.item()
 
 
+def is_parameter_required(
+    function_description: Dict,
+    parameter_name: str,
+) -> bool:
+    """
+    Check if a parameter in required list
+
+    Args:
+        function_description (dict): The API description in JSON format.
+        parameter_name (str): The name of the parameter to check.
+
+    Returns:
+        bool: True if the parameter has the specified property, False otherwise.
+    """
+    required_parameters = function_description.get("required", {})
+
+    return parameter_name in required_parameters
+
+
 class HallucinationStateHandler:
     """
     A class to handle the state of hallucination detection in token processing.
@@ -104,6 +123,7 @@ class HallucinationStateHandler:
         self.parameter_name: List[str] = []
         self.token_probs_map: List[Tuple[str, float, float]] = []
         self.response_iterator = response_iterator
+        self.has_tool_call = False
 
     def append_and_check_token_hallucination(self, token, logprob):
         """
@@ -118,7 +138,8 @@ class HallucinationStateHandler:
         """
         self.tokens.append(token)
         self.logprobs.append(logprob)
-        self._process_token()
+        if self.has_tool_call:
+            self._process_token()
         return self.hallucination
 
     def __iter__(self):
@@ -164,7 +185,7 @@ class HallucinationStateHandler:
                 self.mask.append(MaskToken.FUNCTION_NAME)
             else:
                 self.state = None
-                self._is_function_name_hallucinated()
+                self._get_function_name()
 
         # Check if the token is a function name start token, change the state
         if content.endswith(FUNC_NAME_START_PATTERN):
@@ -182,8 +203,8 @@ class HallucinationStateHandler:
             PARAMETER_NAME_END_TOKENS
         ):
             self.state = None
-            self._is_parameter_name_hallucinated()
             self.parameter_name_done = True
+            self._get_parameter_name()
         # if the parameter name is done and the token is a parameter name start token, change the state
         elif self.parameter_name_done and content.endswith(
             PARAMETER_NAME_START_PATTERN
@@ -208,11 +229,10 @@ class HallucinationStateHandler:
                 if (
                     len(self.mask) > 1
                     and self.mask[-2] != MaskToken.PARAMETER_VALUE
-                    # and not is_parameter_property(
-                    #     self.function_properties[self.function_name],
-                    #     self.parameter_name[-1],
-                    #     "default",
-                    # )
+                    and is_parameter_required(
+                        self.function_properties[self.function_name],
+                        self.parameter_name[-1],
+                    )
                 ):
                     self._check_logprob()
             else:
@@ -266,3 +286,24 @@ class HallucinationStateHandler:
             if self.mask and self.mask[-1] == token
             else 0
         )
+
+    def _get_parameter_name(self):
+        """
+        Get the parameter name from the tokens.
+
+        Returns:
+            str: The extracted parameter name.
+        """
+        p_len = self._count_consecutive_token(MaskToken.PARAMETER_NAME)
+        parameter_name = "".join(self.tokens[:-1][-p_len:])
+        self.parameter_name.append(parameter_name)
+
+    def _get_function_name(self):
+        """
+        Get the function name from the tokens.
+
+        Returns:
+            str: The extracted function name.
+        """
+        f_len = self._count_consecutive_token(MaskToken.FUNCTION_NAME)
+        self.function_name = "".join(self.tokens[:-1][-f_len:])
