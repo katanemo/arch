@@ -217,51 +217,58 @@ prompt_guards:
 
 prompt_targets:
   - name: currency_exchange
-    description: Get currency exchange rate
+    description: Get currency exchange rate from USD to other currencies
     parameters:
-      - name: from_currency_symbol
-        description: the currency that needs conversion from
+      - name: currency_symbol
+        description: the currency that needs conversion
         required: true
         type: str
-        in_param: true
-      - name: to_currency_symbol
-        description: the currency that needs conversion to
-        required: true
-        type: str
-        in_param: true
+        in_path: true
+    http_method: GET
     endpoint:
       name: frankfurther_api
-      path: /v1/latest?base={from_currency_symbol}
+      path: /v1/latest?base=USD&symbols={currency_symbol}
+    system_prompt: |
+      You are a helpful assistant. Show me the currency symbol you want to convert from USD.
 
-  # - name: currency_exchange_history
-  #   description: Get historical data for currency exchange
-  #   parameters:
-  #     - name: base_currency_symbol
-  #       description: base currency
-  #       default: USD
-  #       type: str
-  #       in_param: true
-  #     - name: from_date
-  #       description: show historical data from date
-  #       required: true
-  #       type: str
-  #       in_param: true
-  #     - name: to_date
-  #       description: show historical data until this date
-  #       type: str
-  #       in_param: true
-  #       default: {from_date}
-  #   endpoint:
-  #     name: frankfurther_api
-  #     path: /v1/latest?base={from_date}...{to_date}&{base_currency_symbol}
+  - name: get_supported_currencies
+    description: Get list of supported currencies for conversion
+    http_method: GET
+    endpoint:
+      name: frankfurther_api
+      path: /v1/currencies
 
 endpoints:
   frankfurther_api:
     endpoint: api.frankfurter.dev:443
+    protocol: https
 ```
 
-TODO:
+Now you can issue queries like "what is currency rate for gbp" or "show me list of currencies for conversion".
 
+Here is a sample curl command you can use to interact,
+
+```sh
+
+$ curl --header 'Content-Type: application/json' \
+  --header 'x-arch-llm-provider-hint: ministral-3b' \
+  --data '{"messages": [{"role": "user","content": "what is exchange rate for gbp"}]}' \
+  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
+"As of the date provided in your context, December 5, 2024, the exchange rate for GBP (British Pound) from USD (United States Dollar) is 0.78558. This means that 1 USD is equivalent to 0.78558 GBP."
+
+```
+
+And to get list of supported currencies,
+
+```sh
+
+➜  ~ curl --header 'Content-Type: application/json' \
+  --header 'x-arch-llm-provider-hint: ministral-3b' \
+  --data '{"messages": [{"role": "user","content": "show me list of currencies that are supported for conversion"}]}' \
+  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
+"Here is a list of the currencies that are supported for conversion from USD, along with their symbols:\n\n1. AUD - Australian Dollar\n2. BGN - Bulgarian Lev\n3. BRL - Brazilian Real\n4. CAD - Canadian Dollar\n5. CHF - Swiss Franc\n6. CNY - Chinese Renminbi Yuan\n7. CZK - Czech Koruna\n8. DKK - Danish Krone\n9. EUR - Euro\n10. GBP - British Pound\n11. HKD - Hong Kong Dollar\n12. HUF - Hungarian Forint\n13. IDR - Indonesian Rupiah\n14. ILS - Israeli New Sheqel\n15. INR - Indian Rupee\n16. ISK - Icelandic Króna\n17. JPY - Japanese Yen\n18. KRW - South Korean Won\n19. MXN - Mexican Peso\n20. MYR - Malaysian Ringgit\n21. NOK - Norwegian Krone\n22. NZD - New Zealand Dollar\n23. PHP - Philippine Peso\n24. PLN - Polish Złoty\n25. RON - Romanian Leu\n26. SEK - Swedish Krona\n27. SGD - Singapore Dollar\n28. THB - Thai Baht\n29. TRY - Turkish Lira\n30. USD - United States Dollar\n31. ZAR - South African Rand\n\nIf you want to convert USD to any of these currencies, you can select the one you are interested in."
+
+```
 ### [Observability](https://docs.archgw.com/guides/observability/observability.html)
 Arch is designed to support best-in class observability by supporting open standards. Please read our [docs](https://docs.archgw.com/guides/observability/observability.html) on observability for more details on tracing, metrics, and logs. The screenshot below is from our integration with Signoz (among others)
 
