@@ -2,7 +2,7 @@
 @archfc_endpoint = https://api.fc.archgw.com
 
 ### talk to model_server for completion
-POST {{model_server_endpoint}}/v1/chat/completions HTTP/1.1
+POST {{model_server_endpoint}}/function_calling HTTP/1.1
 Content-Type: application/json
 
 {
@@ -25,7 +25,24 @@ Content-Type: application/json
 }
 
 
-### talk to arch_fc directly for completion
+# talk to Arch-Intent directly for completion
+POST {{archfc_endpoint}}/v1/chat/completions HTTP/1.1
+Content-Type: application/json
+
+{
+  "model": "Arch-Intent",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant.\n\nYou task is to check if there are any tools that can be used to help the last user message in conversations according to the available tools listed below.\n\n<tools>\n{\"index\": \"T0\", \"type\": \"function\", \"function\": {\"name\": \"get_current_weather\", \"description\": \"Get the current weather for a location\", \"parameters\": {\"type\": \"object\", \"properties\": {\"location\": {\"type\": \"str\", \"description\": \"The city and state, e.g. San Francisco, New York\"}, \"unit\": {\"type\": \"str\", \"enum\": [\"celsius\", \"fahrenheit\"], \"description\": \"The unit of temperature to return\"}}, \"required\": [\"location\"]}}}\n</tools>\n\nProvide your tool assessment for ONLY THE LAST USER MESSAGE in the above conversation:\n- First line must read 'Yes' or 'No'.\n- If yes, a second line must include a comma-separated list of tool indexes.\n"
+    },
+    { "role": "user", "content": "how is the weather in seattle? Are there any tools can help?" }
+  ]
+}
+
+
+
+# talk to Arch-Function directly for completion
 POST {{archfc_endpoint}}/v1/chat/completions HTTP/1.1
 Content-Type: application/json
 
