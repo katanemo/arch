@@ -920,7 +920,7 @@ impl StreamContext {
             }
         };
 
-        let http_method = prompt_target.method.unwrap_or_default().to_string();
+        let http_method = endpoint.method.unwrap_or_default().to_string();
         let mut headers = vec![
             (ARCH_UPSTREAM_HOST_HEADER, endpoint.name.as_str()),
             (":method", &http_method),

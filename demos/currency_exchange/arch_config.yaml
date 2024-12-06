@@ -46,3 +46,7 @@ endpoints:
   frankfurther_api:
     endpoint: api.frankfurter.dev:443
     protocol: https
+
+tracing:
+  random_sampling: 100
+  trace_arch_internal: true

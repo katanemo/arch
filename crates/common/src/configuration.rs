@@ -194,12 +194,6 @@ pub struct Parameter {
     pub in_path: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EndpointDetails {
-    pub name: String,
-    pub path: Option<String>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub enum HttpMethod {
     #[default]
@@ -219,12 +213,18 @@ impl Display for HttpMethod {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EndpointDetails {
+    pub name: String,
+    pub path: Option<String>,
+    #[serde(rename = "http_method")]
+    pub method: Option<HttpMethod>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PromptTarget {
     pub name: String,
     pub default: Option<bool>,
     pub description: String,
-    #[serde(rename = "http_method")]
-    pub method: Option<HttpMethod>,
     pub endpoint: Option<EndpointDetails>,
     pub parameters: Option<Vec<Parameter>>,
     pub system_prompt: Option<String>,

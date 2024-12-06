@@ -111,15 +111,15 @@ properties:
               type: string
             path:
               type: string
+            http_method:
+              type: string
+              enum:
+                - GET
+                - POST
           additionalProperties: false
           required:
             - name
             - path
-        http_method:
-          type: string
-          enum:
-            - GET
-            - POST
         system_prompt:
           type: string
       additionalProperties: false

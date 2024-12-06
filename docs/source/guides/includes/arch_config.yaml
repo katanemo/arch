@@ -28,10 +28,10 @@ prompt_targets:
   - name: information_extraction
     default: true
     description: handel all scenarios that are question and answer in nature. Like summarization, information extraction, etc.
-    http_method: POST
     endpoint:
       name: app_server
       path: /agent/summary
+      http_method: POST
     # Arch uses the default LLM and treats the response from the endpoint as the prompt to send to the LLM
     auto_llm_dispatch_on_response: true
     # override system prompt for this prompt target
@@ -39,10 +39,10 @@ prompt_targets:
 
   - name: reboot_network_device
     description: Perform device operations like rebooting a device.
-    http_method: POST
     endpoint:
       name: app_server
       path: /agent/action
+      http_method: POST
     parameters:
       - name: device_id
         type: str

@@ -39,7 +39,7 @@ To get in touch with us, please join our [discord server](https://discord.gg/pGZ
 
 ## Quickstart
 
-Follow this quickstart guide to use arch gateway to build a simple Gen AI application. Laster in the section we will see how you can Arch Gateway to manage access keys, provide unified access to upstream LLMs and to provide e2e observability.
+Follow this quickstart guide to use arch gateway to build a simple AI agent. Laster in the section we will see how you can Arch Gateway to manage access keys, provide unified access to upstream LLMs and to provide e2e observability.
 
 ### Prerequisites
 
@@ -60,9 +60,9 @@ $ source venv/bin/activate   # On Windows, use: venv\Scripts\activate
 $ pip install archgw==0.1.5
 ```
 
-### Build Gen AI Application with Arch Gateway
+### Build AI Agent with Arch Gateway
 
-In following quickstart we will show you how easy it is to build gen ai application with Arch gateway. We will build a currency exchange agent using following simple steps. For this demo we will use `https://api.frankfurter.dev/` to fetch latest price for currencies and assume USD as base currency.
+In following quickstart we will show you how easy it is to build AI agent with Arch gateway. We will build a currency exchange agent using following simple steps. For this demo we will use `https://api.frankfurter.dev/` to fetch latest price for currencies and assume USD as base currency.
 
 #### Step 1. Create arch config file
 
