@@ -2,6 +2,22 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Display;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Configuration {
+    pub version: String,
+    pub listener: Listener,
+    pub endpoints: Option<HashMap<String, Endpoint>>,
+    pub llm_providers: Vec<LlmProvider>,
+    pub overrides: Option<Overrides>,
+    pub system_prompt: Option<String>,
+    pub prompt_guards: Option<PromptGuards>,
+    pub prompt_targets: Option<Vec<PromptTarget>>,
+    pub error_target: Option<ErrorTargetDetail>,
+    pub ratelimits: Option<Vec<Ratelimit>>,
+    pub tracing: Option<Tracing>,
+    pub mode: Option<GatewayMode>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
     pub prompt_target_intent_matching_threshold: Option<f64>,
@@ -20,22 +36,6 @@ pub enum GatewayMode {
     #[default]
     #[serde(rename = "prompt")]
     Prompt,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Configuration {
-    pub version: String,
-    pub listener: Listener,
-    pub endpoints: Option<HashMap<String, Endpoint>>,
-    pub llm_providers: Vec<LlmProvider>,
-    pub overrides: Option<Overrides>,
-    pub system_prompt: Option<String>,
-    pub prompt_guards: Option<PromptGuards>,
-    pub prompt_targets: Option<Vec<PromptTarget>>,
-    pub error_target: Option<ErrorTargetDetail>,
-    pub ratelimits: Option<Vec<Ratelimit>>,
-    pub tracing: Option<Tracing>,
-    pub mode: Option<GatewayMode>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,4 +1,4 @@
-pub mod common_types;
+pub mod api;
 pub mod configuration;
 pub mod consts;
 pub mod embeddings;
