@@ -1,7 +1,12 @@
 #!/bin/bash
 set -e
 
-# Directory where the Docker Compose files are stored
+# Function to load environment variables from the .env file
+load_env() {
+  if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+  fi
+}
 
 # Function to determine the docker-compose file based on the argument
 get_compose_file() {
@@ -16,7 +21,7 @@ get_compose_file() {
       echo "docker-compose-signoz.yaml"
       ;;
     *)
-      echo "docker-compose.yaml"  # Default to Jaeger
+      echo "docker-compose.yaml"
       ;;
   esac
 }
@@ -24,7 +29,7 @@ get_compose_file() {
 # Function to start the demo
 start_demo() {
   # Step 1: Determine the docker-compose file
-  COMPOSE_FILE=$(get_compose_file "$1")
+  COMPOSE_FILE=$(get_compose_file "$1" 2>/dev/null) # Redirects output to /dev/null so user doesn't see it
 
   # Step 2: Check if .env file exists
   if [ -f ".env" ]; then
@@ -35,11 +40,27 @@ start_demo() {
       echo "Error: OPENAI_API_KEY environment variable is not set for the demo."
       exit 1
     fi
+    if [ "$1" == "logfire" ] && [ -z "$LOGFIRE_API_KEY" ]; then
+      echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
+      exit 1
+    fi
 
     echo "Creating .env file..."
     echo "OPENAI_API_KEY=$OPENAI_API_KEY" > .env
+    if [ "$1" == "logfire" ]; then
+      echo "LOGFIRE_API_KEY=$LOGFIRE_API_KEY" >> .env
+    fi
     echo ".env file created with OPENAI_API_KEY."
   fi
+
+  load_env
+
+  if [ "$1" == "logfire" ] && [ -z "$LOGFIRE_API_KEY" ]; then
+    echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
+    exit 1
+  fi
+
+
 
   # Step 4: Start Arch
   echo "Starting Arch with arch_config.yaml..."
