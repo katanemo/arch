@@ -39,7 +39,7 @@ To get in touch with us, please join our [discord server](https://discord.gg/pGZ
 
 ## Quickstart
 
-Follow this quickstart guide to use arch gateway to manage access keys, provide unified access to upstream LLMs and to provide e2e observability. Later we will see how you can use arch gateway to build a Gen AI application.
+Follow this quickstart guide to use arch gateway to build a simple Gen AI application. Laster in the section we will see how you can Arch Gateway to manage access keys, provide unified access to upstream LLMs and to provide e2e observability.
 
 ### Prerequisites
 
@@ -48,8 +48,6 @@ Before you begin, ensure you have the following:
 1. [Docker System](https://docs.docker.com/get-started/get-docker/) (v24)
 2. [Docker compose](https://docs.docker.com/compose/install/) (v2.29)
 3. [Python](https://www.python.org/downloads/) (v3.12)
-
-###
 
 Arch's CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:
 
@@ -62,7 +60,112 @@ $ source venv/bin/activate   # On Windows, use: venv\Scripts\activate
 $ pip install archgw==0.1.5
 ```
 
-### Build LLM gateway
+### Build Gen AI Application with Arch Gateway
+
+In following quickstart we will show you how easy it is to build gen ai application with Arch gateway. We will build a currency exchange agent using following simple steps. For this demo we will use `https://api.frankfurter.dev/` to fetch latest price for currencies and assume USD as base currency.
+
+#### Step 1. Create arch config file
+
+Create `arch_config.yaml` file with following content,
+
+```yaml
+version: v0.1
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
+llm_providers:
+  - name: gpt-4o
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o
+
+system_prompt: |
+  You are a helpful assistant.
+
+prompt_guards:
+  input_guards:
+    jailbreak:
+      on_exception:
+        message: Looks like you're curious about my abilities, but I can only provide assistance for currency exchange.
+
+prompt_targets:
+  - name: currency_exchange
+    description: Get currency exchange rate from USD to other currencies
+    parameters:
+      - name: currency_symbol
+        description: the currency that needs conversion
+        required: true
+        type: str
+        in_path: true
+    http_method: GET
+    endpoint:
+      name: frankfurther_api
+      path: /v1/latest?base=USD&symbols={currency_symbol}
+    system_prompt: |
+      You are a helpful assistant. Show me the currency symbol you want to convert from USD.
+
+  - name: get_supported_currencies
+    description: Get list of supported currencies for conversion
+    http_method: GET
+    endpoint:
+      name: frankfurther_api
+      path: /v1/currencies
+
+endpoints:
+  frankfurther_api:
+    endpoint: api.frankfurter.dev:443
+    protocol: https
+```
+
+#### Step 2. Start arch gateway with currency conversion config
+
+```sh
+
+$ archgw up arch_config.yaml
+2024-12-05 16:56:27,979 - cli.main - INFO - Starting archgw cli version: 0.1.5
+...
+2024-12-05 16:56:28,485 - cli.utils - INFO - Schema validation successful!
+2024-12-05 16:56:28,485 - cli.main - INFO - Starging arch model server and arch gateway
+...
+2024-12-05 16:56:51,647 - cli.core - INFO - Container is healthy!
+
+```
+
+Once the gateway is up you can start interacting with at port 10000 using openai chat completion API.
+
+Some of the sample queries you can ask could be `what is currency rate for gbp?` or `show me list of currencies for conversion`.
+
+#### Step 3. Interacting with gateway using curl command
+
+Here is a sample curl command you can use to interact,
+
+```sh
+
+$ curl --header 'Content-Type: application/json' \
+  --header 'x-arch-llm-provider-hint: ministral-3b' \
+  --data '{"messages": [{"role": "user","content": "what is exchange rate for gbp"}]}' \
+  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
+"As of the date provided in your context, December 5, 2024, the exchange rate for GBP (British Pound) from USD (United States Dollar) is 0.78558. This means that 1 USD is equivalent to 0.78558 GBP."
+
+```
+
+And to get list of supported currencies,
+
+```sh
+
+➜  ~ curl --header 'Content-Type: application/json' \
+  --header 'x-arch-llm-provider-hint: ministral-3b' \
+  --data '{"messages": [{"role": "user","content": "show me list of currencies that are supported for conversion"}]}' \
+  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
+"Here is a list of the currencies that are supported for conversion from USD, along with their symbols:\n\n1. AUD - Australian Dollar\n2. BGN - Bulgarian Lev\n3. BRL - Brazilian Real\n4. CAD - Canadian Dollar\n5. CHF - Swiss Franc\n6. CNY - Chinese Renminbi Yuan\n7. CZK - Czech Koruna\n8. DKK - Danish Krone\n9. EUR - Euro\n10. GBP - British Pound\n11. HKD - Hong Kong Dollar\n12. HUF - Hungarian Forint\n13. IDR - Indonesian Rupiah\n14. ILS - Israeli New Sheqel\n15. INR - Indian Rupee\n16. ISK - Icelandic Króna\n17. JPY - Japanese Yen\n18. KRW - South Korean Won\n19. MXN - Mexican Peso\n20. MYR - Malaysian Ringgit\n21. NOK - Norwegian Krone\n22. NZD - New Zealand Dollar\n23. PHP - Philippine Peso\n24. PLN - Polish Złoty\n25. RON - Romanian Leu\n26. SEK - Swedish Krona\n27. SGD - Singapore Dollar\n28. THB - Thai Baht\n29. TRY - Turkish Lira\n30. USD - United States Dollar\n31. ZAR - South African Rand\n\nIf you want to convert USD to any of these currencies, you can select the one you are interested in."
+
+```
+
+### Use Arch Gateway as LLM Router
 
 #### Step 1. Create arch config file
 
@@ -185,116 +288,12 @@ $ curl --header 'Content-Type: application/json' \
 
 ```
 
-### Build Gen AI Application
-
-In following quickstart we will show you how easy it is to build gen ai application with Arch gateway. We will build a currency exchange agent using following simple steps. For this demo we will use `https://api.frankfurter.dev/` to fetch latest price for currencies and assume USD as base currency.
-
-#### Step 1. Create arch config file
-
-Create `arch_config.yaml` file with following content,
-
-```yaml
-version: v0.1
-
-listener:
-  address: 0.0.0.0
-  port: 10000
-  message_format: huggingface
-  connect_timeout: 0.005s
-
-llm_providers:
-  - name: gpt-4o
-    access_key: $OPENAI_API_KEY
-    provider: openai
-    model: gpt-4o
-
-system_prompt: |
-  You are a helpful assistant.
-
-prompt_guards:
-  input_guards:
-    jailbreak:
-      on_exception:
-        message: Looks like you're curious about my abilities, but I can only provide assistance for currency exchange.
-
-prompt_targets:
-  - name: currency_exchange
-    description: Get currency exchange rate from USD to other currencies
-    parameters:
-      - name: currency_symbol
-        description: the currency that needs conversion
-        required: true
-        type: str
-        in_path: true
-    http_method: GET
-    endpoint:
-      name: frankfurther_api
-      path: /v1/latest?base=USD&symbols={currency_symbol}
-    system_prompt: |
-      You are a helpful assistant. Show me the currency symbol you want to convert from USD.
-
-  - name: get_supported_currencies
-    description: Get list of supported currencies for conversion
-    http_method: GET
-    endpoint:
-      name: frankfurther_api
-      path: /v1/currencies
-
-endpoints:
-  frankfurther_api:
-    endpoint: api.frankfurter.dev:443
-    protocol: https
-```
-
-#### Step 2. Start arch gateway with currency conversion config
-
-```sh
-
-$ archgw up arch_config.yaml
-2024-12-05 16:56:27,979 - cli.main - INFO - Starting archgw cli version: 0.1.5
-...
-2024-12-05 16:56:28,485 - cli.utils - INFO - Schema validation successful!
-2024-12-05 16:56:28,485 - cli.main - INFO - Starging arch model server and arch gateway
-...
-2024-12-05 16:56:51,647 - cli.core - INFO - Container is healthy!
-
-```
-
-Once the gateway is up you can start interacting with at port 10000 using openai chat completion API.
-
-Some of the sample queries you can ask could be `what is currency rate for gbp?` or `show me list of currencies for conversion`.
-
-#### Step 3. Interacting with gateway using curl command
-
-Here is a sample curl command you can use to interact,
-
-```sh
-
-$ curl --header 'Content-Type: application/json' \
-  --header 'x-arch-llm-provider-hint: ministral-3b' \
-  --data '{"messages": [{"role": "user","content": "what is exchange rate for gbp"}]}' \
-  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
-"As of the date provided in your context, December 5, 2024, the exchange rate for GBP (British Pound) from USD (United States Dollar) is 0.78558. This means that 1 USD is equivalent to 0.78558 GBP."
-
-```
-
-And to get list of supported currencies,
-
-```sh
-
-➜  ~ curl --header 'Content-Type: application/json' \
-  --header 'x-arch-llm-provider-hint: ministral-3b' \
-  --data '{"messages": [{"role": "user","content": "show me list of currencies that are supported for conversion"}]}' \
-  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
-"Here is a list of the currencies that are supported for conversion from USD, along with their symbols:\n\n1. AUD - Australian Dollar\n2. BGN - Bulgarian Lev\n3. BRL - Brazilian Real\n4. CAD - Canadian Dollar\n5. CHF - Swiss Franc\n6. CNY - Chinese Renminbi Yuan\n7. CZK - Czech Koruna\n8. DKK - Danish Krone\n9. EUR - Euro\n10. GBP - British Pound\n11. HKD - Hong Kong Dollar\n12. HUF - Hungarian Forint\n13. IDR - Indonesian Rupiah\n14. ILS - Israeli New Sheqel\n15. INR - Indian Rupee\n16. ISK - Icelandic Króna\n17. JPY - Japanese Yen\n18. KRW - South Korean Won\n19. MXN - Mexican Peso\n20. MYR - Malaysian Ringgit\n21. NOK - Norwegian Krone\n22. NZD - New Zealand Dollar\n23. PHP - Philippine Peso\n24. PLN - Polish Złoty\n25. RON - Romanian Leu\n26. SEK - Swedish Krona\n27. SGD - Singapore Dollar\n28. THB - Thai Baht\n29. TRY - Turkish Lira\n30. USD - United States Dollar\n31. ZAR - South African Rand\n\nIf you want to convert USD to any of these currencies, you can select the one you are interested in."
-
-```
-### [Observability](https://docs.archgw.com/guides/observability/observability.html)
+## [Observability](https://docs.archgw.com/guides/observability/observability.html)
 Arch is designed to support best-in class observability by supporting open standards. Please read our [docs](https://docs.archgw.com/guides/observability/observability.html) on observability for more details on tracing, metrics, and logs. The screenshot below is from our integration with Signoz (among others)
 
 ![alt text](docs/source/_static/img/tracing.png)
 
-### Contribution
+## Contribution
 We would love feedback on our [Roadmap](https://github.com/orgs/katanemo/projects/1) and we welcome contributions to **Arch**!
 Whether you're fixing bugs, adding new features, improving documentation, or creating tutorials, your help is much appreciated.
 Please visit our [Contribution Guide](CONTRIBUTING.md) for more details
