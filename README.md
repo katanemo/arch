@@ -239,10 +239,6 @@ $ curl --header 'Content-Type: application/json' \
   --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
   http://localhost:12000/v1/chat/completions
 
-$ curl --header 'Content-Type: application/json' \
-  --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
-  http://localhost:12000/v1/chat/completions
-
 {
   ...
   "model": "gpt-4o-2024-08-06",
