@@ -29,7 +29,7 @@ get_compose_file() {
 # Function to start the demo
 start_demo() {
   # Step 1: Determine the docker-compose file
-  COMPOSE_FILE=$(get_compose_file "$1")
+  COMPOSE_FILE=$(get_compose_file "$1" 2>/dev/null)
 
   # Step 2: Check if .env file exists
   if [ -f ".env" ]; then
@@ -56,25 +56,31 @@ start_demo() {
 
   load_env
 
+  if [ "$1" == "logfire" ] && [ -z "$LOGFIRE_API_KEY"]; then
+    echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
+    exit 1
+  fi
+
   # Step 4: Start Arch
   echo "Starting Arch with arch_config.yaml..."
   archgw up arch_config.yaml
 
   # Step 5: Start Network Agent with the chosen Docker Compose file
+  echo "Starting Network Agent with $COMPOSE_FILE..."
   docker compose -f "$COMPOSE_FILE" up -d  # Run in detached mode
 }
 
 # Function to stop the demo
 stop_demo() {
-  # Step 1: Determine the demo to stop (default to jaeger if no argument provided)
-  DEMO=${1:-jaeger}
-  COMPOSE_FILE=$(get_compose_file "$DEMO")
+  echo "Stopping all Docker Compose services..."
 
-  # Step 2: Stop the specified Docker Compose services
-  echo "Stopping services for $DEMO using $COMPOSE_FILE..."
-  docker compose -f "$COMPOSE_FILE" down
+  # Stop all services by iterating through all configurations
+  for compose_file in ./docker-compose*.yaml; do
+    echo "Stopping services in $compose_file..."
+    docker compose -f "$compose_file" down
+  done
 
-  # Step 3: Stop Arch
+  # Stop Arch
   echo "Stopping Arch..."
   archgw down
 }
@@ -82,7 +88,7 @@ stop_demo() {
 # Main script logic
 if [ "$1" == "down" ]; then
   # Call stop_demo with the second argument as the demo to stop
-  stop_demo "$2"
+  stop_demo 
 else
   # Use the argument (jaeger, logfire, signoz) to determine the compose file
   start_demo "$1"
