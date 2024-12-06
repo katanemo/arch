@@ -48,7 +48,7 @@ source venv/bin/activate
 
 ### Step 3: Run the build script
 ```bash
-sh build_cli.sh
+poetry install
 ```
 
 ### Step 4: build Arch
