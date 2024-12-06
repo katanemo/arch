@@ -33,7 +33,7 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 To get in touch with us, please join our [discord server](https://discord.gg/pGZf2gcwEc). We will be monitoring that actively and offering support there.
 
 ## Demos
-* [Weather Forecast](demos/weather_forecast/README.md) - Walk through of the core function calling capabilities of of arch gateway using weather forecasting service
+* [Weather Forecast](demos/weather_forecast/README.md) - Walk through of the core function calling capabilities of arch gateway using weather forecasting service
 * [Insurance Agent](demos/insurance_agent/README.md) - Build a full insurance agent with Arch
 * [Network Agent](demos/network_agent/README.md) - Build a networking co-pilot/agent agent with Arch
 
