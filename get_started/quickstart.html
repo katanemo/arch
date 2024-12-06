@@ -94,6 +94,7 @@
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_to_arch.html">Intro to Arch</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Concepts</span></p>
 <ul>
@@ -157,100 +158,228 @@
 <section id="prerequisites">
 <h2>Prerequisites<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#prerequisites" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#prerequisites'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
 <p>Before you begin, ensure you have the following:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Docker</span></code> &amp; <code class="docutils literal notranslate"><span class="pre">Python</span></code> installed on your system</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">API</span> <span class="pre">Keys</span></code> for LLM providers (if using external LLMs)</p></li>
-</ul>
-<p>The fastest way to get started using Arch is to use <a class="reference external" href="https://hub.docker.com/r/katanemo/archgw" rel="nofollow noopener">katanemo/archgw<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a> pre-built binaries.
-You can also build it from source.</p>
-</section>
-<section id="step-1-install-arch">
-<h2>Step 1: Install Arch<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-1-install-arch" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-1-install-arch'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>Arch’s CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply
-run the following command:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>archgw
-</span></code></pre></div>
-</div>
-<p>This will install the archgw command-line tool globally on your system.</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://docs.docker.com/get-started/get-docker/" rel="nofollow noopener">Docker System<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a> (v24)</p></li>
+<li><p><a class="reference external" href="https://docs.docker.com/compose/install/" rel="nofollow noopener">Docker compose<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a> (v2.29)</p></li>
+<li><p><a class="reference external" href="https://www.python.org/downloads/" rel="nofollow noopener">Python<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a> (v3.12)</p></li>
+</ol>
+<p>Arch’s CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch.
-This ensures that <cite>archgw</cite> and its dependencies do not interfere with other packages on your system.</p>
-<p>To create and activate a virtual environment, you can run the following commands:</p>
+<p>We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that <code class="docutils literal notranslate"><span class="pre">archgw</span></code> and its dependencies do not interfere with other packages on your system.</p>
+</div>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">$ </span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
 </span><span id="line-2"><span class="gp">$ </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">   </span><span class="c1"># On Windows, use: venv\Scripts\activate</span>
-</span><span id="line-3"><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>archgw
+</span><span id="line-3"><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">archgw</span><span class="o">==</span><span class="m">0</span>.1.5
 </span></code></pre></div>
 </div>
-</div>
 </section>
-<section id="step-2-config-arch">
-<h2>Step 2: Config Arch<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-2-config-arch" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-2-config-arch'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<p>Arch operates based on a configuration file where you can define LLM providers, prompt targets, and guardrails, etc.
-Below is an example configuration to get you started, including:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">endpoints</span></code>: Specifies where Arch listens for incoming prompts.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">system_prompts</span></code>: Defines predefined prompts to set the context for interactions.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">llm_providers</span></code>: Lists the LLM providers Arch can route prompts to.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">prompt_guards</span></code>: Sets up rules to detect and reject undesirable prompts.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">prompt_targets</span></code>: Defines endpoints that handle specific types of prompts.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">error_target</span></code>: Specifies where to route errors for handling.</p></li>
-</ul>
+<section id="build-ai-agent-with-arch-gateway">
+<h2>Build AI Agent with Arch Gateway<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#build-ai-agent-with-arch-gateway" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#build-ai-agent-with-arch-gateway'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<p>In the following quickstart, we will show you how easy it is to build an AI agent with the Arch gateway. We will build a currency exchange agent using the following simple steps. For this demo, we will use <cite>https://api.frankfurter.dev/</cite> to fetch the latest prices for currencies and assume USD as the base currency.</p>
+<section id="step-1-create-arch-config-file">
+<h3>Step 1. Create arch config file<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-1-create-arch-config-file" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-1-create-arch-config-file'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<p>Create <code class="docutils literal notranslate"><span class="pre">arch_config.yaml</span></code> file with the following content:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
-</span><span id="line-2"><span class="nt">listener</span><span class="p">:</span>
-</span><span id="line-3"><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1</span>
-</span><span id="line-4"><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8080</span><span class="w"> </span><span class="c1">#If you configure port 443, you'll need to update the listener with tls_certificates</span>
-</span><span id="line-5"><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
-</span><span id="line-6">
-</span><span id="line-7"><span class="c1"># Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way</span>
-</span><span id="line-8"><span class="nt">llm_providers</span><span class="p">:</span>
-</span><span id="line-9"><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OpenAI</span>
-</span><span id="line-10"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-2">
+</span><span id="line-3"><span class="nt">listener</span><span class="p">:</span>
+</span><span id="line-4"><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span>
+</span><span id="line-5"><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
+</span><span id="line-6"><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
+</span><span id="line-7"><span class="w">  </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-8">
+</span><span id="line-9"><span class="nt">llm_providers</span><span class="p">:</span>
+</span><span id="line-10"><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
 </span><span id="line-11"><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$OPENAI_API_KEY</span>
-</span><span id="line-12"><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-3.5-turbo</span>
-</span><span id="line-13"><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-12"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-13"><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
 </span><span id="line-14">
-</span><span id="line-15"><span class="c1"># default system prompt used by all prompt targets</span>
-</span><span id="line-16"><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-</span><span id="line-17"><span class="w">  </span><span class="no">You are a network assistant that helps operators with a better understanding of network traffic flow and perform actions on networking operations. No advice on manufacturers or purchasing decisions.</span>
-</span><span id="line-18">
-</span><span id="line-19"><span class="nt">prompt_targets</span><span class="p">:</span>
-</span><span id="line-20"><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_summary</span>
-</span><span id="line-21"><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Retrieve network statistics for specific devices within a time range</span>
-</span><span id="line-22"><span class="w">      </span><span class="nt">endpoint</span><span class="p">:</span>
-</span><span id="line-23"><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">app_server</span>
-</span><span id="line-24"><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/agent/device_summary</span>
-</span><span id="line-25"><span class="w">      </span><span class="nt">parameters</span><span class="p">:</span>
-</span><span id="line-26"><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">device_ids</span>
-</span><span id="line-27"><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list</span>
-</span><span id="line-28"><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A list of device identifiers (IDs) to retrieve statistics for.</span>
-</span><span id="line-29"><span class="w">          </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># device_ids are required to get device statistics</span>
-</span><span id="line-30"><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">days</span>
-</span><span id="line-31"><span class="w">          </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
-</span><span id="line-32"><span class="w">          </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The number of days for which to gather device statistics.</span>
-</span><span id="line-33"><span class="w">          </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">"7"</span>
-</span><span id="line-34">
-</span><span id="line-35"><span class="c1"># Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.</span>
-</span><span id="line-36"><span class="nt">endpoints</span><span class="p">:</span>
-</span><span id="line-37"><span class="w">  </span><span class="nt">app_server</span><span class="p">:</span>
-</span><span id="line-38"><span class="w">    </span><span class="c1"># value could be ip address or a hostname with port</span>
-</span><span id="line-39"><span class="w">    </span><span class="c1"># this could also be a list of endpoints for load balancing</span>
-</span><span id="line-40"><span class="w">    </span><span class="c1"># for example endpoint: [ ip1:port, ip2:port ]</span>
-</span><span id="line-41"><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">host.docker.internal:18083</span>
-</span><span id="line-42"><span class="w">    </span><span class="c1"># max time to wait for a connection to be established</span>
-</span><span id="line-43"><span class="w">    </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-15"><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+</span><span id="line-16"><span class="w">  </span><span class="no">You are a helpful assistant.</span>
+</span><span id="line-17">
+</span><span id="line-18"><span class="nt">prompt_guards</span><span class="p">:</span>
+</span><span id="line-19"><span class="w">  </span><span class="nt">input_guards</span><span class="p">:</span>
+</span><span id="line-20"><span class="w">    </span><span class="nt">jailbreak</span><span class="p">:</span>
+</span><span id="line-21"><span class="w">      </span><span class="nt">on_exception</span><span class="p">:</span>
+</span><span id="line-22"><span class="w">        </span><span class="nt">message</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Looks like you're curious about my abilities, but I can only provide assistance for currency exchange.</span>
+</span><span id="line-23">
+</span><span id="line-24"><span class="nt">prompt_targets</span><span class="p">:</span>
+</span><span id="line-25"><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">currency_exchange</span>
+</span><span id="line-26"><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Get currency exchange rate from USD to other currencies</span>
+</span><span id="line-27"><span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+</span><span id="line-28"><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">currency_symbol</span>
+</span><span id="line-29"><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">the currency that needs conversion</span>
+</span><span id="line-30"><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-31"><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">str</span>
+</span><span id="line-32"><span class="w">        </span><span class="nt">in_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-33"><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-34"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">frankfurther_api</span>
+</span><span id="line-35"><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/v1/latest?base=USD&amp;symbols={currency_symbol}</span>
+</span><span id="line-36"><span class="w">    </span><span class="nt">system_prompt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+</span><span id="line-37"><span class="w">      </span><span class="no">You are a helpful assistant. Show me the currency symbol you want to convert from USD.</span>
+</span><span id="line-38">
+</span><span id="line-39"><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">get_supported_currencies</span>
+</span><span id="line-40"><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Get list of supported currencies for conversion</span>
+</span><span id="line-41"><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span>
+</span><span id="line-42"><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">frankfurther_api</span>
+</span><span id="line-43"><span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/v1/currencies</span>
+</span><span id="line-44">
+</span><span id="line-45"><span class="nt">endpoints</span><span class="p">:</span>
+</span><span id="line-46"><span class="w">  </span><span class="nt">frankfurther_api</span><span class="p">:</span>
+</span><span id="line-47"><span class="w">    </span><span class="nt">endpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">api.frankfurter.dev:443</span>
+</span><span id="line-48"><span class="w">    </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https</span>
 </span></code></pre></div>
 </div>
 </section>
-<section id="step-3-start-arch-gateway">
-<h2>Step 3: Start Arch Gateway<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-3-start-arch-gateway" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-3-start-arch-gateway'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">$ </span>archgw<span class="w"> </span>up<span class="w"> </span><span class="o">[</span>path_to_config<span class="o">]</span>
+<section id="step-2-start-arch-gateway-with-currency-conversion-config">
+<h3>Step 2. Start arch gateway with currency conversion config<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-2-start-arch-gateway-with-currency-conversion-config" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-2-start-arch-gateway-with-currency-conversion-config'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">$<span class="w"> </span>archgw<span class="w"> </span>up<span class="w"> </span>arch_config.yaml
+</span><span id="line-2"><span class="m">2024</span>-12-05<span class="w"> </span><span class="m">16</span>:56:27,979<span class="w"> </span>-<span class="w"> </span>cli.main<span class="w"> </span>-<span class="w"> </span>INFO<span class="w"> </span>-<span class="w"> </span>Starting<span class="w"> </span>archgw<span class="w"> </span>cli<span class="w"> </span>version:<span class="w"> </span><span class="m">0</span>.1.5
+</span><span id="line-3">...
+</span><span id="line-4"><span class="m">2024</span>-12-05<span class="w"> </span><span class="m">16</span>:56:28,485<span class="w"> </span>-<span class="w"> </span>cli.utils<span class="w"> </span>-<span class="w"> </span>INFO<span class="w"> </span>-<span class="w"> </span>Schema<span class="w"> </span>validation<span class="w"> </span>successful!
+</span><span id="line-5"><span class="m">2024</span>-12-05<span class="w"> </span><span class="m">16</span>:56:28,485<span class="w"> </span>-<span class="w"> </span>cli.main<span class="w"> </span>-<span class="w"> </span>INFO<span class="w"> </span>-<span class="w"> </span>Starting<span class="w"> </span>arch<span class="w"> </span>model<span class="w"> </span>server<span class="w"> </span>and<span class="w"> </span>arch<span class="w"> </span>gateway
+</span><span id="line-6">...
+</span><span id="line-7"><span class="m">2024</span>-12-05<span class="w"> </span><span class="m">16</span>:56:51,647<span class="w"> </span>-<span class="w"> </span>cli.core<span class="w"> </span>-<span class="w"> </span>INFO<span class="w"> </span>-<span class="w"> </span>Container<span class="w"> </span>is<span class="w"> </span>healthy!
 </span></code></pre></div>
 </div>
-<p>For detailed usage please refer to the <cite>Support &lt;https://github.com/katanemo/arch/blob/main/arch/tools/README.md#setup-instructionsuser-archgw-cli&gt;</cite></p>
+<p>Once the gateway is up, you can start interacting with it at port 10000 using the OpenAI chat completion API.</p>
+<p>Some sample queries you can ask include: <code class="docutils literal notranslate"><span class="pre">what</span> <span class="pre">is</span> <span class="pre">currency</span> <span class="pre">rate</span> <span class="pre">for</span> <span class="pre">gbp?</span></code> or <code class="docutils literal notranslate"><span class="pre">show</span> <span class="pre">me</span> <span class="pre">list</span> <span class="pre">of</span> <span class="pre">currencies</span> <span class="pre">for</span> <span class="pre">conversion</span></code>.</p>
+</section>
+<section id="step-3-interacting-with-gateway-using-curl-command">
+<h3>Step 3. Interacting with gateway using curl command<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-3-interacting-with-gateway-using-curl-command" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-3-interacting-with-gateway-using-curl-command'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<p>Here is a sample curl command you can use to interact:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">$<span class="w"> </span>curl<span class="w"> </span>--header<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-2"><span class="w">  </span>--data<span class="w"> </span><span class="s1">'{"messages": [{"role": "user","content": "what is exchange rate for gbp"}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-3"><span class="w">  </span>http://localhost:10000/v1/chat/completions<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s2">".choices[0].message.content"</span>
+</span><span id="line-4">
+</span><span id="line-5"><span class="s2">"As of the date provided in your context, December 5, 2024, the exchange rate for GBP (British Pound) from USD (United States Dollar) is 0.78558. This means that 1 USD is equivalent to 0.78558 GBP."</span>
+</span></code></pre></div>
+</div>
+<p>And to get the list of supported currencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">$<span class="w"> </span>curl<span class="w"> </span>--header<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-2"><span class="w">  </span>--data<span class="w"> </span><span class="s1">'{"messages": [{"role": "user","content": "show me list of currencies that are supported for conversion"}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-3"><span class="w">  </span>http://localhost:10000/v1/chat/completions<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s2">".choices[0].message.content"</span>
+</span><span id="line-4">
+</span><span id="line-5"><span class="s2">"Here is a list of the currencies that are supported for conversion from USD, along with their symbols:\n\n1. AUD - Australian Dollar\n2. BGN - Bulgarian Lev\n3. BRL - Brazilian Real\n4. CAD - Canadian Dollar\n5. CHF - Swiss Franc\n6. CNY - Chinese Renminbi Yuan\n7. CZK - Czech Koruna\n8. DKK - Danish Krone\n9. EUR - Euro\n10. GBP - British Pound\n11. HKD - Hong Kong Dollar\n12. HUF - Hungarian Forint\n13. IDR - Indonesian Rupiah\n14. ILS - Israeli New Sheqel\n15. INR - Indian Rupee\n16. ISK - Icelandic Króna\n17. JPY - Japanese Yen\n18. KRW - South Korean Won\n19. MXN - Mexican Peso\n20. MYR - Malaysian Ringgit\n21. NOK - Norwegian Krone\n22. NZD - New Zealand Dollar\n23. PHP - Philippine Peso\n24. PLN - Polish Złoty\n25. RON - Romanian Leu\n26. SEK - Swedish Krona\n27. SGD - Singapore Dollar\n28. THB - Thai Baht\n29. TRY - Turkish Lira\n30. USD - United States Dollar\n31. ZAR - South African Rand\n\nIf you want to convert USD to any of these currencies, you can select the one you are interested in."</span>
+</span></code></pre></div>
+</div>
+</section>
+</section>
+<section id="use-arch-gateway-as-llm-router">
+<h2>Use Arch Gateway as LLM Router<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#use-arch-gateway-as-llm-router" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#use-arch-gateway-as-llm-router'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<section id="id2">
+<h3>Step 1. Create arch config file<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id2" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#id2'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<p>Arch operates based on a configuration file where you can define LLM providers, prompt targets, guardrails, etc. Below is an example configuration that defines OpenAI and Mistral LLM providers.</p>
+<p>Create <code class="docutils literal notranslate"><span class="pre">arch_config.yaml</span></code> file with the following content:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v0.1</span>
+</span><span id="line-2">
+</span><span id="line-3"><span class="nt">listener</span><span class="p">:</span>
+</span><span id="line-4"><span class="w">  </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0.0.0</span>
+</span><span id="line-5"><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10000</span>
+</span><span id="line-6"><span class="w">  </span><span class="nt">message_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
+</span><span id="line-7"><span class="w">  </span><span class="nt">connect_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.005s</span>
+</span><span id="line-8">
+</span><span id="line-9"><span class="nt">llm_providers</span><span class="p">:</span>
+</span><span id="line-10"><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+</span><span id="line-11"><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$OPENAI_API_KEY</span>
+</span><span id="line-12"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openai</span>
+</span><span id="line-13"><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+</span><span id="line-14"><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="line-15">
+</span><span id="line-16"><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ministral-3b</span>
+</span><span id="line-17"><span class="w">    </span><span class="nt">access_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$MISTRAL_API_KEY</span>
+</span><span id="line-18"><span class="w">    </span><span class="nt">provider</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mistral</span>
+</span><span id="line-19"><span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ministral-3b-latest</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="step-2-start-arch-gateway">
+<h3>Step 2. Start arch gateway<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-2-start-arch-gateway" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-2-start-arch-gateway'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<p>Once the config file is created, ensure that you have environment variables set up for <code class="docutils literal notranslate"><span class="pre">MISTRAL_API_KEY</span></code> and <code class="docutils literal notranslate"><span class="pre">OPENAI_API_KEY</span></code> (or these are defined in a <code class="docutils literal notranslate"><span class="pre">.env</span></code> file).</p>
+<p>Start the Arch gateway:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">$ </span>archgw<span class="w"> </span>up<span class="w"> </span>arch_config.yaml
+</span><span id="line-2"><span class="go">2024-12-05 11:24:51,288 - cli.main - INFO - Starting archgw cli version: 0.1.5</span>
+</span><span id="line-3"><span class="go">2024-12-05 11:24:51,825 - cli.utils - INFO - Schema validation successful!</span>
+</span><span id="line-4"><span class="go">2024-12-05 11:24:51,825 - cli.main - INFO - Starting arch model server and arch gateway</span>
+</span><span id="line-5"><span class="go">...</span>
+</span><span id="line-6"><span class="go">2024-12-05 11:25:16,131 - cli.core - INFO - Container is healthy!</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="step-3-interact-with-llm">
+<h3>Step 3: Interact with LLM<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-3-interact-with-llm" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#step-3-interact-with-llm'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h3>
+<section id="step-3-1-using-openai-python-client">
+<h4>Step 3.1: Using OpenAI Python client<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-3-1-using-openai-python-client"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h4>
+<p>Make outbound calls via the Arch gateway:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">from</span> <span class="nn">openai</span> <span class="kn">import</span> <span class="n">OpenAI</span>
+</span><span id="line-2">
+</span><span id="line-3"><span class="c1"># Use the OpenAI client as usual</span>
+</span><span id="line-4"><span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
+</span><span id="line-5">  <span class="c1"># No need to set a specific openai.api_key since it's configured in Arch's gateway</span>
+</span><span id="line-6">  <span class="n">api_key</span><span class="o">=</span><span class="s1">'--'</span><span class="p">,</span>
+</span><span id="line-7">  <span class="c1"># Set the OpenAI API base URL to the Arch gateway endpoint</span>
+</span><span id="line-8">  <span class="n">base_url</span><span class="o">=</span><span class="s2">"http://127.0.0.1:12000/v1"</span>
+</span><span id="line-9"><span class="p">)</span>
+</span><span id="line-10">
+</span><span id="line-11"><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+</span><span id="line-12">    <span class="c1"># we select model from arch_config file</span>
+</span><span id="line-13">    <span class="n">model</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span>
+</span><span id="line-14">    <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"What is the capital of France?"</span><span class="p">}],</span>
+</span><span id="line-15"><span class="p">)</span>
+</span><span id="line-16">
+</span><span id="line-17"><span class="nb">print</span><span class="p">(</span><span class="s2">"OpenAI Response:"</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="step-3-2-using-curl-command">
+<h4>Step 3.2: Using curl command<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#step-3-2-using-curl-command"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">$<span class="w"> </span>curl<span class="w"> </span>--header<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-2"><span class="w">  </span>--data<span class="w"> </span><span class="s1">'{"messages": [{"role": "user","content": "What is the capital of France?"}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-3"><span class="w">  </span>http://localhost:12000/v1/chat/completions
+</span><span id="line-4">
+</span><span id="line-5"><span class="o">{</span>
+</span><span id="line-6"><span class="w">  </span>...
+</span><span id="line-7"><span class="w">  </span><span class="s2">"model"</span>:<span class="w"> </span><span class="s2">"gpt-4o-2024-08-06"</span>,
+</span><span id="line-8"><span class="w">  </span><span class="s2">"choices"</span>:<span class="w"> </span><span class="o">[</span>
+</span><span id="line-9"><span class="w">    </span><span class="o">{</span>
+</span><span id="line-10"><span class="w">      </span>...
+</span><span id="line-11"><span class="w">      </span><span class="s2">"message"</span>:<span class="w"> </span><span class="o">{</span>
+</span><span id="line-12"><span class="w">        </span><span class="s2">"role"</span>:<span class="w"> </span><span class="s2">"assistant"</span>,
+</span><span id="line-13"><span class="w">        </span><span class="s2">"content"</span>:<span class="w"> </span><span class="s2">"The capital of France is Paris."</span>,
+</span><span id="line-14"><span class="w">      </span><span class="o">}</span>,
+</span><span id="line-15"><span class="w">    </span><span class="o">}</span>
+</span><span id="line-16"><span class="w">  </span><span class="o">]</span>,
+</span><span id="line-17"><span class="o">}</span>
+</span></code></pre></div>
+</div>
+<p>You can override model selection using the <code class="docutils literal notranslate"><span class="pre">x-arch-llm-provider-hint</span></code> header. For example, to use Mistral, use the following curl command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">$<span class="w"> </span>curl<span class="w"> </span>--header<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-2"><span class="w">  </span>--header<span class="w"> </span><span class="s1">'x-arch-llm-provider-hint: ministral-3b'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-3"><span class="w">  </span>--data<span class="w"> </span><span class="s1">'{"messages": [{"role": "user","content": "What is the capital of France?"}]}'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="line-4"><span class="w">  </span>http://localhost:12000/v1/chat/completions
+</span><span id="line-5">
+</span><span id="line-6"><span class="o">{</span>
+</span><span id="line-7"><span class="w">  </span>...
+</span><span id="line-8"><span class="w">  </span><span class="s2">"model"</span>:<span class="w"> </span><span class="s2">"ministral-3b-latest"</span>,
+</span><span id="line-9"><span class="w">  </span><span class="s2">"choices"</span>:<span class="w"> </span><span class="o">[</span>
+</span><span id="line-10"><span class="w">    </span><span class="o">{</span>
+</span><span id="line-11"><span class="w">      </span><span class="s2">"message"</span>:<span class="w"> </span><span class="o">{</span>
+</span><span id="line-12"><span class="w">        </span><span class="s2">"role"</span>:<span class="w"> </span><span class="s2">"assistant"</span>,
+</span><span id="line-13"><span class="w">        </span><span class="s2">"content"</span>:<span class="w"> </span><span class="s2">"The capital of France is Paris. It is the most populous city in France and is known for its iconic landmarks such as the Eiffel Tower, the Louvre Museum, and Notre-Dame Cathedral. Paris is also a major global center for art, fashion, gastronomy, and culture."</span>,
+</span><span id="line-14"><span class="w">      </span><span class="o">}</span>,
+</span><span id="line-15"><span class="w">      </span>...
+</span><span id="line-16"><span class="w">    </span><span class="o">}</span>
+</span><span id="line-17"><span class="w">  </span><span class="o">]</span>,
+</span><span id="line-18"><span class="w">  </span>...
+</span><span id="line-19"><span class="o">}</span>
+</span></code></pre></div>
+</div>
+</section>
+</section>
+</section>
 </section>
 <section id="next-steps">
-<h2>Next Steps<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#next-steps" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#next-steps'"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h2>
+<h1>Next Steps<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#next-steps"><svg height="1em" viewbox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"></path></svg></a></h1>
 <p>Congratulations! You’ve successfully set up Arch and made your first prompt-based request. To further enhance your GenAI applications, explore the following resources:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="overview.html#overview"><span class="std std-ref">Full Documentation</span></a>: Comprehensive guides and references.</p></li>
@@ -258,7 +387,6 @@ Below is an example configuration to get you started, including:</p>
 <li><p><a class="reference external" href="https://github.com/katanemo/arch#contact" rel="nofollow noopener">Support<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>: Get help and connect with the Arch community .</p></li>
 </ul>
 <p>With Arch, building scalable, fast, and personalized GenAI applications has never been easier. Dive deeper into Arch’s capabilities and start creating innovative AI-driven experiences today!</p>
-</section>
 </section>
 </div><div class="flex justify-between items-center pt-6 mt-12 border-t border-border gap-4">
 <div class="mr-auto">
@@ -280,10 +408,26 @@ Below is an example configuration to get you started, including:</p>
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
+<li><ul>
 <li><a :data-current="activeSection === '#prerequisites'" class="reference internal" href="#prerequisites">Prerequisites</a></li>
-<li><a :data-current="activeSection === '#step-1-install-arch'" class="reference internal" href="#step-1-install-arch">Step 1: Install Arch</a></li>
-<li><a :data-current="activeSection === '#step-2-config-arch'" class="reference internal" href="#step-2-config-arch">Step 2: Config Arch</a></li>
-<li><a :data-current="activeSection === '#step-3-start-arch-gateway'" class="reference internal" href="#step-3-start-arch-gateway">Step 3: Start Arch Gateway</a></li>
+<li><a :data-current="activeSection === '#build-ai-agent-with-arch-gateway'" class="reference internal" href="#build-ai-agent-with-arch-gateway">Build AI Agent with Arch Gateway</a><ul>
+<li><a :data-current="activeSection === '#step-1-create-arch-config-file'" class="reference internal" href="#step-1-create-arch-config-file">Step 1. Create arch config file</a></li>
+<li><a :data-current="activeSection === '#step-2-start-arch-gateway-with-currency-conversion-config'" class="reference internal" href="#step-2-start-arch-gateway-with-currency-conversion-config">Step 2. Start arch gateway with currency conversion config</a></li>
+<li><a :data-current="activeSection === '#step-3-interacting-with-gateway-using-curl-command'" class="reference internal" href="#step-3-interacting-with-gateway-using-curl-command">Step 3. Interacting with gateway using curl command</a></li>
+</ul>
+</li>
+<li><a :data-current="activeSection === '#use-arch-gateway-as-llm-router'" class="reference internal" href="#use-arch-gateway-as-llm-router">Use Arch Gateway as LLM Router</a><ul>
+<li><a :data-current="activeSection === '#id2'" class="reference internal" href="#id2">Step 1. Create arch config file</a></li>
+<li><a :data-current="activeSection === '#step-2-start-arch-gateway'" class="reference internal" href="#step-2-start-arch-gateway">Step 2. Start arch gateway</a></li>
+<li><a :data-current="activeSection === '#step-3-interact-with-llm'" class="reference internal" href="#step-3-interact-with-llm">Step 3: Interact with LLM</a><ul>
+<li><a :data-current="activeSection === '#step-3-1-using-openai-python-client'" class="reference internal" href="#step-3-1-using-openai-python-client">Step 3.1: Using OpenAI Python client</a></li>
+<li><a :data-current="activeSection === '#step-3-2-using-curl-command'" class="reference internal" href="#step-3-2-using-curl-command">Step 3.2: Using curl command</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a :data-current="activeSection === '#next-steps'" class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </div>
