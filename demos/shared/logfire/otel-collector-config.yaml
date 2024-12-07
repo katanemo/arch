@@ -6,19 +6,24 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
+processors:
+  filter:
+    include:
+      attributes:
+        http.url: '*/healthz'
+    drop: true
+  batch:
+    timeout: 5s
+
 exporters:
   otlphttp:
     endpoint: "https://logfire-api.pydantic.dev"
     headers:
       Authorization: "${LOGFIRE_API_KEY}"
 
-processors:
-  batch:
-    timeout: 5s
-
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [filter, batch]
       exporters: [otlphttp]
