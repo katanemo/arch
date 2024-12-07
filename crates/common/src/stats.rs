@@ -2,7 +2,6 @@ use log::error;
 use proxy_wasm::hostcalls;
 use proxy_wasm::types::*;
 
-#[allow(unused)]
 pub trait Metric {
     fn id(&self) -> u32;
     fn value(&self) -> Result<u64, String> {
@@ -14,7 +13,6 @@ pub trait Metric {
     }
 }
 
-#[allow(unused)]
 pub trait IncrementingMetric: Metric {
     fn increment(&self, offset: i64) {
         match hostcalls::increment_metric(self.id(), offset) {
@@ -24,7 +22,6 @@ pub trait IncrementingMetric: Metric {
     }
 }
 
-#[allow(unused)]
 pub trait RecordingMetric: Metric {
     fn record(&self, value: u64) {
         match hostcalls::record_metric(self.id(), value) {
@@ -39,7 +36,6 @@ pub struct Counter {
     id: u32,
 }
 
-#[allow(unused)]
 impl Counter {
     pub fn new(name: String) -> Counter {
         let returned_id = hostcalls::define_metric(MetricType::Counter, &name)
@@ -85,7 +81,6 @@ pub struct Histogram {
     id: u32,
 }
 
-#[allow(unused)]
 impl Histogram {
     pub fn new(name: String) -> Histogram {
         let returned_id = hostcalls::define_metric(MetricType::Histogram, &name)
