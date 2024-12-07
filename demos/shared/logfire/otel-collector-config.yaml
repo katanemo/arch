@@ -19,11 +19,11 @@ exporters:
   otlphttp:
     endpoint: "https://logfire-api.pydantic.dev"
     headers:
-      Authorization: "${LOGFIRE_API_KEY}"
+      Authorization: "Bearer ${LOGFIRE_API_KEY}"
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [filter, batch]
+      processors: [batch]
       exporters: [otlphttp]

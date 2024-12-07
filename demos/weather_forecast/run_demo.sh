@@ -56,7 +56,7 @@ start_demo() {
 
   load_env
 
-  if [ "$1" == "logfire" ] && [ -z "$LOGFIRE_API_KEY"]; then
+  if [ "$1" == "logfire" ] && [ -z "$LOGFIRE_API_KEY" ]; then
     echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
     exit 1
   fi
