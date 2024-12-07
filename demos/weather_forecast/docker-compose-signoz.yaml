@@ -4,7 +4,7 @@ include:
 services:
   weather_forecast_service:
     build:
-      context: ./weather_forecast_service
+      context: .
     environment:
       - OLTP_HOST=http://otel-collector:4317
     extra_hosts:
