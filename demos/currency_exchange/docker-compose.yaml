@@ -1,14 +1,4 @@
 services:
-  weather_forecast_service:
-    build:
-      context: ./
-    environment:
-      - OLTP_HOST=http://jaeger:4317
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "18083:80"
-
   chatbot_ui:
     build:
       context: ../shared/chatbot_ui
@@ -29,13 +19,3 @@ services:
       - "16686:16686"
       - "4317:4317"
       - "4318:4318"
-
-  prometheus:
-    build:
-      context: ../shared/prometheus
-
-  grafana:
-    build:
-      context: ../shared/grafana
-    ports:
-      - "3000:3000"

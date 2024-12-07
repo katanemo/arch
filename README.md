@@ -33,94 +33,184 @@ Engineered with purpose-built LLMs, Arch handles the critical but undifferentiat
 To get in touch with us, please join our [discord server](https://discord.gg/pGZf2gcwEc). We will be monitoring that actively and offering support there.
 
 ## Demos
-* [Weather Forecast](demos/weather_forecast/README.md) - Walk through of the core function calling capabilities of of arch gateway using weather forecasting service
+* [Weather Forecast](demos/weather_forecast/README.md) - Walk through of the core function calling capabilities of arch gateway using weather forecasting service
 * [Insurance Agent](demos/insurance_agent/README.md) - Build a full insurance agent with Arch
 * [Network Agent](demos/network_agent/README.md) - Build a networking co-pilot/agent agent with Arch
 
 ## Quickstart
 
-Follow this guide to learn how to quickly set up Arch and integrate it into your generative AI applications.
+Follow this quickstart guide to use arch gateway to build a simple AI agent. Laster in the section we will see how you can Arch Gateway to manage access keys, provide unified access to upstream LLMs and to provide e2e observability.
 
 ### Prerequisites
 
 Before you begin, ensure you have the following:
 
-- `Docker` & `Python` installed on your system
-- `API Keys` for LLM providers (if using external LLMs)
-
-
-### Step 1: Install Arch
-
-Arch's CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:
-Tip: We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that archgw and its dependencies do not interfere with other packages on your system.
-
-Make sure you have following utilities installed before proceeding further,
-
 1. [Docker System](https://docs.docker.com/get-started/get-docker/) (v24)
 2. [Docker compose](https://docs.docker.com/compose/install/) (v2.29)
 3. [Python](https://www.python.org/downloads/) (v3.12)
-4. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (v1.8.3. *Note: only needed for local development*)
 
+Arch's CLI allows you to manage and interact with the Arch gateway efficiently. To install the CLI, simply run the following command:
+
+> [!TIP]
+> We recommend that developers create a new Python virtual environment to isolate dependencies before installing Arch. This ensures that archgw and its dependencies do not interfere with other packages on your system.
 
 ```console
 $ python -m venv venv
 $ source venv/bin/activate   # On Windows, use: venv\Scripts\activate
-$ pip install archgw
+$ pip install archgw==0.1.6
 ```
 
-### Step 2: Configure Arch with your application
+### Build AI Agent with Arch Gateway
 
-Arch operates based on a configuration file where you can define LLM providers, prompt targets, guardrails, etc.
-Below is an example configuration to get you started:
+In following quickstart we will show you how easy it is to build AI agent with Arch gateway. We will build a currency exchange agent using following simple steps. For this demo we will use `https://api.frankfurter.dev/` to fetch latest price for currencies and assume USD as base currency.
+
+#### Step 1. Create arch config file
+
+Create `arch_config.yaml` file with following content,
 
 ```yaml
 version: v0.1
+
 listener:
-  address: 127.0.0.1
-  port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
+  address: 0.0.0.0
+  port: 10000
   message_format: huggingface
+  connect_timeout: 0.005s
 
-# Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
 llm_providers:
-  - name: OpenAI
-    provider: openai
+  - name: gpt-4o
     access_key: $OPENAI_API_KEY
-    model: gpt-3.5-turbo
-    default: true
+    provider: openai
+    model: gpt-4o
 
-# default system prompt used by all prompt targets
 system_prompt: |
-  You are a network assistant that helps operators with a better understanding of network traffic flow and perform actions on networking operations. No advice on manufacturers or purchasing decisions.
+  You are a helpful assistant.
+
+prompt_guards:
+  input_guards:
+    jailbreak:
+      on_exception:
+        message: Looks like you're curious about my abilities, but I can only provide assistance for currency exchange.
 
 prompt_targets:
-    - name: device_summary
-      description: Retrieve network statistics for specific devices within a time range
-      endpoint:
-        name: app_server
-        path: /agent/device_summary
-      parameters:
-        - name: device_ids
-          type: list
-          description: A list of device identifiers (IDs) to retrieve statistics for.
-          required: true  # device_ids are required to get device statistics
-        - name: days
-          type: int
-          description: The number of days for which to gather device statistics.
-          default: "7"
+  - name: currency_exchange
+    description: Get currency exchange rate from USD to other currencies
+    parameters:
+      - name: currency_symbol
+        description: the currency that needs conversion
+        required: true
+        type: str
+        in_path: true
+    endpoint:
+      name: frankfurther_api
+      path: /v1/latest?base=USD&symbols={currency_symbol}
+    system_prompt: |
+      You are a helpful assistant. Show me the currency symbol you want to convert from USD.
 
-# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+  - name: get_supported_currencies
+    description: Get list of supported currencies for conversion
+    endpoint:
+      name: frankfurther_api
+      path: /v1/currencies
+
 endpoints:
-  app_server:
-    # value could be ip address or a hostname with port
-    # this could also be a list of endpoints for load balancing
-    # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: host.docker.internal:18083
-    # max time to wait for a connection to be established
-    connect_timeout: 0.005s
+  frankfurther_api:
+    endpoint: api.frankfurter.dev:443
+    protocol: https
 ```
-### Step 3: Using OpenAI Client with Arch as an Egress Gateway
 
-Make outbound calls via Arch
+#### Step 2. Start arch gateway with currency conversion config
+
+```sh
+
+$ archgw up arch_config.yaml
+2024-12-05 16:56:27,979 - cli.main - INFO - Starting archgw cli version: 0.1.5
+...
+2024-12-05 16:56:28,485 - cli.utils - INFO - Schema validation successful!
+2024-12-05 16:56:28,485 - cli.main - INFO - Starging arch model server and arch gateway
+...
+2024-12-05 16:56:51,647 - cli.core - INFO - Container is healthy!
+
+```
+
+Once the gateway is up you can start interacting with at port 10000 using openai chat completion API.
+
+Some of the sample queries you can ask could be `what is currency rate for gbp?` or `show me list of currencies for conversion`.
+
+#### Step 3. Interacting with gateway using curl command
+
+Here is a sample curl command you can use to interact,
+
+```bash
+$ curl --header 'Content-Type: application/json' \
+  --data '{"messages": [{"role": "user","content": "what is exchange rate for gbp"}]}' \
+  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
+
+"As of the date provided in your context, December 5, 2024, the exchange rate for GBP (British Pound) from USD (United States Dollar) is 0.78558. This means that 1 USD is equivalent to 0.78558 GBP."
+
+```
+
+And to get list of supported currencies,
+
+```bash
+$ curl --header 'Content-Type: application/json' \
+  --data '{"messages": [{"role": "user","content": "show me list of currencies that are supported for conversion"}]}' \
+  http://localhost:10000/v1/chat/completions | jq ".choices[0].message.content"
+
+"Here is a list of the currencies that are supported for conversion from USD, along with their symbols:\n\n1. AUD - Australian Dollar\n2. BGN - Bulgarian Lev\n3. BRL - Brazilian Real\n4. CAD - Canadian Dollar\n5. CHF - Swiss Franc\n6. CNY - Chinese Renminbi Yuan\n7. CZK - Czech Koruna\n8. DKK - Danish Krone\n9. EUR - Euro\n10. GBP - British Pound\n11. HKD - Hong Kong Dollar\n12. HUF - Hungarian Forint\n13. IDR - Indonesian Rupiah\n14. ILS - Israeli New Sheqel\n15. INR - Indian Rupee\n16. ISK - Icelandic Króna\n17. JPY - Japanese Yen\n18. KRW - South Korean Won\n19. MXN - Mexican Peso\n20. MYR - Malaysian Ringgit\n21. NOK - Norwegian Krone\n22. NZD - New Zealand Dollar\n23. PHP - Philippine Peso\n24. PLN - Polish Złoty\n25. RON - Romanian Leu\n26. SEK - Swedish Krona\n27. SGD - Singapore Dollar\n28. THB - Thai Baht\n29. TRY - Turkish Lira\n30. USD - United States Dollar\n31. ZAR - South African Rand\n\nIf you want to convert USD to any of these currencies, you can select the one you are interested in."
+
+```
+
+### Use Arch Gateway as LLM Router
+
+#### Step 1. Create arch config file
+
+Arch operates based on a configuration file where you can define LLM providers, prompt targets, guardrails, etc. Below is an example configuration that defines openai and mistral LLM providers.
+
+Create `arch_config.yaml` file with following content:
+
+```yaml
+version: v0.1
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
+llm_providers:
+  - name: gpt-4o
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o
+    default: true
+
+  - name: ministral-3b
+    access_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: ministral-3b-latest
+```
+
+#### Step 2. Start arch gateway
+
+Once the config file is created ensure that you have env vars setup for `MISTRAL_API_KEY` and `OPENAI_API_KEY` (or these are defined in `.env` file).
+
+Start arch gateway,
+
+```
+$ archgw up arch_config.yaml
+2024-12-05 11:24:51,288 - cli.main - INFO - Starting archgw cli version: 0.1.5
+2024-12-05 11:24:51,825 - cli.utils - INFO - Schema validation successful!
+2024-12-05 11:24:51,825 - cli.main - INFO - Starting arch model server and arch gateway
+...
+2024-12-05 11:25:16,131 - cli.core - INFO - Container is healthy!
+```
+
+### Step 3: Interact with LLM
+
+#### Step 3.1: Using OpenAI python client
+
+Make outbound calls via Arch gateway
 
 ```python
 from openai import OpenAI
@@ -143,12 +233,59 @@ print("OpenAI Response:", response.choices[0].message.content)
 
 ```
 
-### [Observability](https://docs.archgw.com/guides/observability/observability.html)
+#### Step 3.2: Using curl command
+```
+$ curl --header 'Content-Type: application/json' \
+  --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
+  http://localhost:12000/v1/chat/completions
+
+{
+  ...
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      ...
+      "message": {
+        "role": "assistant",
+        "content": "The capital of France is Paris.",
+      },
+    }
+  ],
+...
+}
+
+```
+
+You can override model selection using `x-arch-llm-provider-hint` header. For example if you want to use mistral using following curl command,
+
+```
+$ curl --header 'Content-Type: application/json' \
+  --header 'x-arch-llm-provider-hint: ministral-3b' \
+  --data '{"messages": [{"role": "user","content": "What is the capital of France?"}]}' \
+  http://localhost:12000/v1/chat/completions
+{
+  ...
+  "model": "ministral-3b-latest",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "The capital of France is Paris. It is the most populous city in France and is known for its iconic landmarks such as the Eiffel Tower, the Louvre Museum, and Notre-Dame Cathedral. Paris is also a major global center for art, fashion, gastronomy, and culture.",
+      },
+      ...
+    }
+  ],
+  ...
+}
+
+```
+
+## [Observability](https://docs.archgw.com/guides/observability/observability.html)
 Arch is designed to support best-in class observability by supporting open standards. Please read our [docs](https://docs.archgw.com/guides/observability/observability.html) on observability for more details on tracing, metrics, and logs. The screenshot below is from our integration with Signoz (among others)
 
 ![alt text](docs/source/_static/img/tracing.png)
 
-### Contribution
+## Contribution
 We would love feedback on our [Roadmap](https://github.com/orgs/katanemo/projects/1) and we welcome contributions to **Arch**!
 Whether you're fixing bugs, adding new features, improving documentation, or creating tutorials, your help is much appreciated.
 Please visit our [Contribution Guide](CONTRIBUTING.md) for more details

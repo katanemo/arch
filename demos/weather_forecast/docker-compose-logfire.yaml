@@ -1,9 +1,9 @@
 services:
   weather_forecast_service:
     build:
-      context: ./
+      context: ./weather_forecast_service
     environment:
-      - OLTP_HOST=http://jaeger:4317
+      - OLTP_HOST=http://otel-collector:4317
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -15,20 +15,25 @@ services:
     ports:
       - "18080:8080"
     environment:
-      # this is only because we are running the sample app in the same docker container environemtn as archgw
+      # this is only because we are running the sample app in the same docker container environment as archgw
       - CHAT_COMPLETION_ENDPOINT=http://host.docker.internal:10000/v1
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./arch_config.yaml:/app/arch_config.yaml
 
-  jaeger:
+  otel-collector:
     build:
-      context: ../shared/jaeger
+      context: ../shared/logfire/
     ports:
-      - "16686:16686"
       - "4317:4317"
       - "4318:4318"
+    volumes:
+      - ../shared/logfire/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    env_file:
+      - .env
+    environment:
+      - LOGFIRE_API_KEY
 
   prometheus:
     build:

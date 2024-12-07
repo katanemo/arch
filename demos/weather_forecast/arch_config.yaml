@@ -60,6 +60,7 @@ prompt_targets:
     endpoint:
       name: weather_forecast_service
       path: /weather
+      http_method: POST
 
   - name: default_target
     default: true
@@ -67,6 +68,7 @@ prompt_targets:
     endpoint:
       name: weather_forecast_service
       path: /default_target
+      http_method: POST
     system_prompt: |
       You are a helpful assistant! Summarize the user's request and provide a helpful response.
     # if it is set to false arch will send response that it received from this prompt target to the user

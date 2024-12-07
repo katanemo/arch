@@ -39,7 +39,7 @@ cd -
 log building and installing archgw cli
 log ==================================
 cd ../arch/tools
-sh build_cli.sh
+poetry install
 cd -
 
 log building docker image for arch gateway

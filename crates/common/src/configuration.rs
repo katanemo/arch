@@ -194,17 +194,11 @@ pub struct Parameter {
     pub in_path: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EndpointDetails {
-    pub name: String,
-    pub path: Option<String>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub enum HttpMethod {
+    #[default]
     #[serde(rename = "GET")]
     Get,
-    #[default]
     #[serde(rename = "POST")]
     Post,
 }
@@ -216,6 +210,14 @@ impl Display for HttpMethod {
             HttpMethod::Post => write!(f, "POST"),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EndpointDetails {
+    pub name: String,
+    pub path: Option<String>,
+    #[serde(rename = "http_method")]
+    pub method: Option<HttpMethod>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

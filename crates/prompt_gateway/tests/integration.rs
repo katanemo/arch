@@ -360,6 +360,7 @@ prompt_targets:
     endpoint:
       name: api_server
       path: /weather
+      http_method: POST
     system_prompt: |
       You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
       - Use farenheight for temperature

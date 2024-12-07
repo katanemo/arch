@@ -940,7 +940,7 @@ impl StreamContext {
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
 
-        // only add params that are of string and number type
+        // only add params that are of string, number and bool type
         let url_params = tool_params
             .iter()
             .filter(|(_, value)| value.is_number() || value.is_string() || value.is_bool())
@@ -967,7 +967,7 @@ impl StreamContext {
             }
         };
 
-        let http_method = prompt_target.method.unwrap_or_default().to_string();
+        let http_method = endpoint.method.unwrap_or_default().to_string();
         let mut headers = vec![
             (ARCH_UPSTREAM_HOST_HEADER, endpoint.name.as_str()),
             (":method", &http_method),
