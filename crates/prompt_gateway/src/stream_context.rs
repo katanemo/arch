@@ -1,15 +1,17 @@
+use crate::embeddings::EmbeddingType;
 use crate::filter_context::{EmbeddingsStore, WasmMetrics};
-use crate::hallucination::extract_messages_for_hallucination;
 use acap::cos;
-use common::common_types::open_ai::{
+use common::api::hallucination::{
+    extract_messages_for_hallucination, HallucinationClassificationRequest,
+    HallucinationClassificationResponse,
+};
+use common::api::open_ai::{
     to_server_events, ArchState, ChatCompletionStreamResponse, ChatCompletionTool,
     ChatCompletionsRequest, ChatCompletionsResponse, FunctionDefinition, FunctionParameter,
     FunctionParameters, Message, ParameterType, ToolCall, ToolType,
 };
-use common::common_types::{
-    EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
-    PromptGuardResponse, ZeroShotClassificationRequest, ZeroShotClassificationResponse,
-};
+use common::api::prompt_guard::PromptGuardResponse;
+use common::api::zero_shot::{ZeroShotClassificationRequest, ZeroShotClassificationResponse};
 use common::configuration::{Overrides, PromptGuards, PromptTarget, Tracing};
 use common::consts::{
     ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS,

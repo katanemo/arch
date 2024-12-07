@@ -1,5 +1,5 @@
 use crate::filter_context::WasmMetrics;
-use common::common_types::open_ai::{
+use common::api::open_ai::{
     ChatCompletionStreamResponseServerEvents, ChatCompletionsRequest, ChatCompletionsResponse,
     Message, StreamOptions,
 };

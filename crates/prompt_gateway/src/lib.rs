@@ -3,8 +3,8 @@ use proxy_wasm::traits::*;
 use proxy_wasm::types::*;
 
 mod context;
+mod embeddings;
 mod filter_context;
-mod hallucination;
 mod http_context;
 mod stream_context;
 
