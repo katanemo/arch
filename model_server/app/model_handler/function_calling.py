@@ -12,6 +12,7 @@ from app.model_handler.base_handler import (
     ChatCompletionResponse,
     ArchBaseHandler,
 )
+from app.function_calling.hallucination_handler import HallucinationStateHandler
 
 
 SUPPORT_DATA_TYPES = ["int", "float", "bool", "str", "list", "tuple", "set", "dict"]
@@ -79,8 +80,10 @@ class ArchIntentHandler(ArchBaseHandler):
         Returns:
             bool: A boolean value to indicate if any intent match with prompts or not
         """
-
-        return content.choices[0].message.content == "Yes"
+        if hasattr(content.choices[0].message, "content"):
+            return content.choices[0].message.content == "Yes"
+        else:
+            return False
 
     @override
     async def chat_completion(self, req: ChatMessage) -> ChatCompletionResponse:
@@ -322,7 +325,7 @@ class ArchFunctionHandler(ArchBaseHandler):
                     if required_param not in func_args:
                         is_valid = False
                         error_tool_call = tool_call
-                        error_message = f"`{required_param}` is requried by the function `{func_name}` but not found in the tool call!"
+                        error_message = f"`{required_param}` is requiried by the function `{func_name}` but not found in the tool call!"
                         return is_valid, error_tool_call, error_message
 
                 # Verify the data type of each parameter in the tool calls
@@ -339,6 +342,36 @@ class ArchFunctionHandler(ArchBaseHandler):
                             return is_valid, error_tool_call, error_message
 
         return is_valid, error_tool_call, error_message
+
+    def _prefill_response(self, messages: List[Dict[str, str]]):
+        """
+        Prefills the response with the tool call prefix.
+
+        Args:
+            messages (List[Dict[str, str]]): A list of messages.
+            tools (List[Dict[str, Any]]): A list of tools.
+
+        Returns:
+            List[Dict[str, str]]: A list of messages with the prefill prefix.
+        """
+
+        messages.append(
+            {
+                "role": "assistant",
+                "content": random.choice(self.prefill_prefix),
+            }
+        )
+        prefill_response = self.client.chat.completions.create(
+            messages=messages,
+            model=self.model_name,
+            stream=False,
+            extra_body={
+                **self.generation_params,
+                **self.prefill_params,
+            },
+        )
+
+        return prefill_response
 
     @override
     async def chat_completion(
@@ -390,23 +423,7 @@ class ArchFunctionHandler(ArchBaseHandler):
 
             # start parameter gathering if the model is not generating a tool call
             if has_tool_call is False:
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": random.choice(self.prefill_prefix),
-                    }
-                )
-
-                prefill_response = self.client.chat.completions.create(
-                    messages=messages,
-                    model=self.model_name,
-                    stream=False,
-                    extra_body={
-                        **self.generation_params,
-                        **self.prefill_params,
-                    },
-                )
-
+                prefill_response = self._prefill_response(messages)
                 model_response = prefill_response.choices[0].message.content
         else:
             model_response = response.choices[0].message.content
