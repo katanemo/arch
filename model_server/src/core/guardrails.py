@@ -1,12 +1,12 @@
 import time
 import torch
 import numpy as np
-import src.commons.utilities as utils
+import src.commons.utils as utils
 
+from typing import List
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from optimum.intel import OVModelForSequenceClassification
-from typing import List
 
 
 class GuardRequest(BaseModel):

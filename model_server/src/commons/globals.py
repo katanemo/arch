@@ -1,13 +1,11 @@
-import src.commons.utilities as utils
-
 from openai import OpenAI
 from src.commons.constants import *
 from src.core.function_calling import ArchIntentHandler, ArchFunctionHandler
 from src.core.guardrails import get_guardrail_handler
+from src.commons.utils import get_model_server_logger
 
 
-logger = utils.get_model_server_logger()
-
+logger = get_model_server_logger()
 
 # Define the client
 ARCH_ENDPOINT = "https://api.fc.archgw.com/v1"
