@@ -1,7 +1,8 @@
 import math
 import torch
-from typing import Dict, List, Tuple
 import itertools
+
+from typing import Dict, List, Tuple
 from enum import Enum
 
 # constants

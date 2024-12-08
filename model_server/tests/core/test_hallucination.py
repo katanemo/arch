@@ -3,7 +3,7 @@ import pytest
 import os
 
 
-from app.model_handler.hallucination_handler import HallucinationStateHandler
+from src.core.hallucination_handler import HallucinationStateHandler
 
 
 # Get the directory of the current file

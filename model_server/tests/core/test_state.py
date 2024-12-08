@@ -1,5 +1,5 @@
-from app.commons.globals import handler_map
-from app.model_handler.function_calling import Message
+from src.commons.globals import handler_map
+from src.core.function_calling import Message
 
 
 test_input_history = [

@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from app.model_handler.guardrails import get_guardrail_handler
+from src.core.guardrails import get_guardrail_handler
 
 # Mock constants
 arch_guard_model_type = {

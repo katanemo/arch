@@ -1,9 +1,9 @@
-import app.commons.utilities as utils
+import src.commons.utilities as utils
 
 from openai import OpenAI
-from app.commons.constants import *
-from app.model_handler.function_calling import ArchIntentHandler, ArchFunctionHandler
-from app.model_handler.guardrails import get_guardrail_handler
+from src.commons.constants import *
+from src.core.function_calling import ArchIntentHandler, ArchFunctionHandler
+from src.core.guardrails import get_guardrail_handler
 
 
 logger = utils.get_model_server_logger()

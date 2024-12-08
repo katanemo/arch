@@ -1,7 +1,7 @@
 import time
 import torch
 import numpy as np
-import app.commons.utilities as utils
+import src.commons.utilities as utils
 
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification

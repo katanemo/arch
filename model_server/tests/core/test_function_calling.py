@@ -3,8 +3,8 @@ import pytest
 
 from fastapi import Response
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.commons.globals import handler_map
-from app.model_handler.base_handler import (
+from src.commons.globals import handler_map
+from src.core.base_handler import (
     Message,
     ChatMessage,
     ChatCompletionResponse,

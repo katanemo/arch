@@ -5,14 +5,13 @@ import builtins
 from openai import OpenAI
 from typing import Any, Dict, List, Tuple, Union
 from overrides import override
-from app.model_handler.base_handler import (
+from src.core.base_handler import (
     Message,
     ChatMessage,
     Choice,
     ChatCompletionResponse,
     ArchBaseHandler,
 )
-from app.function_calling.hallucination_handler import HallucinationStateHandler
 
 
 SUPPORT_DATA_TYPES = ["int", "float", "bool", "str", "list", "tuple", "set", "dict"]
