@@ -11,9 +11,9 @@ arch_guard_model_type = {
 
 # [TODO] Review: check the following code to test under `cpu`, `cuda`, and `mps`
 # Test for `get_guardrail_handler()` function on `cpu`
-@patch("app.model_handler.guardrail.AutoTokenizer.from_pretrained")
-@patch("app.model_handler.guardrail.OVModelForSequenceClassification.from_pretrained")
-@patch("app.model_handler.guardrail.AutoModelForSequenceClassification.from_pretrained")
+@patch("src.core.guardrail.AutoTokenizer.from_pretrained")
+@patch("src.core.guardrail.OVModelForSequenceClassification.from_pretrained")
+@patch("src.core.guardrail.AutoModelForSequenceClassification.from_pretrained")
 def test_guardrail_handler_on_cpu(mock_auto_model, mock_ov_model, mock_tokenizer):
     device = "cpu"
 
@@ -34,9 +34,9 @@ def test_guardrail_handler_on_cpu(mock_auto_model, mock_ov_model, mock_tokenizer
 
 
 # Test for `get_guardrail_handler()` function on `cuda`
-@patch("app.model_handler.guardrail.AutoTokenizer.from_pretrained")
-@patch("app.model_handler.guardrail.OVModelForSequenceClassification.from_pretrained")
-@patch("app.model_handler.guardrail.AutoModelForSequenceClassification.from_pretrained")
+@patch("src.core.guardrail.AutoTokenizer.from_pretrained")
+@patch("src.core.guardrail.OVModelForSequenceClassification.from_pretrained")
+@patch("src.core.guardrail.AutoModelForSequenceClassification.from_pretrained")
 def test_guardrail_handler_on_cuda(mock_auto_model, mock_ov_model, mock_tokenizer):
     device = "cuda"
 
@@ -57,9 +57,9 @@ def test_guardrail_handler_on_cuda(mock_auto_model, mock_ov_model, mock_tokenize
 
 
 # Test for `get_guardrail_handler()` function on `mps`
-@patch("app.model_handler.guardrail.AutoTokenizer.from_pretrained")
-@patch("app.model_handler.guardrail.OVModelForSequenceClassification.from_pretrained")
-@patch("app.model_handler.guardrail.AutoModelForSequenceClassification.from_pretrained")
+@patch("src.core.guardrail.AutoTokenizer.from_pretrained")
+@patch("src.core.guardrail.OVModelForSequenceClassification.from_pretrained")
+@patch("src.core.guardrail.AutoModelForSequenceClassification.from_pretrained")
 def test_guardrail_handler_on_mps(mock_auto_model, mock_ov_model, mock_tokenizer):
     device = "mps"
 

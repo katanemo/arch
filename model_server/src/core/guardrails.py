@@ -3,22 +3,9 @@ import torch
 import numpy as np
 import src.commons.utils as utils
 
-from typing import List
-from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from optimum.intel import OVModelForSequenceClassification
-
-
-class GuardRequest(BaseModel):
-    input: str
-    task: str
-
-
-class GuardResponse(BaseModel):
-    prob: List
-    verdict: bool
-    sentence: List
-    latency: float = 0
+from src.core.model_utils import GuardRequest, GuardResponse
 
 
 class ArchGuardHanlder:

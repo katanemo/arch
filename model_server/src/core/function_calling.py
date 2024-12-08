@@ -1,11 +1,12 @@
 import json
 import random
 import builtins
+import textwrap
 
 from openai import OpenAI
 from typing import Any, Dict, List, Tuple, Union
 from overrides import override
-from src.core.base_handler import (
+from src.core.model_utils import (
     Message,
     ChatMessage,
     Choice,
@@ -14,43 +15,57 @@ from src.core.base_handler import (
 )
 
 
-SUPPORT_DATA_TYPES = ["int", "float", "bool", "str", "list", "tuple", "set", "dict"]
+class ArchIntentConfig:
+    TASK_PROMPT = textwrap.dedent(
+        """
+    You are a helpful assistant.
+    """
+    ).strip()
+
+    TOOL_PROMPT_TEMPLATE = textwrap.dedent(
+        """
+    You task is to check if there are any tools that can be used to help the last user message in conversations according to the available tools listed below.
+
+    <tools>
+    {tool_text}
+    </tools>
+    """
+    ).strip()
+
+    FORMAT_PROMPT = textwrap.dedent(
+        """
+    Provide your tool assessment for ONLY THE LAST USER MESSAGE in the above conversation:
+    - First line must read 'Yes' or 'No'.
+    - If yes, a second line must include a comma-separated list of tool indexes.
+    """
+    ).strip()
+
+    EXTRA_INSTRUCTION = "Are there any tools can help?"
+
+    GENERATION_PARAMS = {"max_tokens": 1, "stop_token_ids": [151645]}
 
 
 class ArchIntentHandler(ArchBaseHandler):
-    def __init__(
-        self,
-        client: OpenAI,
-        model_name: str,
-        task_prompt: str,
-        tool_prompt_template: str,
-        format_prompt: str,
-        extra_instruction: str,
-        generation_params: Dict,
-    ):
+    def __init__(self, client: OpenAI, model_name: str, config: ArchIntentConfig):
         """
         Initializes the intent handler.
 
         Args:
             client (OpenAI): An OpenAI client instance.
             model_name (str): Name of the model to use.
-            task_prompt (str): The main task prompt for the system.
-            tool_prompt_template (str): A prompt to describe tools.
-            format_prompt (str): A prompt specifying the desired output format.
-            extra_instruction (str): Instructions specific to intent handling.
-            generation_params (Dict): Generation parameters for the model.
+            config (ArchIntentConfig): The configuration for Arch-Intent.
         """
 
         super().__init__(
             client,
             model_name,
-            task_prompt,
-            tool_prompt_template,
-            format_prompt,
-            generation_params,
+            config.TASK_PROMPT,
+            config.TOOL_PROMPT_TEMPLATE,
+            config.FORMAT_PROMPT,
+            config.GENERATION_PARAMS,
         )
 
-        self.extra_instruction = extra_instruction
+        self.extra_instruction = config.EXTRA_INSTRUCTION
 
     @override
     def _convert_tools(self, tools: List[Dict[str, Any]]) -> str:
@@ -125,17 +140,73 @@ class ArchIntentHandler(ArchBaseHandler):
         return chat_completion_response
 
 
+# =============================================================================================================
+
+
+class ArchFunctionConfig:
+    TASK_PROMPT = textwrap.dedent(
+        """
+    You are a helpful assistant.
+    """
+    ).strip()
+
+    TOOL_PROMPT_TEMPLATE = textwrap.dedent(
+        """
+    # Tools
+
+    You may call one or more functions to assist with the user query.
+
+    You are provided with function signatures within <tools></tools> XML tags:
+    <tools>
+    {tool_text}
+    </tools>
+    """
+    ).strip()
+
+    FORMAT_PROMPT = textwrap.dedent(
+        """
+    For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+    <tool_call>
+    {"name": <function-name>, "arguments": <args-json-object>}
+    </tool_call>
+    """
+    ).strip()
+
+    GENERATION_PARAMS = (
+        {
+            "temperature": 0.2,
+            "top_p": 1.0,
+            "top_k": 50,
+            "max_tokens": 512,
+            "stop_token_ids": [151645],
+        },
+    )
+
+    PREFILL_CONFIG = {
+        "prefill_params": {
+            "continue_final_message": True,
+            "add_generation_prompt": False,
+        },
+        "prefill_prefix": [
+            "May",
+            "Could",
+            "Sure",
+            "Definitely",
+            "Certainly",
+            "Of course",
+            "Can",
+        ],
+    }
+
+    SUPPORT_DATA_TYPES = ["int", "float", "bool", "str", "list", "tuple", "set", "dict"]
+
+
 class ArchFunctionHandler(ArchBaseHandler):
     def __init__(
         self,
         client: OpenAI,
         model_name: str,
-        task_prompt: str,
-        tool_prompt_template: str,
-        format_prompt: str,
-        generation_params: Dict,
-        prefill_params: Dict,
-        prefill_prefix: List,
+        config: ArchFunctionConfig,
     ):
         """
         Initializes the function handler.
@@ -143,30 +214,26 @@ class ArchFunctionHandler(ArchBaseHandler):
         Args:
             client (OpenAI): An OpenAI client instance.
             model_name (str): Name of the model to use.
-            task_prompt (str): The main task prompt for the system.
-            tool_prompt_template (str): A prompt to describe tools.
-            format_prompt (str): A prompt specifying the desired output format.
-            generation_params (Dict): Generation parameters for the model.
-            prefill_params (Dict): Additional parameters for prefilling responses.
-            prefill_prefix (List[str]): List of prefixes for prefill responses.
+            config (ArchFunctionConfig): The configuration for Arch-Function
         """
 
         super().__init__(
             client,
             model_name,
-            task_prompt,
-            tool_prompt_template,
-            format_prompt,
-            generation_params,
+            config.TASK_PROMPT,
+            config.TOOL_PROMPT_TEMPLATE,
+            config.FORMAT_PROMPT,
+            config.GENERATION_PARAMS,
         )
 
-        self.prefill_params = prefill_params
-        self.prefill_prefix = prefill_prefix
+        self.prefill_params = config.PREFILL_CONFIG["prefill_params"]
+        self.prefill_prefix = config.PREFILL_CONFIG["prefill_prefix"]
 
         # Predefine data types for verification. Only support Python for now.
         # [TODO] Extend the list of support data types
         self.support_data_types = {
-            type_name: getattr(builtins, type_name) for type_name in SUPPORT_DATA_TYPES
+            type_name: getattr(builtins, type_name)
+            for type_name in config.SUPPORT_DATA_TYPES
         }
 
     @override

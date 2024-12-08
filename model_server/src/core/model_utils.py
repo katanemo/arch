@@ -32,6 +32,21 @@ class ChatCompletionResponse(BaseModel):
     model: str
 
 
+class GuardRequest(BaseModel):
+    input: str
+    task: str
+
+
+class GuardResponse(BaseModel):
+    prob: List
+    verdict: bool
+    sentence: List
+    latency: float = 0
+
+
+# ================================================================================================
+
+
 class ArchBaseHandler:
     def __init__(
         self,
@@ -53,9 +68,7 @@ class ArchBaseHandler:
             format_prompt (str): A prompt specifying the desired output format.
             generation_params (Dict): Generation parameters for the model.
         """
-
         self.client = client
-
         self.model_name = model_name
 
         self.task_prompt = task_prompt

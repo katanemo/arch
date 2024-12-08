@@ -12,7 +12,7 @@ PROJ_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 
 # Default log directory and file
-DEFAULT_LOG_DIR = os.path.join(PROJ_DIR, "logs")
+DEFAULT_LOG_DIR = os.path.join(PROJ_DIR, ".logs")
 DEFAULT_LOG_FILE = "modelserver.log"
 
 
@@ -50,7 +50,7 @@ def get_model_server_logger(log_dir=None, log_file=None):
     Get or initialize the logger instance for the model server.
 
     Parameters:
-    - log_dir (str): Custom directory to store the log file. Defaults to `~/archgw_logs`.
+    - log_dir (str): Custom directory to store the log file. Defaults to `./.logs`.
     - log_file (str): Custom log file name. Defaults to `modelserver.log`.
 
     Returns:
@@ -146,13 +146,13 @@ def terminate_process_by_pid(pid, timeout):
     subprocess.run(["kill", "-9", str(pid)], check=False)
 
 
-def find_process_by_port(port=51000):
+def find_processes_by_port(port=51000):
     """Find processes listening on a specific port."""
 
     port_processes = []
 
     try:
-        lsof_command = f"lsof -n -i:{port} | grep LISTEN"
+        lsof_command = f"lsof -n | grep {port} | grep -i LISTEN"
         result = subprocess.run(
             lsof_command, shell=True, capture_output=True, text=True
         )
@@ -167,7 +167,7 @@ def find_process_by_port(port=51000):
         return []
 
 
-def kill_process_by_port(port_processes=51000, wait=True, timeout=10):
+def kill_processes(port_processes, wait=True, timeout=10):
     """Kill processes on a specific port."""
 
     try:

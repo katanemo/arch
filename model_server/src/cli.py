@@ -8,8 +8,8 @@ from src.commons.utils import (
     wait_for_health_check,
     check_lsof,
     install_lsof,
-    find_process_by_port,
-    kill_process_by_port,
+    find_processes_by_port,
+    kill_processes,
 )
 
 
@@ -23,7 +23,7 @@ def start_server(port=51000):
             "python",
             "-m",
             "uvicorn",
-            "app.main:app",
+            "src.main:app",
             "--host",
             "0.0.0.0",
             "--port",
@@ -56,14 +56,16 @@ def stop_server(port=51000, wait=True, timeout=10):
             sys.exit(1)
 
     logger.info(f"Stopping processes on port {port}...")
-    port_processes = find_process_by_port(port)
+    port_processes = find_processes_by_port(port)
     if port_processes is None:
         logger.info(f"No processes found listening on port {port}.")
     else:
         if len(port_processes):
-            process_killed = kill_process_by_port(port_processes, wait, timeout)
+            process_killed = kill_processes(port_processes, wait, timeout)
             if not process_killed:
                 logger.error(f"Unable to kill all processes on {port}")
+            else:
+                logger.info(f"All processes on port {port} have been killed.")
         else:
             logger.error(f"Unable to find processes on {port}")
 

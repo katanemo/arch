@@ -1,8 +1,7 @@
 import os
 
 from src.commons.globals import handler_map
-from src.core.base_handler import ChatMessage
-from src.core.guardrails import GuardRequest
+from src.core.model_utils import ChatMessage, GuardRequest
 
 from fastapi import FastAPI, Response
 from opentelemetry import trace
