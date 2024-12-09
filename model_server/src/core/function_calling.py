@@ -495,7 +495,7 @@ class ArchFunctionHandler(ArchBaseHandler):
                 print(
                     f"Hallucination detected for the following response, start parameter gathering: \n{''.join(self.hallu_handler.tokens)}"
                 )
-
+                print(f"Token entropy/varentropy map: {self.hallu_handler.entropy_map}")
                 prefill_response = self._engage_parameter_gathering(messages)
                 model_response = prefill_response.choices[0].message.content
                 break
