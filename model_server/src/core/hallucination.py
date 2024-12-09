@@ -27,10 +27,10 @@ class MaskToken(Enum):
 
 
 HALLUCINATION_THRESHOLD_DICT = {
-    MaskToken.TOOL_CALL.value: {"entropy": 0.1, "varentropy": 0.5},
+    MaskToken.TOOL_CALL.value: {"entropy": 0.001, "varentropy": 0.005},
     MaskToken.PARAMETER_VALUE.value: {
-        "entropy": 0.5,
-        "varentropy": 2.5,
+        "entropy": 0.001,
+        "varentropy": 0.005,
     },
 }
 
@@ -105,11 +105,10 @@ class HallucinationStateHandler:
         hallucination (bool): Flag indicating if a hallucination is detected.
         hallucination_message (str): Message describing the hallucination.
         parameter_name (list): List of extracted parameter names.
-        function_description (dict): Description of functions and their parameters.
         token_probs_map (list): List mapping tokens to their entropy and variance of entropy.
     """
 
-    def __init__(self, response_iterator=None):
+    def __init__(self, response_iterator=None, function=None):
         """
         Initializes the HallucinationStateHandler with default values.
         """
@@ -124,7 +123,15 @@ class HallucinationStateHandler:
         self.parameter_name: List[str] = []
         self.token_probs_map: List[Tuple[str, float, float]] = []
         self.response_iterator = response_iterator
-        self.has_tool_call = False
+        self._process_function(function)
+
+    def _process_function(self, function):
+        self.function = function
+        if self.function is None:
+            raise ValueError("API descriptions not set.")
+        self.function_properties = {
+            x["function"]["name"]: x["function"]["parameters"] for x in self.function
+        }
 
     def append_and_check_token_hallucination(self, token, logprob):
         """
@@ -139,8 +146,7 @@ class HallucinationStateHandler:
         """
         self.tokens.append(token)
         self.logprobs.append(logprob)
-        if self.has_tool_call:
-            self._process_token()
+        self._process_token()
         return self.hallucination
 
     def __iter__(self):

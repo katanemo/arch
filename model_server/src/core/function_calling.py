@@ -13,6 +13,7 @@ from src.core.model_utils import (
     ChatCompletionResponse,
     ArchBaseHandler,
 )
+from src.core.hallucination import HallucinationStateHandler
 
 
 class ArchIntentConfig:
@@ -178,6 +179,8 @@ class ArchFunctionConfig:
         "top_k": 50,
         "max_tokens": 512,
         "stop_token_ids": [151645],
+        "logprobs": True,
+        "top_logprobs": 10,
     }
 
     PREFILL_CONFIG = {
@@ -391,7 +394,8 @@ class ArchFunctionHandler(ArchBaseHandler):
                         return is_valid, invalid_tool_call, error_message
 
                 # Verify the data type of each parameter in the tool calls
-                for param_name, param_value in func_args:
+                for param_name in func_args:
+                    param_value = func_args[param_name]
                     data_type = functions[func_name]["properties"][param_name]["type"]
 
                     if data_type in self.support_data_types:
@@ -427,6 +431,22 @@ class ArchFunctionHandler(ArchBaseHandler):
             }
         ]
 
+    def _engage_parameter_gathering(self, messages: List[Dict[str, str]]):
+        """
+        Engage parameter gathering for tool calls
+        """
+
+        # TODO: log enaging parameter gathering
+        prefill_response = self.client.chat.completions.create(
+            messages=self._add_prefill_message(messages),
+            model=self.model_name,
+            extra_body={
+                **self.generation_params,
+                **self.prefill_params,
+            },
+        )
+        return prefill_response
+
     @override
     async def chat_completion(self, req: ChatMessage) -> ChatCompletionResponse:
         """
@@ -453,32 +473,35 @@ class ArchFunctionHandler(ArchBaseHandler):
             extra_body=self.generation_params,
         )
 
+        # initialize the hallucination handler, which is an iterator
+        self.hallu_handler = HallucinationStateHandler(
+            response_iterator=response, function=req.tools
+        )
+
         model_response, has_tool_call = "", None
 
-        for token in response:
-            token_content = token.choices[0].delta.content.strip()
-
-            if token_content:
-                if has_tool_call is None and token_content != "<tool_call>":
-                    has_tool_call = False
-                    response.close()
-                    break
-                else:
+        for token in self.hallu_handler:
+            # check if the first token is <tool_call>
+            if len(self.hallu_handler.tokens) > 0 and has_tool_call == None:
+                if self.hallu_handler.tokens[0] == "<tool_call>":
                     has_tool_call = True
+                else:
+                    has_tool_call = False
+                    break
 
-                if has_tool_call is True:
-                    model_response += token_content
+            # if the model is hallucinating, start parameter gathering
+            if self.hallu_handler.hallucination == True:
+                prefill_response = self._engage_parameter_gathering(messages)
+                model_response = prefill_response.choices[0].message.content
+                break
+
+        # start parameter gathering if the model is not generating tool calls
+        if self.hallu_handler.hallucination == False:
+            model_response = "".join(self.hallu_handler.tokens)
 
         # start parameter gathering if the model is not generating tool calls
         if has_tool_call is False:
-            prefill_response = self.client.chat.completions.create(
-                messages=self._add_prefill_message(messages),
-                model=self.model_name,
-                extra_body={
-                    **self.generation_params,
-                    **self.prefill_params,
-                },
-            )
+            prefill_response = self._engage_parameter_gathering(messages)
             model_response = prefill_response.choices[0].message.content
 
         # Extract tool calls from model response
