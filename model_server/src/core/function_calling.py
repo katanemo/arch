@@ -495,8 +495,7 @@ class ArchFunctionHandler(ArchBaseHandler):
                 model_response = prefill_response.choices[0].message.content
                 break
 
-        # start parameter gathering if the model is not generating tool calls
-        if self.hallu_handler.hallucination == False:
+        if has_tool_call and self.hallu_handler.hallucination == False:
             model_response = "".join(self.hallu_handler.tokens)
 
         # start parameter gathering if the model is not generating tool calls
