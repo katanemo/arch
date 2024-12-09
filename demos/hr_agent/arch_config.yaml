@@ -34,6 +34,7 @@ prompt_targets:
       endpoint:
         name: app_server
         path: /agent/workforce
+        http_method: POST
       parameters:
         - name: staffing_type
           type: str
@@ -52,6 +53,7 @@ prompt_targets:
       endpoint:
         name: app_server
         path: /agent/slack_message
+        http_method: POST
       description: sends a slack message on a channel
       parameters:
         - name: slack_message

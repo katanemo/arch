@@ -1,47 +1,95 @@
 #!/bin/bash
 set -e
 
+# Function to load environment variables from the .env file
+load_env() {
+  if [ -f ".env" ]; then
+    export $(grep -v '^#' .env | xargs)
+  fi
+}
+
+# Function to determine the docker-compose file based on the argument
+get_compose_file() {
+  case "$1" in
+    jaeger)
+      echo "docker-compose-jaeger.yaml"
+      ;;
+    logfire)
+      echo "docker-compose-logfire.yaml"
+      ;;
+    signoz)
+      echo "docker-compose-signoz.yaml"
+      ;;
+    *)
+      echo "docker-compose.yaml"
+      ;;
+  esac
+}
+
 # Function to start the demo
 start_demo() {
-  # Step 1: Check if .env file exists
+  # Step 1: Determine the docker-compose file
+  COMPOSE_FILE=$(get_compose_file "$1" 2>/dev/null)
+
+  # Step 2: Check if .env file exists
   if [ -f ".env" ]; then
     echo ".env file already exists. Skipping creation."
   else
-    # Step 2: Create `.env` file and set OpenAI key
+    # Step 3: Check for required environment variables
     if [ -z "$OPENAI_API_KEY" ]; then
       echo "Error: OPENAI_API_KEY environment variable is not set for the demo."
       exit 1
     fi
+    if [ "$1" == "logfire" ] && [ -z "$LOGFIRE_API_KEY" ]; then
+      echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
+      exit 1
+    fi
 
+    # Create .env file
     echo "Creating .env file..."
     echo "OPENAI_API_KEY=$OPENAI_API_KEY" > .env
-    echo ".env file created with OPENAI_API_KEY."
+    if [ "$1" == "logfire" ]; then
+      echo "LOGFIRE_API_KEY=$LOGFIRE_API_KEY" >> .env
+    fi
+    echo ".env file created with required API keys."
   fi
 
-  # Step 3: Start Arch
+  load_env
+
+  if [ "$1" == "logfire" ] && [ -z "$LOGFIRE_API_KEY" ]; then
+    echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
+    exit 1
+  fi
+
+  # Step 4: Start Arch
   echo "Starting Arch with arch_config.yaml..."
   archgw up arch_config.yaml
 
-  # Step 4: Start Network Agent
-  echo "Starting Network Agent using Docker Compose..."
-  docker compose up -d  # Run in detached mode
+  # Step 5: Start Network Agent with the chosen Docker Compose file
+  echo "Starting Network Agent with $COMPOSE_FILE..."
+  docker compose -f "$COMPOSE_FILE" up -d  # Run in detached mode
 }
 
 # Function to stop the demo
 stop_demo() {
-  # Step 1: Stop Docker Compose services
-  echo "Stopping Network Agent using Docker Compose..."
-  docker compose down
+  echo "Stopping all Docker Compose services..."
 
-  # Step 2: Stop Arch
+  # Stop all services by iterating through all configurations
+  for compose_file in ./docker-compose*.yaml; do
+    echo "Stopping services in $compose_file..."
+    docker compose -f "$compose_file" down
+  done
+
+  # Stop Arch
   echo "Stopping Arch..."
   archgw down
 }
 
 # Main script logic
 if [ "$1" == "down" ]; then
+  # Call stop_demo with the second argument as the demo to stop
   stop_demo
 else
-  # Default action is to bring the demo up
-  start_demo
+  # Use the argument (jaeger, logfire, signoz) to determine the compose file
+  start_demo "$1"
 fi

@@ -1,6 +1,6 @@
 use proxy_wasm::types::Status;
 
-use crate::{common_types::open_ai::ChatCompletionChunkResponseError, ratelimit};
+use crate::{api::open_ai::ChatCompletionChunkResponseError, ratelimit};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientError {

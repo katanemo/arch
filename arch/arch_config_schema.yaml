@@ -28,6 +28,11 @@ properties:
             type: string
           connect_timeout:
             type: string
+          protocol:
+            type: string
+            enum:
+              - http
+              - https
         additionalProperties: false
         required:
           - endpoint
@@ -92,6 +97,8 @@ properties:
                 type: array
                 items:
                   type: string
+              in_path:
+                type: boolean
             additionalProperties: false
             required:
               - name
@@ -104,6 +111,11 @@ properties:
               type: string
             path:
               type: string
+            http_method:
+              type: string
+              enum:
+                - GET
+                - POST
           additionalProperties: false
           required:
             - name
