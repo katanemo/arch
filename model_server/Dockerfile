@@ -28,4 +28,4 @@ COPY ./app/openai_params.yaml .
 # RUN python install.py && \
 #   find /root/.cache/torch/sentence_transformers/ -name onnx -exec rm -rf {} +
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "80"]

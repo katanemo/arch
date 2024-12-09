@@ -1,3 +1,4 @@
+import logging
 import sys
 import subprocess
 import argparse
@@ -11,6 +12,29 @@ from src.commons.utils import (
     find_processes_by_port,
     kill_processes,
 )
+
+
+log = logging.getLogger("model_server.cli")
+log.setLevel(logging.INFO)
+log.info(f"model server version: {get_version()}")
+
+
+def run_server(port=51000):
+    """Start, stop, or restart the Uvicorn server based on command-line arguments."""
+    if len(sys.argv) > 1:
+        action = sys.argv[1]
+    else:
+        action = "start"
+
+    if action == "start":
+        start_server(port)
+    elif action == "stop":
+        stop_server(port)
+    elif action == "restart":
+        restart_server(port)
+    else:
+        log.info(f"Unknown action: {action}")
+        sys.exit(1)
 
 
 def start_server(port=51000):

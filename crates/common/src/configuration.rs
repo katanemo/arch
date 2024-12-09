@@ -2,6 +2,22 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Display;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Configuration {
+    pub version: String,
+    pub listener: Listener,
+    pub endpoints: Option<HashMap<String, Endpoint>>,
+    pub llm_providers: Vec<LlmProvider>,
+    pub overrides: Option<Overrides>,
+    pub system_prompt: Option<String>,
+    pub prompt_guards: Option<PromptGuards>,
+    pub prompt_targets: Option<Vec<PromptTarget>>,
+    pub error_target: Option<ErrorTargetDetail>,
+    pub ratelimits: Option<Vec<Ratelimit>>,
+    pub tracing: Option<Tracing>,
+    pub mode: Option<GatewayMode>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Overrides {
     pub prompt_target_intent_matching_threshold: Option<f64>,
@@ -20,22 +36,6 @@ pub enum GatewayMode {
     #[default]
     #[serde(rename = "prompt")]
     Prompt,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Configuration {
-    pub version: String,
-    pub listener: Listener,
-    pub endpoints: Option<HashMap<String, Endpoint>>,
-    pub llm_providers: Vec<LlmProvider>,
-    pub overrides: Option<Overrides>,
-    pub system_prompt: Option<String>,
-    pub prompt_guards: Option<PromptGuards>,
-    pub prompt_targets: Option<Vec<PromptTarget>>,
-    pub error_target: Option<ErrorTargetDetail>,
-    pub ratelimits: Option<Vec<Ratelimit>>,
-    pub tracing: Option<Tracing>,
-    pub mode: Option<GatewayMode>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -179,8 +179,6 @@ impl Display for LlmProvider {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Endpoint {
     pub endpoint: Option<String>,
-    // pub connect_timeout: Option<DurationString>,
-    // pub timeout: Option<DurationString>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -193,12 +191,33 @@ pub struct Parameter {
     #[serde(rename = "enum")]
     pub enum_values: Option<Vec<String>>,
     pub default: Option<String>,
+    pub in_path: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
+pub enum HttpMethod {
+    #[default]
+    #[serde(rename = "GET")]
+    Get,
+    #[serde(rename = "POST")]
+    Post,
+}
+
+impl Display for HttpMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HttpMethod::Get => write!(f, "GET"),
+            HttpMethod::Post => write!(f, "POST"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EndpointDetails {
     pub name: String,
     pub path: Option<String>,
+    #[serde(rename = "http_method")]
+    pub method: Option<HttpMethod>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

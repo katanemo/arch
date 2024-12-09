@@ -1,4 +1,4 @@
-pub mod common_types;
+pub mod api;
 pub mod configuration;
 pub mod consts;
 pub mod embeddings;
@@ -11,3 +11,4 @@ pub mod routing;
 pub mod stats;
 pub mod tokenizer;
 pub mod tracing;
+pub mod path;

@@ -1,3 +1,4 @@
+use crate::metrics::Metrics;
 use crate::stream_context::StreamContext;
 use common::configuration::Configuration;
 use common::consts::OTEL_COLLECTOR_HTTP;
@@ -6,9 +7,7 @@ use common::http::CallArgs;
 use common::http::Client;
 use common::llm_providers::LlmProviders;
 use common::ratelimit;
-use common::stats::Counter;
 use common::stats::Gauge;
-use common::stats::Histogram;
 use common::tracing::TraceData;
 use log::debug;
 use log::warn;
@@ -22,39 +21,12 @@ use std::time::Duration;
 
 use std::sync::{Arc, Mutex};
 
-#[derive(Copy, Clone, Debug)]
-pub struct WasmMetrics {
-    pub active_http_calls: Gauge,
-    pub ratelimited_rq: Counter,
-    pub time_to_first_token: Histogram,
-    pub time_per_output_token: Histogram,
-    pub tokens_per_second: Histogram,
-    pub request_latency: Histogram,
-    pub output_sequence_length: Histogram,
-    pub input_sequence_length: Histogram,
-}
-
-impl WasmMetrics {
-    fn new() -> WasmMetrics {
-        WasmMetrics {
-            active_http_calls: Gauge::new(String::from("active_http_calls")),
-            ratelimited_rq: Counter::new(String::from("ratelimited_rq")),
-            time_to_first_token: Histogram::new(String::from("time_to_first_token")),
-            time_per_output_token: Histogram::new(String::from("time_per_output_token")),
-            tokens_per_second: Histogram::new(String::from("tokens_per_second")),
-            request_latency: Histogram::new(String::from("request_latency")),
-            output_sequence_length: Histogram::new(String::from("output_sequence_length")),
-            input_sequence_length: Histogram::new(String::from("input_sequence_length")),
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct CallContext {}
 
 #[derive(Debug)]
 pub struct FilterContext {
-    metrics: Rc<WasmMetrics>,
+    metrics: Rc<Metrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, CallContext>>,
     llm_providers: Option<Rc<LlmProviders>>,
@@ -65,7 +37,7 @@ impl FilterContext {
     pub fn new() -> FilterContext {
         FilterContext {
             callouts: RefCell::new(HashMap::new()),
-            metrics: Rc::new(WasmMetrics::new()),
+            metrics: Rc::new(Metrics::new()),
             llm_providers: None,
             traces_queue: Arc::new(Mutex::new(VecDeque::new())),
         }

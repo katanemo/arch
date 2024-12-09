@@ -1,12 +1,9 @@
-include:
-  - ../shared/signoz/docker-compose-minimal.yaml
-
 services:
   weather_forecast_service:
     build:
-      context: ../shared/weather_forecast_service
+      context: ./
     environment:
-      - OLTP_HOST=http://otel-collector:4317
+      - OLTP_HOST=http://jaeger:4317
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -24,6 +21,14 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./arch_config.yaml:/app/arch_config.yaml
+
+  jaeger:
+    build:
+      context: ../shared/jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
 
   prometheus:
     build:

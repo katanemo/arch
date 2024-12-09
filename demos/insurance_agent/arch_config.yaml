@@ -29,6 +29,7 @@ prompt_targets:
     endpoint:
       name: app_server
       path: /policy/qa
+      http_method: POST
     description: Handle general Q/A related to insurance.
     default: true
 
@@ -37,6 +38,7 @@ prompt_targets:
     endpoint:
       name: app_server
       path: /policy/coverage
+      http_method: POST
     parameters:
     - name: policy_type
       type: str
@@ -48,6 +50,7 @@ prompt_targets:
     endpoint:
       name: app_server
       path: /policy/initiate
+      http_method: POST
     description: Start a policy coverage for car, boat, motorcycle or house.
     parameters:
     - name: policy_type
@@ -64,6 +67,7 @@ prompt_targets:
     endpoint:
       name: app_server
       path: /policy/claim
+      http_method: POST
     description: Update the notes on the claim
     parameters:
     - name: claim_id
@@ -79,6 +83,7 @@ prompt_targets:
     endpoint:
       name: app_server
       path: /policy/deductible
+      http_method: POST
     description: Update the deductible amount for a specific policy coverage.
     parameters:
     - name: policy_id

@@ -1,15 +1,13 @@
 [tool.poetry]
 name = "archgw_modelserver"
-version = "0.1.5"
+version = "0.1.7"
 description = "A model server for serving models"
 authors = ["Katanemo Labs, Inc <archgw@katanemo.com>"]
 license = "Apache 2.0"
 readme = "README.md"
 packages = [
-    { include = "app" }, # Include the 'app' package
-    { include = "app/function_calling" }, # Include the 'app' package
+    { include = "src" }
 ]
-include = ["app/*.yaml"]
 
 [tool.poetry.dependencies]
 python = ">=3.12"
@@ -29,16 +27,17 @@ openai = "1.50.2"
 tf-keras = "*"
 onnx = "1.17.0"
 onnxruntime = "1.19.2"
-httpx = "*"
+httpx = "0.27.2" # https://community.openai.com/t/typeerror-asyncclient-init-got-an-unexpected-keyword-argument-proxies/1040287
 pytest-asyncio = "*"
 pytest = "*"
 opentelemetry-api = "^1.28.0"
 opentelemetry-sdk = "^1.28.0"
 opentelemetry-exporter-otlp = "^1.28.0"
 opentelemetry-instrumentation-fastapi = "^0.49b0"
+overrides = "^7.7.0"
 
 [tool.poetry.scripts]
-archgw_modelserver = "app.cli:run_server"
+archgw_modelserver = "src.cli:start_server"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
