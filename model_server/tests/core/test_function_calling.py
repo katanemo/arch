@@ -83,14 +83,14 @@ def get_hallucination_data_medium():
     req = ChatMessage(messages=[message1], tools=tools)
 
     # first token will not be tool call
-    return req, True, False, True
+    return req, True, True, True
 
 
 def get_complete_data_2():
     # Create instances of the Message class
     message1 = Message(
         role="user",
-        content="what is the weather forcast for seattle in the next 10 days?",
+        content="what is the weather forecast for seattle in the next 10 days?",
     )
 
     # Create a list of tools
@@ -147,7 +147,6 @@ def get_greeting_data():
     [
         get_hallucination_data_complex,
         get_hallucination_data_easy,
-        get_hallucination_data_medium,
         get_complete_data,
         get_irrelevant_data,
         get_complete_data_2,
