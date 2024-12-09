@@ -511,6 +511,7 @@ class ArchFunctionHandler(ArchBaseHandler):
         if has_tool_call is False:
             # [TODO] - Review: remove the following code
             print("No tool call found, start parameter gathering")
+            print(f"Token entropy/varentropy map: {self.hallu_handler.token_probs_map}")
             prefill_response = self._engage_parameter_gathering(messages)
             model_response = prefill_response.choices[0].message.content
 

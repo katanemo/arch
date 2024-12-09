@@ -33,7 +33,7 @@ HALLUCINATION_THRESHOLD_DICT = {
     },
     MaskToken.PARAMETER_VALUE.value: {
         "entropy": 0.5437773168087006,
-        "varentropy": 2.413176417350769,
+        "varentropy": 0.49826696813106713,
     },
 }
 
