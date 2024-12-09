@@ -1,4 +1,5 @@
 import os
+import time
 
 from src.commons.globals import handler_map
 from src.core.model_utils import ChatMessage, GuardRequest
@@ -54,22 +55,34 @@ async def models():
 @app.post("/function_calling")
 async def function_calling(req: ChatMessage, res: Response):
     try:
+        intent_start_time = time.perf_counter()
         intent_response = await handler_map["Arch-Intent"].chat_completion(req)
+        intent_latency = time.perf_counter() - intent_start_time
 
         if handler_map["Arch-Intent"].detect_intent(intent_response):
             # [TODO] measure agreement between intent detection and function calling
             try:
+                function_start_time = time.perf_counter()
                 function_calling_response = await handler_map[
                     "Arch-Function"
                 ].chat_completion(req)
-                return function_calling_response
+                function_latency = time.perf_counter() - function_start_time
+                return {
+                    "response": function_calling_response,
+                    "intent_latency": round(intent_latency * 1000, 3),
+                    "function_latency": round(function_latency * 1000, 3),
+                }
             except Exception as e:
                 # [TODO] Review: update how to collect debugging outputs
                 # logger.error(f"Error in chat_completion from `Arch-Function`: {e}")
                 res.status_code = 500
                 return {"error": f"[Arch-Function] - {e}"}
         # [TODO] Review: define the behavior if `Arch-Intent` doesn't detect an intent
-        # else:
+        else:
+            return {
+                "result": "No intent matched",
+                "intent_latency": round(intent_latency * 1000, 3),
+            }
 
     except Exception as e:
         # [TODO] Review: update how to collect debugging outputs
@@ -81,8 +94,13 @@ async def function_calling(req: ChatMessage, res: Response):
 @app.post("/guardrails")
 async def guardrails(req: GuardRequest, res: Response, max_num_words=300):
     try:
+        guard_start_time = time.perf_counter()
         guard_result = handler_map["Arch-Guard"].predict(req)
-        return guard_result
+        guard_latency = time.perf_counter() - guard_start_time
+        return {
+            "response": guard_result,
+            "guard_latency": round(guard_latency * 1000, 3),
+        }
     except Exception as e:
         # [TODO] Review: update how to collect debugging outputs
         res.status_code = 500
