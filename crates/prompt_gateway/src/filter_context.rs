@@ -1,4 +1,5 @@
 use crate::embeddings::EmbeddingType;
+use crate::metrics::Metrics;
 use crate::stream_context::StreamContext;
 use common::configuration::{Configuration, Overrides, PromptGuards, PromptTarget, Tracing};
 use common::consts::ARCH_UPSTREAM_HOST_HEADER;
@@ -21,19 +22,6 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
 
-#[derive(Copy, Clone, Debug)]
-pub struct WasmMetrics {
-    pub active_http_calls: Gauge,
-}
-
-impl WasmMetrics {
-    fn new() -> WasmMetrics {
-        WasmMetrics {
-            active_http_calls: Gauge::new(String::from("active_http_calls")),
-        }
-    }
-}
-
 pub type EmbeddingTypeMap = HashMap<EmbeddingType, Vec<f64>>;
 pub type EmbeddingsStore = HashMap<String, EmbeddingTypeMap>;
 
@@ -45,7 +33,7 @@ pub struct FilterCallContext {
 
 #[derive(Debug)]
 pub struct FilterContext {
-    metrics: Rc<WasmMetrics>,
+    metrics: Rc<Metrics>,
     // callouts stores token_id to request mapping that we use during #on_http_call_response to match the response to the request.
     callouts: RefCell<HashMap<u32, FilterCallContext>>,
     overrides: Rc<Option<Overrides>>,
@@ -62,7 +50,7 @@ impl FilterContext {
     pub fn new() -> FilterContext {
         FilterContext {
             callouts: RefCell::new(HashMap::new()),
-            metrics: Rc::new(WasmMetrics::new()),
+            metrics: Rc::new(Metrics::new()),
             system_prompt: Rc::new(None),
             prompt_targets: Rc::new(HashMap::new()),
             overrides: Rc::new(None),

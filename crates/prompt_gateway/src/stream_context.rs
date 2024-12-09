@@ -1,5 +1,6 @@
 use crate::embeddings::EmbeddingType;
-use crate::filter_context::{EmbeddingsStore, WasmMetrics};
+use crate::filter_context::EmbeddingsStore;
+use crate::metrics::Metrics;
 use acap::cos;
 use common::api::hallucination::{
     extract_messages_for_hallucination, HallucinationClassificationRequest,
@@ -67,7 +68,7 @@ pub struct StreamContext {
     pub prompt_targets: Rc<HashMap<String, PromptTarget>>,
     pub embeddings_store: Option<Rc<EmbeddingsStore>>,
     overrides: Rc<Option<Overrides>>,
-    pub metrics: Rc<WasmMetrics>,
+    pub metrics: Rc<Metrics>,
     pub callouts: RefCell<HashMap<u32, StreamCallContext>>,
     pub context_id: u32,
     pub tool_calls: Option<Vec<ToolCall>>,
@@ -90,7 +91,7 @@ impl StreamContext {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         context_id: u32,
-        metrics: Rc<WasmMetrics>,
+        metrics: Rc<Metrics>,
         system_prompt: Rc<Option<String>>,
         prompt_targets: Rc<HashMap<String, PromptTarget>>,
         prompt_guards: Rc<PromptGuards>,
