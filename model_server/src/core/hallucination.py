@@ -27,10 +27,13 @@ class MaskToken(Enum):
 
 
 HALLUCINATION_THRESHOLD_DICT = {
-    MaskToken.TOOL_CALL.value: {"entropy": 0.001, "varentropy": 0.005},
+    MaskToken.TOOL_CALL.value: {
+        "entropy": 0.14212761431932427,
+        "varentropy": 0.059890941083430876,
+    },
     MaskToken.PARAMETER_VALUE.value: {
-        "entropy": 0.1,
-        "varentropy": 0.5,
+        "entropy": 0.5437773168087006,
+        "varentropy": 2.413176417350769,
     },
 }
 
@@ -47,7 +50,7 @@ def check_threshold(entropy: float, varentropy: float, thd: Dict) -> bool:
     Returns:
         bool: True if either the entropy or varentropy exceeds their respective thresholds, False otherwise.
     """
-    return entropy > thd["entropy"] or varentropy > thd["varentropy"]
+    return entropy > thd["entropy"] and varentropy > thd["varentropy"]
 
 
 def calculate_entropy(log_probs: List[float]) -> Tuple[float, float]:
