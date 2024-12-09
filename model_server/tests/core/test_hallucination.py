@@ -1,20 +1,14 @@
-import json
-import pytest
 import os
 
+from src.commons.globals import handler_map
+from src.core.model_utils import ChatMessage, Message
+import pytest
+from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock, patch
+from src.main import app
+from src.commons.globals import handler_map
 
-from src.core.hallucination_handler import HallucinationStateHandler
-
-
-# Get the directory of the current file
-current_dir = os.path.dirname(__file__)
-
-# Construct the full path to the JSON file
-json_file_path = os.path.join(current_dir, "test_cases.json")
-
-with open(json_file_path) as f:
-    test_cases = json.load(f)
-
+# define function
 get_weather_api = {
     "type": "function",
     "function": {
@@ -43,111 +37,106 @@ get_weather_api = {
         },
     },
 }
-function_description = get_weather_api["function"]
-if type(function_description) != list:
-    function_description = [get_weather_api["function"]]
 
 
-# [TODO] Review: update the following code
-@pytest.mark.parametrize("case", test_cases)
-def test_hallucination(case):
-    state = HallucinationStateHandler(
-        response_iterator=None, function=function_description
+def get_hallucination_data_complex():
+    # Create instances of the Message class
+    message1 = Message(role="user", content="How is the weather in Seattle?")
+    message2 = Message(
+        role="assistant", content="Can you specify the unit you want the weather in?"
     )
-    for token, logprob in zip(case["tokens"], case["logprobs"]):
-        if token != "</tool_call>":
-            state.append_and_check_token_hallucination(token, logprob)
-            if state.hallucination:
-                break
-    assert state.hallucination == case["expect"]
+    message3 = Message(role="user", content="In celcius please!")
+
+    # Create a list of tools
+    tools = [get_weather_api]
+
+    # Create an instance of the ChatMessage class
+    req = ChatMessage(messages=[message1, message2, message3], tools=tools)
+
+    return req, True, True, True
 
 
-# [TODO] Review: update the following code
-@pytest.mark.parametrize("is_hallucinate_sample", [True, False])
-def test_hallucination_prompt(is_hallucinate_sample):
-    TASK_PROMPT = """
-    You are a helpful assistant.
-    """.strip()
+def get_hallucination_data_easy():
+    # Create instances of the Message class
+    message1 = Message(role="user", content="How is the weather in Seattle?")
 
-    TOOL_PROMPT = """
-    # Tools
+    # Create a list of tools
+    tools = [get_weather_api]
 
-    You may call one or more functions to assist with the user query.
+    # Create an instance of the ChatMessage class
+    req = ChatMessage(messages=[message1], tools=tools)
 
-    You are provided with function signatures within <tools></tools> XML tags:
-    <tools>
-    {tool_text}
-    </tools>
-    """.strip()
+    # model will hallucinate
+    return req, True, True, True
 
-    FORMAT_PROMPT = """
-    For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
-    <tool_call>
-    {"name": <function-name>, "arguments": <args-json-object>}
-    </tool_call>
-    """.strip()
 
-    def convert_tools(tools):
-        return "\n".join([json.dumps(tool) for tool in tools])
+def get_hallucination_data_medium():
+    # Create instances of the Message class
+    message1 = Message(role="user", content="How is the weather in?")
 
-    def format_prompt(tools):
-        tool_text = convert_tools(tools)
+    # Create a list of tools
+    tools = [get_weather_api]
 
-        return (
-            TASK_PROMPT
-            + "\n\n"
-            + TOOL_PROMPT.format(tool_text=tool_text)
-            + "\n\n"
-            + FORMAT_PROMPT
-            + "\n"
+    # Create an instance of the ChatMessage class
+    req = ChatMessage(messages=[message1], tools=tools)
+
+    # first token will not be tool call
+    return req, True, False, True
+
+
+def get_complete_data():
+    # Create instances of the Message class
+    message1 = Message(role="user", content="How is the weather in Seattle in 7 days?")
+
+    # Create a list of tools
+    tools = [get_weather_api]
+
+    # Create an instance of the ChatMessage class
+    req = ChatMessage(messages=[message1], tools=tools)
+
+    return req, True, False, False
+
+
+def get_irrelevant_data():
+    # Create instances of the Message class
+    message1 = Message(role="user", content="What is 1+1?")
+
+    # Create a list of tools
+    tools = [get_weather_api]
+
+    # Create an instance of the ChatMessage class
+    req = ChatMessage(messages=[message1], tools=tools)
+
+    return req, False, False, False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "get_data_func",
+    [
+        get_hallucination_data_complex,
+        get_hallucination_data_easy,
+        get_hallucination_data_medium,
+        get_complete_data,
+        get_irrelevant_data,
+    ],
+)
+async def test_function_calling(get_data_func):
+    req, intent, hallucination, parameter_gathering = get_data_func()
+
+    intent_response = await handler_map["Arch-Intent"].chat_completion(req)
+
+    assert handler_map["Arch-Intent"].detect_intent(intent_response) == intent
+
+    if intent:
+        function_calling_response = await handler_map["Arch-Function"].chat_completion(
+            req
         )
+        assert handler_map["Arch-Function"].hallu_handler.hallucination == hallucination
+        response_txt = function_calling_response.choices[0].message.content
 
-    openai_format_tools = [get_weather_api]
-
-    system_prompt = format_prompt(openai_format_tools)
-
-    from openai import OpenAI
-
-    client = OpenAI(base_url="https://api.fc.archgw.com/v1", api_key="EMPTY")
-
-    # List models API
-    model = client.models.list().data[0].id
-    assert model == "Arch-Function"
-    if not is_hallucinate_sample:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            # {"role": "user", "content": "can you help me check weather?"},
-            {"role": "user", "content": "How is the weather in Seattle in 7 days?"},
-            # {"role": "assistant", "content": "Of course!"},
-            # {"role": "user", "content": "Seattle please"}
-        ]
-    else:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            # {"role": "user", "content": "can you help me check weather?"},
-            {"role": "user", "content": "How is the weather in Seattle in days?"},
-            # {"role": "assistant", "content": "Of course!"},
-            # {"role": "user", "content": "Seattle please"}
-        ]
-
-    extra_body = {
-        "temperature": 0.6,
-        "top_p": 1.0,
-        "top_k": 50,
-        # "continue_final_message": True,
-        # "add_generation_prompt": False,
-        "logprobs": True,
-        "top_logprobs": 10,
-    }
-
-    resp = client.chat.completions.create(
-        model="Arch-Function", messages=messages, extra_body=extra_body, stream=True
-    )
-
-    hallu = HallucinationStateHandler(
-        response_iterator=resp, function=function_description
-    )
-
-    for token in hallu:
-        assert len(hallu.tokens) >= 0
-    assert hallu.hallucination == is_hallucinate_sample
+        if parameter_gathering:
+            prefill_prefix = handler_map["Arch-Function"].prefill_prefix
+            assert any(
+                response_txt.startswith(prefix) for prefix in prefill_prefix
+            ), f"Response '{response_txt}' does not start with any of the prefixes: {prefill_prefix}"

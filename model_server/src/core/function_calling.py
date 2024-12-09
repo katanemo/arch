@@ -435,6 +435,8 @@ class ArchFunctionHandler(ArchBaseHandler):
         """
         Engage parameter gathering for tool calls
         """
+
+        # TODO: log enaging parameter gathering
         prefill_response = self.client.chat.completions.create(
             messages=self._add_prefill_message(messages),
             model=self.model_name,
@@ -472,32 +474,34 @@ class ArchFunctionHandler(ArchBaseHandler):
         )
 
         # initialize the hallucination handler, which is an iterator
-        hallu_handler = HallucinationStateHandler(
+        self.hallu_handler = HallucinationStateHandler(
             response_iterator=response, function=req.tools
         )
 
         model_response, has_tool_call = "", None
 
-        for token in hallu_handler:
+        for token in self.hallu_handler:
             # check if the first token is <tool_call>
-            if len(hallu_handler.tokens) > 0 and has_tool_call == False:
-                if hallu_handler.tokens[0] == "<tool_call>":
+            if len(self.hallu_handler.tokens) > 0 and has_tool_call == None:
+                if self.hallu_handler.tokens[0] == "<tool_call>":
                     has_tool_call = True
                 else:
                     has_tool_call = False
                     break
-            if hallu_handler.hallucination == True:
+
+            # if the model is hallucinating, start parameter gathering
+            if self.hallu_handler.hallucination == True:
                 prefill_response = self._engage_parameter_gathering(messages)
                 model_response = prefill_response.choices[0].message.content
                 break
 
         # start parameter gathering if the model is not generating tool calls
-        if hallu_handler.hallucination == False:
-            model_response = "".join(hallu_handler.tokens)
+        if self.hallu_handler.hallucination == False:
+            model_response = "".join(self.hallu_handler.tokens)
 
         # start parameter gathering if the model is not generating tool calls
         if has_tool_call is False:
-            prefill_response = await self._engage_parameter_gathering(messages)
+            prefill_response = self._engage_parameter_gathering(messages)
             model_response = prefill_response.choices[0].message.content
 
         # Extract tool calls from model response
