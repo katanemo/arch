@@ -27,10 +27,10 @@ class MaskToken(Enum):
 
 
 HALLUCINATION_THRESHOLD_DICT = {
-    MaskToken.TOOL_CALL.value: {"entropy": 0.05, "varentropy": 0.25},
+    MaskToken.TOOL_CALL.value: {"entropy": 0.001, "varentropy": 0.005},
     MaskToken.PARAMETER_VALUE.value: {
-        "entropy": 0.05,
-        "varentropy": 0.25,
+        "entropy": 0.001,
+        "varentropy": 0.005,
     },
 }
 
@@ -105,7 +105,6 @@ class HallucinationStateHandler:
         hallucination (bool): Flag indicating if a hallucination is detected.
         hallucination_message (str): Message describing the hallucination.
         parameter_name (list): List of extracted parameter names.
-        function_description (dict): Description of functions and their parameters.
         token_probs_map (list): List mapping tokens to their entropy and variance of entropy.
     """
 
@@ -130,13 +129,9 @@ class HallucinationStateHandler:
         self.function = function
         if self.function is None:
             raise ValueError("API descriptions not set.")
-        parameter_names = {}
-        for func in self.function:
-            func_name = func["name"]
-            parameters = func["parameters"]["properties"]
-            parameter_names[func_name] = list(parameters.keys())
-        self.function_description = parameter_names
-        self.function_properties = {x["name"]: x["parameters"] for x in self.function}
+        self.function_properties = {
+            x["function"]["name"]: x["function"]["parameters"] for x in self.function
+        }
 
     def append_and_check_token_hallucination(self, token, logprob):
         """

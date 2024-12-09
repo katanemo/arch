@@ -394,7 +394,8 @@ class ArchFunctionHandler(ArchBaseHandler):
                         return is_valid, invalid_tool_call, error_message
 
                 # Verify the data type of each parameter in the tool calls
-                for param_name, param_value in func_args:
+                for param_name in func_args:
+                    param_value = func_args[param_name]
                     data_type = functions[func_name]["properties"][param_name]["type"]
 
                     if data_type in self.support_data_types:
@@ -469,6 +470,8 @@ class ArchFunctionHandler(ArchBaseHandler):
             stream=True,
             extra_body=self.generation_params,
         )
+
+        # initialize the hallucination handler, which is an iterator
         hallu_handler = HallucinationStateHandler(
             response_iterator=response, function=req.tools
         )
@@ -476,8 +479,9 @@ class ArchFunctionHandler(ArchBaseHandler):
         model_response, has_tool_call = "", None
 
         for token in hallu_handler:
+            # check if the first token is <tool_call>
             if len(hallu_handler.tokens) > 0 and has_tool_call == False:
-                if hallu_handler.tokens[-0] == "<tool_call>":
+                if hallu_handler.tokens[0] == "<tool_call>":
                     has_tool_call = True
                 else:
                     has_tool_call = False
