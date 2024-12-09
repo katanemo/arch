@@ -1,6 +1,6 @@
+use crate::embeddings::EmbeddingType;
 use crate::metrics::Metrics;
 use crate::stream_context::StreamContext;
-use common::common_types::EmbeddingType;
 use common::configuration::{Configuration, Overrides, PromptGuards, PromptTarget, Tracing};
 use common::consts::ARCH_UPSTREAM_HOST_HEADER;
 use common::consts::DEFAULT_EMBEDDING_MODEL;

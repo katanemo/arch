@@ -171,7 +171,7 @@ def up(file, path, service):
         log.info(f"Error: {str(e)}")
         sys.exit(1)
 
-    log.info("Starging arch model server and arch gateway")
+    log.info("Starting arch model server and arch gateway")
 
     # Set the ARCH_CONFIG_FILE environment variable
     env_stage = {}

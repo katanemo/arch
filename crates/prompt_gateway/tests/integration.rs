@@ -1,11 +1,14 @@
-use common::common_types::open_ai::{ChatCompletionsResponse, Choice, Message, Usage};
-use common::common_types::open_ai::{FunctionCallDetail, ToolCall, ToolType};
-use common::common_types::{HallucinationClassificationResponse, PromptGuardResponse};
+use common::api::hallucination::HallucinationClassificationResponse;
+use common::api::open_ai::{
+    ChatCompletionsResponse, Choice, FunctionCallDetail, Message, ToolCall, ToolType, Usage,
+};
+use common::api::prompt_guard::PromptGuardResponse;
+use common::api::zero_shot::ZeroShotClassificationResponse;
+use common::configuration::Configuration;
 use common::embeddings::{
     create_embedding_response, embedding, CreateEmbeddingResponse, CreateEmbeddingResponseUsage,
     Embedding,
 };
-use common::{common_types::ZeroShotClassificationResponse, configuration::Configuration};
 use http::StatusCode;
 use proxy_wasm_test_framework::tester::{self, Tester};
 use proxy_wasm_test_framework::types::{
@@ -360,6 +363,7 @@ prompt_targets:
     endpoint:
       name: api_server
       path: /weather
+      http_method: POST
     system_prompt: |
       You are a helpful weather forecaster. Use weater data that is provided to you. Please following following guidelines when responding to user queries:
       - Use farenheight for temperature

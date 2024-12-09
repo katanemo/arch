@@ -22,6 +22,7 @@ prompt_targets:
       endpoint:
         name: app_server
         path: /agent/device_summary
+        http_method: POST
       parameters:
         - name: device_ids
           type: list
@@ -36,6 +37,7 @@ prompt_targets:
       endpoint:
         name: app_server
         path: /agent/device_reboot
+        http_method: POST
       parameters:
         - name: device_ids
           type: list

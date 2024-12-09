@@ -1,16 +1,18 @@
+use crate::embeddings::EmbeddingType;
 use crate::filter_context::EmbeddingsStore;
-use crate::hallucination::extract_messages_for_hallucination;
 use crate::metrics::Metrics;
 use acap::cos;
-use common::common_types::open_ai::{
+use common::api::hallucination::{
+    extract_messages_for_hallucination, HallucinationClassificationRequest,
+    HallucinationClassificationResponse,
+};
+use common::api::open_ai::{
     to_server_events, ArchState, ChatCompletionStreamResponse, ChatCompletionTool,
     ChatCompletionsRequest, ChatCompletionsResponse, FunctionDefinition, FunctionParameter,
     FunctionParameters, Message, ParameterType, ToolCall, ToolType,
 };
-use common::common_types::{
-    EmbeddingType, HallucinationClassificationRequest, HallucinationClassificationResponse,
-    PromptGuardResponse, ZeroShotClassificationRequest, ZeroShotClassificationResponse,
-};
+use common::api::prompt_guard::PromptGuardResponse;
+use common::api::zero_shot::{ZeroShotClassificationRequest, ZeroShotClassificationResponse};
 use common::configuration::{Overrides, PromptGuards, PromptTarget, Tracing};
 use common::consts::{
     ARCH_FC_INTERNAL_HOST, ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS,
@@ -30,6 +32,7 @@ use derivative::Derivative;
 use http::StatusCode;
 use log::{debug, info, trace, warn};
 use proxy_wasm::traits::*;
+use serde_yaml::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -893,9 +896,37 @@ impl StreamContext {
         let endpoint = prompt_target.endpoint.unwrap();
         let path: String = endpoint.path.unwrap_or(String::from("/"));
 
+        // only add params that are of string, number and bool type
+        let url_params = tool_params
+            .iter()
+            .filter(|(_, value)| value.is_number() || value.is_string() || value.is_bool())
+            .map(|(key, value)| match value {
+                Value::Number(n) => (key.clone(), n.to_string()),
+                Value::String(s) => (key.clone(), s.clone()),
+                Value::Bool(b) => (key.clone(), b.to_string()),
+                Value::Null => todo!(),
+                Value::Sequence(_) => todo!(),
+                Value::Mapping(_) => todo!(),
+                Value::Tagged(_) => todo!(),
+            })
+            .collect::<HashMap<String, String>>();
+
+        let path = match common::path::replace_params_in_path(&path, &url_params) {
+            Ok(path) => path,
+            Err(e) => {
+                return self.send_server_error(
+                    ServerError::BadRequest {
+                        why: format!("error replacing params in path: {}", e),
+                    },
+                    Some(StatusCode::BAD_REQUEST),
+                );
+            }
+        };
+
+        let http_method = endpoint.method.unwrap_or_default().to_string();
         let mut headers = vec![
             (ARCH_UPSTREAM_HOST_HEADER, endpoint.name.as_str()),
-            (":method", "POST"),
+            (":method", &http_method),
             (":path", &path),
             (":authority", endpoint.name.as_str()),
             ("content-type", "application/json"),

@@ -1,7 +1,23 @@
-use common::{
-    common_types::open_ai::Message,
+use std::collections::HashMap;
+
+use crate::{
+    api::open_ai::Message,
     consts::{ARCH_MODEL_PREFIX, HALLUCINATION_TEMPLATE, USER_ROLE},
 };
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HallucinationClassificationRequest {
+    pub prompt: String,
+    pub parameters: HashMap<String, String>,
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HallucinationClassificationResponse {
+    pub params_scores: HashMap<String, f64>,
+    pub model: String,
+}
 
 pub fn extract_messages_for_hallucination(messages: &[Message]) -> Vec<String> {
     let mut arch_assistant = false;
@@ -42,7 +58,7 @@ pub fn extract_messages_for_hallucination(messages: &[Message]) -> Vec<String> {
 
 #[cfg(test)]
 mod test {
-    use common::common_types::open_ai::Message;
+    use crate::api::open_ai::Message;
     use pretty_assertions::assert_eq;
 
     use super::extract_messages_for_hallucination;
