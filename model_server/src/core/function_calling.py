@@ -480,7 +480,7 @@ class ArchFunctionHandler(ArchBaseHandler):
 
         model_response, has_tool_call = "", None
 
-        for token in self.hallu_handler:
+        for _ in self.hallu_handler:
             # check if the first token is <tool_call>
             if len(self.hallu_handler.tokens) > 0 and has_tool_call == None:
                 if self.hallu_handler.tokens[0] == "<tool_call>":

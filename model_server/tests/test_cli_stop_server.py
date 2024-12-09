@@ -1,7 +1,7 @@
 import unittest
 
 from unittest.mock import patch, MagicMock
-from src.cli import kill_process
+from src.core.cli import kill_process
 
 
 class TestStopServer(unittest.TestCase):

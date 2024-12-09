@@ -27,10 +27,10 @@ class MaskToken(Enum):
 
 
 HALLUCINATION_THRESHOLD_DICT = {
-    MaskToken.TOOL_CALL.value: {"entropy": 0.001, "varentropy": 0.005},
+    MaskToken.TOOL_CALL.value: {"entropy": 0.05, "varentropy": 0.25},
     MaskToken.PARAMETER_VALUE.value: {
-        "entropy": 0.001,
-        "varentropy": 0.005,
+        "entropy": 0.05,
+        "varentropy": 0.25,
     },
 }
 
