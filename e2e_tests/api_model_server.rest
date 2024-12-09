@@ -10,21 +10,65 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "how is the weather in seattle for next 10 days"
+      "content": "what is the weather forcast for seattle in the next 10 days?"
     }
   ],
   "tools": [
     {
-        "id": "weather-112",
-        "tool_type": "function",
-        "function": {
-          "name": "weather_forecast",
-          "arguments": {"city": "str", "days": "int"}
+      "type": "function",
+      "function": {
+        "name": "weather_forecast",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "str"
+            },
+            "days": {
+              "type": "int"
+            }
+          },
+          "required": ["city", "days"]
         }
+      }
     }
   ]
 }
 
+
+
+### talk to function calling endpoint
+POST {{model_server_endpoint}}/function_calling HTTP/1.1
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "book a hotel for me"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "weather_forecast",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "str"
+            },
+            "days": {
+              "type": "int"
+            }
+          },
+          "required": ["city", "days"]
+        }
+      }
+    }
+  ]
+}
 
 ### talk to Arch-Intent directly for completion
 POST https://api.fc.archgw.com/v1/chat/completions HTTP/1.1

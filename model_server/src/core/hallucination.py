@@ -278,6 +278,9 @@ class HallucinationStateHandler:
                 f"Hallucination: token '{self.tokens[-1]}' is uncertain."
             )
 
+            # [TODO] - Review: remove the following code
+            print(f"[Hallucination] - Hallucination detected: {self.error_message}")
+
     def _count_consecutive_token(self, token=MaskToken.PARAMETER_VALUE) -> int:
         """
         Counts the number of consecutive occurrences of a given token in the mask.

@@ -174,7 +174,7 @@ class ArchFunctionConfig:
     ).strip()
 
     GENERATION_PARAMS = {
-        "temperature": 0.2,
+        "temperature": 0.6,
         "top_p": 1.0,
         "top_k": 50,
         "max_tokens": 512,
@@ -482,7 +482,7 @@ class ArchFunctionHandler(ArchBaseHandler):
 
         for _ in self.hallu_handler:
             # check if the first token is <tool_call>
-            if len(self.hallu_handler.tokens) > 0 and has_tool_call == None:
+            if len(self.hallu_handler.tokens) > 0 and has_tool_call is None:
                 if self.hallu_handler.tokens[0] == "<tool_call>":
                     has_tool_call = True
                 else:
@@ -490,29 +490,42 @@ class ArchFunctionHandler(ArchBaseHandler):
                     break
 
             # if the model is hallucinating, start parameter gathering
-            if self.hallu_handler.hallucination == True:
+            if self.hallu_handler.hallucination is True:
+                # [TODO] - Review: remove the following code
+                print(
+                    f"Hallucination detected for the following response, start parameter gathering: \n{''.join(self.hallu_handler.tokens)}"
+                )
+
                 prefill_response = self._engage_parameter_gathering(messages)
                 model_response = prefill_response.choices[0].message.content
                 break
 
-        if has_tool_call and self.hallu_handler.hallucination == False:
+        if has_tool_call and self.hallu_handler.hallucination is False:
+            # [TODO] - Review: remove the following code
+            print("Tool call found, no hallucination detected!")
             model_response = "".join(self.hallu_handler.tokens)
 
         # start parameter gathering if the model is not generating tool calls
         if has_tool_call is False:
+            # [TODO] - Review: remove the following code
+            print("No tool call found, start parameter gathering")
             prefill_response = self._engage_parameter_gathering(messages)
             model_response = prefill_response.choices[0].message.content
 
         # Extract tool calls from model response
         extracted = self._extract_tool_calls(model_response)
+        # [TODO] - Review: remvoe the following code
+        print(f"[Extracted] - {extracted}")
 
-        if extracted["result"]:
+        if len(extracted["result"]) and extracted["status"]:
             # [TODO] Review: define the behavior in the case that tool call extraction fails
             # if not extracted["status"]:
 
             verified = self._verify_tool_calls(
                 tools=req.tools, tool_calls=extracted["result"]
             )
+            # [TODO] - Review: remvoe the following code
+            print(f"[Verified] - {verified}")
 
             # [TODO] Review: In the case that tool calls are invalid, define the protocol to collect debugging output and the behavior to handle it appropriately
             if verified["status"]:
