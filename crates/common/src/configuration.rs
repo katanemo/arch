@@ -236,9 +236,9 @@ pub struct PromptTarget {
 }
 
 // convert PromptTarget to ChatCompletionTool
-impl Into<ChatCompletionTool> for &PromptTarget {
-    fn into(self) -> ChatCompletionTool {
-        let properties: HashMap<String, FunctionParameter> = match self.parameters {
+impl From<&PromptTarget> for ChatCompletionTool {
+    fn from(val: &PromptTarget) -> Self {
+        let properties: HashMap<String, FunctionParameter> = match val.parameters {
             Some(ref entities) => {
                 let mut properties: HashMap<String, FunctionParameter> = HashMap::new();
                 for entity in entities.iter() {
@@ -261,8 +261,8 @@ impl Into<ChatCompletionTool> for &PromptTarget {
         ChatCompletionTool {
             tool_type: crate::api::open_ai::ToolType::Function,
             function: FunctionDefinition {
-                name: self.name.clone(),
-                description: self.description.clone(),
+                name: val.name.clone(),
+                description: val.description.clone(),
                 parameters: FunctionParameters { properties },
             },
         }

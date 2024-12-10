@@ -20,12 +20,10 @@ pub fn replace_params_in_path(
                 return Err(format!("Missing value for parameter `{}`", param_name));
             }
             current_param.clear();
+        } else if in_param {
+            current_param.push(c);
         } else {
-            if in_param {
-                current_param.push(c);
-            } else {
-                result.push(c);
-            }
+            result.push(c);
         }
     }
 
