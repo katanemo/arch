@@ -15,20 +15,76 @@ Content-Type: application/json
   ],
   "tools": [
     {
-      "type": "function",
-      "function": {
-        "name": "weather_forecast",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "city": {
-              "type": "str"
-            },
-            "days": {
-              "type": "int"
+        "id": "weather-112",
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get current weather at a location.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "str",
+                        "description": "The location to get the weather for",
+                        "format": "City, State"
+                    },
+                    "unit": {
+                        "type": "str",
+                        "description": "The unit to return the weather in.",
+                        "enum": ["celsius", "fahrenheit"],
+                        "default": "celsius"
+                    },
+                    "days": {
+                        "type": "str",
+                        "description": "the number of days for the request."
+                    }
+                },
+                "required": ["location", "days"]
             }
-          },
-          "required": ["city", "days"]
+        }
+    }
+  ]
+}
+
+### talk to function calling endpoint
+POST {{model_server_endpoint}}/function_calling HTTP/1.1
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "how is the weather in seattle"
+    }
+  ],
+  "tools": [
+    {
+        "id": "weather-112",
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get current weather at a location.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "str",
+                        "description": "The location to get the weather for",
+                        "format": "City, State"
+                    },
+                    "unit": {
+                        "type": "str",
+                        "description": "The unit to return the weather in.",
+                        "enum": ["celsius", "fahrenheit"],
+                        "default": "celsius"
+                    },
+                    "days": {
+                        "type": "str",
+                        "description": "the number of days for the request."
+                    }
+                },
+                "required": ["location", "days"]
+            }
         }
       }
     }

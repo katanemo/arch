@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-pub fn replace_params_in_path(path: &str, params: &HashMap<String, String>) -> Result<String, String> {
+pub fn replace_params_in_path(
+    path: &str,
+    params: &HashMap<String, String>,
+) -> Result<String, String> {
     let mut result = String::new();
     let mut in_param = false;
     let mut current_param = String::new();

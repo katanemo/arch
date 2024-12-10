@@ -21,7 +21,7 @@ pub struct ChatCompletionsRequest {
     pub metadata: Option<HashMap<String, String>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ToolType {
     #[serde(rename = "function")]
     Function,
@@ -165,8 +165,8 @@ pub struct Message {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Choice {
-    pub finish_reason: String,
-    pub index: usize,
+    pub finish_reason: Option<String>,
+    pub index: Option<usize>,
     pub message: Message,
 }
 
@@ -217,8 +217,8 @@ impl ChatCompletionsResponse {
                     tool_calls: None,
                     tool_call_id: None,
                 },
-                index: 0,
-                finish_reason: "done".to_string(),
+                index: Some(0),
+                finish_reason: Some("done".to_string()),
             }],
             usage: None,
             model: ARCH_FC_MODEL_NAME.to_string(),
