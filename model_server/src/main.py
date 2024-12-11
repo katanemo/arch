@@ -67,11 +67,12 @@ async def function_calling(req: ChatMessage, res: Response):
                     "Arch-Function"
                 ].chat_completion(req)
                 function_latency = time.perf_counter() - function_start_time
-                return {
-                    "response": function_calling_response,
-                    "intent_latency": round(intent_latency * 1000, 3),
-                    "function_latency": round(function_latency * 1000, 3),
+                function_calling_response.metadata = {
+                    "intent_latency": str(round(intent_latency * 1000, 3)),
+                    "function_latency": str(round(function_latency * 1000, 3)),
                 }
+
+                return function_calling_response
             except Exception as e:
                 # [TODO] Review: update how to collect debugging outputs
                 # logger.error(f"Error in chat_completion from `Arch-Function`: {e}")

@@ -124,7 +124,8 @@ impl StreamContext {
         let arch_fc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
             Ok(arch_fc_response) => arch_fc_response,
             Err(e) => {
-                warn!("error deserializing archfc response: {}", e);
+                warn!("error deserializing archfc response: {}, body: {}", e, body_str
+              );
                 return self.send_server_error(ServerError::Deserialization(e), None);
             }
         };

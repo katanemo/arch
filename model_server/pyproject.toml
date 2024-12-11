@@ -37,7 +37,7 @@ opentelemetry-instrumentation-fastapi = "^0.49b0"
 overrides = "^7.7.0"
 
 [tool.poetry.scripts]
-archgw_modelserver = "src.cli:start_server"
+archgw_modelserver = "src.cli:run_server"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
