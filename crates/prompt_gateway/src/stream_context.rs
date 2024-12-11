@@ -1,12 +1,13 @@
 use crate::metrics::Metrics;
 use common::api::open_ai::{
     to_server_events, ArchState, ChatCompletionStreamResponse, ChatCompletionsRequest,
-    ChatCompletionsResponse, Message, ToolCall,
+    ChatCompletionsResponse, Message, ModelServerResponse, ToolCall,
 };
 use common::configuration::{Overrides, PromptTarget, Tracing};
 use common::consts::{
-    ARCH_FC_MODEL_NAME, ARCH_INTERNAL_CLUSTER_NAME, ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE,
-    MESSAGES_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE, TOOL_ROLE, TRACE_PARENT_HEADER, USER_ROLE,
+    ARCH_FC_MODEL_NAME, ARCH_FC_REQUEST_TIMEOUT_MS, ARCH_INTERNAL_CLUSTER_NAME,
+    ARCH_UPSTREAM_HOST_HEADER, ASSISTANT_ROLE, MESSAGES_KEY, REQUEST_ID_HEADER, SYSTEM_ROLE,
+    TOOL_ROLE, TRACE_PARENT_HEADER, USER_ROLE,
 };
 use common::errors::ServerError;
 use common::http::{CallArgs, Client};
@@ -26,6 +27,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 pub enum ResponseHandlerType {
     ArchFC,
     FunctionCall,
+    DefaultTarget,
 }
 
 #[derive(Clone, Derivative)]
@@ -117,16 +119,92 @@ impl StreamContext {
         }
     }
 
-    pub fn arch_fc_response_handler(&mut self, body: Vec<u8>, callout_context: StreamCallContext) {
+    pub fn arch_fc_response_handler(
+        &mut self,
+        body: Vec<u8>,
+        mut callout_context: StreamCallContext,
+    ) {
         let body_str = String::from_utf8(body).unwrap();
         debug!("archgw <= archfc response: {}", body_str);
 
-        let arch_fc_response: ChatCompletionsResponse = match serde_json::from_str(&body_str) {
+        let model_server_response: ModelServerResponse = match serde_json::from_str(&body_str) {
             Ok(arch_fc_response) => arch_fc_response,
             Err(e) => {
-                warn!("error deserializing archfc response: {}, body: {}", e, body_str
-              );
+                warn!(
+                    "error deserializing archfc response: {}, body: {}",
+                    e, body_str
+                );
                 return self.send_server_error(ServerError::Deserialization(e), None);
+            }
+        };
+
+        let arch_fc_response = match model_server_response {
+            ModelServerResponse::ChatCompletionsResponse(response) => response,
+            ModelServerResponse::ModelServerErrorResponse(response) => {
+                debug!("archgw <= archfc error response: {}", response.result);
+                if response.result == "No intent matched" {
+                    if let Some(default_prompt_target) = self
+                        .prompt_targets
+                        .values()
+                        .find(|pt| pt.default.unwrap_or(false))
+                    {
+                        debug!("default prompt target found, forwarding request to default prompt target");
+                        let endpoint = default_prompt_target.endpoint.clone().unwrap();
+                        let upstream_path: String = endpoint.path.unwrap_or(String::from("/"));
+
+                        let upstream_endpoint = endpoint.name;
+                        let mut params = HashMap::new();
+                        params.insert(
+                            MESSAGES_KEY.to_string(),
+                            callout_context.request_body.messages.clone(),
+                        );
+                        let arch_messages_json = serde_json::to_string(&params).unwrap();
+                        let timeout_str = ARCH_FC_REQUEST_TIMEOUT_MS.to_string();
+
+                        let mut headers = vec![
+                            (":method", "POST"),
+                            (ARCH_UPSTREAM_HOST_HEADER, &upstream_endpoint),
+                            (":path", &upstream_path),
+                            (":authority", &upstream_endpoint),
+                            ("content-type", "application/json"),
+                            ("x-envoy-max-retries", "3"),
+                            ("x-envoy-upstream-rq-timeout-ms", timeout_str.as_str()),
+                        ];
+
+                        if self.request_id.is_some() {
+                            headers.push((REQUEST_ID_HEADER, self.request_id.as_ref().unwrap()));
+                        }
+
+                        // if self.trace_arch_internal() && self.traceparent.is_some() {
+                        //     headers.push((TRACE_PARENT_HEADER, self.traceparent.as_ref().unwrap()));
+                        // }
+
+                        let call_args = CallArgs::new(
+                            ARCH_INTERNAL_CLUSTER_NAME,
+                            &upstream_path,
+                            headers,
+                            Some(arch_messages_json.as_bytes()),
+                            vec![],
+                            Duration::from_secs(5),
+                        );
+                        callout_context.response_handler_type = ResponseHandlerType::DefaultTarget;
+                        callout_context.prompt_target_name =
+                            Some(default_prompt_target.name.clone());
+
+                        if let Err(e) = self.http_call(call_args, callout_context) {
+                            warn!("error dispatching default prompt target request: {}", e);
+                            return self.send_server_error(
+                                ServerError::HttpDispatch(e),
+                                Some(StatusCode::BAD_REQUEST),
+                            );
+                        }
+                        return;
+                    }
+                }
+                return self.send_server_error(
+                    ServerError::LogicError(response.result),
+                    Some(StatusCode::BAD_REQUEST),
+                );
             }
         };
 
@@ -422,6 +500,126 @@ impl StreamContext {
             tool_calls: None,
             tool_call_id: Some(self.tool_calls.as_ref().unwrap()[0].id.clone()),
         }
+    }
+
+    pub fn default_target_handler(&self, body: Vec<u8>, mut callout_context: StreamCallContext) {
+        let prompt_target = self
+            .prompt_targets
+            .get(callout_context.prompt_target_name.as_ref().unwrap())
+            .unwrap()
+            .clone();
+
+        // check if the default target should be dispatched to the LLM provider
+        if !prompt_target
+            .auto_llm_dispatch_on_response
+            .unwrap_or_default()
+        {
+            let default_target_response_str = if self.streaming_response {
+                let chat_completion_response =
+                    match serde_json::from_slice::<ChatCompletionsResponse>(&body) {
+                        Ok(chat_completion_response) => chat_completion_response,
+                        Err(e) => {
+                            warn!(
+                                "error deserializing default target response: {}, body str: {}",
+                                e,
+                                String::from_utf8(body).unwrap()
+                            );
+                            return self.send_server_error(ServerError::Deserialization(e), None);
+                        }
+                    };
+
+                let chunks = vec![
+                    ChatCompletionStreamResponse::new(
+                        None,
+                        Some(ASSISTANT_ROLE.to_string()),
+                        Some(chat_completion_response.model.clone()),
+                        None,
+                    ),
+                    ChatCompletionStreamResponse::new(
+                        chat_completion_response.choices[0].message.content.clone(),
+                        None,
+                        Some(chat_completion_response.model.clone()),
+                        None,
+                    ),
+                ];
+
+                to_server_events(chunks)
+            } else {
+                String::from_utf8(body).unwrap()
+            };
+
+            self.send_http_response(
+                StatusCode::OK.as_u16().into(),
+                vec![],
+                Some(default_target_response_str.as_bytes()),
+            );
+            return;
+        }
+
+        let chat_completions_resp: ChatCompletionsResponse = match serde_json::from_slice(&body) {
+            Ok(chat_completions_resp) => chat_completions_resp,
+            Err(e) => {
+                warn!(
+                    "error deserializing default target response: {}, body str: {}",
+                    e,
+                    String::from_utf8(body).unwrap()
+                );
+                return self.send_server_error(ServerError::Deserialization(e), None);
+            }
+        };
+
+        let mut messages = Vec::new();
+        // add system prompt
+        match prompt_target.system_prompt.as_ref() {
+            None => {}
+            Some(system_prompt) => {
+                let system_prompt_message = Message {
+                    role: SYSTEM_ROLE.to_string(),
+                    content: Some(system_prompt.clone()),
+                    model: None,
+                    tool_calls: None,
+                    tool_call_id: None,
+                };
+                messages.push(system_prompt_message);
+            }
+        }
+
+        messages.append(&mut callout_context.request_body.messages);
+
+        let api_resp = chat_completions_resp.choices[0]
+            .message
+            .content
+            .as_ref()
+            .unwrap();
+
+        let user_message = messages.pop().unwrap();
+        let message = format!("{}\ncontext: {}", user_message.content.unwrap(), api_resp);
+        messages.push(Message {
+            role: USER_ROLE.to_string(),
+            content: Some(message),
+            model: None,
+            tool_calls: None,
+            tool_call_id: None,
+        });
+
+        let chat_completion_request = ChatCompletionsRequest {
+            model: self
+                .chat_completions_request
+                .as_ref()
+                .unwrap()
+                .model
+                .clone(),
+            messages,
+            tools: None,
+            stream: callout_context.request_body.stream,
+            stream_options: callout_context.request_body.stream_options,
+            metadata: None,
+        };
+
+        let json_resp = serde_json::to_string(&chat_completion_request).unwrap();
+        debug!("archgw => (default target) llm request: {}", json_resp);
+        self.set_http_request_body(0, self.request_body_size, json_resp.as_bytes());
+        self.resume_http_request();
     }
 }
 

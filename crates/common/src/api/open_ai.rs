@@ -197,6 +197,18 @@ pub struct ToolCallState {
 pub enum ArchState {
     ToolCall(Vec<ToolCallState>),
 }
+#[derive(Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum ModelServerResponse {
+    ChatCompletionsResponse(ChatCompletionsResponse),
+    ModelServerErrorResponse(ModelServerErrorResponse),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelServerErrorResponse {
+    pub result: String,
+    pub intent_latency: f64,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatCompletionsResponse {

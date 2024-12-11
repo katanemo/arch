@@ -24,6 +24,7 @@ impl Context for StreamContext {
             match callout_context.response_handler_type {
                 ResponseHandlerType::ArchFC => self.arch_fc_response_handler(body, callout_context),
                 ResponseHandlerType::FunctionCall => self.api_call_response_handler(body, callout_context),
+                ResponseHandlerType::DefaultTarget =>self.default_target_handler(body, callout_context),
             }
         } else {
             self.send_server_error(
