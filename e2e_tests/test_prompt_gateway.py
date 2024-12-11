@@ -15,7 +15,7 @@ from common import (
 def test_prompt_gateway(stream):
     expected_tool_call = {
         "name": "get_current_weather",
-        "arguments": {"location": "seattle", "days": "10"},
+        "arguments": {"location": "seattle, wa", "days": "10"},
     }
 
     body = {
