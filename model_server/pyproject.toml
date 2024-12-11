@@ -47,6 +47,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 python_files = ["test*.py"]
 addopts = ["-v", "-s"]
-retries = 5
+retries = 2
 retry_delay = 0.5
 cumulative_timing = false
