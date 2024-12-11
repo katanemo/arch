@@ -1,9 +1,8 @@
-import json
 import math
 import torch
-import random
-from typing import Any, Dict, List, Tuple
 import itertools
+
+from typing import Dict, List, Tuple
 from enum import Enum
 
 # constants
@@ -28,10 +27,13 @@ class MaskToken(Enum):
 
 
 HALLUCINATION_THRESHOLD_DICT = {
-    MaskToken.TOOL_CALL.value: {"entropy": 0.1, "varentropy": 0.5},
+    MaskToken.TOOL_CALL.value: {
+        "entropy": 0.35,
+        "varentropy": 3.55,
+    },
     MaskToken.PARAMETER_VALUE.value: {
-        "entropy": 0.5,
-        "varentropy": 2.5,
+        "entropy": 0.15,
+        "varentropy": 0.5,
     },
 }
 
@@ -48,7 +50,7 @@ def check_threshold(entropy: float, varentropy: float, thd: Dict) -> bool:
     Returns:
         bool: True if either the entropy or varentropy exceeds their respective thresholds, False otherwise.
     """
-    return entropy > thd["entropy"] or varentropy > thd["varentropy"]
+    return entropy > thd["entropy"] and varentropy > thd["varentropy"]
 
 
 def calculate_entropy(log_probs: List[float]) -> Tuple[float, float]:
@@ -74,24 +76,23 @@ def calculate_entropy(log_probs: List[float]) -> Tuple[float, float]:
     return entropy.item(), varentropy.item()
 
 
-def is_parameter_property(
-    function_description: Dict, parameter_name: str, property_name: str
+def is_parameter_required(
+    function_description: Dict,
+    parameter_name: str,
 ) -> bool:
     """
-    Check if a parameter in an API description has a specific property.
+    Check if a parameter in required list
 
     Args:
         function_description (dict): The API description in JSON format.
         parameter_name (str): The name of the parameter to check.
-        property_name (str): The property to look for (e.g., 'format', 'default').
 
     Returns:
         bool: True if the parameter has the specified property, False otherwise.
     """
-    parameters = function_description.get("properties", {})
-    parameter_info = parameters.get(parameter_name, {})
+    required_parameters = function_description.get("required", {})
 
-    return property_name in parameter_info
+    return parameter_name in required_parameters
 
 
 class HallucinationStateHandler:
@@ -107,7 +108,6 @@ class HallucinationStateHandler:
         hallucination (bool): Flag indicating if a hallucination is detected.
         hallucination_message (str): Message describing the hallucination.
         parameter_name (list): List of extracted parameter names.
-        function_description (dict): Description of functions and their parameters.
         token_probs_map (list): List mapping tokens to their entropy and variance of entropy.
     """
 
@@ -132,13 +132,9 @@ class HallucinationStateHandler:
         self.function = function
         if self.function is None:
             raise ValueError("API descriptions not set.")
-        parameter_names = {}
-        for func in self.function:
-            func_name = func["name"]
-            parameters = func["parameters"]["properties"]
-            parameter_names[func_name] = list(parameters.keys())
-        self.function_description = parameter_names
-        self.function_properties = {x["name"]: x["parameters"] for x in self.function}
+        self.function_properties = {
+            x["function"]["name"]: x["function"]["parameters"] for x in self.function
+        }
 
     def append_and_check_token_hallucination(self, token, logprob):
         """
@@ -199,7 +195,7 @@ class HallucinationStateHandler:
                 self.mask.append(MaskToken.FUNCTION_NAME)
             else:
                 self.state = None
-                self._is_function_name_hallucinated()
+                self._get_function_name()
 
         # Check if the token is a function name start token, change the state
         if content.endswith(FUNC_NAME_START_PATTERN):
@@ -217,8 +213,8 @@ class HallucinationStateHandler:
             PARAMETER_NAME_END_TOKENS
         ):
             self.state = None
-            self._is_parameter_name_hallucinated()
             self.parameter_name_done = True
+            self._get_parameter_name()
         # if the parameter name is done and the token is a parameter name start token, change the state
         elif self.parameter_name_done and content.endswith(
             PARAMETER_NAME_START_PATTERN
@@ -237,14 +233,15 @@ class HallucinationStateHandler:
             # checking if the token is a value token and is not empty
             if self.tokens[-1].strip() not in ['"', ""]:
                 self.mask.append(MaskToken.PARAMETER_VALUE)
+
+                # [TODO] Review: update the following code: `is_parameter_property` should not be here, move to `ArchFunctionHandler`
                 # checking if the parameter doesn't have default and the token is the first parameter value token
                 if (
                     len(self.mask) > 1
                     and self.mask[-2] != MaskToken.PARAMETER_VALUE
-                    and not is_parameter_property(
+                    and is_parameter_required(
                         self.function_properties[self.function_name],
                         self.parameter_name[-1],
-                        "default",
                     )
                 ):
                     self._check_logprob()
@@ -284,6 +281,9 @@ class HallucinationStateHandler:
                 f"Hallucination: token '{self.tokens[-1]}' is uncertain."
             )
 
+            # [TODO] - Review: remove the following code
+            print(f"[Hallucination] - Hallucination detected: {self.error_message}")
+
     def _count_consecutive_token(self, token=MaskToken.PARAMETER_VALUE) -> int:
         """
         Counts the number of consecutive occurrences of a given token in the mask.
@@ -300,25 +300,23 @@ class HallucinationStateHandler:
             else 0
         )
 
-    def _is_function_name_hallucinated(self):
+    def _get_parameter_name(self):
         """
-        Checks the extracted function name against the function descriptions.
-        Detects hallucinations if the function name is not found.
-        """
-        f_len = self._count_consecutive_token(MaskToken.FUNCTION_NAME)
-        self.function_name = "".join(self.tokens[:-1][-f_len:])
-        if self.function_name not in self.function_description.keys():
-            self.error_type = "function_name"
-            self.error_message = f"Function name '{self.function_name}' not found in given function descriptions."
+        Get the parameter name from the tokens.
 
-    def _is_parameter_name_hallucinated(self):
-        """
-        Checks the extracted parameter name against the function descriptions.
-        Detects hallucinations if the parameter name is not found.
+        Returns:
+            str: The extracted parameter name.
         """
         p_len = self._count_consecutive_token(MaskToken.PARAMETER_NAME)
         parameter_name = "".join(self.tokens[:-1][-p_len:])
         self.parameter_name.append(parameter_name)
-        if parameter_name not in self.function_description[self.function_name]:
-            self.error_type = "parameter_name"
-            self.error_message = f"Parameter name '{parameter_name}' not found in given function descriptions."
+
+    def _get_function_name(self):
+        """
+        Get the function name from the tokens.
+
+        Returns:
+            str: The extracted function name.
+        """
+        f_len = self._count_consecutive_token(MaskToken.FUNCTION_NAME)
+        self.function_name = "".join(self.tokens[:-1][-f_len:])

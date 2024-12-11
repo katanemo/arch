@@ -73,6 +73,15 @@ Content-Type: application/json
     {
       "role": "user",
       "content": "for next 10 days"
+    },
+    {
+      "role": "assistant",
+      "content": "Could you tell me what units you want the weather in? (For example: Celsius or Fahrenheit)",
+      "model": "Arch-Function-1.5b"
+    },
+    {
+      "role": "user",
+      "content": "Fahrenheit"
     }
   ]
 }
@@ -82,6 +91,7 @@ POST {{prompt_endpoint}}/v1/chat/completions HTTP/1.1
 Content-Type: application/json
 
 {
+  "model": "--",
   "messages": [
     {
       "role": "user",

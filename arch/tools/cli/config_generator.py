@@ -90,6 +90,7 @@ def validate_and_render_schema():
 
     rendered = template.render(data)
     print(ENVOY_CONFIG_FILE_RENDERED)
+    print(rendered)
     with open(ENVOY_CONFIG_FILE_RENDERED, "w") as file:
         file.write(rendered)
 
