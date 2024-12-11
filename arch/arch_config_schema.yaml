@@ -99,6 +99,8 @@ properties:
                   type: string
               in_path:
                 type: boolean
+              format:
+                type: string
             additionalProperties: false
             required:
               - name

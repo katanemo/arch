@@ -169,7 +169,7 @@ def test_prompt_gateway_param_gathering(stream):
 def test_prompt_gateway_param_tool_call(stream):
     expected_tool_call = {
         "name": "get_current_weather",
-        "arguments": {"location": "seattle", "days": "2"},
+        "arguments": {"location": "seattle, wa", "days": "2"},
     }
 
     body = {
@@ -181,11 +181,11 @@ def test_prompt_gateway_param_tool_call(stream):
             {
                 "role": "assistant",
                 "content": "Of course, I can help with that. Could you please specify the days you want the weather forecast for?",
-                "model": "Arch-Function-1.5B",
+                "model": "Arch-Function",
             },
             {
                 "role": "user",
-                "content": "2 days",
+                "content": "for 2 days please",
             },
         ],
         "stream": stream,
