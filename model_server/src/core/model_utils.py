@@ -30,6 +30,7 @@ class ChatCompletionResponse(BaseModel):
     created: Optional[str] = ""
     choices: List[Choice]
     model: str
+    metadata: Optional[Dict[str, str]] = {}
 
 
 class GuardRequest(BaseModel):
