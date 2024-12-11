@@ -469,7 +469,7 @@ class ArchFunctionHandler(ArchBaseHandler):
         )
         return prefill_response
 
-    def _check_length_and_pop_messages(messages, max_tokens=4096):
+    def _check_length_and_pop_messages(self, messages, max_tokens=4096):
         """
         Trims the `messages` list to ensure the total token count does not exceed `max_tokens`.
 
