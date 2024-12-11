@@ -9,7 +9,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["app.main:app","--reload", "--port", "51000"]
+      "args": ["src.main:app","--reload", "--port", "51000"]
     }
   ]
 }

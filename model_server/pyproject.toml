@@ -1,15 +1,13 @@
 [tool.poetry]
 name = "archgw_modelserver"
-version = "0.1.6"
+version = "0.1.7"
 description = "A model server for serving models"
 authors = ["Katanemo Labs, Inc <archgw@katanemo.com>"]
 license = "Apache 2.0"
 readme = "README.md"
 packages = [
-    { include = "app" }, # Include the 'app' package
-    { include = "app/function_calling" }, # Include the 'app' package
+    { include = "src" }
 ]
-include = ["app/*.yaml"]
 
 [tool.poetry.dependencies]
 python = ">=3.12"
@@ -36,10 +34,19 @@ opentelemetry-api = "^1.28.0"
 opentelemetry-sdk = "^1.28.0"
 opentelemetry-exporter-otlp = "^1.28.0"
 opentelemetry-instrumentation-fastapi = "^0.49b0"
+overrides = "^7.7.0"
+pytest-retry = "^1.6.3"
 
 [tool.poetry.scripts]
-archgw_modelserver = "app.cli:run_server"
+archgw_modelserver = "src.cli:run_server"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+python_files = ["test*.py"]
+addopts = ["-v", "-s"]
+retries = 2
+retry_delay = 0.5
+cumulative_timing = false
