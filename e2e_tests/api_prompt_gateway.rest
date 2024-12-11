@@ -73,15 +73,6 @@ Content-Type: application/json
     {
       "role": "user",
       "content": "for next 10 days"
-    },
-    {
-      "role": "assistant",
-      "content": "Could you tell me what units you want the weather in? (For example: Celsius or Fahrenheit)",
-      "model": "Arch-Function-1.5b"
-    },
-    {
-      "role": "user",
-      "content": "Fahrenheit"
     }
   ]
 }

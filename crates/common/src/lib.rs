@@ -1,7 +1,6 @@
 pub mod api;
 pub mod configuration;
 pub mod consts;
-pub mod embeddings;
 pub mod errors;
 pub mod http;
 pub mod llm_providers;

@@ -80,6 +80,8 @@ pub struct FunctionParameter {
     pub enum_values: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub format: Option<String>,
 }
 
 impl Serialize for FunctionParameter {
@@ -95,6 +97,9 @@ impl Serialize for FunctionParameter {
         }
         if let Some(default) = &self.default {
             map.serialize_entry("default", default)?;
+        }
+        if let Some(format) = &self.format {
+            map.serialize_entry("format", format)?;
         }
         map.end()
     }

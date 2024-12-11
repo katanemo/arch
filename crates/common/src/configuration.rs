@@ -196,6 +196,7 @@ pub struct Parameter {
     pub enum_values: Option<Vec<String>>,
     pub default: Option<String>,
     pub in_path: Option<bool>,
+    pub format: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
@@ -250,6 +251,7 @@ impl From<&PromptTarget> for ChatCompletionTool {
                         required: entity.required,
                         enum_values: entity.enum_values.clone(),
                         default: entity.default.clone(),
+                        format: entity.format.clone(),
                     };
                     properties.insert(entity.name.clone(), param);
                 }
