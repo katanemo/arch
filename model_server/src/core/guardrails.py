@@ -18,6 +18,7 @@ class ArchGuardHanlder:
         """
 
         self.model = model_dict["model"]
+        self.model_name = model_dict["model_name"]
         self.tokenizer = model_dict["tokenizer"]
         self.device = model_dict["device"]
 

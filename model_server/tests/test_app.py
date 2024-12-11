@@ -34,7 +34,7 @@ async def test_guardrail_endpoint():
     request_data = {"input": "Test for jailbreak and toxicity", "task": "jailbreak"}
     response = client.post("/guardrails", json=request_data)
     assert response.status_code == 200
-    assert "jailbreak_verdict" in response.json()
+    assert "response" in response.json()
 
 
 # [TODO] Review: check the following code. Seems something wrong with asyncio package❗
@@ -50,4 +50,4 @@ async def test_function_calling_endpoint():
         }
         response = await client.post("/function_calling", json=request_data)
         assert response.status_code == 200
-        assert "choices" in response.json()
+        assert "result" in response.json()
