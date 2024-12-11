@@ -493,7 +493,7 @@ class ArchFunctionHandler(ArchBaseHandler):
         total_tokens = estimate_token_length(messages)
 
         # Trim messages if token count exceeds the limit
-        while total_tokens > max_tokens:
+        while total_tokens > max_tokens and len(messages) >= 3:
             # Find the first non-system message pair
             for i in range(len(messages)):
                 if messages[i]["role"] != "system":
