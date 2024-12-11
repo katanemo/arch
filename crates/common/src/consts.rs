@@ -1,4 +1,3 @@
-pub const DEFAULT_EMBEDDING_MODEL: &str = "katanemo/bge-large-en-v1.5";
 pub const DEFAULT_INTENT_MODEL: &str = "katanemo/bart-large-mnli";
 pub const DEFAULT_PROMPT_TARGET_THRESHOLD: f64 = 0.8;
 pub const DEFAULT_HALLUCINATED_THRESHOLD: f64 = 0.25;
