@@ -425,6 +425,7 @@ mod test {
                 required: Some(true),
                 enum_values: None,
                 default: Some("test".to_string()),
+                format: None,
             },
         );
 
@@ -479,6 +480,7 @@ mod test {
                 required: Some(true),
                 enum_values: None,
                 default: Some("test".to_string()),
+                format: None,
             },
         )]);
 
