@@ -421,7 +421,12 @@ class ArchFunctionHandler(ArchBaseHandler):
 
                     if data_type in self.support_data_types:
                         if not isinstance(
-                            self._correcting_type(param_value),
+                            param_value,
+                            self.support_data_types[data_type],
+                        ) and not isinstance(
+                            self._correcting_type(
+                                param_value, self.support_data_types[data_type]
+                            ),
                             self.support_data_types[data_type],
                         ):
                             is_valid = False
