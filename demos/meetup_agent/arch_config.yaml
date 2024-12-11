@@ -1,0 +1,55 @@
+version: v0.1
+listener:
+  address: 127.0.0.1
+  port: 8080 #If you configure port 443, you'll need to update the listener with tls_certificates
+  message_format: huggingface
+
+# Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
+llm_providers:
+  - name: OpenAI
+    provider: openai
+    access_key: $OPENAI_API_KEY
+    model: gpt-4o-mini
+    default: true
+
+# default system prompt used by all prompt targets
+system_prompt: |
+  You are a meetup agent and you help with summarizing personal or professional details about a person, and be able to save notes from a meetup via Slack integration.
+
+prompt_targets:
+  - name: get_profile
+    description: get profile information by name
+    endpoint:
+      name: app_server
+      path: /agent/get_profile
+    parameters:
+      - name: name
+        type: str
+        description: the first name of the person
+        required: true
+      - name: interests
+        type: str
+        enum: ["professional", "personal"]
+        description: interests of the person
+        required: false
+  - name: send_meetup_notes
+    description: send meetup notes to a slack channel
+    endpoint:
+      name: app_server
+      path: /agent/send_notes
+      http_method: POST
+    parameters:
+      - name: slack_message
+        type: string
+        required: true
+        description: the meetup notes that should be sent to a slack channel
+
+# Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
+endpoints:
+  app_server:
+    # value could be ip address or a hostname with port
+    # this could also be a list of endpoints for load balancing
+    # for example endpoint: [ ip1:port, ip2:port ]
+    endpoint: host.docker.internal:18080
+    # max time to wait for a connection to be established
+    connect_timeout: 0.005s
