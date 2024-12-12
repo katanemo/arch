@@ -7,10 +7,11 @@ listener:
   connect_timeout: 0.005s
 
 llm_providers:
-  - name: gpt-4o
-    access_key: $OPENAI_API_KEY
-    provider: openai
-    model: gpt-4o
+  - name: ministral-3b
+    access_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: ministral-3b-latest
+    default: true
 
 system_prompt: |
   You are a helpful assistant.

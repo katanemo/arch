@@ -6,10 +6,10 @@ listener:
 
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
 llm_providers:
-  - name: gpt-4o
-    access_key: $OPENAI_API_KEY
-    provider: openai
-    model: gpt-4o
+  - name: ministral-3b
+    access_key: $MISTRAL_API_KEY
+    provider: mistral
+    model: ministral-3b-latest
     default: true
 
 # default system prompt used by all prompt targets
@@ -30,20 +30,21 @@ prompt_targets:
         required: true
       - name: interests
         type: str
-        enum: ["professional", "personal"]
-        description: interests of the person
+        enum: [professional, personal]
+        description: the type of interests
         required: false
-  - name: send_meetup_notes
-    description: send meetup notes to a slack channel
+        default: professional
+  - name: send_notes_via_slack
+    description: send notes to a slack channel
     endpoint:
       name: app_server
       path: /agent/send_notes
       http_method: POST
     parameters:
-      - name: slack_message
+      - name: slack_note
         type: string
         required: true
-        description: the meetup notes that should be sent to a slack channel
+        description: the notes that should be sent to a slack channel
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
 endpoints:
