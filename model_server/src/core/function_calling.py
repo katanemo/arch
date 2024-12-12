@@ -356,7 +356,7 @@ class ArchFunctionHandler(ArchBaseHandler):
 
         return {"result": tool_calls, "status": is_valid, "message": error_message}
 
-    def _correcting_type(value, target_type):
+    def _correcting_type(self, value, target_type):
         try:
             if target_type == float and isinstance(value, int):
                 return float(value)
