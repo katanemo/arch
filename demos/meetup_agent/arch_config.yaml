@@ -6,10 +6,10 @@ listener:
 
 # Centralized way to manage LLMs, manage keys, retry logic, failover and limits in a central way
 llm_providers:
-  - name: OpenAI
-    provider: openai
+  - name: gpt-4o
     access_key: $OPENAI_API_KEY
-    model: gpt-4o-mini
+    provider: openai
+    model: gpt-4o
     default: true
 
 # default system prompt used by all prompt targets
@@ -22,6 +22,7 @@ prompt_targets:
     endpoint:
       name: app_server
       path: /agent/get_profile
+      http_method: POST
     parameters:
       - name: name
         type: str
@@ -50,6 +51,6 @@ endpoints:
     # value could be ip address or a hostname with port
     # this could also be a list of endpoints for load balancing
     # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: host.docker.internal:18080
+    endpoint: host.docker.internal:18083
     # max time to wait for a connection to be established
     connect_timeout: 0.005s

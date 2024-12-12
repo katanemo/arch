@@ -1,13 +1,12 @@
 import os
 import json
-import gradio as gr
-import logging
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from common import create_gradio_app
+
+# from common import create_gradio_app
 
 app = FastAPI()
 profile_data = None
@@ -28,7 +27,7 @@ profile_dict = {
 # Define the request model
 class ProfileRequest(BaseModel):
     name: str
-    interest: str
+    interests: str = "professional"
 
 
 class ProfileResponse(BaseModel):
@@ -39,16 +38,22 @@ class SlackRequest(BaseModel):
     slack_message: str
 
 
-@app.get("/agenty/get_profile")
+@app.post("/agent/get_profile")
 def get_profile(request: ProfileRequest):
     name = request.name
-    interests = request.interest
+    interests = request.interests
 
-    if name not in profile_dict["name"]:
+    if name not in profile_dict:
         details = f"Sorry I don't have any profile information for {name}. Looks like you'll have to chat with this person to get more info"
     else:
         profile_dict_details = profile_dict[name]
-
+        details = ""
+        if interests == "personal":
+            personal_details = profile_dict_details["personal"]
+            details += f"Personal details {personal_details}."
+        else:
+            professional_details = profile_dict_details["professional"]
+            details += f"Professional details {professional_details}."
     return details
 
 
@@ -76,16 +81,6 @@ def send_slack_message(request: SlackRequest):
         except SlackApiError as e:
             print(f"Error sending message: {e.response['error']}")
 
-
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
-client = OpenAI(
-    api_key="--",
-    base_url=CHAT_COMPLETION_ENDPOINT,
-)
-
-gr.mount_gradio_app(
-    app, create_gradio_app(demo_description, client), path="/agent/chat"
-)
 
 if __name__ == "__main__":
     app.run(debug=True)
