@@ -1,0 +1,95 @@
+version: "0.1-beta"
+
+listener:
+  address: 0.0.0.0
+  port: 10000
+  message_format: huggingface
+  connect_timeout: 0.005s
+
+overrides:
+  # confidence threshold for prompt target intent matching
+  prompt_target_intent_matching_threshold: 0.6
+
+endpoints:
+  acm_service:
+    endpoint: host.docker.internal:18083
+    connect_timeout: 0.005s
+
+llm_providers:
+  - name: gpt-4o-mini
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o-mini
+    default: true
+
+  - name: gpt-3.5-turbo-0125
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-3.5-turbo-0125
+
+  - name: gpt-4o
+    access_key: $OPENAI_API_KEY
+    provider: openai
+    model: gpt-4o
+
+system_prompt: |
+  You are a helpful assistant.
+
+prompt_guards:
+  input_guards:
+    jailbreak:
+      on_exception:
+        message: Looks like you're curious about my abilities, but I can only provide assistance for weather forecasting.
+
+prompt_targets:
+  - name: listAllClusterDetails
+    description: Query your clusters for more details.
+    http_method: GET
+    endpoint:
+      name: acm_service
+      path: /cluster.open-cluster-management.io/v1/managedclusters
+
+  - name: getClusterDetails
+    description: Query a single cluster for more details
+    http_method: GET
+    endpoint:
+      name: acm_service
+      path: /cluster.open-cluster-management.io/v1/managedclusters/{cluster_name}
+    parameters:
+      - name: cluster_name
+        in_path: true
+        description: The name of the cluster to retrieve
+        required: true
+        type: str
+
+  - name: default_target
+    default: true
+    description: This is the default target for all unmatched prompts.
+    system_prompt: |
+      You are a helpful assistant that can help answer ACM queries. Following is a list of available commands user can ask. Based on question asked, tell me which command you want to execute.
+
+      - name: listAllClusterDetails
+        description: Query your clusters for more details.
+        http_method: GET
+        endpoint:
+          name: acm_service
+          path: /cluster.open-cluster-management.io/v1/managedclusters
+
+      - name: getClusterDetails
+        description: Query a single cluster for more details
+        http_method: GET
+        endpoint:
+          name: acm_service
+          path: /cluster.open-cluster-management.io/v1/managedclusters/{cluster_name}
+        parameters:
+          - name: cluster_name
+            in_path: true
+            description: The name of the cluster to retrieve
+            required: true
+            type: str
+
+    auto_llm_dispatch_on_response: true
+
+tracing:
+  random_sampling: 100
+  trace_arch_internal: true

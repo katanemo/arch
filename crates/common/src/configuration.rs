@@ -225,6 +225,8 @@ pub struct PromptTarget {
     pub name: String,
     pub default: Option<bool>,
     pub description: String,
+    #[serde(rename = "http_method")]
+    pub method: Option<HttpMethod>,
     pub endpoint: Option<EndpointDetails>,
     pub parameters: Option<Vec<Parameter>>,
     pub system_prompt: Option<String>,

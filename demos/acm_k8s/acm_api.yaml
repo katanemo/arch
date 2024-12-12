@@ -1,0 +1,116 @@
+openapi: 3.0.0
+info:
+  version: 2.12.0
+  title: ACM API for cluster management
+  description: This is the API for managing clusters using ACM - https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_management_for_kubernetes/2.12/html/apis/apis#tags
+  contact:
+    name: Katanemo Labs Inc.
+    email: support@katanemo.com
+    url: https://katanemo.com
+paths:
+  /cluster.open-cluster-management.io/v1/managedclusters:
+    get:
+      summary: Query your clusters for more details.
+      operationId: listManagedClusters
+      responses:
+        "200":
+          description: List of managed clusters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManagedCluster"
+    post:
+      summary: Create a cluster
+      operationId: createCluster
+      requestBody:
+        description: Details about the service, including the text-representation of the service APIs.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagedCluster"
+      responses:
+        "200":
+          description: cluster created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedCluster"
+
+  /cluster.open-cluster-management.io/v1/managedclusters/{cluster_name}:
+    get:
+      summary: Query a single cluster for more details
+      operationId: getCluster
+      parameters:
+        - name: cluster_name
+          in: path
+          description: The name of the cluster to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cluster details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedCluster"
+    delete:
+      summary: Delete a single cluster
+      responses:
+        "200":
+          description: Cluster details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedCluster"
+components:
+  schemas:
+    ManagedCluster:
+      title: managed cluster details
+      type: object
+      properties:
+        apiVersion:
+          type: string
+          enum:
+            - cluster.open-cluster-management.io/v1
+        kind:
+          type: string
+          enum:
+            - ManagedCluster
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        spec:
+          $ref: "#/components/schemas/Spec"
+        status:
+          type: string
+    Metadata:
+      title: metadata details
+      type: object
+      properties:
+        name:
+          type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    Spec:
+      title: spec details
+      type: object
+      properties:
+        hubAcceptsClient:
+          type: boolean
+        managedClusterClientConfigs:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManagedClusterClientConfig"
+    ManagedClusterClientConfig:
+      title: managed cluster client config details
+      type: object
+      properties:
+        url:
+          type: string
+        caBundle:
+          type: string
