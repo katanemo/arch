@@ -8,7 +8,7 @@ from pytest_httpserver import HTTPServer, RequestMatcher
 
 @pytest.fixture(scope="session")
 def httpserver_listen_address():
-    return ("127.0.0.1", 51001)
+    return ("0.0.0.0", 51001)
 
 
 from common import (
