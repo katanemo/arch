@@ -30,13 +30,13 @@ jobs:
           cd tests/archgw && docker compose up -d
 
       - name: Wait for archgw to be healthy
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
           cd tests/archgw && source common.sh && wait_for_healthz http://localhost:10000/healthz
 
       - name: Run e2e tests
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
           cd tests/archgw && poetry install && poetry run pytest
 
