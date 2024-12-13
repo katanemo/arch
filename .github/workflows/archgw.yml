@@ -9,9 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest-m
-    defaults:
-      run:
-        working-directory: ./tests/archgw
 
     steps:
       - name: Checkout code
@@ -37,6 +34,10 @@ jobs:
       - name: Wait for archgw to be healthy
         run: |
           source common.sh && wait_for_healthz http://localhost:10000/healthz
+
+      - name: build arch docker image
+        run: |
+          docker build  -f arch/Dockerfile . -t katanemo/archgw
 
       - name: Install dependencies
         run: |
