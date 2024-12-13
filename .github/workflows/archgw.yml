@@ -36,20 +36,21 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
-          docker compose up -d
+          docker compose up archgw.logs 2>&1 &
 
       - name: Wait for archgw to be healthy
         run: |
           source common.sh && wait_for_healthz http://localhost:10000/healthz
 
-      - name: Install dependencies
+      - name: Install test dependencies
         run: |
           poetry install
 
-      - name: Run e2e tests
+      - name: Run archgw tests
         run: |
           poetry run pytest
 
-      - name: Stop archgw
+      - name: Stop archgw docker container
         run: |
+          tail -n 1000 archgw.logs
           docker compose down
