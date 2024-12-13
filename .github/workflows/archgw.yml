@@ -48,7 +48,7 @@ jobs:
 
       - name: run archgw tests
         run: |
-          poetry run pytest
+          poetry run pytest || tail -100 archgw.logs
 
       - name: stop archgw docker container
         env:
