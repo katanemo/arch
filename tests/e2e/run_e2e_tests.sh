@@ -26,30 +26,30 @@ log starting > ../build.log
 
 log building and running function_callling demo
 log ===========================================
-cd ../demos/weather_forecast
+cd ../../demos/weather_forecast/
 docker compose up weather_forecast_service --build -d
 cd -
 
 log building and install model server
 log =================================
-cd ../model_server
+cd ../../model_server
 poetry install
 cd -
 
 log building and installing archgw cli
 log ==================================
-cd ../arch/tools
+cd ../../arch/tools
 poetry install
 cd -
 
 log building docker image for arch gateway
 log ======================================
-cd ../
+cd ../../
 archgw build
 cd -
 
 log startup arch gateway with function calling demo
-cd ..
+cd ../../
 tail -F ~/archgw_logs/modelserver.log &
 model_server_tail_pid=$!
 archgw down
@@ -64,12 +64,10 @@ poetry run pytest
 
 log shutting down the arch gateway service
 log ======================================
-cd ../
 archgw down
-cd -
 
 log shutting down the weather_forecast demo
 log =======================================
-cd ../demos/weather_forecast
+cd ../../demos/weather_forecast
 docker compose down
 cd -

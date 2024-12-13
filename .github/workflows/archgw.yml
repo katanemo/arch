@@ -1,14 +1,15 @@
-name: e2e tests
+name: archgw tests
 
 on:
   push:
     branches:
-      - main  # Run tests on pushes to the main branch
+      - main
   pull_request:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
+    # runs-on: gh-large-150gb-ssd
 
     steps:
       - name: Checkout code
@@ -24,10 +25,21 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           export PATH="$HOME/.local/bin:$PATH"
 
+      - name: Start archgw
+        run: |
+          cd tests/archgw && docker compose up -d
+
+      - name: Wait for archgw to be healthy
+        run: |
+          cd tests/archgw && source common.sh && wait_for_healthz http://localhost:10000/healthz
+
       - name: Run e2e tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
-          python -mvenv venv
-          source venv/bin/activate && cd tests/e2e && bash run_e2e_tests.sh
+          cd tests/archgw && poetry install && poetry run pytest
+
+      - name: Stop archgw
+        run: |
+          cd tests/archgw && docker compose down

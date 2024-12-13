@@ -36,6 +36,7 @@ opentelemetry-exporter-otlp = "^1.28.0"
 opentelemetry-instrumentation-fastapi = "^0.49b0"
 overrides = "^7.7.0"
 pytest-retry = "^1.6.3"
+pytest-httpserver = "^1.1.0"
 
 [tool.poetry.scripts]
 archgw_modelserver = "src.cli:run_server"

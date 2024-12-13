@@ -2844,6 +2844,20 @@ docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1.0)"]
 testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
+name = "pytest-httpserver"
+version = "1.1.0"
+description = "pytest-httpserver is a httpserver for pytest"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pytest_httpserver-1.1.0-py3-none-any.whl", hash = "sha256:7ef88be8ed3354b6784daa3daa75a422370327c634053cefb124903fa8d73a41"},
+    {file = "pytest_httpserver-1.1.0.tar.gz", hash = "sha256:6b1cb0199e2ed551b1b94d43f096863bbf6ae5bcd7c75c2c06845e5ce2dc8701"},
+]
+
+[package.dependencies]
+Werkzeug = ">=2.0.0"
+
+[[package]]
 name = "pytest-retry"
 version = "1.6.3"
 description = "Adds the ability to retry flaky tests in CI environments"
@@ -4335,4 +4349,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12"
-content-hash = "0a1026a25a578b3cc049ebe26691093b9a2d8ec0ad5cbec57e9949a138c177b8"
+content-hash = "fe44aedec57a6d6c6b61b865a73df6051c4500f1e25194a947c0ede7561fac1c"

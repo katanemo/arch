@@ -8,7 +8,7 @@ services:
       - "12000:12000"
       - "19901:9901"
     volumes:
-      - ${ARCH_CONFIG_FILE:-../demos/weather_forecast/arch_config.yaml}:/config/arch_config.yaml
+      - ../../demos/weather_forecast/arch_config.yaml:/app/arch_config.yaml
       - /etc/ssl/cert.pem:/etc/ssl/cert.pem
       - ~/archgw_logs:/var/log/
     extra_hosts:
@@ -17,3 +17,4 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
       - OTEL_TRACING_HTTP_ENDPOINT=http://host.docker.internal:4318/v1/traces
+      - MODEL_SERVER_PORT=${MODEL_SERVER_PORT:-51000}

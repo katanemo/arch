@@ -359,7 +359,8 @@ impl StreamContext {
         let http_status = self
             .get_http_call_response_header(":status")
             .expect("http status code not found");
-        if http_status != StatusCode::OK.as_str() {
+          debug!("api_call_response_handler: http_status: {}", http_status);
+          if http_status != StatusCode::OK.as_str() {
             warn!(
                 "api server responded with non 2xx status code: {}",
                 http_status
