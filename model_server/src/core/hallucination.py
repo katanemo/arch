@@ -4,6 +4,7 @@ import itertools
 
 from typing import Dict, List, Tuple
 from enum import Enum
+import string
 
 # constants
 FUNC_NAME_START_PATTERN = ('<tool_call>\n{"name":"', "<tool_call>\n{'name':'")
@@ -15,6 +16,8 @@ PARAMETER_NAME_END_TOKENS = ('":', ':"', "':", ":'")
 PARAMETER_NAME_START_PATTERN = (',"', ",'")
 PARAMETER_VALUE_START_PATTERN = ('":', "':")
 PARAMETER_VALUE_END_TOKEN = ('",', "}}\n", "',")
+
+BRACKETS = {"(": ")", "{": "}", "[": "]"}
 
 
 # Thresholds
@@ -38,7 +41,9 @@ HALLUCINATION_THRESHOLD_DICT = {
 }
 
 
-def check_threshold(entropy: float, varentropy: float, thd: Dict) -> bool:
+def check_threshold(
+    entropy: float, varentropy: float, probability: float, thd: Dict
+) -> bool:
     """
     Check if the given entropy or variance of entropy exceeds the specified thresholds.
 
@@ -50,10 +55,13 @@ def check_threshold(entropy: float, varentropy: float, thd: Dict) -> bool:
     Returns:
         bool: True if either the entropy or varentropy exceeds their respective thresholds, False otherwise.
     """
-    return entropy > thd["entropy"] and varentropy > thd["varentropy"]
+    if probability > thd["probability"]:
+        return entropy > thd["entropy"] or varentropy > thd["varentropy"]
+    else:
+        return True
 
 
-def calculate_entropy(log_probs: List[float]) -> Tuple[float, float]:
+def calculate_uncertainty(log_probs: List[float]) -> Tuple[float, float]:
     """
     Calculate the entropy and variance of entropy (varentropy) from log probabilities.
 
@@ -73,7 +81,7 @@ def calculate_entropy(log_probs: List[float]) -> Tuple[float, float]:
         token_probs * (log_probs / math.log(2, math.e)) + entropy.unsqueeze(-1) ** 2,
         dim=-1,
     )
-    return entropy.item(), varentropy.item()
+    return entropy.item(), varentropy.item(), token_probs[0].item()
 
 
 def is_parameter_required(
@@ -127,6 +135,10 @@ class HallucinationStateHandler:
         self.token_probs_map: List[Tuple[str, float, float]] = []
         self.response_iterator = response_iterator
         self._process_function(function)
+        self.open_bracket = False
+        self.bracket = None
+        self.check_parameter_name = {}
+        self.HALLUCINATION_THRESHOLD_DICT = HALLUCINATION_THRESHOLD_DICT
 
     def _process_function(self, function):
         self.function = function
@@ -216,8 +228,10 @@ class HallucinationStateHandler:
             self.parameter_name_done = True
             self._get_parameter_name()
         # if the parameter name is done and the token is a parameter name start token, change the state
-        elif self.parameter_name_done and content.endswith(
-            PARAMETER_NAME_START_PATTERN
+        elif (
+            self.parameter_name_done
+            and self.open_bracket == False
+            and content.endswith(PARAMETER_NAME_START_PATTERN)
         ):
             self.state = "parameter_name"
 
@@ -231,7 +245,23 @@ class HallucinationStateHandler:
             PARAMETER_VALUE_END_TOKEN
         ):
             # checking if the token is a value token and is not empty
-            if self.tokens[-1].strip() not in ['"', ""]:
+            open_brackets = [
+                char for char in self.tokens[-1].strip() if char in BRACKETS
+            ]
+            if open_brackets:
+                self.open_bracket = True
+                self.bracket = open_brackets[0]
+
+            if self.open_bracket and BRACKETS[self.bracket] in self.tokens[-1].strip():
+                self.open_bracket = False
+                self.bracket = None
+
+            if (
+                not all(
+                    char in set(string.punctuation) for char in self.tokens[-1].strip()
+                )
+                and self.tokens[-1].strip() != ""
+            ):
                 self.mask.append(MaskToken.PARAMETER_VALUE)
 
                 # [TODO] Review: update the following code: `is_parameter_property` should not be here, move to `ArchFunctionHandler`
@@ -244,12 +274,16 @@ class HallucinationStateHandler:
                         self.parameter_name[-1],
                     )
                 ):
-                    self._check_logprob()
+                    if self.parameter_name[-1] not in self.check_parameter_name:
+                        self._check_logprob()
+                        self.check_parameter_name[self.parameter_name[-1]] = True
             else:
                 self.mask.append(MaskToken.NOT_USED)
         # if the state is parameter value and the token is an end token, change the state
-        elif self.state == "parameter_value" and content.endswith(
-            PARAMETER_VALUE_END_TOKEN
+        elif (
+            self.state == "parameter_value"
+            and self.open_bracket == False
+            and content.endswith(PARAMETER_VALUE_END_TOKEN)
         ):
             self.state = None
         # if the parameter name is done and the token is a parameter value start token, change the state
@@ -269,11 +303,14 @@ class HallucinationStateHandler:
         Detects hallucinations based on entropy and variance of entropy.
         """
         probs = self.logprobs[-1]
-        entropy, varentropy = calculate_entropy(probs)
-        self.token_probs_map.append((self.tokens[-1], entropy, varentropy))
+        entropy, varentropy, probability = calculate_uncertainty(probs)
+        self.token_probs_map.append((self.tokens[-1], entropy, varentropy, probability))
 
         if check_threshold(
-            entropy, varentropy, HALLUCINATION_THRESHOLD_DICT[self.mask[-1].value]
+            entropy,
+            varentropy,
+            probability,
+            self.HALLUCINATION_THRESHOLD_DICT[self.mask[-1].value],
         ):
             self.hallucination = True
             self.error_type = "Hallucination"
@@ -282,7 +319,7 @@ class HallucinationStateHandler:
             )
 
             # [TODO] - Review: remove the following code
-            print(f"[Hallucination] - Hallucination detected: {self.error_message}")
+            # print(f"[Hallucination] - Hallucination detected: {self.error_message}")
 
     def _count_consecutive_token(self, token=MaskToken.PARAMETER_VALUE) -> int:
         """
