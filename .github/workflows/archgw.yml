@@ -26,31 +26,31 @@ jobs:
         run: |
           cd ../../ && docker build  -f arch/Dockerfile . -t katanemo/archgw
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          export PATH="$HOME/.local/bin:$PATH"
-
-      - name: Start archgw
+      - name: start archgw
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
-          docker compose up 2>&1 archgw.logs &
+          docker compose up &> archgw.logs &
 
-      - name: Wait for archgw to be healthy
+      - name: wait for archgw to be healthy
         run: |
           source common.sh && wait_for_healthz http://localhost:10000/healthz
 
-      - name: Install test dependencies
+      - name: install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: install test dependencies
         run: |
           poetry install
 
-      - name: Run archgw tests
+      - name: run archgw tests
         run: |
           poetry run pytest
 
-      - name: Stop archgw docker container
+      - name: stop archgw docker container
         run: |
           tail -n 1000 archgw.logs
           docker compose down
