@@ -36,7 +36,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
-          docker compose up archgw.logs 2>&1 &
+          docker compose up 2>&1 archgw.logs &
 
       - name: Wait for archgw to be healthy
         run: |
