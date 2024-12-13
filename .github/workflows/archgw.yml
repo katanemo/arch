@@ -9,7 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest-m
-    # runs-on: gh-large-150gb-ssd
+    defaults:
+      run:
+        working-directory: ./tests/archgw
 
     steps:
       - name: Checkout code
@@ -30,16 +32,20 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
-          cd tests/archgw && docker compose up -d
+          docker compose up -d
 
       - name: Wait for archgw to be healthy
         run: |
-          cd tests/archgw && source common.sh && wait_for_healthz http://localhost:10000/healthz
+          source common.sh && wait_for_healthz http://localhost:10000/healthz
+
+      - name: Install dependencies
+        run: |
+          poetry install
 
       - name: Run e2e tests
         run: |
-          cd tests/archgw && poetry install && poetry run pytest
+          poetry run pytest
 
       - name: Stop archgw
         run: |
-          cd tests/archgw && docker compose down
+          docker compose down
