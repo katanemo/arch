@@ -48,10 +48,11 @@ jobs:
 
       - name: run archgw tests
         run: |
-          tail -F archgw.logs &
           poetry run pytest
 
-
       - name: stop archgw docker container
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
           docker compose down
