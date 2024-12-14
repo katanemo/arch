@@ -35,10 +35,6 @@ jobs:
         run: |
           poetry install
 
-      - name: start model server
-        run: |
-            archgw_modelserver start
-
       - name: run tests
         run: |
           poetry run pytest
