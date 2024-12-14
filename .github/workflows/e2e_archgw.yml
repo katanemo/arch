@@ -1,4 +1,4 @@
-name: archgw tests
+name: e2e archgw tests
 
 on:
   push:
