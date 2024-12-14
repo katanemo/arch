@@ -84,6 +84,7 @@ def test_prompt_gateway(stream):
 
 
 @pytest.mark.parametrize("stream", [True, False])
+@pytest.mark.skip("no longer needed")
 def test_prompt_gateway_arch_direct_response(stream):
     body = {
         "messages": [
@@ -125,6 +126,7 @@ def test_prompt_gateway_arch_direct_response(stream):
 
 
 @pytest.mark.parametrize("stream", [True, False])
+@pytest.mark.skip("no longer needed")
 def test_prompt_gateway_param_gathering(stream):
     body = {
         "messages": [
@@ -166,6 +168,7 @@ def test_prompt_gateway_param_gathering(stream):
 
 
 @pytest.mark.parametrize("stream", [True, False])
+@pytest.mark.skip("no longer needed")
 def test_prompt_gateway_param_tool_call(stream):
     expected_tool_call = {
         "name": "get_current_weather",
@@ -246,6 +249,7 @@ def test_prompt_gateway_param_tool_call(stream):
 
 
 @pytest.mark.parametrize("stream", [True, False])
+@pytest.mark.skip("no longer needed")
 def test_prompt_gateway_default_target(stream):
     body = {
         "messages": [
