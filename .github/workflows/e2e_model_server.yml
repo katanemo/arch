@@ -27,9 +27,9 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           export PATH="$HOME/.local/bin:$PATH"
 
-      - name: install model server
+      - name: install model server and start it
         run: |
-          cd ../../model_server/ && poetry install
+          cd ../../model_server/ && poetry install && poetry run archgw_modelserver start
 
       - name: install test dependencies
         run: |
