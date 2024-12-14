@@ -11,10 +11,6 @@ endpoints:
     endpoint: host.docker.internal:51001
     connect_timeout: 0.005s
 
-overrides:
-  # confidence threshold for prompt target intent matching
-  prompt_target_intent_matching_threshold: 0.6
-
 llm_providers:
   - name: gpt-4o-mini
     access_key: $OPENAI_API_KEY
@@ -71,7 +67,3 @@ prompt_targets:
     # if it is set to false arch will send response that it received from this prompt target to the user
     # if true arch will forward the response to the default LLM
     auto_llm_dispatch_on_response: false
-
-tracing:
-  random_sampling: 100
-  trace_arch_internal: true

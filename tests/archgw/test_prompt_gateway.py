@@ -2,6 +2,10 @@ import json
 import pytest
 import requests
 from deepdiff import DeepDiff
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 from pytest_httpserver import HTTPServer, RequestMatcher
 
@@ -55,6 +59,8 @@ def test_prompt_gateway(httpserver: HTTPServer):
     assistant_message = choices[0]["message"]
     assert "role" in assistant_message
     assert assistant_message["role"] == "assistant"
+    assert "content" in assistant_message
+    assert "weather" in assistant_message["content"]
     # now verify arch_messages (tool call and api response) that are sent as response metadata
     arch_messages = get_arch_messages(response_json)
     assert len(arch_messages) == 2
