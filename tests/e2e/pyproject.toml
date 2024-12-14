@@ -2,7 +2,7 @@
 name = "e2e_tests"
 version = "0.0.1"
 description = "e2e tests for prompt and llm gateway"
-authors = ["Katanemo Labs, Inc <archgw@katanemo.com>"]
+authors = ["Katanemo Labs, Inc <info@katanemo.com>"]
 license = "Apache 2.0"
 readme = "README.md"
 package-mode = false

@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "archgw_mock_tests"
+name = "modelserver_mock_tests"
 version = "0.0.1"
-description = "archgw mock tests"
+description = "modelserver tests"
 authors = ["Katanemo Labs, Inc <info@katanemo.com>"]
 license = "Apache 2.0"
 readme = "README.md"

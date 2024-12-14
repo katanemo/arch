@@ -10,7 +10,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "what is the weather forcast for seattle in the next 10 days?"
+      "content": "what is the weather forecast for seattle in the next 10 days?"
     }
   ],
   "tools": [

@@ -5,18 +5,12 @@ import argparse
 
 from src.commons.globals import logger
 from src.commons.utils import (
-    get_version,
     wait_for_health_check,
     check_lsof,
     install_lsof,
     find_processes_by_port,
     kill_processes,
 )
-
-
-log = logging.getLogger("model_server.cli")
-log.setLevel(logging.INFO)
-log.info(f"model server version: {get_version()}")
 
 
 def run_server(port=51000):
@@ -33,7 +27,7 @@ def run_server(port=51000):
     elif action == "restart":
         restart_server(port)
     else:
-        log.info(f"Unknown action: {action}")
+        logger.info(f"Unknown action: {action}")
         sys.exit(1)
 
 
