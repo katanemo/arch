@@ -58,7 +58,7 @@ def check_threshold(
         bool: True if either the entropy or varentropy exceeds their respective thresholds, False otherwise.
     """
     if probability > thd["probability"]:
-        return entropy > thd["entropy"] or varentropy > thd["varentropy"]
+        return entropy > thd["entropy"] and varentropy > thd["varentropy"]
     else:
         return True
 
