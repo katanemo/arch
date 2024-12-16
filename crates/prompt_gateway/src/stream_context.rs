@@ -358,7 +358,7 @@ impl StreamContext {
     pub fn api_call_response_handler(&mut self, body: Vec<u8>, callout_context: StreamCallContext) {
         let http_status = self
             .get_http_call_response_header(":status")
-            .expect("http status code not found");
+            .unwrap_or(StatusCode::OK.as_str().to_string());
           debug!("api_call_response_handler: http_status: {}", http_status);
           if http_status != StatusCode::OK.as_str() {
             warn!(

@@ -371,6 +371,9 @@ fn prompt_gateway_request_to_llm_gateway() {
         .returning(Some(&arch_fc_resp_str))
         .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Trace), None)
         .expect_log(Some(LogLevel::Trace), None)
         .expect_http_call(
             Some("arch_internal"),
@@ -400,6 +403,10 @@ fn prompt_gateway_request_to_llm_gateway() {
         .expect_log(Some(LogLevel::Debug), None)
         .expect_get_header_map_value(Some(MapType::HttpCallResponseHeaders), Some(":status"))
         .returning(Some("200"))
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
+        .expect_log(Some(LogLevel::Debug), None)
         .expect_log(Some(LogLevel::Debug), None)
         .expect_set_buffer_bytes(Some(BufferType::HttpRequestBody), None)
         .execute_and_expect(ReturnType::None)
