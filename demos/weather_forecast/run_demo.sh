@@ -11,18 +11,21 @@ load_env() {
 # Function to determine the docker-compose file based on the argument
 get_compose_file() {
   case "$1" in
-    jaeger)
-      echo "docker-compose-jaeger.yaml"
-      ;;
-    logfire)
-      echo "docker-compose-logfire.yaml"
-      ;;
-    signoz)
-      echo "docker-compose-signoz.yaml"
-      ;;
-    *)
-      echo "docker-compose.yaml"
-      ;;
+  jaeger)
+    echo "docker-compose-jaeger.yaml"
+    ;;
+  logfire)
+    echo "docker-compose-logfire.yaml"
+    ;;
+  signoz)
+    echo "docker-compose-signoz.yaml"
+    ;;
+  honeycomb)
+    echo "docker-compose-honeycomb.yaml"
+    ;;
+  *)
+    echo "docker-compose.yaml"
+    ;;
   esac
 }
 
@@ -44,12 +47,16 @@ start_demo() {
       echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
       exit 1
     fi
+    if [ "$1" == "honeycomb" ] && [ -z "$HONEYCOMB_API_KEY" ]; then
+      echo "Error: HONEYCOMB_API_KEY environment variable is required for Honeycomb."
+      exit 1
+    fi
 
     # Create .env file
     echo "Creating .env file..."
-    echo "OPENAI_API_KEY=$OPENAI_API_KEY" > .env
+    echo "OPENAI_API_KEY=$OPENAI_API_KEY" >.env
     if [ "$1" == "logfire" ]; then
-      echo "LOGFIRE_API_KEY=$LOGFIRE_API_KEY" >> .env
+      echo "LOGFIRE_API_KEY=$LOGFIRE_API_KEY" >>.env
     fi
     echo ".env file created with required API keys."
   fi
@@ -60,6 +67,10 @@ start_demo() {
     echo "Error: LOGFIRE_API_KEY environment variable is required for Logfire."
     exit 1
   fi
+  if [ "$1" == "honeycomb" ] && [ -z "$HONEYCOMB_API_KEY" ]; then
+    echo "Error: HONEYCOMB_API_KEY environment variable is required for Honeycomb."
+    exit 1
+  fi
 
   # Step 4: Start Arch
   echo "Starting Arch with arch_config.yaml..."
@@ -67,7 +78,7 @@ start_demo() {
 
   # Step 5: Start Network Agent with the chosen Docker Compose file
   echo "Starting Network Agent with $COMPOSE_FILE..."
-  docker compose -f "$COMPOSE_FILE" up -d  # Run in detached mode
+  docker compose -f "$COMPOSE_FILE" up -d # Run in detached mode
 }
 
 # Function to stop the demo
