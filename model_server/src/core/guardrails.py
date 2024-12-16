@@ -2,9 +2,7 @@ import time
 import torch
 import numpy as np
 import src.commons.utils as utils
-
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from optimum.intel import OVModelForSequenceClassification
+from transformers import AutoTokenizer
 from src.core.model_utils import GuardRequest, GuardResponse
 
 
@@ -152,9 +150,13 @@ def get_guardrail_handler(device: str = None):
 
     model_class, model_name = None, None
     if device == "cpu":
+        from optimum.intel import OVModelForSequenceClassification
+
         model_class = OVModelForSequenceClassification
         model_name = "katanemo/Arch-Guard-cpu"
     else:
+        from transformers import AutoModelForSequenceClassification
+
         model_class = AutoModelForSequenceClassification
         model_name = "katanemo/Arch-Guard"
 

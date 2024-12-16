@@ -10,7 +10,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "what is the weather forcast for seattle in the next 10 days?"
+      "content": "what is the weather forecast for seattle in the next 10 days?"
     }
   ],
   "tools": [
@@ -239,39 +239,10 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "how is the weather in seattle for next 10 days"
+      "content": "hello"
     }
   ],
   "tools": [
-    {
-      "type": "function",
-      "function": {
-        "name": "get_current_weather",
-        "description": "Get current weather at a location.",
-        "parameters": {
-          "properties": {
-            "location": {
-              "type": "str",
-              "description": "The location to get the weather for"
-            },
-            "days": {
-              "type": "str",
-              "description": "the number of days for the request"
-            },
-            "units": {
-              "type": "str",
-              "description": "The unit to return the weather in",
-              "default": "fahrenheit",
-              "enum": ["celsius", "fahrenheit"]
-            }
-          },
-          "required": [
-            "location",
-            "days"
-          ]
-        }
-      }
-    },
     {
       "type": "function",
       "function": {
@@ -281,67 +252,28 @@ Content-Type: application/json
           "properties": {}
         }
       }
-    }
-  ],
-  "stream": false
-}
-
-
-### archgw to model_server 3
-POST {{model_server_endpoint}}/function_calling HTTP/1.1
-Content-Type: application/json
-
-{
-  "model": "--",
-  "messages": [
-    {
-      "role": "user",
-      "content": "how is the weather in seattle"
     },
     {
-      "role": "assistant",
-      "content": "Of course, I can help with that. Could you please specify the days you want the weather forecast for?",
-      "model": "Arch-Function"
-    },
-    {
-      "role": "user",
-      "content": "for 2 days please"
-    }
-  ],
-  "tools": [
-    {
-      "id": "weather-112",
       "type": "function",
       "function": {
         "name": "get_current_weather",
         "description": "Get current weather at a location.",
         "parameters": {
-          "type": "object",
           "properties": {
+            "days": {
+              "type": "str",
+              "description": "the number of days for the request"
+            },
             "location": {
               "type": "str",
               "description": "The location to get the weather for",
-              "format": "City, State"
-            },
-            "days": {
-              "type": "str",
-              "description": "the number of days for the request"
+              "format": "city, state"
             }
           },
           "required": [
-            "days", "location"
+            "days",
+            "location"
           ]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "default_target",
-        "description": "This is the default target for all unmatched prompts.",
-        "parameters": {
-          "type": "object",
-          "properties": {}
         }
       }
     }

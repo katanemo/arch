@@ -1,10 +1,16 @@
+import json
 import math
 import torch
 import itertools
 
+
 from typing import Dict, List, Tuple
 from enum import Enum
 import string
+
+from src.commons.utils import get_model_server_logger
+
+logger = get_model_server_logger()
 
 # constants
 FUNC_NAME_START_PATTERN = ('<tool_call>\n{"name":"', "<tool_call>\n{'name':'")
@@ -173,6 +179,7 @@ class HallucinationStateHandler:
         if self.response_iterator is not None:
             try:
                 r = next(self.response_iterator)
+                logger.info("prefill stream response: %s", json.dumps(r.dict()))
                 if hasattr(r.choices[0].delta, "content"):
                     token_content = r.choices[0].delta.content
                     if token_content:

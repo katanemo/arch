@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "e2e_tests"
+version = "0.0.1"
+description = "e2e tests for prompt and llm gateway"
+authors = ["Katanemo Labs, Inc <info@katanemo.com>"]
+license = "Apache 2.0"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pytest = "^8.3.3"
+requests = "^2.29.0"
+selenium = "^4.11.2"
+pytest-sugar = "^1.0.0"
+deepdiff = "^8.0.1"
+pytest-retry = "^1.6.3"
+
+[tool.poetry.dev-dependencies]
+pytest-cov = "^4.1.0"
+
+[tool.pytest.ini_options]
+python_files = ["test*.py"]
+addopts = ["-v", "-s"]
+# retries = 2
+retry_delay = 0.5
+cumulative_timing = false

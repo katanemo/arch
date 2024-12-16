@@ -6,6 +6,7 @@ import textwrap
 from openai import OpenAI
 from typing import Any, Dict, List
 from overrides import override
+from src.commons.utils import get_model_server_logger
 from src.core.model_utils import (
     Message,
     ChatMessage,
@@ -14,6 +15,8 @@ from src.core.model_utils import (
     ArchBaseHandler,
 )
 from src.core.hallucination import HallucinationStateHandler
+
+logger = get_model_server_logger()
 
 
 class ArchIntentConfig:
@@ -133,6 +136,8 @@ class ArchIntentHandler(ArchBaseHandler):
                 stream=False,
                 extra_body=self.generation_params,
             )
+
+            logger.info("arch_intent response: %s", json.dumps(model_response.dict()))
 
             model_response = Message(
                 content=model_response.choices[0].message.content, tool_calls=[]
@@ -472,6 +477,9 @@ class ArchFunctionHandler(ArchBaseHandler):
                 **self.prefill_params,
             },
         )
+
+        # logger.info("prefill response: %s", json.dumps(prefill_response.dict()))
+
         return prefill_response
 
     def _check_length_and_pop_messages(self, messages, max_tokens=4096):

@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import torch
 import logging
 import requests
 import subprocess
@@ -22,27 +21,6 @@ def get_version():
         return version
     except importlib.metadata.PackageNotFoundError:
         return "version not found"
-
-
-def get_device():
-    available_device = {
-        "cpu": True,
-        "cuda": torch.cuda.is_available(),
-        "mps": (
-            torch.backends.mps.is_available()
-            if hasattr(torch.backends, "mps")
-            else False
-        ),
-    }
-
-    if available_device["cuda"]:
-        device = "cuda"
-    elif available_device["mps"]:
-        device = "mps"
-    else:
-        device = "cpu"
-
-    return device
 
 
 def get_model_server_logger(log_dir=None, log_file=None):
@@ -88,6 +66,34 @@ def get_model_server_logger(log_dir=None, log_file=None):
     )
 
     return logger
+
+
+logger = get_model_server_logger()
+logger.info(f"model server version: {get_version()}")
+
+logging.info("initializing torch device ...")
+import torch
+
+
+def get_device():
+    available_device = {
+        "cpu": True,
+        "cuda": torch.cuda.is_available(),
+        "mps": (
+            torch.backends.mps.is_available()
+            if hasattr(torch.backends, "mps")
+            else False
+        ),
+    }
+
+    if available_device["cuda"]:
+        device = "cuda"
+    elif available_device["mps"]:
+        device = "mps"
+    else:
+        device = "cpu"
+
+    return device
 
 
 def wait_for_health_check(url, timeout=300):

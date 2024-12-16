@@ -192,8 +192,8 @@ impl HttpContext for StreamContext {
             prompt_target_name: None,
             request_body: self.chat_completions_request.as_ref().unwrap().clone(),
             similarity_scores: None,
-            upstream_cluster: None,
-            upstream_cluster_path: None,
+            upstream_cluster: Some(ARCH_INTERNAL_CLUSTER_NAME.to_string()),
+            upstream_cluster_path: Some("/function_calling".to_string()),
         };
 
         if let Err(e) = self.http_call(call_args, call_context) {
@@ -316,9 +316,11 @@ impl HttpContext for StreamContext {
                 let mut data = match serde_json::from_str(&body_utf8) {
                     Ok(data) => data,
                     Err(e) => {
-                        warn!("could not deserialize response: {}", e);
-                        self.send_server_error(ServerError::Deserialization(e), None);
-                        return Action::Pause;
+                        warn!(
+                            "could not deserialize response, sending data as it is: {}",
+                            e
+                        );
+                        return Action::Continue;
                     }
                 };
                 // use serde::Value to manipulate the json object and ensure that we don't lose any data

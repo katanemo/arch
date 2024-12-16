@@ -1,5 +1,9 @@
+use std::str::FromStr;
+
 use common::errors::ServerError;
 use common::stats::IncrementingMetric;
+use http::StatusCode;
+use log::{debug, warn};
 use proxy_wasm::traits::Context;
 
 use crate::stream_context::{ResponseHandlerType, StreamContext};
@@ -19,18 +23,33 @@ impl Context for StreamContext {
             .expect("invalid token_id");
         self.metrics.active_http_calls.increment(-1);
 
-        if let Some(body) = self.get_http_call_response_body(0, body_size) {
-            #[cfg_attr(any(), rustfmt::skip)]
-            match callout_context.response_handler_type {
-                ResponseHandlerType::ArchFC => self.arch_fc_response_handler(body, callout_context),
-                ResponseHandlerType::FunctionCall => self.api_call_response_handler(body, callout_context),
-                ResponseHandlerType::DefaultTarget =>self.default_target_handler(body, callout_context),
-            }
-        } else {
-            self.send_server_error(
-                ServerError::LogicError(String::from("No response body in inline HTTP request")),
-                None,
+        let body = self
+            .get_http_call_response_body(0, body_size)
+            .unwrap_or(vec![]);
+
+        let http_status = self
+            .get_http_call_response_header(":status")
+            .expect("http status code not found");
+        debug!("http call response code: {}", http_status);
+        if http_status != StatusCode::OK.as_str() {
+            let server_error = ServerError::Upstream {
+                host: callout_context.upstream_cluster.unwrap(),
+                path: callout_context.upstream_cluster_path.unwrap(),
+                status: http_status.clone(),
+                body: String::from_utf8(body).unwrap(),
+            };
+            warn!("filter received non 2xx code: {:?}", server_error);
+            return self.send_server_error(
+                server_error,
+                Some(StatusCode::from_str(http_status.as_str()).unwrap()),
             );
+        }
+
+        #[cfg_attr(any(), rustfmt::skip)]
+        match callout_context.response_handler_type {
+            ResponseHandlerType::ArchFC => self.arch_fc_response_handler(body, callout_context),
+            ResponseHandlerType::FunctionCall => self.api_call_response_handler(body, callout_context),
+            ResponseHandlerType::DefaultTarget =>self.default_target_handler(body, callout_context),
         }
     }
 }

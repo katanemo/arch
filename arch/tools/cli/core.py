@@ -44,6 +44,7 @@ def start_archgw_docker(client, arch_config_file, env):
         },
         environment={
             "OTEL_TRACING_HTTP_ENDPOINT": "http://host.docker.internal:4318/v1/traces",
+            "MODEL_SERVER_PORT": os.getenv("MODEL_SERVER_PORT", "51000"),
             **env,
         },
         extra_hosts={"host.docker.internal": "host-gateway"},
@@ -129,6 +130,16 @@ def start_arch(arch_config_file, env, log_timeout=120):
 
     try:
         client = docker.from_env()
+
+        try:
+            container = client.containers.get("archgw")
+            log.info("archgw container found in docker, stopping and removing it")
+            # ensure that previous docker container is stopped and removed
+            container.stop()
+            container.remove()
+            log.info("Stopped and removed archgw container")
+        except docker.errors.NotFound as e:
+            pass
 
         container = start_archgw_docker(client, arch_config_file, env)
 

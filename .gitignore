@@ -138,3 +138,5 @@ arch_logs/
 crates/*/target/
 crates/target/
 build.log
+
+archgw.log

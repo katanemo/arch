@@ -8,7 +8,7 @@ from common import LLM_GATEWAY_ENDPOINT, get_data_chunks
 # test default llm
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("provider_hint", [None, "gpt-3.5-turbo-0125"])
-def test_hello_llm_gateway_llm(stream, provider_hint):
+def test_llm_gateway(stream, provider_hint):
     expected_llm = "gpt-4o-mini-2024-07-18" if provider_hint is None else provider_hint
     body = {
         "messages": [
