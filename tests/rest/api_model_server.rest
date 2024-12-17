@@ -214,37 +214,44 @@ Content-Type: application/json
 
 {
   "messages": [
-    {
-      "role": "user",
-      "content": "how is the weather in seattle for next 10 days"
-    }
+      {
+          "role": "user",
+          "content": "how is the weather in las vegas?"
+      },
+      {
+          "role": "assistant",
+          "content": "Can you provide the number of days you want to check the weather forecast for?",
+          "model": "Arch-Function"
+      },
+      {
+          "role": "user",
+          "content": "for 2 days please"
+      }
   ],
   "tools": [
     {
-      "type": "function",
-      "function": {
-        "name": "weather_forecast",
-        "description": "Check weather information for a given city.",
-        "parameters": {
-          "properties": {
-            "city": {
-              "type": "str",
-              "description": "the name of the city"
-            },
-            "days": {
-              "type": "int",
-              "description": "the number of days"
+        "id": "weather-112",
+        "type": "function",
+        "function": {
+            "name": "weather_forecast",
+            "description": "Get current weather for a city.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "str",
+                        "description": "The city to get the weather for"
+                    },
+                    "days": {
+                        "type": "str",
+                        "description": "the number of days for the request."
+                    }
+                },
+                "required": ["city", "days"]
             }
-          },
-          "required": [
-            "city",
-            "days"
-          ]
         }
-      }
     }
-  ],
-  "stream": false
+  ]
 }
 
 
