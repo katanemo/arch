@@ -9,7 +9,7 @@ packages = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.12"
+python = "^3.12"
 archgw_modelserver = "0.1.7"
 pyyaml = "^6.0.2"
 pydantic = "^2.10.1"
