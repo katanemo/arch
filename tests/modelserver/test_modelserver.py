@@ -76,3 +76,153 @@ def test_model_server():
     # ensure that the tool call matches the expected tool call
     diff = DeepDiff(tool_call, expected_tool_call, ignore_string_case=True)
     assert not diff
+
+
+def test_model_server_param_gathering():
+    expected_tool_call = {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "arguments": {"location": "Seattle, WA", "days": "10"},
+        },
+    }
+    input = {
+        "messages": [
+            {
+                "role": "user",
+                "content": "what is the weather in Seattle?",
+            },
+            {
+                "role": "assistant",
+                "content": "May I know the location and number of days you want to get the weather for?",
+                "model": "Arch-Function",
+            },
+            {
+                "role": "user",
+                "content": "10 days",
+            },
+        ],
+        "tools": [
+            {
+                "id": "weather-112",
+                "type": "function",
+                "function": {
+                    "name": "get_current_weather",
+                    "description": "Get current weather at a location.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "str",
+                                "description": "The location to get the weather for",
+                                "format": "City, State",
+                            },
+                            "days": {
+                                "type": "str",
+                                "description": "the number of days for the request.",
+                            },
+                        },
+                        "required": ["location", "days"],
+                    },
+                },
+            }
+        ],
+    }
+
+    response = requests.post(MODEL_SERVER_ENDPOINT, json=input)
+    assert response.status_code == 200
+    print(json.dumps(response.json()))
+    # ensure that response is json
+    assert response.headers["content-type"] == "application/json"
+    response_json = response.json()
+    print(response_json)
+    assert response_json
+    choices = response_json.get("choices", [])
+    assert len(choices) == 1
+    choice = choices[0]
+    assert "message" in choice
+    message = choice["message"]
+    assert "tool_calls" in message
+    tool_calls = message["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert "id" in tool_call
+    del tool_call["id"]
+    # ensure that the tool call matches the expected tool call
+    diff = DeepDiff(tool_call, expected_tool_call, ignore_string_case=True)
+    assert not diff
+
+
+def test_model_server_param_gathering_multi_param():
+    expected_tool_call = {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "arguments": {"location": "Seattle, WA", "days": "10"},
+        },
+    }
+    input = {
+        "messages": [
+            {
+                "role": "user",
+                "content": "what is the weather?",
+            },
+            {
+                "role": "assistant",
+                "content": "Could you specify the location and the number of days you want to know about?",
+                "model": "Arch-Function",
+            },
+            {
+                "role": "user",
+                "content": "Seattle and 10 days",
+            },
+        ],
+        "tools": [
+            {
+                "id": "weather-112",
+                "type": "function",
+                "function": {
+                    "name": "get_current_weather",
+                    "description": "Get current weather at a location.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "str",
+                                "description": "The location to get the weather for",
+                                "format": "City, State",
+                            },
+                            "days": {
+                                "type": "str",
+                                "description": "the number of days for the request.",
+                            },
+                        },
+                        "required": ["location", "days"],
+                    },
+                },
+            }
+        ],
+    }
+
+    response = requests.post(MODEL_SERVER_ENDPOINT, json=input)
+    assert response.status_code == 200
+    print(json.dumps(response.json()))
+    # ensure that response is json
+    assert response.headers["content-type"] == "application/json"
+    response_json = response.json()
+    print(response_json)
+    assert response_json
+    choices = response_json.get("choices", [])
+    assert len(choices) == 1
+    choice = choices[0]
+    assert "message" in choice
+    message = choice["message"]
+    assert "tool_calls" in message
+    tool_calls = message["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert "id" in tool_call
+    del tool_call["id"]
+    # ensure that the tool call matches the expected tool call
+    diff = DeepDiff(tool_call, expected_tool_call, ignore_string_case=True)
+    assert not diff
