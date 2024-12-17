@@ -49,9 +49,7 @@ HALLUCINATION_THRESHOLD_DICT = {
 }
 
 
-def check_threshold(
-    entropy: float, varentropy: float, probability: float, thd: Dict
-) -> bool:
+def check_threshold(entropy: float, varentropy: float, thd: Dict) -> bool:
     """
     Check if the given entropy or variance of entropy exceeds the specified thresholds.
 
