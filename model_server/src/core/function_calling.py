@@ -367,6 +367,8 @@ class ArchFunctionHandler(ArchBaseHandler):
                 return float(value)
             elif target_type == list and isinstance(value, str):
                 return ast.literal_eval(value)
+            elif target_type == str and not isinstance(value, str):
+                return str(value)
             # Add more conversion rules as needed
         except (ValueError, TypeError, json.JSONDecodeError):
             pass
@@ -610,8 +612,8 @@ class ArchFunctionHandler(ArchBaseHandler):
             # [TODO] Review: In the case that tool calls are invalid, define the protocol to collect debugging output and the behavior to handle it appropriately
             if verified["status"]:
                 model_response = Message(content="", tool_calls=extracted["result"])
-            # else:
-
+            else:
+                raise ValueError(f"Invalid tool call: {verified['message']}")
         else:
             model_response = Message(content=model_response, tool_calls=[])
 
