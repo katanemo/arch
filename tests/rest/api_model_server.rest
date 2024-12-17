@@ -10,24 +10,8 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "hi what can you do?"
-    },
-    {
-      "role": "assistant",
-      "content": "Definitely! I can provide information about the weather, assist you with tasks, and even help with educational content. What would you like to know or do?"
-    },
-    {
-      "role": "user",
-      "content": "what is the weather in Seattle?"
-    },
-    {
-      "role": "assistant",
-      "content": "Sure, I can help with that. How many days of weather information would you like?"
-    },
-    {
-      "role": "user",
-      "content": "two please!"
-    },
+      "content": "what is the weather forecast for seattle in the next 10 days?"
+    }
   ],
   "tools": [
     {
@@ -62,12 +46,12 @@ Content-Type: application/json
 
 {
   "messages": [
-            {
-                "role": "user",
-                "content": "what is the weather in Seattle?",
-            }
-    ],
-   "tools": [
+    {
+      "role": "user",
+      "content": "how is the weather in seattle"
+    }
+  ],
+  "tools": [
     {
         "id": "weather-112",
         "type": "function",
@@ -82,6 +66,12 @@ Content-Type: application/json
                         "description": "The location to get the weather for",
                         "format": "City, State"
                     },
+                    "unit": {
+                        "type": "str",
+                        "description": "The unit to return the weather in.",
+                        "enum": ["celsius", "fahrenheit"],
+                        "default": "celsius"
+                    },
                     "days": {
                         "type": "str",
                         "description": "the number of days for the request."
@@ -90,9 +80,11 @@ Content-Type: application/json
                 "required": ["location", "days"]
             }
         }
+      }
     }
   ]
 }
+
 
 
 ### talk to function calling endpoint
@@ -103,15 +95,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "what is the weather in Seattle?"
-    },
-    {
-      "role": "assistant",
-      "content": "Sure, I can help with that. How many days of weather information would you like?"
-    },
-    {
-      "role": "user",
-      "content": "10 days"
+      "content": "book a hotel for me"
     }
   ],
   "tools": [
@@ -122,10 +106,8 @@ Content-Type: application/json
         "parameters": {
           "type": "object",
           "properties": {
-            "location": {
-              "type": "str",
-              "description": "The location to get the weather for",
-              "format": "City, State",
+            "city": {
+              "type": "str"
             },
             "days": {
               "type": "int"

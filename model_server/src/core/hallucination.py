@@ -63,10 +63,7 @@ def check_threshold(
     Returns:
         bool: True if either the entropy or varentropy exceeds their respective thresholds, False otherwise.
     """
-    if probability > thd["probability"]:
-        return entropy > thd["entropy"] and varentropy > thd["varentropy"]
-    else:
-        return True
+    return entropy > thd["entropy"] and varentropy > thd["varentropy"]
 
 
 def calculate_uncertainty(log_probs: List[float]) -> Tuple[float, float]:
@@ -318,7 +315,6 @@ class HallucinationStateHandler:
         if check_threshold(
             entropy,
             varentropy,
-            probability,
             self.HALLUCINATION_THRESHOLD_DICT[self.mask[-1].value],
         ):
             self.hallucination = True
