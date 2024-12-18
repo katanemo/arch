@@ -191,7 +191,6 @@ class HallucinationStateHandler:
         if self.response_iterator is not None:
             try:
                 r = next(self.response_iterator)
-                logger.info("prefill stream response: %s", json.dumps(r.model_dump()))
                 if hasattr(r.choices[0].delta, "content"):
                     token_content = r.choices[0].delta.content
                     if token_content:
