@@ -1,11 +1,9 @@
-from openai import OpenAI
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from common import create_gradio_app
-import gradio as gr
 import os
+from typing import List, Optional
 
+from fastapi import FastAPI, HTTPException
+from openai import OpenAI
+from pydantic import BaseModel, Field
 
 app = FastAPI()
 demo_description = """This demo illustrates how **Arch** can be used to perform function calling with network-related tasks.
@@ -100,10 +98,3 @@ client = OpenAI(
     api_key="--",
     base_url=CHAT_COMPLETION_ENDPOINT,
 )
-
-gr.mount_gradio_app(
-    app, create_gradio_app(demo_description, client), path="/agent/chat"
-)
-
-if __name__ == "__main__":
-    app.run(debug=True)

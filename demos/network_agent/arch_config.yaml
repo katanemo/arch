@@ -17,36 +17,32 @@ system_prompt: |
   You are a network assistant that helps operators with a better understanding of network traffic flow and perform actions on networking operations. No advice on manufacturers or purchasing decisions.
 
 prompt_targets:
-    - name: device_summary
-      description: Retrieve network statistics for specific devices within a time range
-      endpoint:
-        name: app_server
-        path: /agent/device_summary
-        http_method: POST
-      parameters:
-        - name: device_ids
-          type: list
-          description: A list of device identifiers (IDs) to retrieve statistics for.
-          required: true  # device_ids are required to get device statistics
-        - name: days
-          type: int
-          description: The number of days for which to gather device statistics.
-          default: "7"
-    - name: reboot_devices
-      description: Reboot a list of devices
-      endpoint:
-        name: app_server
-        path: /agent/device_reboot
-        http_method: POST
-      parameters:
-        - name: device_ids
-          type: list
-          description: A list of device identifiers (IDs).
-          required: true
-        - name: days
-          type: int
-          description: A list of device identifiers (IDs)
-          default: "7"
+  - name: device_summary
+    description: Retrieve network statistics for specific devices within a time range
+    endpoint:
+      name: app_server
+      path: /agent/device_summary
+      http_method: POST
+    parameters:
+      - name: device_ids
+        type: list
+        description: A list of device identifiers (IDs) to retrieve statistics for.
+        required: true # device_ids are required to get device statistics
+      - name: days
+        type: int
+        description: The number of days for which to gather device statistics.
+        default: "7"
+  - name: reboot_devices
+    description: Reboot a list of devices
+    endpoint:
+      name: app_server
+      path: /agent/device_reboot
+      http_method: POST
+    parameters:
+      - name: device_ids
+        type: list
+        description: A list of device identifiers (IDs).
+        required: true
 
 # Arch creates a round-robin load balancing between different endpoints, managed via the cluster subsystem.
 endpoints:
@@ -54,6 +50,6 @@ endpoints:
     # value could be ip address or a hostname with port
     # this could also be a list of endpoints for load balancing
     # for example endpoint: [ ip1:port, ip2:port ]
-    endpoint: host.docker.internal:18080
+    endpoint: host.docker.internal:18083
     # max time to wait for a connection to be established
     connect_timeout: 0.005s
