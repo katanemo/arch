@@ -155,10 +155,7 @@ class HallucinationStateHandler:
         """
         Resets all parameters in the HallucinationStateHandler to their default values.
         """
-        self.tokens = []
-        self.logprobs = []
         self.state = None
-        self.mask = []
         self.parameter_name_done = False
         self.hallucination = False
         self.error_message = ""
