@@ -57,68 +57,7 @@ def start_archgw_docker(client, arch_config_file, env):
     )
 
 
-def stream_gateway_logs(follow):
-    """
-    Stream logs from the arch gateway service.
-    """
-    log.info("Logs from arch gateway service.")
-
-    options = ["docker", "logs", "archgw"]
-    if follow:
-        options.append("-f")
-    try:
-        # Run `docker-compose logs` to stream logs from the gateway service
-        subprocess.run(
-            options,
-            check=True,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-        )
-
-    except subprocess.CalledProcessError as e:
-        log.info(f"Failed to stream logs: {str(e)}")
-
-
-def stream_model_server_logs(follow):
-    """
-    Get the model server logs, check if the user wants to follow/tail them.
-    """
-    log_file_expanded = os.path.expanduser(MODEL_SERVER_LOG_FILE)
-
-    stream_command = ["tail"]
-    if follow:
-        stream_command.append("-f")
-
-    stream_command.append(log_file_expanded)
-    subprocess.run(
-        stream_command,
-        check=True,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-    )
-
-
-def stream_access_logs(follow):
-    """
-    Get the archgw access logs
-    """
-    log_file_pattern_expanded = os.path.expanduser(ACCESS_LOG_FILES)
-    log_files = glob.glob(log_file_pattern_expanded)
-
-    stream_command = ["tail"]
-    if follow:
-        stream_command.append("-f")
-
-    stream_command.extend(log_files)
-    subprocess.run(
-        stream_command,
-        check=True,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-    )
-
-
-def start_arch(arch_config_file, env, log_timeout=120):
+def start_arch(arch_config_file, env, log_timeout=120, foreground=False):
     """
     Start Docker Compose in detached mode and stream logs until services are healthy.
 
@@ -164,6 +103,13 @@ def start_arch(arch_config_file, env, log_timeout=120):
                 log.info(f"Container health status: {container_status}")
                 time.sleep(1)
 
+        if foreground:
+            for line in container.logs(stream=True):
+                print(line.decode("utf-8").strip("\n"))
+
+    except KeyboardInterrupt:
+        log.info("Keyboard interrupt received, stopping arch gateway service.")
+        stop_arch()
     except docker.errors.APIError as e:
         log.info(f"Failed to start Arch: {str(e)}")
 
@@ -197,17 +143,23 @@ def download_models_from_hf():
         snapshot_download(repo_id=model)
 
 
-def start_arch_modelserver():
+def start_arch_modelserver(foreground):
     """
     Start the model server. This assumes that the archgw_modelserver package is installed locally
 
     """
     try:
         log.info("archgw_modelserver restart")
-        subprocess.run(
-            ["archgw_modelserver", "restart"], check=True, start_new_session=True
-        )
-        log.info("Successfully ran model_server")
+        if foreground:
+            subprocess.run(
+                ["archgw_modelserver", "start", "--foreground"],
+                check=True,
+            )
+        else:
+            subprocess.run(
+                ["archgw_modelserver", "start"],
+                check=True,
+            )
     except subprocess.CalledProcessError as e:
         log.info(f"Failed to start model_server. Please check archgw_modelserver logs")
         sys.exit(1)
@@ -223,7 +175,6 @@ def stop_arch_modelserver():
             ["archgw_modelserver", "stop"],
             check=True,
         )
-        log.info("Successfully stopped the archgw model_server")
     except subprocess.CalledProcessError as e:
         log.info(f"Failed to start model_server. Please check archgw_modelserver logs")
         sys.exit(1)

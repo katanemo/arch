@@ -16,9 +16,6 @@ from cli.core import (
     stop_arch_modelserver,
     start_arch,
     stop_arch,
-    stream_gateway_logs,
-    stream_model_server_logs,
-    stream_access_logs,
     download_models_from_hf,
 )
 from cli.consts import (
@@ -138,16 +135,27 @@ def build(service):
     default=SERVICE_ALL,
     help="Service to start. Options are model_server, archgw.",
 )
-def up(file, path, service):
+@click.option(
+    "--foreground",
+    default=False,
+    help="Run Arch in the foreground. Default is False",
+    is_flag=True,
+)
+def up(file, path, service, foreground):
     """Starts Arch."""
     if service not in [SERVICE_NAME_ARCHGW, SERVICE_NAME_MODEL_SERVER, SERVICE_ALL]:
         log.info(f"Error: Invalid service {service}. Exiting")
         sys.exit(1)
 
+    if service == SERVICE_ALL and foreground:
+        # foreground can only be specified when starting individual services
+        log.info("foreground flag is only supported for individual services. Exiting.")
+        sys.exit(1)
+
     if service == SERVICE_NAME_MODEL_SERVER:
         log.info("Download archgw models from HuggingFace...")
         download_models_from_hf()
-        start_arch_modelserver()
+        start_arch_modelserver(foreground)
         return
 
     if file:
@@ -214,12 +222,11 @@ def up(file, path, service):
     env.update(env_stage)
 
     if service == SERVICE_NAME_ARCHGW:
-        start_arch(arch_config_file, env)
+        start_arch(arch_config_file, env, foreground=foreground)
     else:
-        # this will used the cached versions of the models, so its safe to use everytime.
         download_models_from_hf()
-        start_arch_modelserver()
-        start_arch(arch_config_file, env)
+        start_arch_modelserver(foreground)
+        start_arch(arch_config_file, env, foreground=foreground)
 
 
 @click.command()
@@ -266,72 +273,9 @@ def generate_prompt_targets(file):
     targets.generate_prompt_targets(file)
 
 
-@click.command()
-@click.option(
-    "--service",
-    default=SERVICE_ALL,
-    help="Service to monitor. By default it will monitor both core gateway and model_server logs.",
-)
-@click.option(
-    "--debug",
-    help="For detailed debug logs to trace calls from archgw <> model_server <> api_server, etc",
-    is_flag=True,
-)
-@click.option("--follow", help="Follow the logs", is_flag=True)
-def logs(service, debug, follow):
-    """Stream logs from access logs services."""
-
-    if service not in [SERVICE_NAME_ARCHGW, SERVICE_NAME_MODEL_SERVER, SERVICE_ALL]:
-        print(f"Error: Invalid service {service}. Exiting")
-        sys.exit(1)
-
-    if debug:
-        try:
-            archgw_process = None
-            if service == SERVICE_NAME_ARCHGW or service == SERVICE_ALL:
-                archgw_process = multiprocessing.Process(
-                    target=stream_gateway_logs, args=(follow,)
-                )
-                archgw_process.start()
-
-            model_server_process = None
-            if service == SERVICE_NAME_MODEL_SERVER or service == SERVICE_ALL:
-                model_server_process = multiprocessing.Process(
-                    target=stream_model_server_logs, args=(follow,)
-                )
-                model_server_process.start()
-
-            if archgw_process:
-                archgw_process.join()
-            if model_server_process:
-                model_server_process.join()
-        except KeyboardInterrupt:
-            log.info("KeyboardInterrupt detected. Exiting.")
-            if archgw_process and archgw_process.is_alive():
-                archgw_process.terminate()
-
-            if model_server_process and model_server_process.is_alive():
-                model_server_process.terminate()
-    else:
-        try:
-            archgw_access_logs_process = None
-            archgw_access_logs_process = multiprocessing.Process(
-                target=stream_access_logs, args=(follow,)
-            )
-            archgw_access_logs_process.start()
-
-            if archgw_access_logs_process:
-                archgw_access_logs_process.join()
-        except KeyboardInterrupt:
-            log.info("KeyboardInterrupt detected. Exiting.")
-            if archgw_access_logs_process.is_alive():
-                archgw_access_logs_process.terminate()
-
-
 main.add_command(up)
 main.add_command(down)
 main.add_command(build)
-main.add_command(logs)
 main.add_command(generate_prompt_targets)
 
 if __name__ == "__main__":
