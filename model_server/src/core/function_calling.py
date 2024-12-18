@@ -137,7 +137,9 @@ class ArchIntentHandler(ArchBaseHandler):
                 extra_body=self.generation_params,
             )
 
-            logger.info("arch_intent response: %s", json.dumps(model_response.dict()))
+            logger.info(
+                "arch_intent response: %s", json.dumps(model_response.model_dump())
+            )
 
             model_response = Message(
                 content=model_response.choices[0].message.content, tool_calls=[]
@@ -480,7 +482,7 @@ class ArchFunctionHandler(ArchBaseHandler):
             },
         )
 
-        logger.info("prefill response: %s", json.dumps(prefill_response.dict()))
+        logger.info("prefill response: %s", json.dumps(prefill_response.model_dump()))
 
         return prefill_response
 
@@ -593,6 +595,8 @@ class ArchFunctionHandler(ArchBaseHandler):
         extracted = self._extract_tool_calls(model_response)
 
         if len(extracted["result"]) and extracted["status"]:
+            # [TODO] Review: define the behavior in the case that tool call extraction fails
+            # if not extracted["status"]:
             verified = self._verify_tool_calls(
                 tools=req.tools, tool_calls=extracted["result"]
             )
@@ -602,6 +606,8 @@ class ArchFunctionHandler(ArchBaseHandler):
             # [TODO] Review: In the case that tool calls are invalid, define the protocol to collect debugging output and the behavior to handle it appropriately
             if verified["status"]:
                 model_response = Message(content="", tool_calls=extracted["result"])
+                log_message = f"model_server <= arch_function: (tool_calls): {json.dumps([tool_call['function'] for tool_call in extracted['result']])}"
+                logger.info(log_message)
             else:
                 raise ValueError(f"Invalid tool call: {verified['message']}")
         else:
@@ -612,11 +618,9 @@ class ArchFunctionHandler(ArchBaseHandler):
         )
 
         # [TODO] Review: define the protocol to collect debugging output
+
         logger.info(
-            f"model_server <= arch_function: (tool_calls): {json.dumps([tool_call['function'] for tool_call in tool_calls])}"
-        )
-        logger.info(
-            f"model_server <= arch_function: response body: {json.dumps(chat_completion_response.dict())}"
+            f"model_server <= arch_function: response body: {json.dumps(chat_completion_response.model_dump())}"
         )
 
         return chat_completion_response
