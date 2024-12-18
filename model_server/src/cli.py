@@ -1,103 +1,48 @@
+import importlib
 import logging
+from os import path
+import os
+from signal import SIGKILL
 import sys
 import subprocess
 import argparse
+import tempfile
+import time
 
-from src.commons.globals import logger
-from src.commons.utils import (
-    wait_for_health_check,
-    check_lsof,
-    install_lsof,
-    find_processes_by_port,
-    kill_processes,
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
-
-def run_server(port=51000):
-    """Start, stop, or restart the Uvicorn server based on command-line arguments."""
-    if len(sys.argv) > 1:
-        action = sys.argv[1]
-    else:
-        action = "start"
-
-    if action == "start":
-        start_server(port)
-    elif action == "stop":
-        stop_server(port)
-    elif action == "restart":
-        restart_server(port)
-    else:
-        logger.info(f"Unknown action: {action}")
-        sys.exit(1)
+logger = logging.getLogger(__name__)
 
 
-def start_server(port=51000):
-    """Start the Uvicorn server."""
-
-    logger.info("Starting model server - loading some awesomeness, please wait...")
-
-    process = subprocess.Popen(
-        [
-            "python",
-            "-m",
-            "uvicorn",
-            "src.main:app",
-            "--host",
-            "0.0.0.0",
-            "--port",
-            str(port),
-        ],
-        start_new_session=True,
-        bufsize=1,
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-    if wait_for_health_check(f"http://0.0.0.0:{port}/healthz"):
-        logger.info(f"Model server started successfully with PID {process.pid}.")
-    else:
-        logger.error("Model server failed to start in time, shutting it down.")
-        process.terminate()
+def get_version():
+    try:
+        version = importlib.metadata.version("archgw_modelserver")
+        return version
+    except importlib.metadata.PackageNotFoundError:
+        return "version not found"
 
 
-def stop_server(port=51000, wait=True, timeout=10):
-    """Stop the Uvicorn server."""
-    if check_lsof():
-        logger.info("`lsof` is already installed.")
-    else:
-        logger.info("`lsof` not found, attempting to install...")
-        if install_lsof():
-            logger.info("`lsof` installed successfully.")
-        else:
-            logger.error("Failed to install `lsof`.")
-            sys.exit(1)
+def wait_for_health_check(url, timeout=300):
+    """Wait for the Uvicorn server to respond to health-check requests."""
 
-    logger.info(f"Stopping processes on port {port}...")
-    port_processes = find_processes_by_port(port)
-    if port_processes is None:
-        logger.info(f"No processes found listening on port {port}.")
-    else:
-        if len(port_processes):
-            process_killed = kill_processes(port_processes, wait, timeout)
-            if not process_killed:
-                logger.error(f"Unable to kill all processes on {port}")
-            else:
-                logger.info(f"All processes on port {port} have been killed.")
-        else:
-            logger.error(f"Unable to find processes on {port}")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                return True
+        except requests.ConnectionError:
+            time.sleep(1)
+
+    return False
 
 
-def restart_server(port=51000):
-    """Restart the Uvicorn server."""
-    stop_server(port)
-    start_server(port)
-
-
-def main():
-    """
-    Start, stop, or restart the Uvicorn server based on command-line arguments.
-    """
+def parse_args():
     parser = argparse.ArgumentParser(description="Manage the Uvicorn server.")
     parser.add_argument(
         "action",
@@ -113,14 +58,155 @@ def main():
         help="Port number for the server (default: 51000).",
     )
 
-    args = parser.parse_args()
+    parser.add_argument(
+        "--foreground",
+        default=False,
+        action="store_true",
+        help="Run the server in the foreground (default: False).",
+    )
 
-    logger.info(f"Model server version: {get_version()}")
+    return parser.parse_args()
+
+
+def get_pid_file():
+    temp_dir = tempfile.gettempdir()
+    return path.join(temp_dir, "model_server.pid")
+
+
+def stop_server():
+    """Stop the Uvicorn server."""
+    pid_file = get_pid_file()
+    if os.path.exists(pid_file):
+        logger.info(f"PID file found, shutting down the server.")
+        # read pid from file
+        with open(pid_file, "r") as f:
+            pid = int(f.read())
+            logger.info(f"Killing model server {pid}")
+            try:
+                os.kill(pid, SIGKILL)
+            except ProcessLookupError:
+                logger.info(f"Process {pid} not found")
+        os.remove(pid_file)
+    else:
+        logger.info("No PID file found, server is not running.")
+
+
+def restart_server(port=51000, foreground=False):
+    """Restart the Uvicorn server."""
+    stop_server()
+    start_server(port, foreground)
+
+
+def run_server():
+    """Start, stop, or restart the Uvicorn server based on command-line arguments."""
+
+    args = parse_args()
+    action = args.action
+
+    if action == "start":
+        start_server(args.port, args.foreground)
+    elif action == "stop":
+        stop_server()
+    elif action == "restart":
+        restart_server(args.port, args.foreground)
+    else:
+        logger.info(f"Unknown action: {action}")
+        sys.exit(1)
+
+
+def ensure_killed(process):
+    process.terminate()
+    # if the process is not terminated, kill it
+    now = time.time()
+    # wait for 5 seconds
+    while time.time() - now < 5:
+        if process.poll() is not None:
+            break
+        time.sleep(1)
+    if process.poll() is None:
+        logger.info("Killing model server")
+        process.kill()
+
+
+def start_server(port=51000, foreground=False):
+    """Start the Uvicorn server."""
+
+    logging.info("model server version: %s", get_version())
+
+    stop_server()
+
+    logger.info(
+        "starting model server, port: %s, foreground: %s. Please wait ...",
+        port,
+        foreground,
+    )
+
+    if foreground:
+        process = subprocess.Popen(
+            [
+                "python",
+                "-m",
+                "uvicorn",
+                "src.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                str(port),
+            ],
+        )
+    else:
+        process = subprocess.Popen(
+            [
+                "python",
+                "-m",
+                "uvicorn",
+                "src.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                str(port),
+            ],
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+
+    try:
+        if wait_for_health_check(f"http://0.0.0.0:{port}/healthz"):
+            logger.info(
+                f"model server health check passed, port {port}, pid: {process.pid}"
+            )
+        else:
+            logger.error("health check failed, shutting it down.")
+            process.terminate()
+    except KeyboardInterrupt:
+        logger.info("model server stopped by user during initialization.")
+        ensure_killed(process)
+
+    # write process id to temp file in temp folder
+    pid_file = get_pid_file()
+    logger.info(f"writing pid {process.pid} to {pid_file}")
+    with open(pid_file, "w") as f:
+        f.write(str(process.pid))
+
+    if foreground:
+        try:
+            process.wait()
+        except KeyboardInterrupt:
+            logger.info("model server stopped by user.")
+            ensure_killed(process)
+
+
+def main():
+    """
+    Start, stop, or restart the Uvicorn server based on command-line arguments.
+    """
+
+    args = parse_args()
 
     if args.action == "start":
-        start_server(args.port)
+        start_server(args.port, args.foreground)
     elif args.action == "stop":
-        stop_server(args.port)
+        stop_server()
     elif args.action == "restart":
         restart_server(args.port)
     else:
