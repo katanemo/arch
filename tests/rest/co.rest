@@ -15,16 +15,24 @@ Content-Type: application/json
       "content": "Certainly! How can I assist you today"
     },
     {
-      "role": "user",
-      "content": "i want to use weather forecast for 2 days"
+        "role": "user",
+        "content": "Get me weather for Seattle"
     },
     {
-        "role": "assistant",
-        "content": "Can you please provide me with the location and the city you want the weather forecast for?"
+      "role": "assistant",
+      "content": "Definitely. How many days of weather would you like to see?"
     },
     {
         "role": "user",
-        "content": "Seattle"
+        "content": "5 days"
+    },
+    {
+        "role": "tool",
+        "content": "the weather is amazing."
+    },
+    {
+        "role": "user",
+        "content": "how about Austin"
     }
   ],
   "tools": [
@@ -150,7 +158,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "Give me a product recommendation for user 123"
+      "content": "Give me a product recommendation"
     },
     {
       "role": "user",
@@ -159,6 +167,14 @@ Content-Type: application/json
     {
       "role": "user",
       "content": "i would like phones"
+    },
+    {
+      "role": "user",
+      "content": "May I have your unique identifier and the maximum number of recommendations you want to receive?"
+    },
+    {
+      "role": "user",
+      "content": "user id is 1234 and 5 recommendations please"
     }
   ],
   "tools": [
@@ -178,7 +194,7 @@ Content-Type: application/json
                     },
                     "category": {
                         "type": "str",
-                        "description": "Product category for recommendations, e.g., electronics, clothing, books."
+                        "description": "Product category for recommendations."
                     },
                     "max_results": {
                         "type": "int",
@@ -201,39 +217,32 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "Give me a recommendation for  phones"
+      "content": "Give me a product recommendation"
     },
     {
-        "role": "assistant",
-        "content": "Can you specify the maximum number of recommendations you would like?"
+      "role": "assistant",
+      "content": "Can you please specify the category of products you are interested in?"
     },
     {
-        "role": "user",
-        "content": "10"
-    },
-    {
-        "role": "assistant",
-        "content": "Sure, I can provide 10 phone recommendations based on your preferences."
+      "role": "user",
+      "content": "Phones"
     }
   ],
   "tools": [
     {
-        "id": "weather-112",
+        "id": "recommendation-112",
         "type": "function",
         "function":
         {
             "name": "product_recommendation",
-            "description": "Provide personalized product recommendations for users based on their preferences and purchase history.",
+            "description": "Provides product recommendations",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "user_id": {
-                        "type": "str",
-                        "description": "Unique identifier for the user."
-                    },
                     "category": {
                         "type": "str",
-                        "description": "Product category for recommendations"
+                        "description": "Product category for recommendations",
+                        "enum": ["electronics", "clothing", "books", "phones"]
                     },
                     "max_results": {
                         "type": "int",
@@ -241,7 +250,7 @@ Content-Type: application/json
                         "default": 10
                     }
                 },
-                "required": ["user_id", "category"]
+                "required": ["category"]
             }
         }
 
@@ -258,12 +267,20 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": " Give me workforce data for contractor in Americas in 3 days"
+      "content": " Can you show the workforce data for agency staff in 3 days"
+    },
+    {
+      "role": "assistant",
+      "content": "Of course, I can help with that. However, I need the region and staffing type to provide the workforce data. Could you please provide that information?"
+    },
+    {
+      "role": "user",
+      "content": "america"
     }
   ],
   "tools": [
     {
-        "id": "weather-112",
+        "id": "hr-112",
         "type": "function",
         "function":
           {
@@ -274,15 +291,17 @@ Content-Type: application/json
             "properties": {
                 "staffing_type": {
                     "type": "str",
-                    "description": "Staffing type like contract, fte or agency"
+                    "description": "Staffing type of employees"
                 },
                 "region": {
                     "type": "str",
-                    "description": "Geographical region for which you want workforce data like asia, europe, americas."
+                    "description": "Geographical region for which you want workforce data.",
+                    "enum": ["americas", "emea", "apac"]
                 },
                 "point_in_time": {
                     "type": "str",
-                    "description": "the point in time for which to retrieve data. For e.g 0 days ago, 30 days ago, etc."
+                    "description": "the point in time for which to retrieve data.",
+                    "default": "1"
                 }
             },
             "required": ["staffing_type", "region"]
@@ -347,5 +366,49 @@ Content-Type: application/json
         "deductible": {"type": "float",
          "description": "The deductible amount set for the policy."}},
        "required": ["policy_id", "deductible"]}}}
+  ]
+}
+### talk to Arch-Intent directly for completion
+
+POST {{model_server_endpoint}}/function_calling HTTP/1.1
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Identify sales opportunities in South America for the retail industry"
+    }
+  ],
+  "tools": [
+    {
+        "id": "weather-112",
+        "type": "function",
+        "function":
+          {
+    "name": "sales_opportunity",
+    "description": "Retrieve potential sales opportunities based for a particular industry type in a region.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "region": {
+                "type": "str",
+                "description": "Geographical region to identify sales opportunities."
+            },
+            "industry": {
+                "type": "str",
+                "description": "Industry type."
+            },
+            "max_results": {
+                "type": "int",
+                "description": "Maximum number of sales opportunities to retrieve.",
+                "default": 20
+            }
+        },
+        "required": ["region", "industry"]
+    }
+}
+
+    }
   ]
 }

@@ -482,8 +482,6 @@ class ArchFunctionHandler(ArchBaseHandler):
             },
         )
 
-        logger.info("prefill response: %s", json.dumps(prefill_response.model_dump()))
-
         return prefill_response
 
     def _check_length_and_pop_messages(self, messages, max_tokens=4096):
@@ -560,7 +558,7 @@ class ArchFunctionHandler(ArchBaseHandler):
         )
 
         model_response, self.has_tool_call = "", None
-
+        self.hallucination = False
         for _ in self.hallu_handler:
             # check if the first token is <tool_call>
             if len(self.hallu_handler.tokens) > 0 and self.has_tool_call is None:
@@ -572,18 +570,24 @@ class ArchFunctionHandler(ArchBaseHandler):
 
             # if the model is hallucinating, start parameter gathering
             if self.hallu_handler.hallucination is True:
+                self.hallucination = True
                 logger.info(
                     f"{self.hallu_handler.error_message} - start parameter gathering"
                 )
-                prefill_response = self._engage_parameter_gathering(messages)
-                model_response = prefill_response.choices[0].message.content
-                break
+                logger.info(
+                    f"Hallucinated response : {''.join(self.hallu_handler.tokens)}"
+                )
+                # [TODO] - add break when hallucination is detected
+                # break
+        if self.hallucination is True:
+            prefill_response = self._engage_parameter_gathering(messages)
+            model_response = prefill_response.choices[0].message.content
 
-        if self.has_tool_call and self.hallu_handler.hallucination is False:
+        if self.has_tool_call and self.hallucination is False:
             # [TODO] - Review: remove the following code
-            logger.info("Tool call found, no hallucination detected!")
-            model_response = "".join(self.hallu_handler.tokens)
 
+            model_response = "".join(self.hallu_handler.tokens)
+            logger.info(f"Tool call found, no hallucination detected {model_response}!")
         # start parameter gathering if the model is not generating tool calls
         if self.has_tool_call is False:
             # [TODO] - Review: remove the following code
