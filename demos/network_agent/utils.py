@@ -1,10 +1,11 @@
-import pandas as pd
-import random
-from datetime import datetime, timedelta, timezone
-import re
 import logging
-from dateparser import parse
+import random
+import re
 import sqlite3
+from datetime import datetime, timedelta, timezone
+
+import pandas as pd
+from dateparser import parse
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
