@@ -107,6 +107,26 @@ def is_parameter_required(
     return parameter_name in required_parameters
 
 
+def is_parameter_property(
+    function_description: Dict, parameter_name: str, property_name: str
+) -> bool:
+    """
+    Check if a parameter in an API description has a specific property.
+
+    Args:
+        function_description (dict): The API description in JSON format.
+        parameter_name (str): The name of the parameter to check.
+        property_name (str): The property to look for (e.g., 'format', 'default').
+
+    Returns:
+        bool: True if the parameter has the specified property, False otherwise.
+    """
+    parameters = function_description.get("properties", {})
+    parameter_info = parameters.get(parameter_name, {})
+
+    return property_name in parameter_info
+
+
 class HallucinationStateHandler:
     """
     A class to handle the state of hallucination detection in token processing.
@@ -284,13 +304,18 @@ class HallucinationStateHandler:
             ):
                 self.mask.append(MaskToken.PARAMETER_VALUE)
 
-                # checking if the parameter doesn't have default and the token is the first parameter value token
+                # checking if the parameter doesn't have enum and the token is the first parameter value token
                 if (
                     len(self.mask) > 1
                     and self.mask[-2] != MaskToken.PARAMETER_VALUE
                     and is_parameter_required(
                         self.function_properties[self.function_name],
                         self.parameter_name[-1],
+                    )
+                    and not is_parameter_property(
+                        self.function_properties[self.function_name],
+                        self.parameter_name[-1],
+                        "enum",
                     )
                 ):
                     if self.parameter_name[-1] not in self.check_parameter_name:
