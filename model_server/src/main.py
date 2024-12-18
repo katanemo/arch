@@ -75,11 +75,17 @@ async def function_calling(req: ChatMessage, res: Response):
                 return function_calling_response
             except ValueError as e:
                 res.statuscode = 500
-                error_message = "Tool call verification error"
+                error_message = "Tool call extraction error"
+                logger.error(f" {error_message}: {e}")
+                return {"error": f"[Arch-Function] - {error_message} - {e}"}
+            except StopIteration as e:
+                res.statuscode = 500
+                error_message = "Hallucination iterator error"
+                logger.error(f" {error_message}: {e}")
                 return {"error": f"[Arch-Function] - {error_message} - {e}"}
             except Exception as e:
                 # [TODO] Review: update how to collect debugging outputs
-                # logger.error(f"Error in chat_completion from `Arch-Function`: {e}")
+                logger.error(f"Error in chat_completion from `Arch-Function`: {e}")
                 res.status_code = 500
                 return {"error": f"[Arch-Function] - {e}"}
         # [TODO] Review: define the behavior if `Arch-Intent` doesn't detect an intent

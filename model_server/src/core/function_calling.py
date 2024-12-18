@@ -480,7 +480,7 @@ class ArchFunctionHandler(ArchBaseHandler):
             },
         )
 
-        # logger.info("prefill response: %s", json.dumps(prefill_response.dict()))
+        logger.info("prefill response: %s", json.dumps(prefill_response.dict()))
 
         return prefill_response
 
@@ -570,12 +570,8 @@ class ArchFunctionHandler(ArchBaseHandler):
 
             # if the model is hallucinating, start parameter gathering
             if self.hallu_handler.hallucination is True:
-                # [TODO] - Review: remove the following code
-                print(
-                    f"Hallucination detected for the following response, start parameter gathering: \n{''.join(self.hallu_handler.tokens)}"
-                )
-                print(
-                    f"Token entropy/varentropy map: {self.hallu_handler.token_probs_map}"
+                logger.info(
+                    f"{self.hallu_handler.error_message} - start parameter gathering"
                 )
                 prefill_response = self._engage_parameter_gathering(messages)
                 model_response = prefill_response.choices[0].message.content
@@ -583,26 +579,20 @@ class ArchFunctionHandler(ArchBaseHandler):
 
         if self.has_tool_call and self.hallu_handler.hallucination is False:
             # [TODO] - Review: remove the following code
-            print("Tool call found, no hallucination detected!")
+            logger.info("Tool call found, no hallucination detected!")
             model_response = "".join(self.hallu_handler.tokens)
 
         # start parameter gathering if the model is not generating tool calls
         if self.has_tool_call is False:
             # [TODO] - Review: remove the following code
-            print("No tool call found, start parameter gathering")
-            print(f"Token entropy/varentropy map: {self.hallu_handler.token_probs_map}")
+            logger.info("No tool call found, start parameter gathering")
             prefill_response = self._engage_parameter_gathering(messages)
             model_response = prefill_response.choices[0].message.content
 
         # Extract tool calls from model response
         extracted = self._extract_tool_calls(model_response)
-        # [TODO] - Review: remvoe the following code
-        # print(f"[Extracted] - {extracted}")
 
         if len(extracted["result"]) and extracted["status"]:
-            # [TODO] Review: define the behavior in the case that tool call extraction fails
-            # if not extracted["status"]:
-
             verified = self._verify_tool_calls(
                 tools=req.tools, tool_calls=extracted["result"]
             )
@@ -622,11 +612,11 @@ class ArchFunctionHandler(ArchBaseHandler):
         )
 
         # [TODO] Review: define the protocol to collect debugging output
-        # logger.info(
-        #     f"model_server <= arch_function: (tool_calls): {json.dumps([tool_call['function'] for tool_call in tool_calls])}"
-        # )
-        # logger.info(
-        #     f"model_server <= arch_function: response body: {json.dumps(chat_completion_response.dict())}"
-        # )
+        logger.info(
+            f"model_server <= arch_function: (tool_calls): {json.dumps([tool_call['function'] for tool_call in tool_calls])}"
+        )
+        logger.info(
+            f"model_server <= arch_function: response body: {json.dumps(chat_completion_response.dict())}"
+        )
 
         return chat_completion_response

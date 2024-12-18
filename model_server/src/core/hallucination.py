@@ -16,6 +16,7 @@ logger = get_model_server_logger()
 FUNC_NAME_START_PATTERN = ('<tool_call>\n{"name":"', "<tool_call>\n{'name':'")
 FUNC_NAME_END_TOKEN = ('",', "',")
 TOOL_CALL_TOKEN = "<tool_call>"
+END_TOOL_CALL_TOKEN = "</tool_call>"
 
 FIRST_PARAM_NAME_START_PATTERN = ('"arguments":{"', "'arguments':{'")
 PARAMETER_NAME_END_TOKENS = ('":', ':"', "':", ":'")
@@ -133,7 +134,6 @@ class HallucinationStateHandler:
         self.parameter_name_done: bool = False
         self.hallucination: bool = False
         self.error_message: str = ""
-        self.error_type: str = ""
         self.parameter_name: List[str] = []
         self.token_probs_map: List[Tuple[str, float, float]] = []
         self.response_iterator = response_iterator
@@ -150,6 +150,23 @@ class HallucinationStateHandler:
         self.function_properties = {
             x["function"]["name"]: x["function"]["parameters"] for x in self.function
         }
+
+    def _reset_parameters(self):
+        """
+        Resets all parameters in the HallucinationStateHandler to their default values.
+        """
+        self.tokens = []
+        self.logprobs = []
+        self.state = None
+        self.mask = []
+        self.parameter_name_done = False
+        self.hallucination = False
+        self.error_message = ""
+        self.parameter_name = []
+        self.token_probs_map = []
+        self.open_bracket = False
+        self.bracket = None
+        self.check_parameter_name = {}
 
     def append_and_check_token_hallucination(self, token, logprob):
         """
@@ -187,9 +204,12 @@ class HallucinationStateHandler:
                             raise ValueError(
                                 f"Error extracting logprobs from response: {e}"
                             )
-                        self.append_and_check_token_hallucination(
-                            token_content, logprobs
-                        )
+                        if token_content == END_TOOL_CALL_TOKEN:
+                            self._reset_parameters()
+                        else:
+                            self.append_and_check_token_hallucination(
+                                token_content, logprobs
+                            )
                         return token_content
             except StopIteration:
                 raise StopIteration
@@ -268,7 +288,6 @@ class HallucinationStateHandler:
             ):
                 self.mask.append(MaskToken.PARAMETER_VALUE)
 
-                # [TODO] Review: update the following code: `is_parameter_property` should not be here, move to `ArchFunctionHandler`
                 # checking if the parameter doesn't have default and the token is the first parameter value token
                 if (
                     len(self.mask) > 1
@@ -316,13 +335,7 @@ class HallucinationStateHandler:
             self.HALLUCINATION_THRESHOLD_DICT[self.mask[-1].value],
         ):
             self.hallucination = True
-            self.error_type = "Hallucination"
-            self.error_message = (
-                f"Hallucination: token '{self.tokens[-1]}' is uncertain."
-            )
-
-            # [TODO] - Review: remove the following code
-            # print(f"[Hallucination] - Hallucination detected: {self.error_message}")
+            self.error_message = f"Hallucination: token '{self.tokens[-1]}' is uncertain. {self.token_probs_map}"
 
     def _count_consecutive_token(self, token=MaskToken.PARAMETER_VALUE) -> int:
         """
