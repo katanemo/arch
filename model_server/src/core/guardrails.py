@@ -4,7 +4,8 @@ import numpy as np
 import src.commons.utils as utils
 from transformers import AutoTokenizer
 from src.core.model_utils import GuardRequest, GuardResponse
-from optimum.intel import OVModelForSequenceClassification
+
+# from optimum.intel import OVModelForSequenceClassification
 from transformers import AutoModelForSequenceClassification
 
 
@@ -151,12 +152,12 @@ def get_guardrail_handler(device: str = None):
         device = utils.get_device()
 
     model_class, model_name = None, None
-    if device == "cpu":
-        model_class = OVModelForSequenceClassification
-        model_name = "katanemo/Arch-Guard-cpu"
-    else:
-        model_class = AutoModelForSequenceClassification
-        model_name = "katanemo/Arch-Guard"
+    # if device == "cpu":
+    #     model_class = OVModelForSequenceClassification
+    #     model_name = "katanemo/Arch-Guard-cpu"
+    # else:
+    model_class = AutoModelForSequenceClassification
+    model_name = "katanemo/Arch-Guard"
 
     guardrail_dict = {
         "device": device,
