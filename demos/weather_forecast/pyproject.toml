@@ -2,7 +2,7 @@
 name = "api-server"
 version = "0.1.0"
 description = ""
-authors = ["Adil Hafeez <adil@katanemo.com>"]
+authors = ["Adil Hafeez <info@katanemo.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]

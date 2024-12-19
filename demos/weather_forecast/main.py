@@ -42,7 +42,7 @@ async def healthz():
 
 
 class WeatherRequest(BaseModel):
-    city: str
+    location: str
     days: int = 7
     units: str = "Farenheit"
 
@@ -50,7 +50,7 @@ class WeatherRequest(BaseModel):
 @app.post("/weather")
 async def weather(req: WeatherRequest, res: Response):
     weather_forecast = {
-        "city": req.city,
+        "location": req.location,
         "temperature": [],
         "units": req.units,
     }

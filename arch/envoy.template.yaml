@@ -237,8 +237,7 @@ static_resources:
                       domains:
                         - "*"
                       routes:
-
-                        {% for internal_clustrer in ["embeddings", "zeroshot", "guard", "arch_fc", "hallucination"] %}
+                        {% for internal_clustrer in ["arch_fc", "model_server"] %}
                         - match:
                             prefix: "/"
                             headers:
@@ -475,7 +474,7 @@ static_resources:
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
           sni: api.mistral.ai
-    {% for internal_clustrer in ["embeddings", "zeroshot", "guard", "arch_fc", "hallucination"] %}
+    {% for internal_clustrer in ["arch_fc", "model_server"] %}
     - name: {{ internal_clustrer }}
       connect_timeout: 5s
       type: STRICT_DNS
@@ -489,7 +488,7 @@ static_resources:
                   address:
                     socket_address:
                       address: host.docker.internal
-                      port_value: 51000
+                      port_value: $MODEL_SERVER_PORT
                   hostname: {{ internal_clustrer }}
     {% endfor %}
     - name: mistral_7b_instruct

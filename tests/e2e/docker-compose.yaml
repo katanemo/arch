@@ -1,0 +1,20 @@
+services:
+  archgw:
+    image: katanemo/archgw:latest
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "11000:11000"
+      - "12000:12000"
+      - "19901:9901"
+    volumes:
+      - ../../demos/weather_forecast/arch_config.yaml:/app/arch_config.yaml
+      - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+      - ~/archgw_logs:/var/log/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
+      - OTEL_TRACING_HTTP_ENDPOINT=http://host.docker.internal:4318/v1/traces
+      - MODEL_SERVER_PORT=${MODEL_SERVER_PORT:-51000}

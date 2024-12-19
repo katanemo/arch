@@ -1,0 +1,40 @@
+name: e2e model server tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest-m
+    defaults:
+      run:
+        working-directory: ./tests/modelserver
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: install model server and start it
+        run: |
+          cd ../../model_server/ && poetry install && poetry run archgw_modelserver start
+
+      - name: install test dependencies
+        run: |
+          poetry install
+
+      - name: run tests
+        run: |
+          poetry run pytest

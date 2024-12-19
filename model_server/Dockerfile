@@ -15,7 +15,7 @@ WORKDIR /src
 # specify list of models that will go into the image as a comma separated list
 # following models have been tested to work with this image
 # "sentence-transformers/all-MiniLM-L6-v2,sentence-transformers/all-mpnet-base-v2,thenlper/gte-base,thenlper/gte-large,thenlper/gte-small"
-ENV MODELS="katanemo/bge-large-en-v1.5-onnx"
+ENV MODELS=""
 
 COPY ./app ./app
 COPY ./app/guard_model_config.yaml .
@@ -28,4 +28,4 @@ COPY ./app/openai_params.yaml .
 # RUN python install.py && \
 #   find /root/.cache/torch/sentence_transformers/ -name onnx -exec rm -rf {} +
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "80"]

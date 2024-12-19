@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-pub fn replace_params_in_path(path: &str, params: &HashMap<String, String>) -> Result<String, String> {
+pub fn replace_params_in_path(
+    path: &str,
+    params: &HashMap<String, String>,
+) -> Result<String, String> {
     let mut result = String::new();
     let mut in_param = false;
     let mut current_param = String::new();
@@ -17,12 +20,10 @@ pub fn replace_params_in_path(path: &str, params: &HashMap<String, String>) -> R
                 return Err(format!("Missing value for parameter `{}`", param_name));
             }
             current_param.clear();
+        } else if in_param {
+            current_param.push(c);
         } else {
-            if in_param {
-                current_param.push(c);
-            } else {
-                result.push(c);
-            }
+            result.push(c);
         }
     }
 
