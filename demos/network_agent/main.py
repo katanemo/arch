@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field
 
 app = FastAPI()
 DEMO_DESCRIPTION = """This demo illustrates how **Arch** can be used to perform function calling
-with network-related tasks. In this demo, you act as a **network assistant** that provides factual
-information, without offering advice on manufacturers or purchasing decisions."""
+ with network-related tasks. In this demo, you act as a **network assistant** that provides factual
+ information, without offering advice on manufacturers or purchasing decisions."""
 
 
 # Define the request model
@@ -87,8 +87,8 @@ def get_device_summary(request: DeviceSummaryRequest):
         stats = {
             "device_id": device_id,
             "time_range": f"Last {time_range} days",
-            "data": f"""Device {device_id} over the last {time_range} days experienced {minutes} 
-            minutes of downtime.""",
+            "data": f"""Device {device_id} over the last {time_range} days experienced {minutes}
+             minutes of downtime.""",
         }
         minutes += 1
         statistics.append(DeviceStatistics(**stats))
