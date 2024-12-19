@@ -320,7 +320,23 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "i want to start a car insurance policy with 500 deductible and update deductible my boat insurance policy with id boawd123"
+      "content": "hi what can you do?"
+    },
+    {
+      "role": "assistant",
+      "content": "Certainly! I'm here to assist you with various questions and tasks. Whether it's answering specific questions, providing information, or helping with something else, feel free to let me know how I can assist you."
+    },
+    {
+      "role": "user",
+      "content": "i want to start a new insurance policy"
+    },
+    {
+      "role": "assistant",
+      "content": "Certainly! To start a new insurance policy, I'll need the type of insurance policy you're interested in and the deductible amount you'd like to set for that policy. Could you please provide this information?"
+    },
+    {
+      "role": "user",
+      "content": "car insurance, 500. Also, please get me the coverage details for a house insurance"
     }
   ],
   "tools": [

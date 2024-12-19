@@ -43,10 +43,11 @@ def test_model_server(test_data):
     message = choice["message"]
     assert "tool_calls" in message
     tool_calls = message["tool_calls"]
-    assert len(tool_calls) == 1
-    tool_call = tool_calls[0]
-    assert "id" in tool_call
-    del tool_call["id"]
-    # ensure that the tool call matches the expected tool call
-    diff = DeepDiff(tool_call, expected, ignore_string_case=True)
-    assert not diff
+    assert len(tool_calls) == len(expected)
+
+    for tool_call, expected_tool_call in zip(tool_calls, expected):
+        assert "id" in tool_call
+        del tool_call["id"]
+        # ensure that the tool call matches the expected tool call
+        diff = DeepDiff(tool_call, expected_tool_call, ignore_string_case=True)
+        assert not diff
