@@ -49,5 +49,5 @@ def test_model_server(test_data):
         assert "id" in tool_call
         del tool_call["id"]
         # ensure that the tool call matches the expected tool call
-        diff = DeepDiff(tool_call, expected_tool_call, ignore_string_case=True)
+        diff = DeepDiff(expected_tool_call, tool_call, ignore_string_case=True)
         assert not diff

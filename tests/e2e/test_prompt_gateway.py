@@ -31,7 +31,7 @@ def test_prompt_gateway(stream):
     assert response.status_code == 200
     if stream:
         chunks = get_data_chunks(response, n=20)
-        print(chunks)
+        # print(chunks)
         assert len(chunks) > 2
 
         # first chunk is tool calls (role = assistant)
