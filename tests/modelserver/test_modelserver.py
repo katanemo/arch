@@ -250,6 +250,95 @@ MODEL_SERVER_ENDPOINT = os.getenv(
             },
             id="multi turn, single tool, infer param from context",
         ),
+        pytest.param(
+            {
+                "input": {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": "how is the weather in seattle for 2 days?",
+                            "tool_call_id": "",
+                            "tool_calls": [],
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "",
+                            "tool_call_id": "",
+                            "tool_calls": [
+                                {
+                                    "id": "call_7134",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "get_current_weather",
+                                        "arguments": {
+                                            "location": "Seattle, WA",
+                                            "days": "2",
+                                        },
+                                    },
+                                }
+                            ],
+                        },
+                        {
+                            "role": "tool",
+                            "content": '{"location":"Seattle, WA","temperature":[{"date":"2024-12-19","temperature":{"min":74,"max":90},"units":"Farenheit","query_time":"2024-12-19 00:14:35.853372+00:00"},{"date":"2024-12-20","temperature":{"min":79,"max":88},"units":"Farenheit","query_time":"2024-12-19 00:14:35.853402+00:00"}],"units":"Farenheit"}',
+                            "tool_call_id": "",
+                            "tool_calls": [],
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "The weather in Seattle for the next two days is as follows:\n\n- **December 19, 2024**: The temperature will range from a minimum of 74\u00b0F to a maximum of 90\u00b0F.\n- **December 20, 2024**: The temperature will range from a minimum of 79\u00b0F to a maximum of 88\u00b0F.\n\nIt seems to be quite warm for Seattle during these dates!",
+                            "tool_call_id": "",
+                            "tool_calls": [],
+                        },
+                        {
+                            "role": "user",
+                            "content": "what about weather in chicago?",
+                            "tool_call_id": "",
+                            "tool_calls": [],
+                        },
+                    ],
+                    "tools": [
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": "get_current_weather",
+                                "description": "Get current weather at a location.",
+                                "parameters": {
+                                    "properties": {
+                                        "days": {
+                                            "type": "str",
+                                            "description": "the number of days for the request",
+                                        },
+                                        "location": {
+                                            "type": "str",
+                                            "description": "The location to get the weather for",
+                                            "format": "city, state",
+                                        },
+                                    },
+                                    "required": ["days", "location"],
+                                },
+                            },
+                        },
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": "default_target",
+                                "description": "This is the default target for all unmatched prompts.",
+                                "parameters": {"properties": {}},
+                            },
+                        },
+                    ],
+                },
+                "expected": {
+                    "type": "function",
+                    "function": {
+                        "name": "get_current_weather",
+                        "arguments": {"location": "Chicago, IL", "days": "2"},
+                    },
+                },
+            },
+            id="multi turn, single tool, infer param from context 2nd try",
+        ),
     ],
 )
 def test_model_server(test_data):

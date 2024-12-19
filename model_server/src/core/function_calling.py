@@ -541,6 +541,10 @@ class ArchFunctionHandler(ArchBaseHandler):
             Currently only support vllm inference
         """
 
+        logger.info(
+            f"model_server => arch_function: request body: {json.dumps(req.model_dump())}"
+        )
+
         messages = self._process_messages(req.messages, req.tools)
         messages = self._check_length_and_pop_messages(messages)
 
