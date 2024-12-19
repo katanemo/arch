@@ -49,6 +49,7 @@
       "eamodio.gitlens",
       "ms-python.black-formatter",
       "tamasfe.even-better-toml",
+      "esbenp.prettier-vscode",
       ]
   }
 }

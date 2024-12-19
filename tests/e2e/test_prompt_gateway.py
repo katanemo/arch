@@ -15,7 +15,7 @@ from common import (
 def test_prompt_gateway(stream):
     expected_tool_call = {
         "name": "get_current_weather",
-        "arguments": {"location": "seattle, wa", "days": "10"},
+        "arguments": {"location": "seattle, wa", "days": 10},
     }
 
     body = {
@@ -79,7 +79,7 @@ def test_prompt_gateway(stream):
         tool_calls = tool_calls_message.get("tool_calls", [])
         assert len(tool_calls) > 0
         tool_call = tool_calls[0]["function"]
-        diff = DeepDiff(tool_call, expected_tool_call, ignore_string_case=True)
+        diff = DeepDiff(expected_tool_call, tool_call, ignore_string_case=True)
         assert not diff
 
 
