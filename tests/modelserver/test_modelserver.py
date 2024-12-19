@@ -181,7 +181,7 @@ MODEL_SERVER_ENDPOINT = os.getenv(
                     },
                 },
             },
-            id="multi turn, single tool",
+            id="multi turn, single tool, all params passed",
         ),
         pytest.param(
             {
