@@ -3,7 +3,7 @@ test_cases:
     input:
       messages:
         - role: "user"
-          content: "what is the weather forecast for seattle in the next 10 days?"
+          content: "what is the weather forecast for Seattle, WA in the next 10 days?"
       tools:
         - id: "weather-112"
           type: "function"
@@ -160,7 +160,7 @@ test_cases:
     input:
       messages:
         - role: "user"
-          content: "how is the weather in seattle for 2 days?"
+          content: "how is the weather in seattle for 5 days?"
           tool_call_id: ""
         - role: "assistant"
           content: ""
@@ -172,7 +172,7 @@ test_cases:
                 name: "get_current_weather"
                 arguments:
                   location: "Seattle, WA"
-                  days: 2
+                  days: 5
         - role: "tool"
           content: "{\"location\":\"Seattle, WA\",\"temperature\":[{\"date\":\"2024-12-19\",\"temperature\":{\"min\":74,\"max\":90},\"units\":\"Farenheit\",\"query_time\":\"2024-12-19 00:14:35.853372+00:00\"},{\"date\":\"2024-12-20\",\"temperature\":{\"min\":79,\"max\":88},\"units\":\"Farenheit\",\"query_time\":\"2024-12-19 00:14:35.853402+00:00\"}],\"units\":\"Farenheit\"}"
           tool_call_id: ""
@@ -209,16 +209,16 @@ test_cases:
         name: "get_current_weather"
         arguments:
           location: "Chicago, IL"
-          days: 2
+          days: 5
   - id: "[HR AGENT] - single turn, single tool, all parameters, enum"
     input:
       messages:
         - role: "user"
-          content: "Can you show the workforce data for agency staff in 3 days"
+          content: "Can you show the workforce data for agency staff?"
         - role: "assistant"
           content: "Of course, I can help with that. However, I need the region and staffing type to provide the workforce data. Could you please provide that information?"
         - role: "user"
-          content: "americaz"
+          content: "ameriza"
       tools:
         - id: "hr-112"
           type: "function"
@@ -234,7 +234,7 @@ test_cases:
                 region:
                   type: "str"
                   description: "Geographical region for which you want workforce data."
-                  enum: ["americas", "emea", "apac"]
+                  enum: ["america", "emea", "apac"]
                 point_in_time:
                   type: "str"
                   description: "the point in time for which to retrieve data."
@@ -245,14 +245,13 @@ test_cases:
       function:
         name: "get_hr_data"
         arguments:
-          region: "americas"
+          region: "america"
           staffing_type: "agency"
-          point_in_time : "3"
   - id: "[INSURANCE AGENT] - single turn, multi tool, all parameters"
     input:
       messages:
         - role: "user"
-          content: " i want to start a car insurance policy with 500 deductible and update deductible my boat insurance policy with id boawd123 to 1000"
+          content: " i want to start an insurance policy with 500 deductible for car and update deductible my boat insurance policy with id boawd123 to 1000"
       tools:
         - type: "function"
           function:
@@ -361,8 +360,7 @@ test_cases:
                   type: "str"
                   description: "The type of insurance policy."
               required: ["policy_type"]
-        - id: "initiate-policy"
-          type: "function"
+        - type: "function"
           function:
             name: "initiate_policy"
             description: "Start a policy coverage for an insurance policy."
@@ -421,7 +419,7 @@ test_cases:
     input:
       messages:
         - role: "user"
-          content: " i want to start a car insurance policy with 500 deductible"
+          content: "i want to start a insurance policy for car with 500 deductible"
       tools:
         - type: "function"
           function:

@@ -14,7 +14,13 @@ MODEL_SERVER_ENDPOINT = os.getenv(
 )
 
 # Load test data from YAML file
-with open("test_success_data.yaml", "r") as file:
+script_dir = os.path.dirname(__file__)
+
+# Construct the full path to the YAML file
+yaml_file_path = os.path.join(script_dir, "test_success_data.yaml")
+
+# Load test data from YAML file
+with open(yaml_file_path, "r") as file:
     test_data_yaml = yaml.safe_load(file)
 
 

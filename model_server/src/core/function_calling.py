@@ -427,23 +427,31 @@ class ArchFunctionHandler(ArchBaseHandler):
 
                 # Verify the data type of each parameter in the tool calls
                 for param_name in func_args:
-                    param_value = func_args[param_name]
-                    data_type = functions[func_name]["properties"][param_name]["type"]
+                    if param_name not in functions[func_name]["properties"]:
+                        is_valid = False
+                        invalid_tool_call = tool_call
+                        error_message = f"Parameter `{param_name}` is not defined in the function `{func_name}`."
+                        break
+                    else:
+                        param_value = func_args[param_name]
+                        data_type = functions[func_name]["properties"][param_name][
+                            "type"
+                        ]
 
-                    if data_type in self.support_data_types:
-                        if not isinstance(
-                            param_value,
-                            self.support_data_types[data_type],
-                        ) and not isinstance(
-                            self._correcting_type(
-                                param_value, self.support_data_types[data_type]
-                            ),
-                            self.support_data_types[data_type],
-                        ):
-                            is_valid = False
-                            invalid_tool_call = tool_call
-                            error_message = f"Parameter `{param_name}` is expected to have the data type `{self.support_data_types[data_type]}`, but got `{type(param_value)}`."
-                            break
+                        if data_type in self.support_data_types:
+                            if not isinstance(
+                                param_value,
+                                self.support_data_types[data_type],
+                            ) and not isinstance(
+                                self._correcting_type(
+                                    param_value, self.support_data_types[data_type]
+                                ),
+                                self.support_data_types[data_type],
+                            ):
+                                is_valid = False
+                                invalid_tool_call = tool_call
+                                error_message = f"Parameter `{param_name}` is expected to have the data type `{self.support_data_types[data_type]}`, but got `{type(param_value)}`."
+                                break
 
         return {
             "status": is_valid,
