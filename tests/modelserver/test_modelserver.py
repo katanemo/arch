@@ -122,28 +122,29 @@ MODEL_SERVER_ENDPOINT = os.getenv(
                     "messages": [
                         {
                             "role": "user",
-                            "content": "what is the weather in Seattle?",
+                            "content": "how is the weather in chicago for next 5 days?",
                         },
                         {
                             "role": "assistant",
-                            "content": "May I know the location and number of days you want to get the weather for?",
-                            "model": "Arch-Function",
+                            "tool_calls": [
+                                {
+                                    "id": "call_3394",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "get_current_weather",
+                                        "arguments": {"city": "Chicago, IL", "days": 5},
+                                    },
+                                }
+                            ],
                         },
-                        {
-                            "role": "user",
-                            "content": "5 days",
-                        },
+                        {"role": "tool", "content": "--", "tool_call_id": "call_3394"},
                         {
                             "role": "assistant",
-                            "content": "Based on the weather data, the weather in Seattle for the next 5 days between 100f and 95f.",
-                        },
-                        {
-                            "role": "tool",
-                            "content": "seattle wa, 2014-10-10, 100f\n seattle wa, 2014-10-11, 87f\n seattle wa, 2014-10-12, 80f\n seattle wa, 2014-10-13, 90f\n seattle wa, 2014-10-14, 95f",
+                            "content": "--",
                         },
                         {
                             "role": "user",
-                            "content": "What about LA?",
+                            "content": "how is the weather in LA for next 5 days?",
                         },
                     ],
                     "tools": [
@@ -176,11 +177,78 @@ MODEL_SERVER_ENDPOINT = os.getenv(
                     "type": "function",
                     "function": {
                         "name": "get_current_weather",
-                        "arguments": {"location": "Los Angeles, WA", "days": "5"},
+                        "arguments": {"location": "Los Angeles, CA", "days": "5"},
                     },
                 },
             },
             id="multi turn, single tool",
+        ),
+        pytest.param(
+            {
+                "input": {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": "how is the weather in chicago for next 5 days?",
+                        },
+                        {
+                            "role": "assistant",
+                            "tool_calls": [
+                                {
+                                    "id": "call_3394",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "get_current_weather",
+                                        "arguments": {"city": "Chicago, IL", "days": 5},
+                                    },
+                                }
+                            ],
+                        },
+                        {"role": "tool", "content": "--", "tool_call_id": "call_3394"},
+                        {
+                            "role": "assistant",
+                            "content": "--",
+                        },
+                        {
+                            "role": "user",
+                            "content": "how is the weather in LA?",
+                        },
+                    ],
+                    "tools": [
+                        {
+                            "id": "weather-112",
+                            "type": "function",
+                            "function": {
+                                "name": "get_current_weather",
+                                "description": "Get current weather at a location.",
+                                "parameters": {
+                                    "type": "object",
+                                    "properties": {
+                                        "location": {
+                                            "type": "str",
+                                            "description": "The location to get the weather for",
+                                            "format": "City, State",
+                                        },
+                                        "days": {
+                                            "type": "str",
+                                            "description": "the number of days for the request.",
+                                        },
+                                    },
+                                    "required": ["location", "days"],
+                                },
+                            },
+                        }
+                    ],
+                },
+                "expected": {
+                    "type": "function",
+                    "function": {
+                        "name": "get_current_weather",
+                        "arguments": {"location": "Los Angeles, CA", "days": "5"},
+                    },
+                },
+            },
+            id="multi turn, single tool, infer param from context",
         ),
     ],
 )
