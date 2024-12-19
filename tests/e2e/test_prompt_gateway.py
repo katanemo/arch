@@ -15,7 +15,7 @@ from common import (
 def test_prompt_gateway(stream):
     expected_tool_call = {
         "name": "get_current_weather",
-        "arguments": {"days": 10},
+        "arguments": {"days": 10, "location": "seattle"},
     }
 
     body = {
@@ -46,7 +46,8 @@ def test_prompt_gateway(stream):
         assert len(tool_calls) > 0
         tool_call = tool_calls[0]["function"]
         location = tool_call["arguments"]["location"]
-        assert "seattle" in location.lower()
+        assert expected_tool_call["arguments"]["location"] in location.lower()
+        del expected_tool_call["arguments"]["location"]
         del tool_call["arguments"]["location"]
         diff = DeepDiff(expected_tool_call, tool_call, ignore_string_case=True)
         assert not diff
@@ -83,7 +84,8 @@ def test_prompt_gateway(stream):
         assert len(tool_calls) > 0
         tool_call = tool_calls[0]["function"]
         location = tool_call["arguments"]["location"]
-        assert "seattle" in location.lower()
+        assert expected_tool_call["arguments"]["location"] in location.lower()
+        del expected_tool_call["arguments"]["location"]
         del tool_call["arguments"]["location"]
         diff = DeepDiff(expected_tool_call, tool_call, ignore_string_case=True)
         assert not diff
