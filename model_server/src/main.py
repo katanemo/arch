@@ -70,6 +70,10 @@ async def function_calling(req: ChatMessage, res: Response):
                 function_calling_response.metadata = {
                     "intent_latency": str(round(intent_latency * 1000, 3)),
                     "function_latency": str(round(function_latency * 1000, 3)),
+                    "hallucination": handler_map["Arch-Function"].hallucination,
+                    "tokens_uncertainty": handler_map[
+                        "Arch-Function"
+                    ].hallu_handler.token_probs_map,
                 }
 
                 return function_calling_response

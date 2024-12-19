@@ -179,8 +179,6 @@ class HallucinationStateHandler:
         self.parameter_name_done = False
         self.hallucination = False
         self.error_message = ""
-        self.parameter_name = []
-        self.token_probs_map = []
         self.open_bracket = False
         self.bracket = None
         self.check_parameter_name = {}

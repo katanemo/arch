@@ -578,7 +578,7 @@ class ArchFunctionHandler(ArchBaseHandler):
                     f"Hallucinated response : {''.join(self.hallu_handler.tokens)}"
                 )
                 # [TODO] - add break when hallucination is detected
-                # break
+                break
         if self.hallucination is True:
             prefill_response = self._engage_parameter_gathering(messages)
             model_response = prefill_response.choices[0].message.content

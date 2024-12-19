@@ -1,6 +1,8 @@
-### talk to function calling endpoint
 @model_server_endpoint = http://localhost:51000
 @archfc_endpoint = https://api.fc.archgw.com
+
+### multi turn conversation with intent, except parameter gathering
+
 POST {{model_server_endpoint}}/function_calling HTTP/1.1
 Content-Type: application/json
 
@@ -28,11 +30,11 @@ Content-Type: application/json
     },
     {
         "role": "tool",
-        "content": "the weather is amazing."
+        "content": "<tool_call>{'name': 'get_current_weather', 'arguments': {'location': 'Seattle, WA', 'days': '5'}}"
     },
     {
         "role": "user",
-        "content": "how about Austin"
+        "content": "how about Austin "
     }
   ],
   "tools": [
@@ -78,8 +80,8 @@ Content-Type: application/json
 }
 
 
-### talk to Arch-Intent directly for completion
 
+### multi turn conversation with correct parameters
 
 POST {{model_server_endpoint}}/function_calling HTTP/1.1
 Content-Type: application/json
@@ -133,7 +135,7 @@ Content-Type: application/json
     }
   ]
 }
-### talk to Arch-Intent directly for completion
+### talk to Arch-Intent directly for completion, expect No
 POST https://api.fc.archgw.com/v1/chat/completions HTTP/1.1
 Content-Type: application/json
 
@@ -149,8 +151,7 @@ Content-Type: application/json
   "stream": false
 }
 
-### talk to Arch-Intent directly for completion
-
+### multi turn conversation with correct parameters
 POST {{model_server_endpoint}}/function_calling HTTP/1.1
 Content-Type: application/json
 
@@ -209,7 +210,7 @@ Content-Type: application/json
     }
   ]
 }
-### talk to Arch-Intent directly for completion
+### multi turn enums
 POST {{model_server_endpoint}}/function_calling HTTP/1.1
 Content-Type: application/json
 
@@ -257,8 +258,7 @@ Content-Type: application/json
     }
   ]
 }
-### talk to Arch-Intent directly for completion
-### talk to Arch-Intent directly for completion
+### multiturn enum with correcting parameters
 
 POST {{model_server_endpoint}}/function_calling HTTP/1.1
 Content-Type: application/json
@@ -275,7 +275,7 @@ Content-Type: application/json
     },
     {
       "role": "user",
-      "content": "america"
+      "content": "americaz"
     }
   ],
   "tools": [
@@ -311,7 +311,7 @@ Content-Type: application/json
   ]
 }
 
-### talk to Arch-Intent directly for completion
+### single turn parameter gathering
 
 POST {{model_server_endpoint}}/function_calling HTTP/1.1
 Content-Type: application/json
@@ -320,7 +320,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "Start a insurance policy with 500 deductible"
+      "content": "i want to start a car insurance policy with 500 deductible and update deductible my boat insurance policy with id boawd123"
     }
   ],
   "tools": [
@@ -331,18 +331,18 @@ Content-Type: application/json
 
     {"type": "function",
      "function": {"name": "get_policy_coverage",
-      "description": "Retrieve the coverage details for a given policy type (car, boat, house, motorcycle).",
+      "description": "Retrieve the coverage details for an insurance policy .",
       "parameters": {"type": "object",
        "properties": {"policy_type": {"type": "str",
-         "description": "The type of policy."}},
+         "description": "The type of insurance policy."}},
        "required": ["policy_type"]}}},
 
     {"type": "function",
      "function": {"name": "initiate_policy",
-      "description": "Start a policy coverage for car, boat, motorcycle or house.",
+      "description": "Start a policy coverage for an insurance policy.",
       "parameters": {"type": "object",
        "properties": {"policy_type": {"type": "str",
-         "description": "The type of policy, option - car, boat, house, motorcycle."},
+         "description": "The type of insurance policy."},
         "deductible": {"type": "float",
          "description": "The deductible amount set for the policy."}},
        "required": ["policy_type", "deductible"]}}},
@@ -359,10 +359,10 @@ Content-Type: application/json
 
     {"type": "function",
      "function": {"name": "update_deductible",
-      "description": "Update the deductible amount for a specific policy coverage.",
+      "description": "Update the deductible amount for a specific insurance policy coverage.",
       "parameters": {"type": "object",
        "properties": {"policy_id": {"type": "str",
-         "description": "The ID of the policy."},
+         "description": "The ID of the insurance policy."},
         "deductible": {"type": "float",
          "description": "The deductible amount set for the policy."}},
        "required": ["policy_id", "deductible"]}}}
