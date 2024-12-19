@@ -49,11 +49,11 @@ prompt_targets:
         description: The location to get the weather for
         required: true
         type: string
-        format: city, state
+        format: City, State
       - name: days
         description: the number of days for the request
         required: true
-        type: string
+        type: int
     endpoint:
       name: weather_forecast_service
       path: /weather
