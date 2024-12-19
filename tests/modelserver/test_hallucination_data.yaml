@@ -89,40 +89,40 @@ test_cases:
       prompt_prefilling: true
 
 
-  # - id: "[WEATHER AGENT] - multi turn, single tool, clarification"
-  #   input:
-  #     messages:
-  #       - role: "user"
-  #         content: "how is the weather for next 5 days?"
-  #       - role: "assistant"
-  #         content: "Can you tell me your location and how many days you want?"
-  #       - role: "user"
-  #         content: "Seattle"
-  #       - role: "assistant"
-  #         content: "Can you please provide me the days for the weather forecast?"
-  #       - role: "user"
-  #         content: "Sorry, the location is actually los angeles in 5 days"
-  #     tools:
-  #       - id: "weather-112"
-  #         type: "function"
-  #         function:
-  #           name: "get_current_weather"
-  #           description: "Get current weather at a location."
-  #           parameters:
-  #             type: "object"
-  #             properties:
-  #               location:
-  #                 type: "str"
-  #                 description: "The location to get the weather for"
-  #                 format: "City, State"
-  #               days:
-  #                 type: "int"
-  #                 description: "the number of days for the request."
-  #             required: ["location", "days"]
-  #   expected:
-  #   - type: "metadata"
-  #     hallucination: false
-  #     prompt_prefilling: true
+  - id: "[WEATHER AGENT] - multi turn, single tool, clarification"
+    input:
+      messages:
+        - role: "user"
+          content: "how is the weather for next 5 days?"
+        - role: "assistant"
+          content: "Can you tell me your location and how many days you want?"
+        - role: "user"
+          content: "Seattle"
+        - role: "assistant"
+          content: "Can you please provide me the days for the weather forecast?"
+        - role: "user"
+          content: "Sorry, the location is actually los angeles in 5 days"
+      tools:
+        - id: "weather-112"
+          type: "function"
+          function:
+            name: "get_current_weather"
+            description: "Get current weather at a location."
+            parameters:
+              type: "object"
+              properties:
+                location:
+                  type: "str"
+                  description: "The location to get the weather for"
+                  format: "City, State"
+                days:
+                  type: "int"
+                  description: "the number of days for the request."
+              required: ["location", "days"]
+    expected:
+    - type: "metadata"
+      hallucination: false
+      prompt_prefilling: true
 
   # - id: "[WEATHER AGENT] - multi turn, single tool, infer param from context 2nd try"
   #   input:

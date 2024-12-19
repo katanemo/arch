@@ -417,7 +417,7 @@ test_cases:
         arguments:
           policy_type: "house insurance"
 
-  - id: "[INSURANCE AGENT] - single turn, multi tool, all parameters"
+  - id: "[INSURANCE AGENT] - single turn, single tool, all parameters"
     input:
       messages:
         - role: "user"

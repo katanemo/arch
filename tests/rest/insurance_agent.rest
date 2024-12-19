@@ -10,31 +10,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "hi"
-    },
-    {
-      "role": "assistant",
-      "content": "Certainly! How can I assist you today"
-    },
-    {
-        "role": "user",
-        "content": "Get me weather for Seattle"
-    },
-    {
-      "role": "assistant",
-      "content": "Definitely. How many days of weather would you like to see?"
-    },
-    {
-        "role": "user",
-        "content": "5 days"
-    },
-    {
-        "role": "tool",
-        "content": "<tool_call>{'name': 'get_current_weather', 'arguments': {'location': 'Seattle, WA', 'days': '5'}}"
-    },
-    {
-        "role": "user",
-        "content": "how about Austin "
+      "content": "what is the weather in Seattle in days?"
     }
   ],
   "tools": [
@@ -106,7 +82,7 @@ Content-Type: application/json
     },
     {
         "role": "user",
-        "content": "5 days"
+        "content": "Sorry, the location is actually los angeles in 5 days"
     }
   ],
   "tools": [
@@ -336,7 +312,7 @@ Content-Type: application/json
     },
     {
       "role": "user",
-      "content": "car insurance, 500 deductible. Also, please get me the coverage details for a house insurance"
+      "content": "car insurance, 500. Also, please get me the coverage details for a house insurance"
     }
   ],
   "tools": [
@@ -393,7 +369,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "Identify sales opportunities in South America for the retail industry"
+      "content": "get me sales opportunities of tech"
     }
   ],
   "tools": [

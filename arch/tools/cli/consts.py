@@ -1,6 +1,5 @@
 KATANEMO_DOCKERHUB_REPO = "katanemo/archgw"
 KATANEMO_LOCAL_MODEL_LIST = [
-    "katanemo/Arch-Guard-cpu",
     "katanemo/Arch-Guard",
 ]
 SERVICE_NAME_ARCHGW = "archgw"
