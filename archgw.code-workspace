@@ -17,8 +17,16 @@
       "path": "model_server"
     },
     {
-      "name": "e2e_tests",
-      "path": "e2e_tests"
+      "name": "tests_e2e",
+      "path": "tests/e2e"
+    },
+    {
+      "name": "tests_archgw",
+      "path": "tests/archgw"
+    },
+    {
+      "name": "tests_modelserver",
+      "path": "tests/modelserver"
     },
     {
       "name": "chatbot_ui",

@@ -1,35 +1,142 @@
-arch/qdrant_data/
-/venv/
-__pycache__
-grafana-data
-prom_data
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+*.sqlite3
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
 .env
-qdrant_data
-generated
-.DS_Store
-*.gguf
-venv
-demos/function_calling/ollama/models/
-demos/function_calling/ollama/id_ed*
-docs/build/
-demos/function_calling/open-webui/
-demos/employee_details_copilot/open-webui/
-demos/employee_details_copilot_arch/open-webui/
-demos/network_copilot/open-webui/
-demos/employee_details_copilot/ollama/models/
-demos/employee_details_copilot_arch/ollama/models/
-demos/network_copilot/ollama/models/
-arch_log/
-arch/tools/*.egg-info
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+
+# VSCode stuff:
+.vscode/
+
+# MacOS Metadata
+*.DS_Store
+
+
+
+# =========================================
+
+# Arch
 arch/tools/config
 arch/tools/build
-model_server/model_server.egg-info
+
+# Archgw - model_server
 model_server/venv_model_server
 model_server/build
 model_server/dist
+
+# Archgw - Docs
+docs/build/
+
+# Archgw - Demos
+demos/function_calling/ollama/models/
+demos/function_calling/ollama/id_ed*
+demos/function_calling/open-webui/
+demos/function_calling/open-webui/
+demos/shared/signoz/data
+
+# Arch - Miscellaneous
+grafana-data
+prom_data
+arch_log/
 arch_logs/
-dist/
 crates/*/target/
 crates/target/
 build.log
-demos/shared/signoz/data
+
+archgw.log

@@ -42,21 +42,18 @@ prompt_guards:
         message: Looks like you're curious about my abilities, but I can only provide assistance for weather forecasting.
 
 prompt_targets:
-  - name: weather_forecast
-    description: Check weather information for a given city.
+  - name: get_current_weather
+    description: Get current weather at a location.
     parameters:
-      - name: city
-        description: the name of the city
+      - name: location
+        description: The location to get the weather for
         required: true
-        type: str
+        type: string
+        format: city, state
       - name: days
-        description: the number of days
-        type: int
+        description: the number of days for the request
         required: true
-      - name: units
-        description: the temperature unit, e.g., Celsius and Fahrenheit
-        type: str
-        default: Fahrenheit
+        type: string
     endpoint:
       name: weather_forecast_service
       path: /weather

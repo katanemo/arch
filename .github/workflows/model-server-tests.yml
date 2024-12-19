@@ -41,4 +41,4 @@ jobs:
           PYTHONPATH: model_server  # Ensure the app's path is available
         run: |
           cd model_server
-          poetry run pytest --maxfail=5 --disable-warnings
+          poetry run pytest
