@@ -5,8 +5,7 @@ test_cases:
         - role: "user"
           content: "what is the weather forecast for Seattle, WA in the next 10 days?"
       tools:
-        - id: "weather-112"
-          type: "function"
+        - type: "function"
           function:
             name: "get_current_weather"
             description: "Get current weather at a location."
@@ -40,8 +39,7 @@ test_cases:
         - role: "user"
           content: "5 days"
       tools:
-        - id: "weather-112"
-          type: "function"
+        - type: "function"
           function:
             name: "get_current_weather"
             description: "Get current weather at a location."
@@ -86,8 +84,7 @@ test_cases:
         - role: "user"
           content: "how is the weather in LA for next 5 days?"
       tools:
-        - id: "weather-112"
-          type: "function"
+        - type: "function"
           function:
             name: "get_current_weather"
             description: "Get current weather at a location."
@@ -132,8 +129,7 @@ test_cases:
         - role: "user"
           content: "how is the weather in LA?"
       tools:
-        - id: "weather-112"
-          type: "function"
+        - type: "function"
           function:
             name: "get_current_weather"
             description: "Get current weather at a location."
@@ -220,8 +216,7 @@ test_cases:
         - role: "user"
           content: "ameriza"
       tools:
-        - id: "hr-112"
-          type: "function"
+        - type: "function"
           function:
             name: "get_hr_data"
             description: "Get workforce data like headcount and satisfacton levels by region and staffing type."

@@ -89,7 +89,7 @@ async def function_calling(req: ChatMessage, res: Response):
 
                 return function_calling_response
             except ValueError as e:
-                res.statuscode = 500
+                res.statuscode = 503
                 error_message = "Tool call extraction error"
                 logger.error(f" {error_message}: {e}")
                 return {"error": f"[Arch-Function] - {error_message} - {e}"}
