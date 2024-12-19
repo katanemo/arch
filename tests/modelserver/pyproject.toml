@@ -16,6 +16,7 @@ pytest-sugar = "^1.0.0"
 deepdiff = "^8.0.1"
 pytest-retry = "^1.6.3"
 pytest-httpserver = "^1.1.0"
+pyyaml = "*"
 
 [tool.poetry.dev-dependencies]
 pytest-cov = "^4.1.0"
