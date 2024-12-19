@@ -23,7 +23,7 @@ test_cases:
               required: ["location", "days"]
     expected:
     - type: "metadata"
-      hallucination: true
+      hallucination: false
       prompt_prefilling: true
 
   - id: "[WEATHER AGENT] - single turn, single tool, hallucination"
