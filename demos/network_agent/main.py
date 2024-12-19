@@ -1,15 +1,14 @@
-from openai import OpenAI
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from common import create_gradio_app
-import gradio as gr
 import os
+from typing import List, Optional
 
+from fastapi import FastAPI, HTTPException
+from openai import OpenAI
+from pydantic import BaseModel, Field
 
 app = FastAPI()
-demo_description = """This demo illustrates how **Arch** can be used to perform function calling with network-related tasks.
-In this demo, you act as a **network assistant** that provides factual information, without offering advice on manufacturers or purchasing decisions."""
+DEMO_DESCRIPTION = """This demo illustrates how **Arch** can be used to perform function calling
+ with network-related tasks. In this demo, you act as a **network assistant** that provides factual
+ information, without offering advice on manufacturers or purchasing decisions."""
 
 
 # Define the request model
@@ -52,7 +51,8 @@ def reboot_network_device(request_data: DeviceRebootRequest):
     # Access data from the Pydantic model
     device_ids = request_data.device_ids
 
-    # Validate 'device_ids' (This is already validated by Pydantic, but additional logic can be added if needed)
+    # Validate 'device_ids'
+    # (This is already validated by Pydantic, but additional logic can be added if needed)
     if not device_ids:
         raise HTTPException(
             status_code=400, detail="'device_ids' parameter is required"
@@ -87,7 +87,8 @@ def get_device_summary(request: DeviceSummaryRequest):
         stats = {
             "device_id": device_id,
             "time_range": f"Last {time_range} days",
-            "data": f"Device {device_id} over the last {time_range} days experienced {minutes} minutes of downtime.",
+            "data": f"""Device {device_id} over the last {time_range} days experienced {minutes}
+             minutes of downtime.""",
         }
         minutes += 1
         statistics.append(DeviceStatistics(**stats))
@@ -100,10 +101,3 @@ client = OpenAI(
     api_key="--",
     base_url=CHAT_COMPLETION_ENDPOINT,
 )
-
-gr.mount_gradio_app(
-    app, create_gradio_app(demo_description, client), path="/agent/chat"
-)
-
-if __name__ == "__main__":
-    app.run(debug=True)
