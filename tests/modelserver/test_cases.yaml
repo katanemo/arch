@@ -214,7 +214,7 @@ test_cases:
     input:
       messages:
         - role: "user"
-          content: " Can you show the workforce data for agency staff in 3 days"
+          content: "Can you show the workforce data for agency staff in 3 days"
         - role: "assistant"
           content: "Of course, I can help with that. However, I need the region and staffing type to provide the workforce data. Could you please provide that information?"
         - role: "user"
@@ -254,8 +254,7 @@ test_cases:
         - role: "user"
           content: " i want to start a car insurance policy with 500 deductible and update deductible my boat insurance policy with id boawd123 to 1000"
       tools:
-        - id: "policy-qa"
-          type: "function"
+        - type: "function"
           function:
             name: "policy_qa"
             description: "Handle general Q/A related to insurance."
@@ -263,8 +262,7 @@ test_cases:
               type: "object"
               properties: {}
               required: []
-        - id: "get-policy-coverage"
-          type: "function"
+        - type: "function"
           function:
             name: "get_policy_coverage"
             description: "Retrieve the coverage details for an insurance policy."
@@ -275,8 +273,7 @@ test_cases:
                   type: "str"
                   description: "The type of insurance policy."
               required: ["policy_type"]
-        - id: "initiate-policy"
-          type: "function"
+        - type: "function"
           function:
             name: "initiate_policy"
             description: "Start a policy coverage for an insurance policy."
@@ -290,8 +287,7 @@ test_cases:
                   type: "float"
                   description: "The deductible amount set for the policy."
               required: ["policy_type", "deductible"]
-        - id: "update-claim"
-          type: "function"
+        - type: "function"
           function:
             name: "update_claim"
             description: "Update the notes on the claim."
@@ -305,8 +301,7 @@ test_cases:
                   type: "str"
                   description: "Notes about the claim number for your adjustor to see."
               required: ["claim_id"]
-        - id: "update-deductible"
-          type: "function"
+        - type: "function"
           function:
             name: "update_deductible"
             description: "Update the deductible amount for a specific insurance policy coverage."
@@ -347,8 +342,7 @@ test_cases:
         - role: "user"
           content: "car insurance, 500. Also, please get me the coverage details for a house insurance"
       tools:
-        - id: "policy-qa"
-          type: "function"
+        - type: "function"
           function:
             name: "policy_qa"
             description: "Handle general Q/A related to insurance."
@@ -356,8 +350,7 @@ test_cases:
               type: "object"
               properties: {}
               required: []
-        - id: "get-policy-coverage"
-          type: "function"
+        - type: "function"
           function:
             name: "get_policy_coverage"
             description: "Retrieve the coverage details for an insurance policy."
@@ -383,8 +376,7 @@ test_cases:
                   type: "float"
                   description: "The deductible amount set for the policy."
               required: ["policy_type", "deductible"]
-        - id: "update-claim"
-          type: "function"
+        - type: "function"
           function:
             name: "update_claim"
             description: "Update the notes on the claim."
@@ -398,8 +390,7 @@ test_cases:
                   type: "str"
                   description: "Notes about the claim number for your adjustor to see."
               required: ["claim_id"]
-        - id: "update-deductible"
-          type: "function"
+        - type: "function"
           function:
             name: "update_deductible"
             description: "Update the deductible amount for a specific insurance policy coverage."
@@ -432,8 +423,7 @@ test_cases:
         - role: "user"
           content: " i want to start a car insurance policy with 500 deductible"
       tools:
-        - id: "policy-qa"
-          type: "function"
+        - type: "function"
           function:
             name: "policy_qa"
             description: "Handle general Q/A related to insurance."
@@ -441,8 +431,7 @@ test_cases:
               type: "object"
               properties: {}
               required: []
-        - id: "get-policy-coverage"
-          type: "function"
+        - type: "function"
           function:
             name: "get_policy_coverage"
             description: "Retrieve the coverage details for an insurance policy."
@@ -453,8 +442,7 @@ test_cases:
                   type: "str"
                   description: "The type of insurance policy."
               required: ["policy_type"]
-        - id: "initiate-policy"
-          type: "function"
+        - type: "function"
           function:
             name: "initiate_policy"
             description: "Start a policy coverage for an insurance policy."
@@ -468,8 +456,7 @@ test_cases:
                   type: "float"
                   description: "The deductible amount set for the policy."
               required: ["policy_type", "deductible"]
-        - id: "update-claim"
-          type: "function"
+        - type: "function"
           function:
             name: "update_claim"
             description: "Update the notes on the claim."
@@ -483,8 +470,7 @@ test_cases:
                   type: "str"
                   description: "Notes about the claim number for your adjustor to see."
               required: ["claim_id"]
-        - id: "update-deductible"
-          type: "function"
+        - type: "function"
           function:
             name: "update_deductible"
             description: "Update the deductible amount for a specific insurance policy coverage."

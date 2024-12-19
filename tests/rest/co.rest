@@ -336,7 +336,7 @@ Content-Type: application/json
     },
     {
       "role": "user",
-      "content": "car insurance, 500. Also, please get me the coverage details for a house insurance"
+      "content": "car insurance, 500 deductible. Also, please get me the coverage details for a house insurance"
     }
   ],
   "tools": [
