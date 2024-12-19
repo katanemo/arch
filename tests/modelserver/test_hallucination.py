@@ -37,5 +37,7 @@ def test_model_server(test_data):
     response_json = response.json()
     assert response_json
     metadata = response_json.get("metadata", [])
-    assert bool(metadata["hallucination"]) == expected[0]["hallucination"]
-    assert bool(metadata["prompt_prefilling"]) == expected[0]["prompt_prefilling"]
+    assert (metadata["hallucination"].lower() == "true") == expected[0]["hallucination"]
+    assert (metadata["prompt_prefilling"].lower() == "true") == expected[0][
+        "prompt_prefilling"
+    ]
