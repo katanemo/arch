@@ -2003,17 +2003,6 @@ mpmath = ">=1.1.0,<1.4"
 dev = ["hypothesis (>=6.70.0)", "pytest (>=7.1.0)"]
 
 [[package]]
-name = "tf-keras"
-version = "2.15.0"
-description = "Deep learning for humans."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "tf_keras-2.15.0-py3-none-any.whl", hash = "sha256:48607ee60a4d1fa7c09d6a44293a803faf3136e7a43f92df089ac094117547d2"},
-    {file = "tf_keras-2.15.0.tar.gz", hash = "sha256:d7559c2ba40667679fcb2105d3e4b68bbc07ecafbf1037462ce7b3974c3c6798"},
-]
-
-[[package]]
 name = "tokenizers"
 version = "0.21.0"
 description = ""
@@ -2398,4 +2387,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "f8c61e860666ba116b62d0add52ac44e5d12fc4f8689c518d3e6762b5db9b9e6"
+content-hash = "2268c8352cd9ac4018a5cb0d8396a91d358dddc9fc5807cb27bd41608b08b81e"
