@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def load_sql():
+def loadsql():
     # Example Usage
     conn = sqlite3.connect(":memory:")
 
@@ -73,7 +73,10 @@ def random_mac():
 
 # Function to generate random IP addresses
 def random_ip():
-    return f"{random.randint(1, 255)}.{random.randint(1, 255)}.{random.randint(1, 255)}.{random.randint(1, 255)}"
+    return f"""{random.randint(1, 255)}
+    .{random.randint(1, 255)}
+    .{random.randint(1, 255)}
+    .{random.randint(1, 255)}"""
 
 
 # Generate synthetic data for the device table
@@ -89,7 +92,8 @@ def generate_device_data(
         "layer": ["L2" if i % 2 == 0 else "L3" for i in range(n)],
         "region": [random.choice(["US", "EU", "ASIA"]) for _ in range(n)],
         "uptime": [
-            f"{random.randint(0, 10)} days {random.randint(0, 23)}:{random.randint(0, 59)}:{random.randint(0, 59)}"
+            f"""{random.randint(0, 10)} days {random.randint(0, 23)}
+            :{random.randint(0, 59)}:{random.randint(0, 59)}"""
             for _ in range(n)
         ],
         "device_mac_address": [random_mac() for _ in range(n)],
@@ -130,7 +134,6 @@ def generate_interface_stats_data(conn, device_df, n=1000):
         )
     df = pd.DataFrame(interface_stats_data)
     df.to_sql("interfacestats", conn, index=False)
-    return
 
 
 # Generate synthetic data for the ts_flow table
@@ -176,14 +179,13 @@ def generate_flow_data(conn, device_df, n=1000):
         )
     df = pd.DataFrame(flow_data)
     df.to_sql("ts_flow", conn, index=False)
-    return
 
 
 def load_params(req):
     # Step 1: Convert the from_time natural language string to a timestamp if provided
     if req.from_time:
         # Use `dateparser` to parse natural language timeframes
-        logger.info(f"{'* ' * 50}\n\nCaptured from time: {req.from_time}\n\n")
+        logger.info("%s\n\nCaptured from time: %s\n\n", "* " * 50, req.from_time)
         parsed_time = parse(req.from_time, settings={"RELATIVE_BASE": datetime.now()})
         if not parsed_time:
             conv_time = convert_to_ago_format(req.from_time)
@@ -193,15 +195,16 @@ def load_params(req):
                 )
             else:
                 return {
-                    "error": "Invalid from_time format. Please provide a valid time description such as 'past 7 days' or 'since last month'."
+                    "error": """Invalid from_time format. Please provide a valid time description
+                    such as 'past 7 days' or 'since last month'."""
                 }
-        logger.info(f"\n\nConverted from time: {parsed_time}\n\n{'* ' * 50}\n\n")
+        logger.info("\n\nConverted from time: %s\n\n%s\n\n", parsed_time, "* " * 50)
         from_time = parsed_time
-        logger.info(f"Using parsed from_time: {from_time}")
+        logger.info("Using parsed from_time: %f", from_time)
     else:
         # If no from_time is provided, use a default value (e.g., the past 7 days)
         from_time = datetime.now() - timedelta(days=7)
-        logger.info(f"Using default from_time: {from_time}")
+        logger.info("Using default from_time: %f", from_time)
 
     # Step 2: Build the dynamic SQL query based on the optional filters
     filters = []
