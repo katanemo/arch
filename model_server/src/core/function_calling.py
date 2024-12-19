@@ -241,6 +241,7 @@ class ArchFunctionHandler(ArchBaseHandler):
 
         self.prefill_params = config.PREFILL_CONFIG["prefill_params"]
         self.prefill_prefix = config.PREFILL_CONFIG["prefill_prefix"]
+        self.prompt_prefilling = False
 
         # Predefine data types for verification. Only support Python for now.
         # [TODO] Extend the list of support data types

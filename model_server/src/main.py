@@ -82,7 +82,7 @@ async def function_calling(req: ChatMessage, res: Response):
                     "tokens_uncertainty": json.dumps(
                         handler_map["Arch-Function"].hallu_handler.token_probs_map
                     ),
-                    "prompt_prefilling": json.dumps(
+                    "prompt_prefilling": str(
                         handler_map["Arch-Function"].prompt_prefilling
                     ),
                 }
