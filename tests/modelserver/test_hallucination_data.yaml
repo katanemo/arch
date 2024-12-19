@@ -1,0 +1,461 @@
+test_cases:
+  - id: "[WEATHER AGENT] - single turn, single tool, prompt prefilling"
+    input:
+      messages:
+        - role: "user"
+          content: "what is the weather forecast for seattle?"
+      tools:
+        - id: "weather-112"
+          type: "function"
+          function:
+            name: "get_current_weather"
+            description: "Get current weather at a location."
+            parameters:
+              type: "object"
+              properties:
+                location:
+                  type: "str"
+                  description: "The location to get the weather for"
+                  format: "City, State"
+                days:
+                  type: "int"
+                  description: "the number of days for the request."
+              required: ["location", "days"]
+    expected:
+    - type: "metadata"
+      hallucination: false
+      prompt_prefilling: true
+
+  - id: "[WEATHER AGENT] - single turn, single tool, hallucination"
+    input:
+      messages:
+        - role: "user"
+          content: "what is the weather in Seattle in days?"
+      tools:
+        - id: "weather-112"
+          type: "function"
+          function:
+            name: "get_current_weather"
+            description: "Get current weather at a location."
+            parameters:
+              type: "object"
+              properties:
+                location:
+                  type: "str"
+                  description: "The location to get the weather for"
+                  format: "City, State"
+                days:
+                  type: "int"
+                  description: "the number of days for the request."
+              required: ["location", "days"]
+    expected:
+    - type: "metadata"
+      hallucination: true
+      prompt_prefilling: true
+
+  - id: "[WEATHER AGENT] - multi turn, single tool, all params passed"
+    input:
+      messages:
+        - role: "user"
+          content: "how is the weather in chicago for next 5 days?"
+        - role: "assistant"
+          content: "Can you tell me your location and how many days you want?"
+        - role: "user"
+          content: "Seattle"
+        - role: "assistant"
+          content: "Can you please provide me the days for the weather forecast?"
+        - role: "user"
+          content: "los angeles in 5 days"
+      tools:
+        - id: "weather-112"
+          type: "function"
+          function:
+            name: "get_current_weather"
+            description: "Get current weather at a location."
+            parameters:
+              type: "object"
+              properties:
+                location:
+                  type: "str"
+                  description: "The location to get the weather for"
+                  format: "City, State"
+                days:
+                  type: "int"
+                  description: "the number of days for the request."
+              required: ["location", "days"]
+    expected:
+    - type: "metadata"
+      hallucination: true
+      prompt_prefilling: true
+
+
+  - id: "[WEATHER AGENT] - multi turn, single tool, clarification"
+    input:
+      messages:
+        - role: "user"
+          content: "how is the weather in chicago for next 5 days?"
+        - role: "assistant"
+          content: "Can you tell me your location and how many days you want?"
+        - role: "user"
+          content: "Seattle"
+        - role: "assistant"
+          content: "Can you please provide me the days for the weather forecast?"
+        - role: "user"
+          content: "Sorry, the location is actually los angeles in 5 days"
+      tools:
+        - id: "weather-112"
+          type: "function"
+          function:
+            name: "get_current_weather"
+            description: "Get current weather at a location."
+            parameters:
+              type: "object"
+              properties:
+                location:
+                  type: "str"
+                  description: "The location to get the weather for"
+                  format: "City, State"
+                days:
+                  type: "int"
+                  description: "the number of days for the request."
+              required: ["location", "days"]
+    expected:
+    - type: "metadata"
+      hallucination: false
+      prompt_prefilling: true
+
+  # - id: "[WEATHER AGENT] - multi turn, single tool, infer param from context 2nd try"
+  #   input:
+  #     messages:
+  #       - role: "user"
+  #         content: "how is the weather in seattle for 2 days?"
+  #         tool_call_id: ""
+  #       - role: "assistant"
+  #         content: ""
+  #         tool_call_id: ""
+  #         tool_calls:
+  #           - id: "call_7134"
+  #             type: "function"
+  #             function:
+  #               name: "get_current_weather"
+  #               arguments:
+  #                 location: "Seattle, WA"
+  #                 days: 2
+  #       - role: "tool"
+  #         content: "{\"location\":\"Seattle, WA\",\"temperature\":[{\"date\":\"2024-12-19\",\"temperature\":{\"min\":74,\"max\":90},\"units\":\"Farenheit\",\"query_time\":\"2024-12-19 00:14:35.853372+00:00\"},{\"date\":\"2024-12-20\",\"temperature\":{\"min\":79,\"max\":88},\"units\":\"Farenheit\",\"query_time\":\"2024-12-19 00:14:35.853402+00:00\"}],\"units\":\"Farenheit\"}"
+  #         tool_call_id: ""
+  #       - role: "assistant"
+  #         content: "The weather in Seattle for the next two days is as follows:\n\n- **December 19, 2024**: The temperature will range from a minimum of 74°F to a maximum of 90°F.\n- **December 20, 2024**: The temperature will range from a minimum of 79°F to a maximum of 88°F.\n\nIt seems to be quite warm for Seattle during these dates!"
+  #         tool_call_id: ""
+  #       - role: "user"
+  #         content: "what about weather in chicago?"
+  #         tool_call_id: ""
+  #     tools:
+  #       - type: "function"
+  #         function:
+  #           name: "get_current_weather"
+  #           description: "Get current weather at a location."
+  #           parameters:
+  #             properties:
+  #               days:
+  #                 type: "int"
+  #                 description: "the number of days for the request"
+  #               location:
+  #                 type: "str"
+  #                 description: "The location to get the weather for"
+  #                 format: "city, state"
+  #             required: ["days", "location"]
+  #       - type: "function"
+  #         function:
+  #           name: "default_target"
+  #           description: "This is the default target for all unmatched prompts."
+  #           parameters:
+  #             properties: {}
+  #   expected:
+  #   - type: "function"
+  #     function:
+  #       name: "get_current_weather"
+  #       arguments:
+  #         location: "Chicago, IL"
+  #         days: 2
+  # - id: "[HR AGENT] - single turn, single tool, all parameters, enum"
+  #   input:
+  #     messages:
+  #       - role: "user"
+  #         content: "Can you show the workforce data for agency staff in 3 days"
+  #       - role: "assistant"
+  #         content: "Of course, I can help with that. However, I need the region and staffing type to provide the workforce data. Could you please provide that information?"
+  #       - role: "user"
+  #         content: "americaz"
+  #     tools:
+  #       - id: "hr-112"
+  #         type: "function"
+  #         function:
+  #           name: "get_hr_data"
+  #           description: "Get workforce data like headcount and satisfacton levels by region and staffing type."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               staffing_type:
+  #                 type: "str"
+  #                 description: "Staffing type of employees"
+  #               region:
+  #                 type: "str"
+  #                 description: "Geographical region for which you want workforce data."
+  #                 enum: ["americas", "emea", "apac"]
+  #               point_in_time:
+  #                 type: "str"
+  #                 description: "the point in time for which to retrieve data."
+  #                 default: "1"
+  #             required: ["staffing_type", "region"]
+  #   expected:
+  #   - type: "function"
+  #     function:
+  #       name: "get_hr_data"
+  #       arguments:
+  #         region: "americas"
+  #         staffing_type: "agency"
+  #         point_in_time : "3"
+  # - id: "[INSURANCE AGENT] - single turn, multi tool, all parameters"
+  #   input:
+  #     messages:
+  #       - role: "user"
+  #         content: " i want to start a car insurance policy with 500 deductible and update deductible my boat insurance policy with id boawd123 to 1000"
+  #     tools:
+  #       - type: "function"
+  #         function:
+  #           name: "policy_qa"
+  #           description: "Handle general Q/A related to insurance."
+  #           parameters:
+  #             type: "object"
+  #             properties: {}
+  #             required: []
+  #       - type: "function"
+  #         function:
+  #           name: "get_policy_coverage"
+  #           description: "Retrieve the coverage details for an insurance policy."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_type:
+  #                 type: "str"
+  #                 description: "The type of insurance policy."
+  #             required: ["policy_type"]
+  #       - type: "function"
+  #         function:
+  #           name: "initiate_policy"
+  #           description: "Start a policy coverage for an insurance policy."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_type:
+  #                 type: "str"
+  #                 description: "The type of insurance policy."
+  #               deductible:
+  #                 type: "float"
+  #                 description: "The deductible amount set for the policy."
+  #             required: ["policy_type", "deductible"]
+  #       - type: "function"
+  #         function:
+  #           name: "update_claim"
+  #           description: "Update the notes on the claim."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               claim_id:
+  #                 type: "str"
+  #                 description: "The claim number."
+  #               notes:
+  #                 type: "str"
+  #                 description: "Notes about the claim number for your adjustor to see."
+  #             required: ["claim_id"]
+  #       - type: "function"
+  #         function:
+  #           name: "update_deductible"
+  #           description: "Update the deductible amount for a specific insurance policy coverage."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_id:
+  #                 type: "str"
+  #                 description: "The ID of the insurance policy."
+  #               deductible:
+  #                 type: "float"
+  #                 description: "The deductible amount set for the policy."
+  #             required: ["policy_id", "deductible"]
+  #   expected:
+  #   - type: "function"
+  #     function:
+  #       name: "initiate_policy"
+  #       arguments:
+  #         policy_type: "car"
+  #         deductible: 500
+  #   - type: "function"
+  #     function:
+  #       name: "update_deductible"
+  #       arguments:
+  #         policy_id: "boawd123"
+  #         deductible: 1000
+  # - id: "[INSURANCE AGENT] - multi turn, multi tool, all parameters"
+  #   input:
+  #     messages:
+  #       - role: "user"
+  #         content: "hi what can you do?"
+  #       - role: "assistant"
+  #         content: "Certainly! I'm here to assist you with various questions and tasks. Whether it's answering specific questions, providing information, or helping with something else, feel free to let me know how I can assist you."
+  #       - role: "user"
+  #         content: "i want to start a new insurance policy"
+  #       - role: "assistant"
+  #         content: "Certainly! To start a new insurance policy, I'll need the type of insurance policy you're interested in and the deductible amount you'd like to set for that policy. Could you please provide this information?"
+  #       - role: "user"
+  #         content: "car insurance, 500. Also, please get me the coverage details for a house insurance"
+  #     tools:
+  #       - type: "function"
+  #         function:
+  #           name: "policy_qa"
+  #           description: "Handle general Q/A related to insurance."
+  #           parameters:
+  #             type: "object"
+  #             properties: {}
+  #             required: []
+  #       - type: "function"
+  #         function:
+  #           name: "get_policy_coverage"
+  #           description: "Retrieve the coverage details for an insurance policy."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_type:
+  #                 type: "str"
+  #                 description: "The type of insurance policy."
+  #             required: ["policy_type"]
+  #       - id: "initiate-policy"
+  #         type: "function"
+  #         function:
+  #           name: "initiate_policy"
+  #           description: "Start a policy coverage for an insurance policy."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_type:
+  #                 type: "str"
+  #                 description: "The type of insurance policy."
+  #               deductible:
+  #                 type: "float"
+  #                 description: "The deductible amount set for the policy."
+  #             required: ["policy_type", "deductible"]
+  #       - type: "function"
+  #         function:
+  #           name: "update_claim"
+  #           description: "Update the notes on the claim."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               claim_id:
+  #                 type: "str"
+  #                 description: "The claim number."
+  #               notes:
+  #                 type: "str"
+  #                 description: "Notes about the claim number for your adjustor to see."
+  #             required: ["claim_id"]
+  #       - type: "function"
+  #         function:
+  #           name: "update_deductible"
+  #           description: "Update the deductible amount for a specific insurance policy coverage."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_id:
+  #                 type: "str"
+  #                 description: "The ID of the insurance policy."
+  #               deductible:
+  #                 type: "float"
+  #                 description: "The deductible amount set for the policy."
+  #             required: ["policy_id", "deductible"]
+  #   expected:
+  #   - type: "function"
+  #     function:
+  #       name: "initiate_policy"
+  #       arguments:
+  #         policy_type: "car insurance"
+  #         deductible: 500
+  #   - type: "function"
+  #     function:
+  #       name: "get_policy_coverage"
+  #       arguments:
+  #         policy_type: "house insurance"
+
+  # - id: "[INSURANCE AGENT] - single turn, multi tool, all parameters"
+  #   input:
+  #     messages:
+  #       - role: "user"
+  #         content: " i want to start a car insurance policy with 500 deductible"
+  #     tools:
+  #       - type: "function"
+  #         function:
+  #           name: "policy_qa"
+  #           description: "Handle general Q/A related to insurance."
+  #           parameters:
+  #             type: "object"
+  #             properties: {}
+  #             required: []
+  #       - type: "function"
+  #         function:
+  #           name: "get_policy_coverage"
+  #           description: "Retrieve the coverage details for an insurance policy."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_type:
+  #                 type: "str"
+  #                 description: "The type of insurance policy."
+  #             required: ["policy_type"]
+  #       - type: "function"
+  #         function:
+  #           name: "initiate_policy"
+  #           description: "Start a policy coverage for an insurance policy."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_type:
+  #                 type: "str"
+  #                 description: "The type of insurance policy."
+  #               deductible:
+  #                 type: "float"
+  #                 description: "The deductible amount set for the policy."
+  #             required: ["policy_type", "deductible"]
+  #       - type: "function"
+  #         function:
+  #           name: "update_claim"
+  #           description: "Update the notes on the claim."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               claim_id:
+  #                 type: "str"
+  #                 description: "The claim number."
+  #               notes:
+  #                 type: "str"
+  #                 description: "Notes about the claim number for your adjustor to see."
+  #             required: ["claim_id"]
+  #       - type: "function"
+  #         function:
+  #           name: "update_deductible"
+  #           description: "Update the deductible amount for a specific insurance policy coverage."
+  #           parameters:
+  #             type: "object"
+  #             properties:
+  #               policy_id:
+  #                 type: "str"
+  #                 description: "The ID of the insurance policy."
+  #               deductible:
+  #                 type: "float"
+  #                 description: "The deductible amount set for the policy."
+  #             required: ["policy_id", "deductible"]
+  #   expected:
+  #   - type: "function"
+  #     function:
+  #       name: "initiate_policy"
+  #       arguments:
+  #         policy_type: "car"
+  #         deductible: 500

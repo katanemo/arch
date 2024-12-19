@@ -74,6 +74,7 @@ class ArchIntentHandler(ArchBaseHandler):
         )
 
         self.extra_instruction = config.EXTRA_INSTRUCTION
+        self.prompt_prefilling = False
 
     @override
     def _convert_tools(self, tools: List[Dict[str, Any]]) -> str:
@@ -481,7 +482,7 @@ class ArchFunctionHandler(ArchBaseHandler):
                 **self.prefill_params,
             },
         )
-
+        self.prompt_prefilling = True
         return prefill_response
 
     def _check_length_and_pop_messages(self, messages, max_tokens=4096):

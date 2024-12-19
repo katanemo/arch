@@ -14,7 +14,7 @@ MODEL_SERVER_ENDPOINT = os.getenv(
 )
 
 # Load test data from YAML file
-with open("test_success_data.yaml", "r") as file:
+with open("test_hallucination_data.yaml", "r") as file:
     test_data_yaml = yaml.safe_load(file)
 
 
@@ -36,18 +36,6 @@ def test_model_server(test_data):
     assert response.headers["content-type"] == "application/json"
     response_json = response.json()
     assert response_json
-    choices = response_json.get("choices", [])
-    assert len(choices) == 1
-    choice = choices[0]
-    assert "message" in choice
-    message = choice["message"]
-    assert "tool_calls" in message
-    tool_calls = message["tool_calls"]
-    assert len(tool_calls) == len(expected)
-
-    for tool_call, expected_tool_call in zip(tool_calls, expected):
-        assert "id" in tool_call
-        del tool_call["id"]
-        # ensure that the tool call matches the expected tool call
-        diff = DeepDiff(tool_call, expected_tool_call, ignore_string_case=True)
-        assert not diff
+    metadata = response_json.get("metadata", [])
+    assert metadata["hallucination"] == expected[0]["hallucination"]
+    assert metadata["prompt_prefilling"] == expected[0]["prompt_prefilling"]
