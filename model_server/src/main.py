@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 
@@ -12,6 +13,12 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.resources import Resource
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 resource = Resource.create(
     {
@@ -102,6 +109,7 @@ async def function_calling(req: ChatMessage, res: Response):
     except Exception as e:
         # [TODO] Review: update how to collect debugging outputs
         # logger.error(f"Error in chat_completion from `Arch-Intent`: {e}")
+        logger.error(f"Error in chat_completion /function_calling: {e}")
         res.status_code = 500
         return {"error": f"[Arch-Intent] - {e}"}
 
