@@ -21,7 +21,6 @@ psutil = "6.0.0"
 pandas = "*"
 dateparser = "*"
 openai = "1.50.2"
-tf-keras = "*"
 httpx = "0.27.2" # https://community.openai.com/t/typeerror-asyncclient-init-got-an-unexpected-keyword-argument-proxies/1040287
 pytest-asyncio = "*"
 pytest = "*"
