@@ -1,34 +1,26 @@
 [tool.poetry]
 name = "archgw_modelserver"
-version = "0.1.6"
+version = "0.1.7"
 description = "A model server for serving models"
-authors = ["Katanemo Labs, Inc <archgw@katanemo.com>"]
+authors = ["Katanemo Labs, Inc <info@katanemo.com>"]
 license = "Apache 2.0"
 readme = "README.md"
 packages = [
-    { include = "app" }, # Include the 'app' package
-    { include = "app/function_calling" }, # Include the 'app' package
+    { include = "src" }
 ]
-include = ["app/*.yaml"]
 
 [tool.poetry.dependencies]
-python = ">=3.12"
+python = "^3.12"
 fastapi = "0.115.0"
-sentence-transformers = "3.1.1"
 torch = "2.4.1"
 uvicorn = "0.31.0"
 transformers = "*"
 pyyaml = "6.0.2"
 accelerate = "*"
 psutil = "6.0.0"
-optimum-intel = "*"
-openvino = "2024.4.0"
 pandas = "*"
 dateparser = "*"
 openai = "1.50.2"
-tf-keras = "*"
-onnx = "1.17.0"
-onnxruntime = "1.19.2"
 httpx = "0.27.2" # https://community.openai.com/t/typeerror-asyncclient-init-got-an-unexpected-keyword-argument-proxies/1040287
 pytest-asyncio = "*"
 pytest = "*"
@@ -36,10 +28,20 @@ opentelemetry-api = "^1.28.0"
 opentelemetry-sdk = "^1.28.0"
 opentelemetry-exporter-otlp = "^1.28.0"
 opentelemetry-instrumentation-fastapi = "^0.49b0"
+overrides = "^7.7.0"
+pytest-retry = "^1.6.3"
+pytest-httpserver = "^1.1.0"
 
 [tool.poetry.scripts]
-archgw_modelserver = "app.cli:run_server"
+archgw_modelserver = "src.cli:run_server"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+python_files = ["test*.py"]
+addopts = ["-v", "-s"]
+retries = 2
+retry_delay = 0.5
+cumulative_timing = false

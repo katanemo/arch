@@ -8,8 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest-m
-    # runs-on: gh-large-150gb-ssd
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -31,4 +30,4 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
           python -mvenv venv
-          source venv/bin/activate && cd e2e_tests && bash run_e2e_tests.sh
+          source venv/bin/activate && cd tests/e2e && bash run_e2e_tests.sh

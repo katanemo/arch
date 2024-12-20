@@ -87,7 +87,7 @@ For more details on how you can build agentic applications using Arch, see our f
 .. Note::
    `Arch-Function <https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68>`_ is a collection of dedicated agentic models engineered in Arch to extract information from a (set of) prompts and executes necessary backend API calls.
    This allows for efficient handling of agentic tasks, such as scheduling data retrieval, by dynamically interacting with backend services.
-   Arch-Function achieves state-of-the-art performance, comparable with frontier models like Claude Sonnet 3.5 ang GPT-4, while being 100x cheaper ($0.05M/token hosted) and 10x faster (p50 latencies of 200ms).
+   Arch-Function achieves state-of-the-art performance, comparable with frontier models like Claude Sonnet 3.5 ang GPT-4, while being 44x cheaper ($0.10M/token hosted) and 10x faster (p50 latencies of 200ms).
 
 Prompting LLMs
 --------------

@@ -34,7 +34,7 @@ prompt_targets:
     default: true
 
   - name: get_policy_coverage
-    description: Retrieve the coverage details for a given policy type (car, boat, house, motorcycle).
+    description: Retrieve the coverage details for an insurance policy.
     endpoint:
       name: app_server
       path: /policy/coverage
@@ -42,7 +42,7 @@ prompt_targets:
     parameters:
     - name: policy_type
       type: str
-      description: The type of policy, option - car, boat, house, motorcycle.
+      description: The type of policy
       default: car
       required: true
 
@@ -51,11 +51,11 @@ prompt_targets:
       name: app_server
       path: /policy/initiate
       http_method: POST
-    description: Start a policy coverage for car, boat, motorcycle or house.
+    description: Start a policy coverage for an insurance policy
     parameters:
     - name: policy_type
       type: str
-      description: The type of policy, option - car, boat, house, motorcycle.
+      description: The type of policy
       default: car
       required: true
     - name: deductible
@@ -84,11 +84,11 @@ prompt_targets:
       name: app_server
       path: /policy/deductible
       http_method: POST
-    description: Update the deductible amount for a specific policy coverage.
+    description: Update the deductible amount for a specific insurance policy coverage.
     parameters:
     - name: policy_id
       type: str
-      description: The id of the policy
+      description: The id of the insurance policy
       required: true
     - name: deductible
       type: float

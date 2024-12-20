@@ -1,0 +1,15 @@
+services:
+  archgw:
+    image: katanemo/archgw:latest
+    ports:
+      - "10000:10000"
+      - "12000:12000"
+    volumes:
+      - ./arch_config.yaml:/app/arch_config.yaml
+      - /etc/ssl/cert.pem:/etc/ssl/cert.pem
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?error}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:?error}
+      - MODEL_SERVER_PORT=${MODEL_SERVER_PORT:-51001}

@@ -1,0 +1,58 @@
+name: e2e archgw tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest-m
+    defaults:
+      run:
+        working-directory: ./tests/archgw
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: build arch docker image
+        run: |
+          cd ../../ && docker build  -f arch/Dockerfile . -t katanemo/archgw
+
+      - name: start archgw
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          docker compose up | tee &> archgw.logs &
+
+      - name: wait for archgw to be healthy
+        run: |
+          source common.sh && wait_for_healthz http://localhost:10000/healthz
+
+      - name: install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          export PATH="$HOME/.local/bin:$PATH"
+
+      - name: install test dependencies
+        run: |
+          poetry install
+
+      - name: run archgw tests
+        run: |
+          poetry run pytest || tail -100 archgw.logs
+
+      - name: stop archgw docker container
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          docker compose down

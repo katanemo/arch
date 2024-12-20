@@ -45,7 +45,7 @@ RUN if command -v nvcc >/dev/null 2>&1; then \
 COPY . /src
 
 # Specify list of models that will go into the image as a comma separated list
-ENV MODELS="katanemo/bge-large-en-v1.5-onnx"
+ENV MODELS=""
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY /app /app
