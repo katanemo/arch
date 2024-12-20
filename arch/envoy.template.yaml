@@ -1,6 +1,32 @@
 admin:
   address:
     socket_address: { address: 0.0.0.0, port_value: 9901 }
+
+stats_config:
+  histogram_bucket_settings:
+    match:
+      exact: "wasmcustom.time_to_first_token"
+    buckets:
+      - 100
+      - 500
+      - 800
+      - 1000
+      - 1200
+      - 1400
+      - 1600
+      - 1800
+      - 2000
+      - 2200
+      - 2400
+      - 3000
+      - 3500
+      - 4000
+      - 4500
+      - 5000
+      - 6000
+      - 10000
+      - 60000
+      - 180000
 static_resources:
   listeners:
     - name: arch_listener_http
