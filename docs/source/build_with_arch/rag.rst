@@ -1,10 +1,18 @@
 .. _arch_rag_guide:
 
-RAG Application
-===============
+RAG Apps
+========
 
 The following section describes how Arch can help you build faster, smarter and more accurate
-Retrieval-Augmented Generation (RAG) applications.
+Retrieval-Augmented Generation (RAG) applications, including fast and accurate RAG in multi-turn
+converational scenarios.
+
+What is Retrieval-Augmented Generation (RAG)?
+---------------------------------------------
+RAG applications combine retrieval-based methods with generative AI models to provide more accurate,
+contextually relevant, and reliable outputs. These applications leverage external data sources to augment
+the capabilities of Large Language Models (LLMs), enabling them to retrieve and integrate specific information
+rather than relying solely on the LLM's internal knowledge.
 
 Parameter Extraction for RAG
 ----------------------------
@@ -33,60 +41,12 @@ Once the prompt targets are configured as above, handling those parameters is
     :caption: Parameter handling with Flask
     :linenos:
 
-[Coming Soon] `Drift Detection via Arch Intent-Markers <https://github.com/orgs/katanemo/projects/1/views/1?pane=issue&itemId=82697909>`_
------------------------------------------------------------------------------------------------------------------------------------------
-Developers struggle to efficiently handle ``follow-up`` or ``clarification`` questions. Specifically, when users ask for
-changes or additions to previous responses their AI applications often generate entirely new responses instead of adjusting
-previous ones. Arch offers ``intent tracking`` as a feature so that developers can know when the user has shifted away from a
-previous intent so that they can dramatically improve retrieval accuracy, lower overall token cost and  improve the speed of
-their responses back to users.
+Multi-Turn RAG (Follow-up Questions)
+-------------------------------------
+Developers often `struggle <https://www.reddit.com/r/LocalLLaMA/comments/18mqwg6/best_practice_for_rag_with_followup_chat/>`_ to efficiently handle
+``follow-up`` or ``clarification`` questions. Specifically, when users ask for changes or additions to previous responses, it requires developers to
+re-write prompts using LLMs with precise prompt engineering techniques. This process is slow, manual, error prone and adds signifcant latency to the
+user experience. Arch
 
-Arch uses its built-in lightweight NLI and embedding models to know if the user has steered away from an active intent.
-Arch's intent-drift detection mechanism is based on its :ref:`prompt target <prompt_target>` primtive. Arch tries to match an incoming
-prompt to one of the prompt_targets configured in the gateway. Once it detects that the user has moved away from an active
-active intent, Arch adds the ``x-arch-intent-marker`` headers to the request before sending it your application servers.
-
-.. literalinclude:: includes/rag/intent_detection.py
-    :language: python
-    :linenos:
-    :lines: 101-157
-    :emphasize-lines: 14-25
-    :caption: Intent Detection Example
-
-
-.. Note::
-
-   Arch is (mostly) stateless so that it can scale in an embarrassingly parrallel fashion. So, while Arch offers
-   intent-drift detetction, you still have to maintain converational state with intent drift as metadata. The
-   following code snippets show how easily you can build and enrich conversational history with Langchain (in Python),
-   so that you can use the most relevant prompts for your retrieval and for prompting upstream LLMs.
-
-
-Step 1: Define ConversationBufferMemory
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. literalinclude:: includes/rag/intent_detection.py
-    :language: python
-    :linenos:
-    :lines: 1-21
-
-Step 2: Update ConversationBufferMemory with Intents
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. literalinclude:: includes/rag/intent_detection.py
-    :language: python
-    :linenos:
-    :lines: 24-64
-
-Step 3: Get Messages based on latest drift
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. literalinclude:: includes/rag/intent_detection.py
-    :language: python
-    :linenos:
-    :lines: 67-80
-
-
-You can used the last set of messages that match to an intent to prompt an LLM, use it with an vector-DB for
-improved retrieval, etc. With Arch and a few lines of code, you can improve the retrieval accuracy, lower overall
-token cost and dramatically improve the speed of their responses back to users.
+Arch is highly capable of accurately detecting and processing prompts in a multi-turn scenarios so that you can buil fast and accurate RAG apps in
+minutes. For additional details on how to build multi-turn RAG applications please refer to our :ref:`multi-turn <arch_multi_turn_guide>` docs.

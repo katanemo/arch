@@ -1,11 +1,11 @@
-Configuration Reference
-============================
+.. _configuration_refernce:
 
-The following is a complete reference of the ``prompt-conifg.yml`` that controls the behavior of a single instance of
-the Arch gateway. We've kept things simple (less than 80 lines) and held off on exposing additional functionality (for
-e.g. suppporting push observability stats, managing prompt-endpoints as virtual cluster, exposing more load balancing
-options, etc). Our belief that the simple things, should be simple. So we offert good defaults for developers, so
-that they can spend more of their time in building features unique to their AI experience.
+Configuration Reference
+=======================
+
+The following is a complete reference of the ``arch_conifg.yml`` that controls the behavior of a single instance of
+the Arch gateway. This where you enable capabilities like routing to upstream LLm providers, defining prompt_targets
+where prompts get routed to, apply guardrails, and enable critical agent observability features.
 
 .. literalinclude:: includes/arch_config_full_reference.yaml
     :language: yaml

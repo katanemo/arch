@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydantic
+openai
+typing
+gradio==5.3.0

@@ -1,18 +1,18 @@
 .. _arch_agent_guide:
 
-Agentic Workflow
-==============================
+Agentic Apps
+=============
 
-Arch helps you easily personalize your applications by calling application-specific (API) functions
-via user prompts. This involves any predefined functions or APIs you want to expose to users to perform tasks,
-gather information, or manipulate data. This capability is generally referred to as :ref:`function calling <function_calling>`, where
-you have the flexibility to support “agentic” apps tailored to specific use cases - from updating insurance
-claims to creating ad campaigns - via prompts.
+Arch helps you build personalized agentic applications by calling application-specific (API) functions via user prompts.
+This involves any predefined functions or APIs you want to expose to users to perform tasks, gather information,
+or manipulate data. This capability is generally referred to as :ref:`function calling <function_calling>`, where
+you can support “agentic” apps tailored to specific use cases - from updating insurance claims to creating ad campaigns - via prompts.
 
-Arch analyzes prompts, extracts critical information from prompts, engages in lightweight conversation with
-the user to gather any missing parameters and makes API calls so that you can focus on writing business logic.
-Arch does this via its purpose-built `Arch-Function <https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68>`_ - the fastest (200ms p90 - 10x faser than GPT-4o)
-and cheapest (100x than GPT-4o) function calling LLM that matches performance with frontier models.
+Arch analyzes prompts, extracts critical information from prompts, engages in lightweight conversation with the user to
+gather any missing parameters and makes API calls so that you can focus on writing business logic. Arch does this via its
+purpose-built `Arch-Function <https://huggingface.co/collections/katanemo/arch-function-66f209a693ea8df14317ad68>`_ -
+the fastest (200ms p50 - 12x faser than GPT-4o) and cheapest (44x than GPT-4o) function calling LLM that matches or outperforms
+frontier LLMs.
 
 .. image:: includes/agent/function-calling-flow.jpg
    :width: 100%
