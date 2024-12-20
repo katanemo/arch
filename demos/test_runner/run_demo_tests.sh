@@ -1,5 +1,5 @@
 #!/bin/bash
-set -u
+set -eu
 
 for demo in currency_exchange hr_agent
 do
