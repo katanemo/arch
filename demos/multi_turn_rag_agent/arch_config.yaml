@@ -19,7 +19,9 @@ llm_providers:
     default: true
 
 system_prompt: |
-  You are a helpful assistant and can offer information about energy sources. You will get a JSON object with energy_source and consideration fields. Focus on answering using those fields
+  You are a helpful assistant and can offer information about energy sources.
+  You will get a JSON object with energy_source and consideration fields. Focus on answering the querstion using those fields.
+  Keep your responses to just three main points to make it easy for the reader to digest the information
 
 prompt_targets:
   - name: get_info_for_energy_source
@@ -43,7 +45,7 @@ prompt_targets:
     default: true
     description: This is the default target for all unmatched prompts.
     endpoint:
-      name: rag_energy_source
+      name: rag_energy_source_agent
       path: /default_target
       http_method: POST
     system_prompt: |

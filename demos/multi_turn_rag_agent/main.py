@@ -5,7 +5,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from openai import OpenAI
-from common import create_gradio_app
 
 app = FastAPI()
 
@@ -38,19 +37,6 @@ def get_workforce(request: EnergySourceRequest):
     }
     return response
 
-
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
-client = OpenAI(
-    api_key="--",
-    base_url=CHAT_COMPLETION_ENDPOINT,
-)
-
-demo_description = """This demo showcases how the **Arch** can be used to build a multi-turn RAG agent that is able
-to summarize details about an energy source and easily handle follow-up questions like getting considerations for an energy source ]"""
-
-gr.mount_gradio_app(
-    app, create_gradio_app(demo_description, client), path="/agent/chat"
-)
 
 if __name__ == "__main__":
     app.run(debug=True)

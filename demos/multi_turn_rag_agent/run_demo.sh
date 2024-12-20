@@ -31,7 +31,7 @@ start_demo() {
 stop_demo() {
   # Step 1: Stop Docker Compose services
   echo "Stopping HR Agent using Docker Compose..."
-  docker compose down
+  docker compose down -v
 
   # Step 2: Stop Arch
   echo "Stopping Arch..."

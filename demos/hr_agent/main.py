@@ -11,14 +11,9 @@ from typing import List, Optional, Tuple
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from openai import OpenAI
-from common import create_gradio_app
 
 app = FastAPI()
 workforce_data_df = None
-demo_description = """This demo showcases how the **Arch** can be used to build an
-HR agent to manage workforce-related inquiries, workforce planning, and communication via Slack.
-It intelligently routes incoming prompts to the correct targets, providing concise and useful responses
-tailored for HR and workforce decision-making. """
 
 with open("workforce_data.json") as file:
     workforce_data = json.load(file)
@@ -94,16 +89,6 @@ def get_workforce(request: WorkforceRequest):
     }
     return response
 
-
-CHAT_COMPLETION_ENDPOINT = os.getenv("CHAT_COMPLETION_ENDPOINT")
-client = OpenAI(
-    api_key="--",
-    base_url=CHAT_COMPLETION_ENDPOINT,
-)
-
-gr.mount_gradio_app(
-    app, create_gradio_app(demo_description, client), path="/agent/chat"
-)
 
 if __name__ == "__main__":
     app.run(debug=True)
