@@ -10,7 +10,23 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "what is the weather in Seattle in days?"
+      "content": "how is the weather for next 5 days?"
+    },
+    {
+      "role": "assistant",
+      "content": "Can you tell me your location and how many days you want?"
+    },
+    {
+      "role": "user",
+      "content": "Seattle"
+    },
+    {
+      "role": "assistant",
+      "content": "Can you please provide me the days for the weather forecast?"
+    },
+    {
+      "role": "user",
+      "content": "Sorry, the location is actually los angeles in 5 days"
     }
   ],
   "tools": [
@@ -296,23 +312,7 @@ Content-Type: application/json
   "messages": [
     {
       "role": "user",
-      "content": "hi what can you do?"
-    },
-    {
-      "role": "assistant",
-      "content": "Certainly! I'm here to assist you with various questions and tasks. Whether it's answering specific questions, providing information, or helping with something else, feel free to let me know how I can assist you."
-    },
-    {
-      "role": "user",
-      "content": "i want to start a new insurance policy"
-    },
-    {
-      "role": "assistant",
-      "content": "Certainly! To start a new insurance policy, I'll need the type of insurance policy you're interested in and the deductible amount you'd like to set for that policy. Could you please provide this information?"
-    },
-    {
-      "role": "user",
-      "content": "car insurance, 500. Also, please get me the coverage details for a house insurance"
+      "content": "i want to start a car insurance policy with 500 deductible"
     }
   ],
   "tools": [

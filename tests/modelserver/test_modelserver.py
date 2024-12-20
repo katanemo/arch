@@ -37,7 +37,6 @@ def test_model_server(test_data):
 
     response = requests.post(MODEL_SERVER_ENDPOINT, json=input)
     assert response.status_code == 200
-    print(json.dumps(response.json()))
     # ensure that response is json
     assert response.headers["content-type"] == "application/json"
     response_json = response.json()
