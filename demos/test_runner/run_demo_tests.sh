@@ -6,13 +6,13 @@ do
   echo "******************************************"
   echo "Running tests for $demo ..."
   echo "****************************************"
-  pushd ../$demo
+  cd ../$demo
   archgw up arch_config.yaml
   docker compose up -d
-  popd
+  cd ../test_runner
   TEST_DATA=../$demo/test_data.yaml poetry run pytest
-  pushd ../$demo
+  cd ../$demo
   docker compose down -v
   archgw down
-  popd
+  cd ../test_runner
 done
