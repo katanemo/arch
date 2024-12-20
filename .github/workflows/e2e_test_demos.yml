@@ -34,9 +34,9 @@ jobs:
       - name: install model server, arch gateway and test dependencies
         run: |
           source venv/bin/activate
-          cd model_server/ && poetry install
-          cd ../arch/tools && poetry install
-          cd ../../demos/test_runner && poetry install
+          cd model_server/ && echo "installing model server" && poetry install
+          cd ../arch/tools && echo "installing archgw cli" && poetry install
+          cd ../../demos/test_runner && echo "installing test dependencies" && poetry install
 
       - name: run demo tests
         env:
