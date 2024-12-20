@@ -1,0 +1,14 @@
+test_cases:
+  - id: get workforce data
+    input:
+      messages:
+        - role: user
+          content: what is workforce data for asia for fte employees
+    expected_tools:
+      - type: function
+        function:
+          name: workforce
+          arguments:
+            staffing_type: fte
+            region: asia
+    expected_output_contains: asia

@@ -1,0 +1,47 @@
+name: e2e demo tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest-m
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: build arch docker image
+        run: |
+          docker build  -f arch/Dockerfile . -t katanemo/archgw
+
+      - name: install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: setup python venv
+        run: |
+          python -m venv venv
+
+      - name: install model server, arch gateway and test dependencies
+        run: |
+          source venv/bin/activate
+          cd model_server/ && poetry install
+          cd ../arch/tools && poetry install
+          cd ../../demos/test_runner && poetry install
+
+      - name: run demo tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          source venv/bin/activate
+          sh run_demo_tests.sh
