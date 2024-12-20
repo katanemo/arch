@@ -250,16 +250,16 @@ static_resources:
                             timeout: 60s
                         {% endfor %}
 
-                        {% for _, cluster in arch_clusters.items() %}
+                        {% for cluster_name, cluster in arch_clusters.items() %}
                         - match:
                             prefix: "/"
                             headers:
                               - name: "x-arch-upstream"
                                 string_match:
-                                  exact: {{ cluster.name }}
+                                  exact: {{ cluster_name }}
                           route:
                             auto_host_rewrite: true
-                            cluster: {{ cluster.name }}
+                            cluster: {{ cluster_name }}
                             timeout: 60s
                         {% endfor %}
                 http_filters:
@@ -506,8 +506,8 @@ static_resources:
                       address: mistral_7b_instruct
                       port_value: 10001
                   hostname: "mistral_7b_instruct"
-{% for _, cluster in arch_clusters.items() %}
-    - name: {{ cluster.name }}
+{% for cluster_name, cluster in arch_clusters.items() %}
+    - name: {{ cluster_name }}
       {% if cluster.connect_timeout -%}
       connect_timeout: {{ cluster.connect_timeout }}
       {% else -%}
@@ -517,7 +517,7 @@ static_resources:
       dns_lookup_family: V4_ONLY
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: {{ cluster.name }}
+        cluster_name: {{ cluster_name }}
         endpoints:
           - lb_endpoints:
               - endpoint:

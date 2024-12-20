@@ -17,6 +17,8 @@ from cli.core import (
     start_arch,
     stop_arch,
     download_models_from_hf,
+    stream_access_logs,
+    stream_gateway_logs,
 )
 from cli.consts import (
     KATANEMO_DOCKERHUB_REPO,
@@ -273,9 +275,44 @@ def generate_prompt_targets(file):
     targets.generate_prompt_targets(file)
 
 
+@click.command()
+@click.option(
+    "--debug",
+    help="For detailed debug logs to trace calls from archgw <> model_server <> api_server, etc",
+    is_flag=True,
+)
+@click.option("--follow", help="Follow the logs", is_flag=True)
+def logs(debug, follow):
+    """Stream logs from access logs services."""
+
+    archgw_process = None
+    try:
+        if debug:
+            archgw_process = multiprocessing.Process(
+                target=stream_gateway_logs, args=(follow,)
+            )
+            archgw_process.start()
+
+        archgw_access_logs_process = multiprocessing.Process(
+            target=stream_access_logs, args=(follow,)
+        )
+        archgw_access_logs_process.start()
+        archgw_access_logs_process.join()
+
+        if archgw_process:
+            archgw_process.join()
+    except KeyboardInterrupt:
+        log.info("KeyboardInterrupt detected. Exiting.")
+        if archgw_access_logs_process.is_alive():
+            archgw_access_logs_process.terminate()
+        if archgw_process and archgw_process.is_alive():
+            archgw_process.terminate()
+
+
 main.add_command(up)
 main.add_command(down)
 main.add_command(build)
+main.add_command(logs)
 main.add_command(generate_prompt_targets)
 
 if __name__ == "__main__":

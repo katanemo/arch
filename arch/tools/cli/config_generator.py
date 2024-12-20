@@ -52,14 +52,11 @@ def validate_and_render_schema():
 
     # override the inferred clusters with the ones defined in the config
     for name, endpoint_details in endpoints.items():
-        if name in inferred_clusters:
-            inferred_clusters[name].update(endpoint_details)
-            endpoint = inferred_clusters[name]["endpoint"]
-            if len(endpoint.split(":")) > 1:
-                inferred_clusters[name]["endpoint"] = endpoint.split(":")[0]
-                inferred_clusters[name]["port"] = int(endpoint.split(":")[1])
-        else:
-            inferred_clusters[name] = endpoint_details
+        inferred_clusters[name] = endpoint_details
+        endpoint = inferred_clusters[name]["endpoint"]
+        if len(endpoint.split(":")) > 1:
+            inferred_clusters[name]["endpoint"] = endpoint.split(":")[0]
+            inferred_clusters[name]["port"] = int(endpoint.split(":")[1])
 
     print("defined clusters from arch_config.yaml: ", json.dumps(inferred_clusters))
 

@@ -57,6 +57,48 @@ def start_archgw_docker(client, arch_config_file, env):
     )
 
 
+def stream_gateway_logs(follow):
+    """
+    Stream logs from the arch gateway service.
+    """
+    log.info("Logs from arch gateway service.")
+
+    options = ["docker", "logs", "archgw"]
+    if follow:
+        options.append("-f")
+    try:
+        # Run `docker-compose logs` to stream logs from the gateway service
+        subprocess.run(
+            options,
+            check=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+    except subprocess.CalledProcessError as e:
+        log.info(f"Failed to stream logs: {str(e)}")
+
+
+def stream_access_logs(follow):
+    """
+    Get the archgw access logs
+    """
+    log_file_pattern_expanded = os.path.expanduser(ACCESS_LOG_FILES)
+    log_files = glob.glob(log_file_pattern_expanded)
+
+    stream_command = ["tail"]
+    if follow:
+        stream_command.append("-f")
+
+    stream_command.extend(log_files)
+    subprocess.run(
+        stream_command,
+        check=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
+
+
 def start_arch(arch_config_file, env, log_timeout=120, foreground=False):
     """
     Start Docker Compose in detached mode and stream logs until services are healthy.
