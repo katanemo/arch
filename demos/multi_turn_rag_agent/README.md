@@ -2,7 +2,7 @@
 
 This demo showcases how the **Arch** can be used to build accurate multi-turn RAG agent by just writing simple APIs.
 
-![Example of Multi-turn Interaction](multi-turn-example.png>)
+![Example of Multi-turn Interaction](mutli-turn-example.png)
 
 ### Energy Source Q/A
 Provides information about various energy sources and considerations.
