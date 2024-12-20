@@ -206,7 +206,39 @@ test_cases:
         arguments:
           location: "Chicago, IL"
           days: 5
-  - id: "[HR AGENT] - single turn, single tool, all parameters, enum"
+  - id: "[HR AGENT] - single turn, single tool, all parameters"
+    input:
+      messages:
+        - role: "user"
+          content: "Can you show the workforce data for agency staff in america?"
+      tools:
+        - type: "function"
+          function:
+            name: "get_hr_data"
+            description: "Get workforce data like headcount and satisfacton levels by region and staffing type."
+            parameters:
+              type: "object"
+              properties:
+                staffing_type:
+                  type: "str"
+                  description: "Staffing type of employees"
+                region:
+                  type: "str"
+                  description: "Geographical region for which you want workforce data."
+                  enum: ["america", "emea", "apac"]
+                point_in_time:
+                  type: "str"
+                  description: "the point in time for which to retrieve data."
+                  default: "1"
+              required: ["staffing_type", "region"]
+    expected:
+    - type: "function"
+      function:
+        name: "get_hr_data"
+        arguments:
+          region: "america"
+          staffing_type: "agency"
+  - id: "[HR AGENT] - multi turn, single tool, all parameters, enum"
     input:
       messages:
         - role: "user"
@@ -242,6 +274,48 @@ test_cases:
         arguments:
           region: "america"
           staffing_type: "agency"
+  - id: "[HR AGENT] - multi turn, multi tool, all parameters, enum"
+    input:
+      messages:
+        - role: "user"
+          content: "Can you show the workforce data for agency staff?"
+        - role: "assistant"
+          content: "Of course, I can help with that. However, I need the region and staffing type to provide the workforce data. Could you please provide that information?"
+        - role: "user"
+          content: "america. Also, please get the satisfaction levels for the full_time staff in emea"
+      tools:
+        - type: "function"
+          function:
+            name: "get_hr_data"
+            description: "Get workforce data like headcount and satisfacton levels by region and staffing type."
+            parameters:
+              type: "object"
+              properties:
+                staffing_type:
+                  type: "str"
+                  description: "Staffing type of employees"
+                region:
+                  type: "str"
+                  description: "Geographical region for which you want workforce data."
+                  enum: ["america", "emea", "apac"]
+                point_in_time:
+                  type: "str"
+                  description: "the point in time for which to retrieve data."
+                  default: "1"
+              required: ["staffing_type", "region"]
+    expected:
+    - type: "function"
+      function:
+        name: "get_hr_data"
+        arguments:
+          region: "america"
+          staffing_type: "agency"
+    - type: "function"
+      function:
+        name: "get_hr_data"
+        arguments:
+          region: "emea"
+          staffing_type: "full_time"
   - id: "[INSURANCE AGENT] - single turn, multi tool, all parameters"
     input:
       messages:
