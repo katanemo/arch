@@ -6,13 +6,13 @@ Terminology
 A few definitions before we dive into the main architecture documentation. Also note, Arch borrows from Envoy's terminology
 to keep things consistent in logs and traces, and introduces and clarifies concepts are is relates to LLM applications.
 
-**Agent**: An application that uses LLMs to handle a wide-set of tasks from users via prompts. This could be as simple
+**Agent**: An application that uses LLMs to handle wide-ranging tasks from users via prompts. This could be as simple
 as retrieving or summarizing data from an API, or being able to trigger compleix actions like adjusting ad campaigns, or
-changing travel plans via user prompts.
+changing travel plans via prompts.
 
 **Arch Config**: Arch operates based on a configuration that controls the behavior of a single instance of the Arch gateway.
-This where you enable capabilities like routing, fast function calling (via prompt_targets), apply guardrails, and enable critical
-features like agent metrics and tracing. For the full configuration reference of `arch_config.yaml` see :ref:`here <configuration_refernce>`.
+This where you enable capabilities like LLM routing, fast function calling (via prompt_targets), applying guardrails, and enabling critical
+features like metrics and tracing. For the full configuration reference of `arch_config.yaml` see :ref:`here <configuration_refernce>`.
 
 **Downstream(Ingress)**: An downstream client (web application, etc.) connects to Arch, sends prompts, and receives responses.
 
