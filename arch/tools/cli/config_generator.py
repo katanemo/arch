@@ -1,3 +1,4 @@
+import json
 import os
 from jinja2 import Environment, FileSystemLoader
 import yaml
@@ -47,23 +48,11 @@ def validate_and_render_schema():
     config_schema_yaml = yaml.safe_load(arch_config_schema)
     inferred_clusters = {}
 
-    if "prompt_targets" in config_yaml:
-        for prompt_target in config_yaml["prompt_targets"]:
-            name = prompt_target.get("endpoint", {}).get("name", None)
-            if not name:
-                continue
-            if name not in inferred_clusters:
-                inferred_clusters[name] = {
-                    "name": name,
-                    "port": 80,  # default port
-                }
-
     endpoints = config_yaml.get("endpoints", {})
 
     # override the inferred clusters with the ones defined in the config
     for name, endpoint_details in endpoints.items():
         if name in inferred_clusters:
-            print("updating cluster", endpoint_details)
             inferred_clusters[name].update(endpoint_details)
             endpoint = inferred_clusters[name]["endpoint"]
             if len(endpoint.split(":")) > 1:
@@ -72,7 +61,17 @@ def validate_and_render_schema():
         else:
             inferred_clusters[name] = endpoint_details
 
-    print("updated clusters", inferred_clusters)
+    print("defined clusters from arch_config.yaml: ", json.dumps(inferred_clusters))
+
+    if "prompt_targets" in config_yaml:
+        for prompt_target in config_yaml["prompt_targets"]:
+            name = prompt_target.get("endpoint", {}).get("name", None)
+            if not name:
+                continue
+            if name not in inferred_clusters:
+                raise Exception(
+                    f"Unknown endpoint {name}, please add it in endpoints section in your arch_config.yaml file"
+                )
 
     arch_llm_providers = config_yaml["llm_providers"]
     arch_tracing = config_yaml.get("tracing", {})
