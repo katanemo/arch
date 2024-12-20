@@ -44,4 +44,4 @@ jobs:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
         run: |
           source venv/bin/activate
-          sh run_demo_tests.sh
+          cd demos/test_runner && sh run_demo_tests.sh
