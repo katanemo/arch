@@ -1,4 +1,4 @@
-# HR Agent Demo
+# Multi-Turn Agentic Demo (RAG)
 
 This demo showcases how the **Arch** can be used to build accurate multi-turn RAG agent by just writing simple APIs.
 
