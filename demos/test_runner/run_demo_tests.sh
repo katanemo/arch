@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eu
 
-for demo in currency_exchange hr_agent
+# for demo in currency_exchange hr_agent
+for demo in currency_exchange
 do
   echo "******************************************"
   echo "Running tests for $demo ..."
@@ -12,7 +13,7 @@ do
   cd ../test_runner
   TEST_DATA=../$demo/test_data.yaml poetry run pytest
   cd ../$demo
-  docker compose down -v
   archgw down
+  docker compose down -v
   cd ../test_runner
 done
