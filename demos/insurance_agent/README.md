@@ -48,11 +48,13 @@ The system can perform a variety of tasks, such as answering insurance-related q
 Arch gateway publishes stats endpoint at http://localhost:19901/stats. In this demo we are using prometheus to pull stats from arch and we are using grafana to visalize the stats in dashboard. To see grafana dashboard follow instructions below,
 
 1. Start grafana and prometheus using following command
+
    ```yaml
    docker compose --profile monitoring up
    ```
-1. Navigate to http://localhost:3000/ to open grafana UI (use admin/grafana as credentials)
+1. Navigate to http://localhost:3000/ to op![Uploading Screenshot 2024-12-20 at 3.32.49 PM.png…]()
+en grafana UI (use admin/grafana as credentials)
 1. From grafana left nav click on dashboards and select "Intelligent Gateway Overview" to view arch gateway stats
 
 Here is sample interaction,
-<img width="575" alt="image" src="https://github.com/user-attachments/assets/25d40f46-616e-41ea-be8e-1623055c84ec">
+<img width="1498" alt="Screenshot 2024-12-20 at 3 32 49 PM" src="https://github.com/user-attachments/assets/c4680685-213a-46af-b448-a97ce428ba08" />
